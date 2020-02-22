@@ -1,26 +1,22 @@
 CXX = g++
 CXXFLAGS = -g -Wall -std=c++0x
 
-INC=-I/usr/include -I/home/oglog/cpp/common -I./
+INC=-I/usr/include -I/home/oglog/cpp/common -I./include/
 LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
 
+all: bin/client bin/server
 
-%.o: %.cpp
+obj/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-all: client server
+bin/server: obj/server.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-server: server.o engine.o vchpack.o myvectors.o cmds.o common.o
-	$(CXX) $(CXXFLAGS) -o server $^ $(LIB)
+bin/client: obj/client.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/graphics.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-client: client.o engine.o vchpack.o myvectors.o cmds.o common.o graphics.o
-	$(CXX) $(CXXFLAGS) -o client $^ $(LIB)
+obj/vchpack.o:
+	$(CXX) $(CXXFLAGS) -c ../common/vchpack.cpp $^ $(LIB) -o $@
 
-test: test.o vchpack.o cmds.o
-	$(CXX) $(CXXFLAGS) -o test $^ $(LIB)
-
-vchpack.o:
-	$(CXX) $(CXXFLAGS) -c /home/oglog/cpp/common/vchpack.cpp $^ $(LIB)
-
-myvectors.o:
-	$(CXX) $(CXXFLAGS) -c /home/oglog/cpp/common/myvectors.cpp $^ $(LIB)
+obj/myvectors.o:
+	$(CXX) $(CXXFLAGS) -c ../common/myvectors.cpp $^ $(LIB) -o $@
