@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
+#include <pthread.h>
 #include "myvectors.h"
 #include "vchpack.h"
 #include "common.h"

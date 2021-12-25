@@ -1,7 +1,7 @@
 CXX = g++
-CXXFLAGS = -g -Wall -std=c++0x
+CXXFLAGS = -g -Wall -std=c++0x -pthread -no-pie
 
-INC=-I/usr/include -I/home/oglog/cpp/common -I./include/
+INC=-I/usr/include -I../common -I./include/
 LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
 
 all: bin/client bin/server
