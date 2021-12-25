@@ -1,7 +1,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+using EntityRef = uint16_t;
+
 const float DISTANCE_TOL = 0.0001;
+
+const EntityRef NULL_ENTITYREF = 0;
 
 const unsigned char NULL_TYPECHAR = 0;
 
