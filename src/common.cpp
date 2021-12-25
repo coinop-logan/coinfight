@@ -54,3 +54,14 @@ bool entityRefIsNull(EntityRef id)
 {
     return id == 0;
 }
+
+std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
+{
+    unsigned int sum = a + b;
+    if (sum < a) {
+        return {};
+    }
+    else {
+        return {sum};
+    }
+}

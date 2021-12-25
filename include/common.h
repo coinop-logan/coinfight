@@ -1,6 +1,7 @@
 #include "myvectors.h"
 #include "vchpack.h"
 #include <stdint.h>
+#include <optional>
 
 #ifndef COMMON_H
 #define COMMON_H
@@ -26,5 +27,6 @@ void packEntityRef(vch *destVch, EntityRef id);
 vchIter unpackEntityRef(vchIter iter, EntityRef *id);
 
 bool entityRefIsNull(EntityRef);
+std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
 #endif // COMMON_H
