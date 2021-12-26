@@ -147,7 +147,8 @@ unsigned int GoldPile::tryAddAmount(unsigned int attemptedAmount)
         added = UINT_MAX - amount;
         amount = UINT_MAX;
     }
-    else {
+    else
+    {
         added = attemptedAmount;
         amount = maybeOverflowed;
     }
@@ -233,15 +234,13 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t ref, vector2f pos) :
-    Unit(game, ref, pos),
-    target(NULL_ENTITYREF)
+MobileUnit::MobileUnit(Game *game, uint16_t ref, vector2f pos) : Unit(game, ref, pos),
+                                                                 target(NULL_ENTITYREF)
 {
     targetRange = 0;
 }
-MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) :
-    Unit(game, ref, iter),
-    target(NULL_ENTITYREF)
+MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter),
+                                                                  target(NULL_ENTITYREF)
 {
     unpackMobileUnitAndMoveIter(iter);
 }
@@ -291,7 +290,6 @@ void MobileUnit::mobileUnitGo()
         moveTowardPoint(*p, targetRange);
     else
         setTarget(Target(pos), 0);
-    
 }
 void MobileUnit::cmdMove(vector2f pointTarget)
 {
@@ -313,14 +311,12 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "L", &heldCredit);
 }
 
-Prime::Prime(Game *game, uint16_t ref, vector2f pos) :
-    MobileUnit(game, ref, pos)
+Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, pos)
 {
     state = Idle;
     heldCredit = 0;
 }
-Prime::Prime(Game *game, uint16_t ref, vchIter *iter) :
-    MobileUnit(game, ref, iter)
+Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -365,64 +361,60 @@ void Prime::go()
 {
     switch (state)
     {
-        case Idle:
-            break;
-        case PickupGold:
-            if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+    case Idle:
+        break;
+    case PickupGold:
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+        {
+            if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
-                if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
-                    if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
-                    {
-                        unsigned int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
-                        cout << "picked up " << amountPickedUp << endl;
-                    }
+                    unsigned int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
+                    cout << "picked up " << amountPickedUp << endl;
                 }
             }
-            break;
-        case PutdownGold:
-            if (optional<vector2f> point = getTarget().getPoint(game))
+        }
+        break;
+    case PutdownGold:
+        if (optional<vector2f> point = getTarget().getPoint(game))
+        {
+            if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
             {
                 if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
-                    if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+                    if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                     {
-                        if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                        // goldPile already exists
+                        unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
+                        if (amountToAdd > 0)
                         {
-                            // goldPile already exists
-                            unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
-                            if (amountToAdd > 0)
-                            {
-                                unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
-                                cout << "put down " << amountPutDown << endl;
-                            }
-                            else
-                            {
-                                state = Idle;
-                            }
+                            unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
+                            cout << "put down " << amountPutDown << endl;
                         }
                         else
                         {
-                            // trying to put down gold "on" non-gold entity...
-                            // maybe in future can transfer to some other unit?
+                            state = Idle;
                         }
-                    }
-                    else if (auto putdownPoint = getTarget().castToPoint())
-                    {
-                        // must create goldPile
-                        boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
-                        game->entities.push_back(gp);
-                        setTarget(Target(gp->ref), PRIME_RANGE);
                     }
                     else
                     {
-                        // not an entity or position - do nothing - could be a dead entity
+                        // trying to put down gold "on" non-gold entity...
+                        // maybe in future can transfer to some other unit?
                     }
                 }
             }
-            break;
-        default:
-            throw logic_error("This case not handled in Prime::go()");
+            else
+            {
+                // must create goldPile
+                boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point, 0));
+                game->entities.push_back(gp);
+                setTarget(Target(gp->ref), PRIME_RANGE);
+            }
+        }
+        break;
+    default:
+        throw logic_error("This case not handled in Prime::go()");
     }
     mobileUnitGo();
 }
@@ -539,7 +531,8 @@ void Game::pack(vch *dest)
 
         packTypechar(dest, typechar);
 
-        if (typechar != NULL_TYPECHAR) {
+        if (typechar != NULL_TYPECHAR)
+        {
             entities[i]->pack(dest);
         }
     }
@@ -614,10 +607,12 @@ void Game::iterate()
 void Target::pack(vch *dest)
 {
     packToVch(dest, "C", (unsigned char)(type));
-    if (type == PointTarget) {
+    if (type == PointTarget)
+    {
         packVector2f(dest, pointTarget);
     }
-    else {
+    else
+    {
         packEntityRef(dest, entityTarget);
     }
 }
@@ -627,10 +622,12 @@ void Target::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     type = static_cast<Type>(enumInt);
 
-    if (type == PointTarget) {
+    if (type == PointTarget)
+    {
         *iter = unpackVector2f(*iter, &pointTarget);
     }
-    else {
+    else
+    {
         *iter = unpackEntityRef(*iter, &entityTarget);
     }
 }
@@ -649,44 +646,51 @@ Target::Target(vector2f _pointTarget)
 Target::Target(EntityRef _entityTarget)
 {
     type = EntityTarget;
-    pointTarget = vector2f(0,0);
+    pointTarget = vector2f(0, 0);
     entityTarget = _entityTarget;
 }
 
 optional<vector2f> Target::getPoint(Game *game)
 {
-    if (type == PointTarget) {
+    if (type == PointTarget)
+    {
         return {pointTarget};
     }
-    else if (boost::shared_ptr<Entity> e = game->entityRefToPtr(entityTarget)) {
+    else if (boost::shared_ptr<Entity> e = game->entityRefToPtr(entityTarget))
+    {
         return {e->pos};
     }
-    else {
+    else
+    {
         return {};
     }
 }
 
 optional<EntityRef> Target::castToEntityRef()
 {
-    if (type == PointTarget) {
+    if (type == PointTarget)
+    {
         return {};
     }
-    else {
+    else
+    {
         return {entityTarget};
     }
 }
 
 optional<vector2f> Target::castToPoint()
 {
-    if (type == PointTarget) {
+    if (type == PointTarget)
+    {
         return {pointTarget};
     }
-    else {
+    else
+    {
         return {};
     }
 }
 
-boost::shared_ptr<Entity> Target::castToEntityPtr(Game* game)
+boost::shared_ptr<Entity> Target::castToEntityPtr(Game *game)
 {
     if (auto eRef = castToEntityRef())
         return game->entityRefToPtr(*eRef);
