@@ -204,7 +204,7 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
 {
     if (error)
     {
-        throw("Lisener error accepting:" + error.value());
+        throw("Listener error accepting:" + error.value());
     }
     else
     {
