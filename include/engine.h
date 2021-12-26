@@ -25,7 +25,7 @@ class Entity
 public:
     Game *game;
     bool dead;
-    EntityRef id;
+    EntityRef ref;
     vector2f pos;
 
     virtual unsigned char typechar();
@@ -39,8 +39,8 @@ public:
 
     void packEntity(vch *destVch);
     void unpackEntityAndMoveIter(vchIter *iter);
-    Entity(Game *game, EntityRef id, vector2f pos);
-    Entity(Game *game, EntityRef id, vchIter *iter);
+    Entity(Game *game, EntityRef ref, vector2f pos);
+    Entity(Game *game, EntityRef ref, vchIter *iter);
 
     vector2f getPos();
 };
@@ -49,7 +49,7 @@ unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
 
 vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>>);
 
-boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef id);
+boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
 
 class Target
 {
@@ -126,8 +126,8 @@ public:
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
-    Unit(Game *game, EntityRef id, vector2f pos);
-    Unit(Game *game, EntityRef id, vchIter *iter);
+    Unit(Game *game, EntityRef ref, vector2f pos);
+    Unit(Game *game, EntityRef ref, vchIter *iter);
 
     float build(float attemptedAmount);
     float getBuiltAmount();
@@ -140,8 +140,8 @@ public:
     void packBuilding(vch *destVch);
     void unpackBuildingAndMoveIter(vchIter *iter);
 
-    Building(Game *game, EntityRef id, vector2f pos);
-    Building(Game *game, EntityRef id, vchIter *iter);
+    Building(Game *game, EntityRef ref, vector2f pos);
+    Building(Game *game, EntityRef ref, vchIter *iter);
 };
 
 class MobileUnit : public Unit
@@ -165,8 +165,8 @@ public:
 
     void cmdMove(vector2f target);
 
-    MobileUnit(Game *game, EntityRef id, vector2f pos);
-    MobileUnit(Game *game, EntityRef id, vchIter *iter);
+    MobileUnit(Game *game, EntityRef ref, vector2f pos);
+    MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
 class Prime : public MobileUnit
@@ -185,11 +185,13 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Prime(Game *game, EntityRef id, vector2f pos);
-    Prime(Game *game, EntityRef id, vchIter *iter);
+    Prime(Game *game, EntityRef ref, vector2f pos);
+    Prime(Game *game, EntityRef ref, vchIter *iter);
 
     void cmdPickup(EntityRef);
     void cmdPutdown(Target);
+
+    unsigned int tryDeductAmount(unsigned int);
 
     float getSpeed();
     float getRange();
@@ -219,8 +221,8 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Gateway(Game *game, EntityRef id, vector2f pos, bool alreadyCompleted);
-    Gateway(Game *game, EntityRef id, vchIter *iter);
+    Gateway(Game *game, EntityRef ref, vector2f pos, bool alreadyCompleted);
+    Gateway(Game *game, EntityRef ref, vchIter *iter);
 
     unsigned char typechar();
     string getTypeName();

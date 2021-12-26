@@ -11,7 +11,7 @@
 
 //using namespace std;
 
-boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef id)
+boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref)
 {
     switch (typechar)
     {
@@ -19,13 +19,13 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
         return boost::shared_ptr<Entity>();
         break;
     case GATEWAY_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Gateway(game, id, iter));
+        return boost::shared_ptr<Entity>(new Gateway(game, ref, iter));
         break;
     case PRIME_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Prime(game, id, iter));
+        return boost::shared_ptr<Entity>(new Prime(game, ref, iter));
         break;
     case GOLDPILE_TYPECHAR:
-        return boost::shared_ptr<Entity>(new GoldPile(game, id, iter));
+        return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
         break;
     default:
         throw runtime_error("Trying to unpack an unrecognized entity");
@@ -37,7 +37,7 @@ vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>> ptrs)
     vector<EntityRef> refs;
     for (uint i = 0; i < ptrs.size(); i++)
     {
-        refs.push_back(ptrs[i]->id);
+        refs.push_back(ptrs[i]->ref);
     }
     return refs;
 }
@@ -89,11 +89,11 @@ void Entity::unpackEntityAndMoveIter(vchIter *iter)
 
     *iter = unpackVector2f(*iter, &pos);
 }
-Entity::Entity(Game *game, EntityRef id, vector2f pos) : game(game), id(id), pos(pos)
+Entity::Entity(Game *game, EntityRef ref, vector2f pos) : game(game), ref(ref), pos(pos)
 {
     dead = false;
 }
-Entity::Entity(Game *game, EntityRef id, vchIter *iter) : game(game), id(id)
+Entity::Entity(Game *game, EntityRef ref, vchIter *iter) : game(game), ref(ref)
 {
     unpackEntityAndMoveIter(iter);
 }
@@ -116,8 +116,8 @@ void GoldPile::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "L", &amount);
 }
 
-GoldPile::GoldPile(Game *game, EntityRef id, vector2f pos, uint32_t amount) : Entity(game, id, pos), amount(amount) {}
-GoldPile::GoldPile(Game *game, EntityRef id, vchIter *iter) : Entity(game, id, iter)
+GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos, uint32_t amount) : Entity(game, ref, pos), amount(amount) {}
+GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -173,11 +173,11 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &builtAmount);
 }
 
-Unit::Unit(Game *game, EntityRef id, vector2f pos) : Entity(game, id, pos)
+Unit::Unit(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos)
 {
     builtAmount = 0;
 }
-Unit::Unit(Game *game, EntityRef id, vchIter *iter) : Entity(game, id, iter)
+Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter)
 {
     unpackUnitAndMoveIter(iter);
 }
@@ -215,8 +215,8 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, uint16_t id, vector2f pos) : Unit(game, id, pos) {}
-Building::Building(Game *game, uint16_t id, vchIter *iter) : Unit(game, id, iter)
+Building::Building(Game *game, uint16_t ref, vector2f pos) : Unit(game, ref, pos) {}
+Building::Building(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter)
 {
     unpackBuildingAndMoveIter(iter);
 }
@@ -233,14 +233,14 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t id, vector2f pos) :
-    Unit(game, id, pos),
+MobileUnit::MobileUnit(Game *game, uint16_t ref, vector2f pos) :
+    Unit(game, ref, pos),
     target(NULL_ENTITYREF)
 {
     targetRange = 0;
 }
-MobileUnit::MobileUnit(Game *game, uint16_t id, vchIter *iter) :
-    Unit(game, id, iter),
+MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) :
+    Unit(game, ref, iter),
     target(NULL_ENTITYREF)
 {
     unpackMobileUnitAndMoveIter(iter);
@@ -310,15 +310,15 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "L", &heldCredit);
 }
 
-Prime::Prime(Game *game, uint16_t id, vector2f pos) :
-    MobileUnit(game, id, pos),
+Prime::Prime(Game *game, uint16_t ref, vector2f pos) :
+    MobileUnit(game, ref, pos),
     target(NULL_ENTITYREF)
 {
     state = Idle;
     heldCredit = 0;
 }
-Prime::Prime(Game *game, uint16_t id, vchIter *iter) :
-    MobileUnit(game, id, iter),
+Prime::Prime(Game *game, uint16_t ref, vchIter *iter) :
+    MobileUnit(game, ref, iter),
     target(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
@@ -338,6 +338,21 @@ void Prime::cmdPutdown(Target _target)
     target = _target;
 
     MobileUnit::setTarget(target, PRIME_RANGE);
+}
+
+unsigned int Prime::tryDeductAmount(unsigned int attemptedAmount)
+{
+    if (attemptedAmount < heldCredit)
+    {
+        heldCredit -= attemptedAmount;
+        return attemptedAmount;
+    }
+    else
+    {
+        unsigned int left = heldCredit;
+        heldCredit = 0;
+        return left;
+    }
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }
@@ -360,8 +375,8 @@ void Prime::go()
                 {
                     if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                     {
-                        int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
-                        cout << amountPickedUp << endl;
+                        unsigned int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
+                        cout << "picked up " << amountPickedUp << endl;
                     }
                 }
             }
@@ -372,8 +387,16 @@ void Prime::go()
                 if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
                     // goldPile already exists
-                    int amountPutDown = heldCredit -= gp->tryAddAmount(PRIME_PUTDOWN_RATE);
-                    cout << amountPutDown << endl;
+                    unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
+                    if (amountToAdd > 0)
+                    {
+                        unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
+                        cout << "put down " << amountPutDown << endl;
+                    }
+                    else
+                    {
+                        state = Idle;
+                    }
                 }
                 else
                 {
@@ -386,9 +409,7 @@ void Prime::go()
                 // must create goldPile
                 boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
                 game->entities.push_back(gp);
-
-                int amountPutDown = heldCredit -= gp->tryAddAmount(PRIME_PUTDOWN_RATE);
-                cout << amountPutDown << endl;
+                target = Target(gp->ref);
             }
             else
             {
@@ -443,14 +464,14 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
     *iter = unpackEntityRef(*iter, &spawningPrimeId);
 }
 
-Gateway::Gateway(Game *game, uint16_t id, vector2f pos, bool alreadyCompleted) : Building(game, id, pos)
+Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) : Building(game, ref, pos)
 {
     if (alreadyCompleted)
     {
         builtAmount = getCreditCost();
     }
 }
-Gateway::Gateway(Game *game, uint16_t id, vchIter *iter) : Building(game, id, iter)
+Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }

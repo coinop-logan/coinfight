@@ -23,8 +23,8 @@ vchIter unpackVector2f(vchIter src, vector2f *v);
 
 vchIter unpackTypecharFromIter(vchIter src, unsigned char *typechar);
 
-void packEntityRef(vch *destVch, EntityRef id);
-vchIter unpackEntityRef(vchIter iter, EntityRef *id);
+void packEntityRef(vch *destVch, EntityRef ref);
+vchIter unpackEntityRef(vchIter iter, EntityRef *ref);
 
 bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);

@@ -41,18 +41,18 @@ vchIter unpackTypecharFromIter(vchIter src, unsigned char *typechar)
     return unpackFromIter(src, "C", typechar);
 }
 
-void packEntityRef(vch *destVch, EntityRef id)
+void packEntityRef(vch *destVch, EntityRef ref)
 {
-    packToVch(destVch, "H", id);
+    packToVch(destVch, "H", ref);
 }
-vchIter unpackEntityRef(vchIter iter, EntityRef *id)
+vchIter unpackEntityRef(vchIter iter, EntityRef *ref)
 {
-    return unpackFromIter(iter, "H", id);
+    return unpackFromIter(iter, "H", ref);
 }
 
-bool entityRefIsNull(EntityRef id)
+bool entityRefIsNull(EntityRef ref)
 {
-    return id == 0;
+    return ref == 0;
 }
 
 std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)

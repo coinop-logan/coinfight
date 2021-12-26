@@ -307,7 +307,7 @@ boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> s
 
     if (unitTypechar == PRIME_TYPECHAR && targetedEntity->typechar() == GOLDPILE_TYPECHAR)
     {
-        return boost::shared_ptr<Cmd>(new PickupCmd(entityPointersToRefs(selectedEntities), targetedEntity->id));
+        return boost::shared_ptr<Cmd>(new PickupCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
     }
 
     return boost::shared_ptr<Cmd>(); // return null cmd
