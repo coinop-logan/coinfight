@@ -7,27 +7,25 @@
 
 using namespace std;
 
-int thing(vector2f)
-
 int main()
 {
-    Target t(4);
+    // Target t(4);
     
-    vch testBuffer;
-    t.pack(&testBuffer);
+    // vch testBuffer;
+    // t.pack(&testBuffer);
 
-    auto iter = testBuffer.begin();
+    // auto iter = testBuffer.begin();
 
-    Target t2(&iter);
+    // Target t2(&iter);
 
-    if (auto p = t2.castToPoint())
-        cout << p->x << "," << p->y << endl;
-        p.and_then()
-    else if (auto e = t2.castToEntityRef())
-        cout << *e << endl;
-    else {
-        cout << "??" << endl;
-    }
+    // if (auto p = t2.castToPoint())
+    //     cout << p->x << "," << p->y << endl;
+    //     p.and_then()
+    // else if (auto e = t2.castToEntityRef())
+    //     cout << *e << endl;
+    // else {
+    //     cout << "??" << endl;
+    // }
 
     return 0;
 }
