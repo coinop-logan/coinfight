@@ -382,38 +382,44 @@ void Prime::go()
             }
             break;
         case PutdownGold:
-            if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+            if (optional<vector2f> point = target.getPoint(game))
             {
-                if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
-                    // goldPile already exists
-                    unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
-                    if (amountToAdd > 0)
+                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
                     {
-                        unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
-                        cout << "put down " << amountPutDown << endl;
+                        if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                        {
+                            // goldPile already exists
+                            unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
+                            if (amountToAdd > 0)
+                            {
+                                unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
+                                cout << "put down " << amountPutDown << endl;
+                            }
+                            else
+                            {
+                                state = Idle;
+                            }
+                        }
+                        else
+                        {
+                            // trying to put down gold "on" non-gold entity...
+                            // maybe in future can transfer to some other unit?
+                        }
+                    }
+                    else if (auto putdownPoint = target.castToPoint())
+                    {
+                        // must create goldPile
+                        boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
+                        game->entities.push_back(gp);
+                        target = Target(gp->ref);
                     }
                     else
                     {
-                        state = Idle;
+                        // not an entity or position - do nothing - could be a dead entity
                     }
                 }
-                else
-                {
-                    // trying to put down gold "on" non-gold entity...
-                    // maybe in future can transfer to some other unit?
-                }
-            }
-            else if (auto putdownPoint = target.castToPoint())
-            {
-                // must create goldPile
-                boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
-                game->entities.push_back(gp);
-                target = Target(gp->ref);
-            }
-            else
-            {
-                // not an entity or position - do nothing - could be a dead entity
             }
             break;
         default:
