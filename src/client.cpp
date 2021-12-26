@@ -158,7 +158,8 @@ public:
 
             cout << "BYTES:" << endl;
             debugOutputVch(receivedBytes);
-            cout << endl << ":FIN" << endl;
+            cout << endl
+                 << ":FIN" << endl;
 
             receivedResyncs.push_back(Game(&place));
 
@@ -297,17 +298,22 @@ boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> s
 {
     // Get typechar of units if they are all of same type
     unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
+    bool allSameType = true;
     for (uint i = 0; i < selectedEntities.size(); i++)
     {
         if (selectedEntities[i]->typechar() != unitTypechar)
         {
-            return boost::shared_ptr<Cmd>(); // return null cmd
+            allSameType = false;
+            break;
         }
     }
 
-    if (unitTypechar == PRIME_TYPECHAR && targetedEntity->typechar() == GOLDPILE_TYPECHAR)
+    if (allSameType)
     {
-        return boost::shared_ptr<Cmd>(new PickupCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
+        if (unitTypechar == PRIME_TYPECHAR && targetedEntity->typechar() == GOLDPILE_TYPECHAR)
+        {
+            return boost::shared_ptr<Cmd>(new PickupCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
+        }
     }
 
     return boost::shared_ptr<Cmd>(); // return null cmd
