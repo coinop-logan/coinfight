@@ -26,7 +26,9 @@ void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity)
     {
         sf::CircleShape circle(5);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(sf::Color::Yellow);
+        circle.setOutlineColor(sf::Color(100,100,100));
+        circle.setOutlineThickness(1);
+        circle.setFillColor(castedEntity->amount > 0 ? sf::Color::Yellow : sf::Color::Transparent);
         circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
         window.draw(circle);
     }
