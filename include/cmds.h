@@ -17,6 +17,7 @@ using EntityRef = uint16_t;
 const unsigned char CMD_MOVE_CHAR = 'M';
 const unsigned char CMD_PICKUP_CHAR = 'U';
 const unsigned char CMD_PUTDOWN_CHAR = 'D';
+const unsigned char CMD_PUTDOWNFORGATEWAY_CHAR = 'G';
 
 struct Cmd
 {
@@ -95,6 +96,21 @@ struct PutdownCmd : public Cmd
 
     PutdownCmd(vector<EntityRef>, Target);
     PutdownCmd(vchIter *iter);
+};
+
+struct PutdownForGatewayCmd : public Cmd
+{
+    EntityRef gatewayRef;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    PutdownForGatewayCmd(vector<EntityRef>, EntityRef);
+    PutdownForGatewayCmd(vchIter *iter);
 };
 
 

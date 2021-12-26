@@ -19,6 +19,7 @@ using vchIter = vector<unsigned char>::iterator;
 using EntityRef = uint16_t;
 
 class Game;
+class Gateway;
 
 class Entity
 {
@@ -192,6 +193,7 @@ public:
 
     void cmdPickup(EntityRef);
     void cmdPutdown(Target);
+    void cmdPutdownForGateway(boost::shared_ptr<Gateway>);
 
     unsigned int tryDeductAmount(unsigned int);
 
@@ -214,10 +216,9 @@ public:
     {
         Idle,
         Spawning,
-        Reclaiming,
-        ReclaimingSelf
+        Reclaiming
     } state;
-    EntityRef spawningPrimeId;
+    EntityRef targetRef;
     boost::shared_ptr<Prime> spawningPrime();
 
     void pack(vch *dest);
@@ -232,6 +233,7 @@ public:
     void go();
 
     void startSpawningPrime(vector2f primePos);
+    void reclaimGoldPile(boost::shared_ptr<GoldPile>);
 };
 
 void packFrameCmdsPacket(vch *dest, uint64_t frame);

@@ -20,7 +20,7 @@ const float SEC_PER_FRAME = 1 / 30.0;
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 
-const float GATEWAY_TRANSFER_RATE = 0.2; // credit per frame
+const float GATEWAY_TRANSFER_RATE = 1; // credit per frame
 
 const float PRIME_COST = 20;
 const float PRIME_SPEED = 2;

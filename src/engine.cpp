@@ -116,7 +116,8 @@ void GoldPile::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "L", &amount);
 }
 
-GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos, uint32_t amount) : Entity(game, ref, pos), amount(amount) {}
+GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos, uint32_t amount) : Entity(game, ref, pos),
+                                                                               amount(amount) {}
 GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter)
 {
     unpackAndMoveIter(iter);
@@ -133,7 +134,6 @@ unsigned int GoldPile::tryDeductAmount(unsigned int attemptedAmount)
     {
         unsigned int left = amount;
         amount = 0;
-        die();
         return left;
     }
 }
@@ -187,7 +187,6 @@ float Unit::build(float attemptedAmount)
 {
     if (builtAmount + attemptedAmount <= getCreditCost())
     {
-        cout << getCreditCost() - builtAmount << endl;
         builtAmount += attemptedAmount;
         return attemptedAmount;
     }
@@ -334,6 +333,27 @@ void Prime::cmdPutdown(Target _target)
 
     setTarget(_target, PRIME_RANGE);
 }
+void Prime::cmdPutdownForGateway(boost::shared_ptr<Gateway> gateway)
+{
+    // create empty gold pile at Gateway's range, toward self
+    cout << "gateway: " << gateway->getPos().x << "," << gateway->getPos().y << endl;
+    vector2f gatewayToPrime = this->getPos() - gateway->getPos();
+    cout << "gatewayToPrime: " << gatewayToPrime.x << "," << gatewayToPrime.y << endl;
+    vector2f resized = gatewayToPrime.normalized() * GATEWAY_RANGE;
+    cout << "resized: " << resized.x << "," << resized.y << endl;
+    vector2f pilePos = gateway->getPos() + resized;
+    cout << "pilePos: " << pilePos.x << "," << pilePos.y << endl;
+
+    EntityRef goldRef = game->getNextEntityRef();
+    boost::shared_ptr<GoldPile> goldPile(new GoldPile(game, goldRef, pilePos, 0));
+    game->entities.push_back(goldPile);
+
+    // tell gateway to target that pile
+    gateway->reclaimGoldPile(goldPile);
+
+    state = PutdownGold;
+    setTarget(Target(goldRef), PRIME_RANGE);
+}
 
 unsigned int Prime::tryDeductAmount(unsigned int attemptedAmount)
 {
@@ -370,8 +390,7 @@ void Prime::go()
             {
                 if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
-                    unsigned int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
-                    cout << "picked up " << amountPickedUp << endl;
+                    heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
                 }
             }
         }
@@ -389,8 +408,7 @@ void Prime::go()
                         unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
                         if (amountToAdd > 0)
                         {
-                            unsigned int amountPutDown = gp->tryAddAmount(amountToAdd);
-                            cout << "put down " << amountPutDown << endl;
+                            gp->tryAddAmount(amountToAdd);
                         }
                         else
                         {
@@ -422,7 +440,7 @@ void Prime::go()
 void Gateway::iterateSpawning()
 {
     //check if void
-    if (entityRefIsNull(spawningPrimeId))
+    if (entityRefIsNull(targetRef))
     {
         throw logic_error("trying to iterateSpawning, but there is no spawningPrime pointer!");
     }
@@ -450,7 +468,7 @@ void Gateway::pack(vch *dest)
 {
     packBuilding(dest);
     packToVch(dest, "C", (unsigned char)(state));
-    packEntityRef(dest, spawningPrimeId);
+    packEntityRef(dest, targetRef);
 }
 void Gateway::unpackAndMoveIter(vchIter *iter)
 {
@@ -458,7 +476,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
-    *iter = unpackEntityRef(*iter, &spawningPrimeId);
+    *iter = unpackEntityRef(*iter, &targetRef);
 }
 
 Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) : Building(game, ref, pos)
@@ -482,6 +500,21 @@ void Gateway::go()
     case Spawning:
         iterateSpawning();
         break;
+    case Reclaiming:
+        if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entityRefToPtr(targetRef)))
+        {
+            if ((goldPile->pos - pos).getMagnitude() <= GATEWAY_RANGE + DISTANCE_TOL)
+            {
+                game->playerCredit += goldPile->tryDeductAmount(GATEWAY_TRANSFER_RATE);
+
+                // This may have depleted and killed the pile
+                if (goldPile->dead)
+                {
+                    state = Idle;
+                }
+            }
+        }
+        break;
     default:
         throw runtime_error("You haven't defined what the Gateway should be doing in this state");
     }
@@ -489,7 +522,7 @@ void Gateway::go()
 
 boost::shared_ptr<Prime> Gateway::spawningPrime()
 {
-    boost::shared_ptr<Prime> p = boost::dynamic_pointer_cast<Prime, Entity>(game->entityRefToPtr(spawningPrimeId));
+    boost::shared_ptr<Prime> p = boost::dynamic_pointer_cast<Prime, Entity>(game->entityRefToPtr(targetRef));
     return p;
 }
 
@@ -497,9 +530,16 @@ void Gateway::startSpawningPrime(vector2f primePos)
 {
     state = Spawning;
 
-    spawningPrimeId = game->getNextEntityRef();
+    targetRef = game->getNextEntityRef();
 
-    game->entities.push_back(boost::shared_ptr<Prime>(new Prime(game, spawningPrimeId, primePos)));
+    game->entities.push_back(boost::shared_ptr<Prime>(new Prime(game, targetRef, primePos)));
+}
+
+void Gateway::reclaimGoldPile(boost::shared_ptr<GoldPile> goldPile)
+{
+    state = Reclaiming;
+
+    targetRef = goldPile->ref;
 }
 
 boost::shared_ptr<Entity> Game::entityRefToPtr(EntityRef r)
@@ -602,6 +642,8 @@ void Game::iterate()
     }
 
     frame++;
+
+    cout << "c:" << playerCredit << endl;
 }
 
 void Target::pack(vch *dest)
