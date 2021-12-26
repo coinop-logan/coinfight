@@ -260,6 +260,11 @@ void MobileUnit::setTarget(Target _target, float newRange)
     target = _target;
     targetRange = newRange;
 }
+Target MobileUnit::getTarget()
+{
+    return target;
+}
+
 void MobileUnit::moveTowardPoint(vector2f dest, float range)
 {
     vector2f toPoint = dest - pos;
@@ -297,7 +302,6 @@ void Prime::pack(vch *dest)
 {
     packMobileUnit(dest);
     packToVch(dest, "C", (unsigned char)(state));
-    target.pack(dest);
     packToVch(dest, "L", heldCredit);
 }
 void Prime::unpackAndMoveIter(vchIter *iter)
@@ -306,20 +310,17 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
-    target = Target(iter);
     *iter = unpackFromIter(*iter, "L", &heldCredit);
 }
 
 Prime::Prime(Game *game, uint16_t ref, vector2f pos) :
-    MobileUnit(game, ref, pos),
-    target(NULL_ENTITYREF)
+    MobileUnit(game, ref, pos)
 {
     state = Idle;
     heldCredit = 0;
 }
 Prime::Prime(Game *game, uint16_t ref, vchIter *iter) :
-    MobileUnit(game, ref, iter),
-    target(NULL_ENTITYREF)
+    MobileUnit(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -328,16 +329,14 @@ void Prime::cmdPickup(EntityRef goldRef)
 {
     state = PickupGold;
 
-    target = Target(goldRef);
-    MobileUnit::setTarget(target, PRIME_RANGE);
+    setTarget(Target(goldRef), PRIME_RANGE);
 }
 
 void Prime::cmdPutdown(Target _target)
 {
     state = PutdownGold;
-    target = _target;
 
-    MobileUnit::setTarget(target, PRIME_RANGE);
+    setTarget(_target, PRIME_RANGE);
 }
 
 unsigned int Prime::tryDeductAmount(unsigned int attemptedAmount)
@@ -369,7 +368,7 @@ void Prime::go()
         case Idle:
             break;
         case PickupGold:
-            if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+            if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
             {
                 if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
@@ -382,11 +381,11 @@ void Prime::go()
             }
             break;
         case PutdownGold:
-            if (optional<vector2f> point = target.getPoint(game))
+            if (optional<vector2f> point = getTarget().getPoint(game))
             {
                 if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
-                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+                    if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
                     {
                         if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                         {
@@ -408,12 +407,12 @@ void Prime::go()
                             // maybe in future can transfer to some other unit?
                         }
                     }
-                    else if (auto putdownPoint = target.castToPoint())
+                    else if (auto putdownPoint = getTarget().castToPoint())
                     {
                         // must create goldPile
                         boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
                         game->entities.push_back(gp);
-                        target = Target(gp->ref);
+                        setTarget(Target(gp->ref), PRIME_RANGE);
                     }
                     else
                     {

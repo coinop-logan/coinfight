@@ -152,11 +152,14 @@ private:
 
     void moveTowardPoint(vector2f, float);
 
+protected:
+    void setTarget(Target _target, float range);
+
 public:
     virtual float getSpeed();
     virtual float getRange();
 
-    void setTarget(Target _target, float range);
+    Target getTarget();
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -172,7 +175,6 @@ public:
 class Prime : public MobileUnit
 {
 public:
-    Target target;
     uint32_t heldCredit;
 
     enum State
