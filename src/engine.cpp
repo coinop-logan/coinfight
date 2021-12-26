@@ -589,7 +589,7 @@ void Game::testInit()
 
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12), true));
     entities.push_back(g);
-    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50), 100));
+    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50), 1000));
     entities.push_back(gp);
 
     g->startSpawningPrime(vector2f(20, 20));
