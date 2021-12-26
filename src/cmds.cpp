@@ -16,6 +16,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new MoveCmd(iter));
     case CMD_PICKUP_CHAR:
         return boost::shared_ptr<Cmd>(new PickupCmd(iter));
+    case CMD_PUTDOWN_CHAR:
+        return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -207,6 +209,41 @@ void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
 PickupCmd::PickupCmd(vector<EntityRef> units, EntityRef goldRef) : Cmd(units), goldRef(goldRef) {}
 PickupCmd::PickupCmd(vchIter *iter) : Cmd(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char PutdownCmd::getTypechar()
+{
+    return CMD_PUTDOWN_CHAR;
+}
+string PutdownCmd::getTypename()
+{
+    return "PutdownCmd";
+}
+void PutdownCmd::pack(vch *dest)
+{
+    packCmd(dest);
+    target.pack(dest);
+}
+void PutdownCmd::unpackAndMoveIter(vchIter *iter)
+{
+    target = Target(iter);
+}
+
+void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (!unit->isActive())
+        return;
+
+    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+        prime->cmdPutdown(target);
+    else
+        cout << "That's not a prime!!" << endl;
+}
+
+PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : Cmd(units), target(target) {}
+PutdownCmd::PutdownCmd(vchIter *iter) : Cmd(iter), target(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }

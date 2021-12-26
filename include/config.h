@@ -26,6 +26,7 @@ const float PRIME_COST = 20;
 const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 50;
 const int PRIME_PICKUP_RATE = 5;
+const int PRIME_PUTDOWN_RATE = 8;
 
 const float GATEWAY_COST = 100;
 const float GATEWAY_RANGE = 50;

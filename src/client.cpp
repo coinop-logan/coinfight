@@ -296,7 +296,7 @@ struct CommandUI
 boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> selectedEntities, boost::shared_ptr<Entity> targetedEntity)
 {
     // Get typechar of units if they are all of same type
-    unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);;
+    unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
     for (uint i = 0; i < selectedEntities.size(); i++)
     {
         if (selectedEntities[i]->typechar() != unitTypechar)
@@ -387,6 +387,10 @@ int main()
                     {
                         cmdToSend = boost::shared_ptr<Cmd>(new MoveCmd(entityPointersToRefs(commandUI.selectedEntities), mouseButtonToVec(event.mouseButton)));
                     }
+                }
+                else if (event.mouseButton.button == sf::Mouse::Middle)
+                {
+                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPointersToRefs(commandUI.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
                 }
                 break;
             case sf::Event::KeyPressed:

@@ -51,6 +51,31 @@ vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>>);
 
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef id);
 
+class Target
+{
+private:
+    vector2f pointTarget;
+    EntityRef entityTarget;
+public:
+    enum Type
+    {
+        PointTarget,
+        EntityTarget
+    } type;
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Target(vector2f);
+    Target(EntityRef);
+    Target(vchIter *iter);
+
+    optional<vector2f> getPoint(Game*);
+    optional<EntityRef> castToEntityRef();
+    optional<vector2f> castToPoint();
+    boost::shared_ptr<Entity> castToEntityPtr(Game*);
+};
+
 class Game
 {
 public:
@@ -84,6 +109,7 @@ public:
     GoldPile(Game *, EntityRef, vchIter *);
 
     unsigned int tryDeductAmount(unsigned int);
+    unsigned int tryAddAmount(unsigned int);
 
     unsigned char typechar();
     string getTypeName();
@@ -121,26 +147,16 @@ public:
 class MobileUnit : public Unit
 {
 private:
-    vector2f targetPos;
-    EntityRef targetEntity;
+    Target target;
     float targetRange;
 
     void moveTowardPoint(vector2f, float);
 
 public:
-    enum TargetType
-    {
-        PointTarget,
-        EntityTarget
-    } targetType;
-
     virtual float getSpeed();
     virtual float getRange();
 
-    bool targetIsNull();
-    vector2f getTargetPos();
-    void setEntityTarget(EntityRef newTarget, float range);
-    void setPosTarget(vector2f newTarget, float range);
+    void setTarget(Target _target, float range);
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -156,13 +172,14 @@ public:
 class Prime : public MobileUnit
 {
 public:
-    EntityRef target;
+    Target target;
     uint32_t heldCredit;
 
     enum State
     {
         Idle,
-        PickupGold
+        PickupGold,
+        PutdownGold
     } state;
 
     void pack(vch *dest);
@@ -171,7 +188,8 @@ public:
     Prime(Game *game, EntityRef id, vector2f pos);
     Prime(Game *game, EntityRef id, vchIter *iter);
 
-    void cmdPickup(EntityRef goldRef);
+    void cmdPickup(EntityRef);
+    void cmdPutdown(Target);
 
     float getSpeed();
     float getRange();

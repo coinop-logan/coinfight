@@ -1,14 +1,33 @@
 #include <iostream>
+#include <optional>
+#include <typeinfo>
 #include "engine.h"
 #include "config.h"
 #include "myvectors.h"
 
+using namespace std;
+
+int thing(vector2f)
 
 int main()
 {
-    GoldPile gp(NULL, NULL_ENTITYREF, vector2f(0,0), 50);
+    Target t(4);
+    
+    vch testBuffer;
+    t.pack(&testBuffer);
 
-    std::cout << gp.tryAddAmount(50) << std::endl;
+    auto iter = testBuffer.begin();
+
+    Target t2(&iter);
+
+    if (auto p = t2.castToPoint())
+        cout << p->x << "," << p->y << endl;
+        p.and_then()
+    else if (auto e = t2.castToEntityRef())
+        cout << *e << endl;
+    else {
+        cout << "??" << endl;
+    }
 
     return 0;
 }

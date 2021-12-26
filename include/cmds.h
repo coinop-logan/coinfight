@@ -3,6 +3,7 @@
 #include "vchpack.h"
 #include "myvectors.h"
 #include "engine.h"
+#include "config.h"
 
 #ifndef CMDS_H
 #define CMDS_H
@@ -14,7 +15,8 @@ using vchIter = vector<unsigned char>::iterator;
 using EntityRef = uint16_t;
 
 const unsigned char CMD_MOVE_CHAR = 'M';
-const unsigned char CMD_PICKUP_CHAR = 'P';
+const unsigned char CMD_PICKUP_CHAR = 'U';
+const unsigned char CMD_PUTDOWN_CHAR = 'D';
 
 struct Cmd
 {
@@ -79,5 +81,21 @@ struct PickupCmd : public Cmd
     PickupCmd(vector<EntityRef>, EntityRef);
     PickupCmd(vchIter *iter);
 };
+
+struct PutdownCmd : public Cmd
+{
+    Target target;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    PutdownCmd(vector<EntityRef>, Target);
+    PutdownCmd(vchIter *iter);
+};
+
 
 #endif // CMDS_H

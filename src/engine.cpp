@@ -138,6 +138,22 @@ unsigned int GoldPile::tryDeductAmount(unsigned int attemptedAmount)
     }
 }
 
+unsigned int GoldPile::tryAddAmount(unsigned int attemptedAmount)
+{
+    uint maybeOverflowed = amount + attemptedAmount;
+    uint added;
+    if (maybeOverflowed < amount) // indicates overflow
+    {
+        added = UINT_MAX - amount;
+        amount = UINT_MAX;
+    }
+    else {
+        added = attemptedAmount;
+        amount = maybeOverflowed;
+    }
+    return added;
+}
+
 unsigned char GoldPile::typechar() { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() { return "GoldPile"; }
 void GoldPile::go() {}
@@ -208,29 +224,24 @@ Building::Building(Game *game, uint16_t id, vchIter *iter) : Unit(game, id, iter
 void MobileUnit::packMobileUnit(vch *dest)
 {
     packUnit(dest);
-    packToVch(dest, "C", (unsigned char)(targetType));
-    packVector2f(dest, targetPos);
-    packEntityRef(dest, targetEntity);
+    target.pack(dest);
     packToVch(dest, "f", targetRange);
 }
 void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 {
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    targetType = static_cast<TargetType>(enumInt);
-
-    *iter = unpackVector2f(*iter, &targetPos);
-    *iter = unpackEntityRef(*iter, &targetEntity);
+    target = Target(iter);
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t id, vector2f pos) : Unit(game, id, pos)
+MobileUnit::MobileUnit(Game *game, uint16_t id, vector2f pos) :
+    Unit(game, id, pos),
+    target(NULL_ENTITYREF)
 {
-    targetType = PointTarget;
-    targetPos = pos;
     targetRange = 0;
 }
-MobileUnit::MobileUnit(Game *game, uint16_t id, vchIter *iter) : Unit(game, id, iter)
+MobileUnit::MobileUnit(Game *game, uint16_t id, vchIter *iter) :
+    Unit(game, id, iter),
+    target(NULL_ENTITYREF)
 {
     unpackMobileUnitAndMoveIter(iter);
 }
@@ -244,35 +255,9 @@ float MobileUnit::getRange()
     throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
 }
 
-bool MobileUnit::targetIsNull() {
-    if (targetType == PointTarget) return false;
-    else return !(bool)(game->entityRefToPtr(targetEntity));
-}
-
-vector2f MobileUnit::getTargetPos()
+void MobileUnit::setTarget(Target _target, float newRange)
 {
-    switch (targetType)
-    {
-    case PointTarget:
-        return targetPos;
-        break;
-    case EntityTarget:
-        return (game->entityRefToPtr(targetEntity)->pos);
-        break;
-    default:
-        throw logic_error("This case not handled in MobileUnit::getTargetPos()");
-    }
-}
-void MobileUnit::setEntityTarget(EntityRef newTarget, float newRange)
-{
-    targetType = EntityTarget;
-    targetEntity = newTarget;
-    targetRange = newRange;
-}
-void MobileUnit::setPosTarget(vector2f newTarget, float newRange)
-{
-    targetType = PointTarget;
-    targetPos = newTarget;
+    target = _target;
     targetRange = newRange;
 }
 void MobileUnit::moveTowardPoint(vector2f dest, float range)
@@ -297,22 +282,22 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
 }
 void MobileUnit::mobileUnitGo()
 {
-    if (targetIsNull()) {
-        setPosTarget(getPos(), 0);
-    }
-    moveTowardPoint(getTargetPos(), targetRange);
+    if (optional<vector2f> p = target.getPoint(game))
+        moveTowardPoint(*p, targetRange);
+    else
+        setTarget(Target(pos), 0);
     
 }
-void MobileUnit::cmdMove(vector2f target)
+void MobileUnit::cmdMove(vector2f pointTarget)
 {
-    setPosTarget(target, 0);
+    setTarget(Target(pointTarget), 0);
 }
 
 void Prime::pack(vch *dest)
 {
     packMobileUnit(dest);
     packToVch(dest, "C", (unsigned char)(state));
-    packEntityRef(dest, target);
+    target.pack(dest);
     packToVch(dest, "L", heldCredit);
 }
 void Prime::unpackAndMoveIter(vchIter *iter)
@@ -321,17 +306,20 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
-    *iter = unpackEntityRef(*iter, &target);
+    target = Target(iter);
     *iter = unpackFromIter(*iter, "L", &heldCredit);
 }
 
-Prime::Prime(Game *game, uint16_t id, vector2f pos) : MobileUnit(game, id, pos)
+Prime::Prime(Game *game, uint16_t id, vector2f pos) :
+    MobileUnit(game, id, pos),
+    target(NULL_ENTITYREF)
 {
     state = Idle;
-    target = 0;
     heldCredit = 0;
 }
-Prime::Prime(Game *game, uint16_t id, vchIter *iter) : MobileUnit(game, id, iter)
+Prime::Prime(Game *game, uint16_t id, vchIter *iter) :
+    MobileUnit(game, id, iter),
+    target(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }
@@ -340,8 +328,16 @@ void Prime::cmdPickup(EntityRef goldRef)
 {
     state = PickupGold;
 
-    target = goldRef;
-    MobileUnit::setEntityTarget(goldRef, PRIME_RANGE);
+    target = Target(goldRef);
+    MobileUnit::setTarget(target, PRIME_RANGE);
+}
+
+void Prime::cmdPutdown(Target _target)
+{
+    state = PutdownGold;
+    target = _target;
+
+    MobileUnit::setTarget(target, PRIME_RANGE);
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }
@@ -353,15 +349,54 @@ float Prime::getCreditCost() { return PRIME_COST; }
 
 void Prime::go()
 {
-    if (boost::shared_ptr<Entity> e = game->entityRefToPtr(target))
+    switch (state)
     {
-        if ((game->entityRefToPtr(target)->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
-        {
-            if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+        case Idle:
+            break;
+        case PickupGold:
+            if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
             {
-                cout << (heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE)) << endl;
+                if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                {
+                    if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                    {
+                        int amountPickedUp = heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
+                        cout << amountPickedUp << endl;
+                    }
+                }
             }
-        }
+            break;
+        case PutdownGold:
+            if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+            {
+                if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                {
+                    // goldPile already exists
+                    int amountPutDown = heldCredit -= gp->tryAddAmount(PRIME_PUTDOWN_RATE);
+                    cout << amountPutDown << endl;
+                }
+                else
+                {
+                    // trying to put down gold "on" non-gold entity...
+                    // maybe in future can transfer to some other unit?
+                }
+            }
+            else if (auto putdownPoint = target.castToPoint())
+            {
+                // must create goldPile
+                boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *putdownPoint, 0));
+                game->entities.push_back(gp);
+
+                int amountPutDown = heldCredit -= gp->tryAddAmount(PRIME_PUTDOWN_RATE);
+                cout << amountPutDown << endl;
+            }
+            else
+            {
+                // not an entity or position - do nothing - could be a dead entity
+            }
+            break;
+        default:
+            throw logic_error("This case not handled in Prime::go()");
     }
     mobileUnitGo();
 }
@@ -548,4 +583,87 @@ void Game::iterate()
     }
 
     frame++;
+}
+
+void Target::pack(vch *dest)
+{
+    packToVch(dest, "C", (unsigned char)(type));
+    if (type == PointTarget) {
+        packVector2f(dest, pointTarget);
+    }
+    else {
+        packEntityRef(dest, entityTarget);
+    }
+}
+void Target::unpackAndMoveIter(vchIter *iter)
+{
+    unsigned char enumInt;
+    *iter = unpackFromIter(*iter, "C", &enumInt);
+    type = static_cast<Type>(enumInt);
+
+    if (type == PointTarget) {
+        *iter = unpackVector2f(*iter, &pointTarget);
+    }
+    else {
+        *iter = unpackEntityRef(*iter, &entityTarget);
+    }
+}
+
+Target::Target(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
+}
+Target::Target(vector2f _pointTarget)
+{
+    type = PointTarget;
+    entityTarget = NULL_ENTITYREF;
+    pointTarget = _pointTarget;
+}
+
+Target::Target(EntityRef _entityTarget)
+{
+    type = EntityTarget;
+    pointTarget = vector2f(0,0);
+    entityTarget = _entityTarget;
+}
+
+optional<vector2f> Target::getPoint(Game *game)
+{
+    if (type == PointTarget) {
+        return {pointTarget};
+    }
+    else if (boost::shared_ptr<Entity> e = game->entityRefToPtr(entityTarget)) {
+        return {e->pos};
+    }
+    else {
+        return {};
+    }
+}
+
+optional<EntityRef> Target::castToEntityRef()
+{
+    if (type == PointTarget) {
+        return {};
+    }
+    else {
+        return {entityTarget};
+    }
+}
+
+optional<vector2f> Target::castToPoint()
+{
+    if (type == PointTarget) {
+        return {pointTarget};
+    }
+    else {
+        return {};
+    }
+}
+
+boost::shared_ptr<Entity> Target::castToEntityPtr(Game* game)
+{
+    if (auto eRef = castToEntityRef())
+        return game->entityRefToPtr(*eRef);
+    else
+        return boost::shared_ptr<Entity>();
 }
