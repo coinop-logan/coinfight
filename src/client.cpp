@@ -229,7 +229,7 @@ public:
     }
 };
 
-boost::shared_ptr<Entity> getEntityAtScreenPos(vector2f screenPos)
+Target getTargetAtScreenPos(vector2f screenPos)
 {
     vector2f gamePos = screenPos; // this will have to be changed when the screen can move
 
@@ -251,7 +251,10 @@ boost::shared_ptr<Entity> getEntityAtScreenPos(vector2f screenPos)
             }
         }
     }
-    return closestValidEntity;
+    if (closestValidEntity)
+        return Target(closestValidEntity->ref);
+    else
+        return Target(gamePos);
 }
 vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
 {
@@ -294,36 +297,53 @@ struct CommandUI
     vector<boost::shared_ptr<Entity>> selectedEntities;
 } commandUI;
 
-boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> selectedEntities, boost::shared_ptr<Entity> targetedEntity)
+boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
 {
-    // Get typechar of units if they are all of same type
-    unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
-    bool allSameType = true;
-    for (uint i = 0; i < selectedEntities.size(); i++)
+    if (optional<vector2f> point = target.castToPoint())
     {
-        if (selectedEntities[i]->typechar() != unitTypechar)
-        {
-            allSameType = false;
-            break;
-        }
+        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(commandUI.selectedEntities), *point));
     }
-
-    if (allSameType)
+    else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
     {
-        if (unitTypechar == PRIME_TYPECHAR)
+        boost::shared_ptr<Entity> entity = *entityPtrPtr;
+
+        // Get typechar of units if they are all of same type
+        unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
+        bool allSameType = true;
+        for (uint i = 0; i < selectedEntities.size(); i++)
         {
-            if (targetedEntity->typechar() == GOLDPILE_TYPECHAR)
-        {
-            return boost::shared_ptr<Cmd>(new PickupCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
-            }
-            else if (targetedEntity->typechar() == GATEWAY_TYPECHAR)
+            if (selectedEntities[i]->typechar() != unitTypechar)
             {
-                return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
+                allSameType = false;
+                break;
             }
         }
-    }
 
+        if (allSameType)
+        {
+            if (unitTypechar == PRIME_TYPECHAR)
+            {
+                if (entity->typechar() == GOLDPILE_TYPECHAR)
+            {
+                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
+                }
+                else if (entity->typechar() == GATEWAY_TYPECHAR)
+                {
+                    return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
+                }
+            }
+        }
+        else
+        {
+            // maybe in future can do a "follow" type action. Or attack if all enemies.
+            return boost::shared_ptr<Cmd>();
+        }
+    }
+    
+    // couldn't cast target to a point or an entity...
+    cout << "issue casting target to a point or entity in makeRightclickCmd" << endl;
     return boost::shared_ptr<Cmd>(); // return null cmd
+    
 }
 
 int main()
@@ -383,8 +403,7 @@ int main()
             case sf::Event::MouseButtonPressed:
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
-
-                    if (boost::shared_ptr<Entity> clickedEntity = getEntityAtScreenPos(mouseButtonToVec(event.mouseButton)))
+                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
                     {
                         commandUI.selectedEntities.clear();
                         commandUI.selectedEntities.push_back(clickedEntity);
@@ -392,25 +411,12 @@ int main()
                 }
                 else if (event.mouseButton.button == sf::Mouse::Right && commandUI.selectedEntities.size() > 0)
                 {
-                    if (boost::shared_ptr<Entity> clickedEntity = getEntityAtScreenPos(mouseButtonToVec(event.mouseButton)))
-                    {
-                        cmdToSend = makeAutoRightclickCmd(commandUI.selectedEntities, clickedEntity);
-                    }
-                    else
-                    {
-                        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(commandUI.selectedEntities[0]))
-                        {
-                            // cmdToSend = new "start spawning" command...
-                        }
-                        else
-                        {
-                            cmdToSend = boost::shared_ptr<Cmd>(new MoveCmd(entityPointersToRefs(commandUI.selectedEntities), mouseButtonToVec(event.mouseButton)));
-                        }
-                    }
+                    cmdToSend = makeRightclickCmd(game, commandUI.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
+                    
                 }
                 else if (event.mouseButton.button == sf::Mouse::Middle)
                 {
-                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPointersToRefs(commandUI.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
+                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(commandUI.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
                 }
                 break;
             case sf::Event::KeyPressed:

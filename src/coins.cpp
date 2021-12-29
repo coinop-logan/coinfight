@@ -3,7 +3,7 @@
 
 extern const unsigned long MAX_COINS = UINT32_MAX;
 
-Coins::Coins(coinsInt max) : max(max), heldAmount(0)
+Coins::Coins(coinsInt max) :  heldAmount(0), max(max)
 {
     if (max > MAX_COINS)
         throw invalid_argument("Can't set Coins max to be greater than MAX_COINS");

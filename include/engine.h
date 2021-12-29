@@ -49,7 +49,8 @@ public:
 
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
 
-vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>>);
+vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>>);
+boost::shared_ptr<Entity> entityRefToPtr(const Game&, EntityRef);
 
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
 
@@ -72,10 +73,10 @@ public:
     Target(EntityRef);
     Target(vchIter *iter);
 
-    optional<vector2f> getPoint(Game*);
+    optional<vector2f> getPoint(const Game&);
     optional<EntityRef> castToEntityRef();
     optional<vector2f> castToPoint();
-    boost::shared_ptr<Entity> castToEntityPtr(Game*);
+    boost::shared_ptr<Entity> castToEntityPtr(const Game&);
 };
 
 class Game

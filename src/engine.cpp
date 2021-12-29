@@ -33,7 +33,7 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
     }
 }
 
-vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>> ptrs)
+vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
 {
     vector<EntityRef> refs;
     for (uint i = 0; i < ptrs.size(); i++)
@@ -41,6 +41,18 @@ vector<EntityRef> entityPointersToRefs(vector<boost::shared_ptr<Entity>> ptrs)
         refs.push_back(ptrs[i]->ref);
     }
     return refs;
+}
+
+boost::shared_ptr<Entity> entityRefToPtr(const Game& game, EntityRef ref)
+{
+    if (ref == 0)
+    {
+        return boost::shared_ptr<Entity>();
+    }
+    else
+    {
+        return game.entities[ref - 1];
+    }
 }
 
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity> e)
@@ -251,7 +263,7 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
 }
 void MobileUnit::mobileUnitGo()
 {
-    if (optional<vector2f> p = target.getPoint(game))
+    if (optional<vector2f> p = target.getPoint(*game))
         moveTowardPoint(*p, targetRange);
     else
         setTarget(Target(pos), 0);
@@ -321,7 +333,7 @@ void Prime::go()
     case Idle:
         break;
     case PickupGold:
-        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
         {
             if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
@@ -333,9 +345,9 @@ void Prime::go()
         }
         break;
     case PutdownGold:
-        if (optional<vector2f> point = getTarget().getPoint(game))
+        if (optional<vector2f> point = getTarget().getPoint(*game))
         {
-            if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+            if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
             {
                 if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
@@ -366,14 +378,14 @@ void Prime::go()
         }
         break;
     case SendGoldThroughGateway:
-        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
         {
             if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
                 if (boost::shared_ptr<Gateway> gw = boost::dynamic_pointer_cast<Gateway, Entity>(e))
                 {
-                    cout << "held gold: " << this->heldGold.getInt() << endl;
-                    cout << "player credit: " << game->playerCredit.getInt() << endl;
+                    // cout << "held gold: " << this->heldGold.getInt() << endl;
+                    // cout << "player credit: " << game->playerCredit.getInt() << endl;
                     cout << "Transferring through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
                 }
             }
@@ -452,7 +464,7 @@ void Gateway::go()
 
 boost::shared_ptr<Prime> Gateway::spawningPrime()
 {
-    boost::shared_ptr<Prime> p = boost::dynamic_pointer_cast<Prime, Entity>(game->entityRefToPtr(targetRef));
+    boost::shared_ptr<Prime> p = boost::dynamic_pointer_cast<Prime, Entity>(entityRefToPtr(*game, targetRef));
     return p;
 }
 
@@ -472,17 +484,6 @@ void Gateway::reclaimGoldPile(boost::shared_ptr<GoldPile> goldPile)
     targetRef = goldPile->ref;
 }
 
-boost::shared_ptr<Entity> Game::entityRefToPtr(EntityRef r)
-{
-    if (r == 0)
-    {
-        return boost::shared_ptr<Entity>();
-    }
-    else
-    {
-        return entities[r - 1];
-    }
-}
 EntityRef Game::getNextEntityRef()
 {
     return entities.size() + 1;
@@ -493,7 +494,7 @@ void Game::pack(vch *dest)
     packToVch(dest, "Q", frame);
 
     playerCredit.pack(dest);
-    
+
     packToVch(dest, "H", (EntityRef)(entities.size()));
 
     for (EntityRef i = 0; i < entities.size(); i++)
@@ -628,13 +629,13 @@ Target::Target(EntityRef _entityTarget)
     entityTarget = _entityTarget;
 }
 
-optional<vector2f> Target::getPoint(Game *game)
+optional<vector2f> Target::getPoint(const Game &game)
 {
     if (type == PointTarget)
     {
         return {pointTarget};
     }
-    else if (boost::shared_ptr<Entity> e = game->entityRefToPtr(entityTarget))
+    else if (boost::shared_ptr<Entity> e = entityRefToPtr(game, entityTarget))
     {
         return {e->pos};
     }
@@ -668,10 +669,10 @@ optional<vector2f> Target::castToPoint()
     }
 }
 
-boost::shared_ptr<Entity> Target::castToEntityPtr(Game *game)
+boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
 {
     if (auto eRef = castToEntityRef())
-        return game->entityRefToPtr(*eRef);
+        return entityRefToPtr(game, *eRef);
     else
         return boost::shared_ptr<Entity>();
 }
