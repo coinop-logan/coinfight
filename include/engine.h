@@ -177,7 +177,8 @@ public:
     {
         Idle,
         PickupGold,
-        PutdownGold
+        PutdownGold,
+        SendGoldThroughGateway
     } state;
 
     void pack(vch *dest);
@@ -188,7 +189,7 @@ public:
 
     void cmdPickup(EntityRef);
     void cmdPutdown(Target);
-    // void cmdPutdownForGateway(boost::shared_ptr<Gateway>);
+    void cmdSendGoldThroughGateway(boost::shared_ptr<Gateway>);
 
     float getSpeed();
     float getRange();

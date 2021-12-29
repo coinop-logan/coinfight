@@ -318,7 +318,7 @@ boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> s
             }
             else if (targetedEntity->typechar() == GATEWAY_TYPECHAR)
             {
-                // return boost::shared_ptr<Cmd>(new PutdownForGatewayCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
+                return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
             }
         }
     }

@@ -301,27 +301,11 @@ void Prime::cmdPutdown(Target _target)
 
     setTarget(_target, PRIME_RANGE);
 }
-// void Prime::cmdPutdownForGateway(boost::shared_ptr<Gateway> gateway)
-// {
-//     // create empty gold pile at Gateway's range, toward self
-//     cout << "gateway: " << gateway->getPos().x << "," << gateway->getPos().y << endl;
-//     vector2f gatewayToPrime = this->getPos() - gateway->getPos();
-//     cout << "gatewayToPrime: " << gatewayToPrime.x << "," << gatewayToPrime.y << endl;
-//     vector2f resized = gatewayToPrime.normalized() * GATEWAY_RANGE;
-//     cout << "resized: " << resized.x << "," << resized.y << endl;
-//     vector2f pilePos = gateway->getPos() + resized;
-//     cout << "pilePos: " << pilePos.x << "," << pilePos.y << endl;
-
-//     EntityRef goldRef = game->getNextEntityRef();
-//     boost::shared_ptr<GoldPile> goldPile(new GoldPile(game, goldRef, pilePos, 0));
-//     game->entities.push_back(goldPile);
-
-//     // tell gateway to target that pile
-//     gateway->reclaimGoldPile(goldPile);
-
-//     state = PutdownGold;
-//     setTarget(Target(goldRef), PRIME_RANGE);
-// }
+void Prime::cmdSendGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
+{
+    state = SendGoldThroughGateway;
+    setTarget(Target(gateway->ref), PRIME_RANGE);
+}
 
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
@@ -378,6 +362,20 @@ void Prime::go()
                 boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point));
                 game->entities.push_back(gp);
                 setTarget(Target(gp->ref), PRIME_RANGE);
+            }
+        }
+        break;
+    case SendGoldThroughGateway:
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(game))
+        {
+            if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            {
+                if (boost::shared_ptr<Gateway> gw = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                {
+                    cout << "held gold: " << this->heldGold.getInt() << endl;
+                    cout << "player credit: " << game->playerCredit.getInt() << endl;
+                    cout << "Transferring through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                }
             }
         }
         break;
@@ -447,21 +445,6 @@ void Gateway::go()
     case Spawning:
         iterateSpawning();
         break;
-    // case Reclaiming:
-    //     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entityRefToPtr(targetRef)))
-    //     {
-    //         if ((goldPile->pos - pos).getMagnitude() <= GATEWAY_RANGE + DISTANCE_TOL)
-    //         {
-    //             game->playerCredit += goldPile->tryDeductAmount(GATEWAY_TRANSFER_RATE);
-
-    //             // This may have depleted and killed the pile
-    //             if (goldPile->dead)
-    //             {
-    //                 state = Idle;
-    //             }
-    //         }
-    //     }
-    //     break;
     default:
         throw runtime_error("You haven't defined what the Gateway should be doing in this state");
     }

@@ -14,9 +14,10 @@ using vch = vector<unsigned char>;
 using vchIter = vector<unsigned char>::iterator;
 using EntityRef = uint16_t;
 
-const unsigned char CMD_MOVE_CHAR = 'M';
-const unsigned char CMD_PICKUP_CHAR = 'U';
-const unsigned char CMD_PUTDOWN_CHAR = 'D';
+const unsigned char CMD_MOVE_CHAR = 0;
+const unsigned char CMD_PICKUP_CHAR = 1;
+const unsigned char CMD_PUTDOWN_CHAR = 2;
+const unsigned char CMD_SENDGOLDTHROUGHGATEWAY_CHAR = 3;
 
 struct Cmd
 {
@@ -97,20 +98,20 @@ struct PutdownCmd : public Cmd
     PutdownCmd(vchIter *iter);
 };
 
-// struct PutdownForGatewayCmd : public Cmd
-// {
-//     EntityRef gatewayRef;
+struct SendGoldThroughGatewayCmd : public Cmd
+{
+    EntityRef gatewayRef;
 
-//     unsigned char getTypechar();
-//     string getTypename();
-//     void pack(vch *);
-//     void unpackAndMoveIter(vchIter *);
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
 
-//     void executeOnUnit(boost::shared_ptr<Unit>);
+    void executeOnUnit(boost::shared_ptr<Unit>);
 
-//     PutdownForGatewayCmd(vector<EntityRef>, EntityRef);
-//     PutdownForGatewayCmd(vchIter *iter);
-// };
+    SendGoldThroughGatewayCmd(vector<EntityRef>, EntityRef);
+    SendGoldThroughGatewayCmd(vchIter *iter);
+};
 
 
 #endif // CMDS_H
