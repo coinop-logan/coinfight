@@ -122,8 +122,8 @@ public:
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
-    Unit(Game *game, EntityRef ref, vector2f pos);
-    Unit(Game *game, EntityRef ref, vchIter *iter);
+    Unit(Game *, EntityRef, coinsInt, vector2f);
+    Unit(Game *, EntityRef, vchIter *);
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
     coinsInt getBuilt();
@@ -136,8 +136,8 @@ public:
     void packBuilding(vch *destVch);
     void unpackBuildingAndMoveIter(vchIter *iter);
 
-    Building(Game *game, EntityRef ref, vector2f pos);
-    Building(Game *game, EntityRef ref, vchIter *iter);
+    Building(Game *, EntityRef, coinsInt, vector2f);
+    Building(Game *, EntityRef, vchIter *);
 };
 
 class MobileUnit : public Unit
@@ -164,7 +164,7 @@ public:
 
     void cmdMove(vector2f target);
 
-    MobileUnit(Game *game, EntityRef ref, vector2f pos);
+    MobileUnit(Game *game, EntityRef ref, coinsInt totalCost, vector2f pos);
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 

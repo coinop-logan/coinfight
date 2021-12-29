@@ -95,7 +95,6 @@ Entity::Entity(Game *game, EntityRef ref, vector2f pos) : game(game),
                                                           dead(false),
                                                           ref(ref),
                                                           pos(pos)
-
 {}
 Entity::Entity(Game *game, EntityRef ref, vchIter *iter) : game(game),
                                                            ref(ref)
@@ -149,11 +148,9 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
     goldInvested = Coins(iter);
 }
 
-Unit::Unit(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
-                                                      goldInvested(getCost())
-{}
+Unit::Unit(Game *game, EntityRef ref, coinsInt totalCost, vector2f pos) : Entity(game, ref, pos), goldInvested(totalCost) {}
 Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
-                                                       goldInvested(getCost()) // blank value, but will get overwritten in unpack below
+                                                       goldInvested((coinsInt)0) // will get overwritten in unpack below
 {
     unpackUnitAndMoveIter(iter);
 }
@@ -184,7 +181,7 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, uint16_t ref, vector2f pos) : Unit(game, ref, pos) {}
+Building::Building(Game *game, uint16_t ref, coinsInt totalCost, vector2f pos) : Unit(game, ref, totalCost, pos) {}
 Building::Building(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter)
 {
     unpackBuildingAndMoveIter(iter);
@@ -202,8 +199,8 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t ref, vector2f pos) : Unit(game, ref, pos),
-                                                                 target(NULL_ENTITYREF)
+MobileUnit::MobileUnit(Game *game, uint16_t ref, coinsInt totalCost, vector2f pos) : Unit(game, ref, totalCost, pos),
+                                                                                     target(NULL_ENTITYREF)
 {
     targetRange = 0;
 }
@@ -281,7 +278,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     heldGold = Coins(iter);
 }
 
-Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, pos),
+Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, PRIME_COST, pos),
                                                        heldGold(PRIME_MAX_GOLD_HELD),
                                                        state(Idle)
 {}
@@ -328,10 +325,10 @@ void Prime::cmdPutdown(Target _target)
 
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
+coinsInt Prime::getCost() { return PRIME_COST; }
 
 unsigned char Prime::typechar() { return PRIME_TYPECHAR; }
 string Prime::getTypeName() { return "Prime"; }
-coinsInt Prime::getCost() { return PRIME_COST; }
 
 void Prime::go()
 {
@@ -429,11 +426,11 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
     *iter = unpackEntityRef(*iter, &targetRef);
 }
 
-Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) : Building(game, ref, pos)
+Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) : Building(game, ref, GATEWAY_COST, pos)
 {
     if (alreadyCompleted)
     {
-        goldInvested = getCost();
+        goldInvested.createMoreByFiat(getCost());
     }
 }
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
@@ -568,7 +565,7 @@ void Game::reassignEntityGamePointers()
 void Game::testInit()
 {
     frame = 0;
-    playerCredit = 50;
+    playerCredit.createMoreByFiat(100000);
 
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12), true));
     entities.push_back(g);
@@ -584,7 +581,9 @@ void Game::iterate()
     for (uint i = 0; i < entities.size(); i++)
     {
         if (entities[i])
+        {
             entities[i]->go();
+        }
     }
 
     for (uint i = 0; i < entities.size(); i++)
