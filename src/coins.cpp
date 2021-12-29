@@ -1,8 +1,13 @@
 #include "coins.h"
+#include "vchpack.h"
 
-extern const unsigned int MAX_COINS = UINT32_MAX;
+extern const unsigned long MAX_COINS = UINT32_MAX;
 
-Coins::Coins() : heldAmount(0) {}
+Coins::Coins(coinsInt max) : max(max), heldAmount(0)
+{
+    if (max > MAX_COINS)
+        throw invalid_argument("Can't set Coins max to be greater than MAX_COINS");
+}
 
 // PRIVATE
 
@@ -24,7 +29,7 @@ unsigned long Coins::addUpTo(unsigned long addAmount)
     else
     {
         unsigned long added = getSpaceLeft();
-        heldAmount = MAX_COINS;
+        heldAmount = max;
         return added;
     }
 }
@@ -51,9 +56,13 @@ bool Coins::tryAdd(unsigned long addAmount)
 
 // PUBLIC
 
+coinsInt Coins::getInt()
+{
+    return heldAmount;
+}
 unsigned long Coins::getSpaceLeft()
 {
-    return MAX_COINS - heldAmount;
+    return max - heldAmount;
 }
 bool Coins::createMoreByFiat(unsigned long createAmount)
 {
@@ -86,4 +95,20 @@ bool Coins::tryTransfer(unsigned long transferAmount, Coins* to)
         else
             throw logic_error("Unexpected mathematical error during Coins::tryTransfer");
     }
+}
+
+using vch = vector<unsigned char>;
+using vchIter = vector<unsigned char>::iterator;
+
+Coins::Coins(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
+}
+void Coins::pack(vch *dest)
+{
+    packToVch(dest, "L", heldAmount);
+}
+void Coins::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackFromIter(*iter, "L", &heldAmount);
 }

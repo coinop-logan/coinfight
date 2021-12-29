@@ -318,7 +318,7 @@ boost::shared_ptr<Cmd> makeAutoRightclickCmd(vector<boost::shared_ptr<Entity>> s
             }
             else if (targetedEntity->typechar() == GATEWAY_TYPECHAR)
             {
-                return boost::shared_ptr<Cmd>(new PutdownForGatewayCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
+                // return boost::shared_ptr<Cmd>(new PutdownForGatewayCmd(entityPointersToRefs(selectedEntities), targetedEntity->ref));
             }
         }
     }
@@ -398,7 +398,14 @@ int main()
                     }
                     else
                     {
-                        cmdToSend = boost::shared_ptr<Cmd>(new MoveCmd(entityPointersToRefs(commandUI.selectedEntities), mouseButtonToVec(event.mouseButton)));
+                        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(commandUI.selectedEntities[0]))
+                        {
+                            // cmdToSend = new "start spawning" command...
+                        }
+                        else
+                        {
+                            cmdToSend = boost::shared_ptr<Cmd>(new MoveCmd(entityPointersToRefs(commandUI.selectedEntities), mouseButtonToVec(event.mouseButton)));
+                        }
                     }
                 }
                 else if (event.mouseButton.button == sf::Mouse::Middle)

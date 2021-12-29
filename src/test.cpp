@@ -20,7 +20,7 @@ void makeSure(string name, bool condition) // hacky test function
 
 void testCoins()
 {
-    Coins a, b;
+    Coins a(200), b(200);
 
     a.createMoreByFiat(11);
     b.createMoreByFiat(50);
@@ -30,22 +30,22 @@ void testCoins()
 
     cout << endl;
 
-    Coins c, d;
-    c.createMoreByFiat(MAX_COINS - 10);
-    d.createMoreByFiat(20);
+    Coins c(500), d(500);
+    c.createMoreByFiat(400);
+    d.createMoreByFiat(400);
 
-    makeSure(d.transferUpTo(20, &c) == 10);
-    makeSure(d.transferUpTo(20, &c) == 0);
+    makeSure(d.transferUpTo(200, &c) == 100);
+    makeSure(d.transferUpTo(200, &c) == 0);
 
     cout << endl;
 
-    Coins e;
+    Coins e(500);
     e.createMoreByFiat(20);
     makeSure(e.tryTransfer(20, &c) == false);
 
     cout << endl;
 
-    Coins low, high;
+    Coins low(MAX_COINS), high(MAX_COINS);
     low.createMoreByFiat(5);
     high.createMoreByFiat(MAX_COINS - 8);
     makeSure(low.tryTransfer(10, &high) == false);

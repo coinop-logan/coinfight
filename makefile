@@ -9,10 +9,10 @@ all: bin/client bin/server bin/test
 obj/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-bin/server: obj/server.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o
+bin/server: obj/server.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/coins.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-bin/client: obj/client.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/graphics.o
+bin/client: obj/client.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/coins.o obj/graphics.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
 bin/test: obj/test.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/graphics.o obj/coins.o

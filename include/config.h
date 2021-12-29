@@ -1,7 +1,10 @@
+#include "coins.h"
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
 using EntityRef = uint16_t;
+using coinsInt = unsigned long;
 
 const float DISTANCE_TOL = 0.0001;
 
@@ -20,15 +23,16 @@ const float SEC_PER_FRAME = 1 / 30.0;
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 
-const float GATEWAY_TRANSFER_RATE = 1; // credit per frame
-
-const float PRIME_COST = 20;
+const coinsInt PRIME_COST = 2000;
 const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 50;
-const int PRIME_PICKUP_RATE = 5;
-const int PRIME_PUTDOWN_RATE = 8;
+const coinsInt PRIME_PICKUP_RATE = 5;
+const coinsInt PRIME_PUTDOWN_RATE = 8;
+const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
+const coinsInt PRIME_BUILD_RATE = 100;
 
-const float GATEWAY_COST = 100;
+
+const coinsInt GATEWAY_COST = 10000;
 const float GATEWAY_RANGE = 50;
 
 #endif // CONFIG_H

@@ -18,8 +18,6 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PickupCmd(iter));
     case CMD_PUTDOWN_CHAR:
         return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
-    case CMD_PUTDOWNFORGATEWAY_CHAR:
-        return boost::shared_ptr<Cmd>(new PutdownForGatewayCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -250,39 +248,39 @@ PutdownCmd::PutdownCmd(vchIter *iter) : Cmd(iter), target(NULL_ENTITYREF)
     unpackAndMoveIter(iter);
 }
 
-unsigned char PutdownForGatewayCmd::getTypechar()
-{
-    return CMD_PUTDOWNFORGATEWAY_CHAR;
-}
-string PutdownForGatewayCmd::getTypename()
-{
-    return "PutdownForGatewayCmd";
-}
-void PutdownForGatewayCmd::pack(vch *dest)
-{
-    packCmd(dest);
-    packEntityRef(dest, gatewayRef);
-}
-void PutdownForGatewayCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &gatewayRef);
-}
+// unsigned char PutdownForGatewayCmd::getTypechar()
+// {
+//     return CMD_PUTDOWNFORGATEWAY_CHAR;
+// }
+// string PutdownForGatewayCmd::getTypename()
+// {
+//     return "PutdownForGatewayCmd";
+// }
+// void PutdownForGatewayCmd::pack(vch *dest)
+// {
+//     packCmd(dest);
+//     packEntityRef(dest, gatewayRef);
+// }
+// void PutdownForGatewayCmd::unpackAndMoveIter(vchIter *iter)
+// {
+//     *iter = unpackEntityRef(*iter, &gatewayRef);
+// }
 
-void PutdownForGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
-{
-    if (!unit->isActive())
-        return;
+// void PutdownForGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+// {
+//     if (!unit->isActive())
+//         return;
     
-    boost::shared_ptr<Entity> gatewayEntity = unit->game->entityRefToPtr(gatewayRef);
-    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
-        {
-            prime->cmdPutdownForGateway(gateway);
-        }
-}
+//     boost::shared_ptr<Entity> gatewayEntity = unit->game->entityRefToPtr(gatewayRef);
+//     if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+//         if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
+//         {
+//             prime->cmdPutdownForGateway(gateway);
+//         }
+// }
 
-PutdownForGatewayCmd::PutdownForGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
-PutdownForGatewayCmd::PutdownForGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
-{
-    unpackAndMoveIter(iter);
-}
+// PutdownForGatewayCmd::PutdownForGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
+// PutdownForGatewayCmd::PutdownForGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
+// {
+//     unpackAndMoveIter(iter);
+// }

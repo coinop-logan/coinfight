@@ -4,24 +4,32 @@
 #define COINS_H
 
 using namespace std;
+using vch = vector<unsigned char>;
+using vchIter = vector<unsigned char>::iterator;
+using coinsInt = unsigned long;
 
-extern const unsigned int MAX_COINS;
+extern const coinsInt MAX_COINS;
 
 class Coins
 {
 private:
-    unsigned long heldAmount;
-    unsigned long deductUpTo(unsigned long);
-    unsigned long addUpTo(unsigned long);
-    bool tryDeduct(unsigned long);
-    bool tryAdd(unsigned long);
+    coinsInt heldAmount;
+    coinsInt deductUpTo(coinsInt);
+    coinsInt addUpTo(coinsInt);
+    bool tryDeduct(coinsInt);
+    bool tryAdd(coinsInt);
 public:
-    Coins();
-    unsigned long getSpaceLeft();
-    bool createMoreByFiat(unsigned long);
-    bool destroySomeByFiat(unsigned long);
-    unsigned long transferUpTo(unsigned long, Coins*);
-    bool tryTransfer(unsigned long, Coins*);
+    coinsInt max;
+    coinsInt getInt();
+    Coins(coinsInt);
+    Coins(vchIter*);
+    coinsInt getSpaceLeft();
+    bool createMoreByFiat(coinsInt);
+    bool destroySomeByFiat(coinsInt);
+    coinsInt transferUpTo(coinsInt, Coins*);
+    bool tryTransfer(coinsInt, Coins*);
+    void pack(vch*);
+    void unpackAndMoveIter(vchIter*);
 };
 
 #endif // COINS_H

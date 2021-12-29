@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <pthread.h>
+#include "coins.h"
 #include "myvectors.h"
 #include "vchpack.h"
 #include "common.h"
@@ -80,7 +81,7 @@ public:
 class Game
 {
 public:
-    float playerCredit;
+    Coins playerCredit;
     uint64_t frame;
     vector<boost::shared_ptr<Entity>> entities;
 
@@ -102,15 +103,11 @@ public:
 class GoldPile : public Entity
 {
 public:
-    uint32_t amount;
-
+    Coins gold;
     void pack(vch *destVch);
     void unpackAndMoveIter(vchIter *iter);
-    GoldPile(Game *, EntityRef, vector2f, uint32_t);
+    GoldPile(Game *, EntityRef, vector2f);
     GoldPile(Game *, EntityRef, vchIter *);
-
-    unsigned int tryDeductAmount(unsigned int);
-    unsigned int tryAddAmount(unsigned int);
 
     unsigned char typechar();
     string getTypeName();
@@ -119,19 +116,17 @@ public:
 
 class Unit : public Entity
 {
-protected:
-    float builtAmount;
-
 public:
-    virtual float getCreditCost();
+    Coins goldInvested;
+    virtual coinsInt getCost();
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
     Unit(Game *game, EntityRef ref, vector2f pos);
     Unit(Game *game, EntityRef ref, vchIter *iter);
 
-    float build(float attemptedAmount);
-    float getBuiltAmount();
+    coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
+    coinsInt getBuilt();
     bool isActive();
 };
 
@@ -176,7 +171,7 @@ public:
 class Prime : public MobileUnit
 {
 public:
-    uint32_t heldCredit;
+    Coins heldGold;
 
     enum State
     {
@@ -193,16 +188,14 @@ public:
 
     void cmdPickup(EntityRef);
     void cmdPutdown(Target);
-    void cmdPutdownForGateway(boost::shared_ptr<Gateway>);
-
-    unsigned int tryDeductAmount(unsigned int);
+    // void cmdPutdownForGateway(boost::shared_ptr<Gateway>);
 
     float getSpeed();
     float getRange();
 
     unsigned char typechar();
     string getTypeName();
-    float getCreditCost();
+    coinsInt getCost();
     void go();
 };
 
@@ -229,7 +222,7 @@ public:
 
     unsigned char typechar();
     string getTypeName();
-    float getCreditCost();
+    coinsInt getCost();
     void go();
 
     void startSpawningPrime(vector2f primePos);

@@ -8,6 +8,7 @@
 #include "config.h"
 #include "vchpack.h"
 #include "engine.h"
+#include "coins.h"
 
 //using namespace std;
 
@@ -79,6 +80,7 @@ void Entity::unpackAndMoveIter(vchIter *iter, Game &game)
 void Entity::packEntity(vch *destVch)
 {
     packToVch(destVch, "C", (unsigned char)dead);
+
     packVector2f(destVch, pos);
 }
 void Entity::unpackEntityAndMoveIter(vchIter *iter)
@@ -89,11 +91,14 @@ void Entity::unpackEntityAndMoveIter(vchIter *iter)
 
     *iter = unpackVector2f(*iter, &pos);
 }
-Entity::Entity(Game *game, EntityRef ref, vector2f pos) : game(game), ref(ref), pos(pos)
-{
-    dead = false;
-}
-Entity::Entity(Game *game, EntityRef ref, vchIter *iter) : game(game), ref(ref)
+Entity::Entity(Game *game, EntityRef ref, vector2f pos) : game(game),
+                                                          dead(false),
+                                                          ref(ref),
+                                                          pos(pos)
+
+{}
+Entity::Entity(Game *game, EntityRef ref, vchIter *iter) : game(game),
+                                                           ref(ref)
 {
     unpackEntityAndMoveIter(iter);
 }
@@ -109,102 +114,66 @@ void Entity::die()
 void GoldPile::pack(vch *dest)
 {
     packEntity(dest);
-    packToVch(dest, "L", amount);
+    gold.pack(dest);
 }
 void GoldPile::unpackAndMoveIter(vchIter *iter)
 {
-    *iter = unpackFromIter(*iter, "L", &amount);
+    gold = Coins(iter);
 }
 
-GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos, uint32_t amount) : Entity(game, ref, pos),
-                                                                               amount(amount) {}
-GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter)
+GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
+                                                              gold(MAX_COINS)
+{}
+GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
+                                                               gold(MAX_COINS)
 {
     unpackAndMoveIter(iter);
-}
-
-unsigned int GoldPile::tryDeductAmount(unsigned int attemptedAmount)
-{
-    if (attemptedAmount < amount)
-    {
-        amount -= attemptedAmount;
-        return attemptedAmount;
-    }
-    else
-    {
-        unsigned int left = amount;
-        amount = 0;
-        return left;
-    }
-}
-
-unsigned int GoldPile::tryAddAmount(unsigned int attemptedAmount)
-{
-    uint maybeOverflowed = amount + attemptedAmount;
-    uint added;
-    if (maybeOverflowed < amount) // indicates overflow
-    {
-        added = UINT_MAX - amount;
-        amount = UINT_MAX;
-    }
-    else
-    {
-        added = attemptedAmount;
-        amount = maybeOverflowed;
-    }
-    return added;
 }
 
 unsigned char GoldPile::typechar() { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() { return "GoldPile"; }
 void GoldPile::go() {}
 
-float Unit::getCreditCost()
+coinsInt Unit::getCost()
 {
-    throw runtime_error("getCreditCost() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getCost() has not been defined for " + getTypeName() + ".");
 }
 void Unit::packUnit(vch *destVch)
 {
     packEntity(destVch);
-    packToVch(destVch, "f", builtAmount);
+    goldInvested.pack(destVch);
 }
 
 void Unit::unpackUnitAndMoveIter(vchIter *iter)
 {
-    *iter = unpackFromIter(*iter, "f", &builtAmount);
+    goldInvested = Coins(iter);
 }
 
-Unit::Unit(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos)
-{
-    builtAmount = 0;
-}
-Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter)
+Unit::Unit(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
+                                                      goldInvested(getCost())
+{}
+Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
+                                                       goldInvested(getCost()) // blank value, but will get overwritten in unpack below
 {
     unpackUnitAndMoveIter(iter);
 }
 
-float Unit::build(float attemptedAmount)
+coinsInt Unit::build(coinsInt attemptedAmount, Coins *fromCoins)
 {
-    if (builtAmount + attemptedAmount <= getCreditCost())
-    {
-        builtAmount += attemptedAmount;
-        return attemptedAmount;
-    }
-    else
-    {
-        float amount = getCreditCost() - builtAmount;
-        builtAmount = getCreditCost();
-        return amount;
-    }
+    return fromCoins->transferUpTo(attemptedAmount, &(this->goldInvested));
 }
 
-float Unit::getBuiltAmount()
+coinsInt Unit::getBuilt()
 {
-    return builtAmount;
+    return goldInvested.getInt();
 }
 bool Unit::isActive()
 {
-    return (builtAmount >= getCreditCost());
+    return
+    (
+        getBuilt() >= getCost() &&
+        (!dead)
+    );
 }
 
 void Building::packBuilding(vch *destVch)
@@ -298,8 +267,10 @@ void MobileUnit::cmdMove(vector2f pointTarget)
 void Prime::pack(vch *dest)
 {
     packMobileUnit(dest);
+
     packToVch(dest, "C", (unsigned char)(state));
-    packToVch(dest, "L", heldCredit);
+
+    heldGold.pack(dest);
 }
 void Prime::unpackAndMoveIter(vchIter *iter)
 {
@@ -307,15 +278,15 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
-    *iter = unpackFromIter(*iter, "L", &heldCredit);
+    heldGold = Coins(iter);
 }
 
-Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, pos)
-{
-    state = Idle;
-    heldCredit = 0;
-}
-Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter)
+Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, pos),
+                                                       heldGold(PRIME_MAX_GOLD_HELD),
+                                                       state(Idle)
+{}
+Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter),
+                                                        heldGold(PRIME_MAX_GOLD_HELD)
 {
     unpackAndMoveIter(iter);
 }
@@ -333,49 +304,34 @@ void Prime::cmdPutdown(Target _target)
 
     setTarget(_target, PRIME_RANGE);
 }
-void Prime::cmdPutdownForGateway(boost::shared_ptr<Gateway> gateway)
-{
-    // create empty gold pile at Gateway's range, toward self
-    cout << "gateway: " << gateway->getPos().x << "," << gateway->getPos().y << endl;
-    vector2f gatewayToPrime = this->getPos() - gateway->getPos();
-    cout << "gatewayToPrime: " << gatewayToPrime.x << "," << gatewayToPrime.y << endl;
-    vector2f resized = gatewayToPrime.normalized() * GATEWAY_RANGE;
-    cout << "resized: " << resized.x << "," << resized.y << endl;
-    vector2f pilePos = gateway->getPos() + resized;
-    cout << "pilePos: " << pilePos.x << "," << pilePos.y << endl;
+// void Prime::cmdPutdownForGateway(boost::shared_ptr<Gateway> gateway)
+// {
+//     // create empty gold pile at Gateway's range, toward self
+//     cout << "gateway: " << gateway->getPos().x << "," << gateway->getPos().y << endl;
+//     vector2f gatewayToPrime = this->getPos() - gateway->getPos();
+//     cout << "gatewayToPrime: " << gatewayToPrime.x << "," << gatewayToPrime.y << endl;
+//     vector2f resized = gatewayToPrime.normalized() * GATEWAY_RANGE;
+//     cout << "resized: " << resized.x << "," << resized.y << endl;
+//     vector2f pilePos = gateway->getPos() + resized;
+//     cout << "pilePos: " << pilePos.x << "," << pilePos.y << endl;
 
-    EntityRef goldRef = game->getNextEntityRef();
-    boost::shared_ptr<GoldPile> goldPile(new GoldPile(game, goldRef, pilePos, 0));
-    game->entities.push_back(goldPile);
+//     EntityRef goldRef = game->getNextEntityRef();
+//     boost::shared_ptr<GoldPile> goldPile(new GoldPile(game, goldRef, pilePos, 0));
+//     game->entities.push_back(goldPile);
 
-    // tell gateway to target that pile
-    gateway->reclaimGoldPile(goldPile);
+//     // tell gateway to target that pile
+//     gateway->reclaimGoldPile(goldPile);
 
-    state = PutdownGold;
-    setTarget(Target(goldRef), PRIME_RANGE);
-}
-
-unsigned int Prime::tryDeductAmount(unsigned int attemptedAmount)
-{
-    if (attemptedAmount < heldCredit)
-    {
-        heldCredit -= attemptedAmount;
-        return attemptedAmount;
-    }
-    else
-    {
-        unsigned int left = heldCredit;
-        heldCredit = 0;
-        return left;
-    }
-}
+//     state = PutdownGold;
+//     setTarget(Target(goldRef), PRIME_RANGE);
+// }
 
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
 
 unsigned char Prime::typechar() { return PRIME_TYPECHAR; }
 string Prime::getTypeName() { return "Prime"; }
-float Prime::getCreditCost() { return PRIME_COST; }
+coinsInt Prime::getCost() { return PRIME_COST; }
 
 void Prime::go()
 {
@@ -390,7 +346,7 @@ void Prime::go()
             {
                 if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
-                    heldCredit += gp->tryDeductAmount(PRIME_PICKUP_RATE);
+                    cout << "Prime picking up " << gp->gold.transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold)) << endl;
                 }
             }
         }
@@ -405,12 +361,9 @@ void Prime::go()
                     if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                     {
                         // goldPile already exists
-                        unsigned int amountToAdd = tryDeductAmount(PRIME_PUTDOWN_RATE);
-                        if (amountToAdd > 0)
-                        {
-                            gp->tryAddAmount(amountToAdd);
-                        }
-                        else
+                        coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(gp->gold));
+                        cout << "Prime putting down " << amountPutDown << endl;
+                        if (amountPutDown == 0)
                         {
                             state = Idle;
                         }
@@ -425,7 +378,7 @@ void Prime::go()
             else
             {
                 // must create goldPile
-                boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point, 0));
+                boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point));
                 game->entities.push_back(gp);
                 setTarget(Target(gp->ref), PRIME_RANGE);
             }
@@ -453,16 +406,13 @@ void Gateway::iterateSpawning()
     else
     {
         // iterate
-        float amountToInvest = min(game->playerCredit, GATEWAY_TRANSFER_RATE);
-        float built = spawningPrime()->build(amountToInvest);
-
-        game->playerCredit -= built;
+        spawningPrime()->build(PRIME_BUILD_RATE, &(game->playerCredit));
     }
 }
 
 unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() { return "Gateway"; }
-float Gateway::getCreditCost() { return GATEWAY_COST; }
+coinsInt Gateway::getCost() { return GATEWAY_COST; }
 
 void Gateway::pack(vch *dest)
 {
@@ -483,7 +433,7 @@ Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) 
 {
     if (alreadyCompleted)
     {
-        builtAmount = getCreditCost();
+        goldInvested = getCost();
     }
 }
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
@@ -500,21 +450,21 @@ void Gateway::go()
     case Spawning:
         iterateSpawning();
         break;
-    case Reclaiming:
-        if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entityRefToPtr(targetRef)))
-        {
-            if ((goldPile->pos - pos).getMagnitude() <= GATEWAY_RANGE + DISTANCE_TOL)
-            {
-                game->playerCredit += goldPile->tryDeductAmount(GATEWAY_TRANSFER_RATE);
+    // case Reclaiming:
+    //     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entityRefToPtr(targetRef)))
+    //     {
+    //         if ((goldPile->pos - pos).getMagnitude() <= GATEWAY_RANGE + DISTANCE_TOL)
+    //         {
+    //             game->playerCredit += goldPile->tryDeductAmount(GATEWAY_TRANSFER_RATE);
 
-                // This may have depleted and killed the pile
-                if (goldPile->dead)
-                {
-                    state = Idle;
-                }
-            }
-        }
-        break;
+    //             // This may have depleted and killed the pile
+    //             if (goldPile->dead)
+    //             {
+    //                 state = Idle;
+    //             }
+    //         }
+    //     }
+    //     break;
     default:
         throw runtime_error("You haven't defined what the Gateway should be doing in this state");
     }
@@ -597,10 +547,11 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game()
+Game::Game() : playerCredit(MAX_COINS)
 {
+    playerCredit.createMoreByFiat(500000);
 }
-Game::Game(vchIter *iter)
+Game::Game(vchIter *iter) : playerCredit(MAX_COINS)
 {
     unpackAndMoveIter(iter);
 }
@@ -621,7 +572,8 @@ void Game::testInit()
 
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12), true));
     entities.push_back(g);
-    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50), 1000));
+    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
+    gp->gold.createMoreByFiat(500);
     entities.push_back(gp);
 
     g->startSpawningPrime(vector2f(20, 20));
@@ -643,7 +595,10 @@ void Game::iterate()
 
     frame++;
 
-    cout << "c:" << playerCredit << endl;
+    if (frame % 40 == 0)
+    {
+        cout << "c:" << playerCredit.getInt() << endl;
+    }
 }
 
 void Target::pack(vch *dest)
