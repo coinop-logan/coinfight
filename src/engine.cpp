@@ -171,6 +171,10 @@ coinsInt Unit::build(coinsInt attemptedAmount, Coins *fromCoins)
 {
     return fromCoins->transferUpTo(attemptedAmount, &(this->goldInvested));
 }
+bool Unit::completeBuildingInstantly(Coins* fromCoins)
+{
+    return fromCoins->tryTransfer(this->getCost() - this->goldInvested.getInt(), &this->goldInvested);
+}
 
 coinsInt Unit::getBuilt()
 {
@@ -397,26 +401,6 @@ void Prime::go()
     mobileUnitGo();
 }
 
-void Gateway::iterateSpawning()
-{
-    //check if void
-    if (entityRefIsNull(targetRef))
-    {
-        throw logic_error("trying to iterateSpawning, but there is no spawningPrime pointer!");
-    }
-    //stop if complete
-    if (spawningPrime()->isActive())
-    {
-        state = Idle;
-        spawningPrime().reset();
-    }
-    else
-    {
-        // iterate
-        spawningPrime()->build(PRIME_BUILD_RATE, &(game->playerCredit));
-    }
-}
-
 unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() { return "Gateway"; }
 coinsInt Gateway::getCost() { return GATEWAY_COST; }
@@ -424,65 +408,20 @@ coinsInt Gateway::getCost() { return GATEWAY_COST; }
 void Gateway::pack(vch *dest)
 {
     packBuilding(dest);
-    packToVch(dest, "C", (unsigned char)(state));
-    packEntityRef(dest, targetRef);
 }
 void Gateway::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
+{}
 
-    *iter = unpackEntityRef(*iter, &targetRef);
-}
-
-Gateway::Gateway(Game *game, uint16_t ref, vector2f pos, bool alreadyCompleted) : Building(game, ref, GATEWAY_COST, pos)
-{
-    if (alreadyCompleted)
-    {
-        goldInvested.createMoreByFiat(getCost());
-    }
-}
+Gateway::Gateway(Game *game, uint16_t ref, vector2f pos) : Building(game, ref, GATEWAY_COST, pos)
+{}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
 
 void Gateway::go()
-{
-    switch (state)
-    {
-    case Idle:
-        break;
-    case Spawning:
-        iterateSpawning();
-        break;
-    default:
-        throw runtime_error("You haven't defined what the Gateway should be doing in this state");
-    }
-}
+{}
 
-boost::shared_ptr<Prime> Gateway::spawningPrime()
-{
-    boost::shared_ptr<Prime> p = boost::dynamic_pointer_cast<Prime, Entity>(entityRefToPtr(*game, targetRef));
-    return p;
-}
-
-void Gateway::startSpawningPrime(vector2f primePos)
-{
-    state = Spawning;
-
-    targetRef = game->getNextEntityRef();
-
-    game->entities.push_back(boost::shared_ptr<Prime>(new Prime(game, targetRef, primePos)));
-}
-
-void Gateway::reclaimGoldPile(boost::shared_ptr<GoldPile> goldPile)
-{
-    state = Reclaiming;
-
-    targetRef = goldPile->ref;
-}
 
 EntityRef Game::getNextEntityRef()
 {
@@ -550,13 +489,19 @@ void Game::testInit()
     frame = 0;
     playerCredit.createMoreByFiat(100000);
 
-    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12), true));
-    entities.push_back(g);
+    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
     boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
-    gp->gold.createMoreByFiat(500);
-    entities.push_back(gp);
+    boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
 
-    g->startSpawningPrime(vector2f(20, 20));
+    if (!(g->completeBuildingInstantly(&playerCredit)
+       && playerCredit.tryTransfer(500, &gp->gold)
+       && p->completeBuildingInstantly(&playerCredit)
+    ))
+        throw runtime_error("not enough playerCredit to initialize all of that");
+
+    entities.push_back(g);
+    entities.push_back(gp);
+    entities.push_back(p);
 }
 
 void Game::iterate()

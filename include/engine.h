@@ -127,6 +127,7 @@ public:
     Unit(Game *, EntityRef, vchIter *);
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
+    bool completeBuildingInstantly(Coins* fromCoins);
     coinsInt getBuilt();
     bool isActive();
 };
@@ -203,32 +204,17 @@ public:
 
 class Gateway : public Building
 {
-private:
-    void iterateSpawning();
-
 public:
-    enum State
-    {
-        Idle,
-        Spawning,
-        Reclaiming
-    } state;
-    EntityRef targetRef;
-    boost::shared_ptr<Prime> spawningPrime();
-
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Gateway(Game *game, EntityRef ref, vector2f pos, bool alreadyCompleted);
+    Gateway(Game *game, EntityRef ref, vector2f pos);
     Gateway(Game *game, EntityRef ref, vchIter *iter);
 
     unsigned char typechar();
     string getTypeName();
     coinsInt getCost();
     void go();
-
-    void startSpawningPrime(vector2f primePos);
-    void reclaimGoldPile(boost::shared_ptr<GoldPile>);
 };
 
 void packFrameCmdsPacket(vch *dest, uint64_t frame);
