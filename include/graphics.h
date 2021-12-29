@@ -7,6 +7,7 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
+sf::RenderWindow setupGraphics();
 void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity);
 
 #endif // GRAPHICS_H

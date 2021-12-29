@@ -375,7 +375,7 @@ int main()
         }
     }
 
-    sf::RenderWindow window(sf::VideoMode(640, 480), "OpenGL Test", sf::Style::Close | sf::Style::Titlebar);
+    sf::RenderWindow window = setupGraphics();
     sf::Event event;
 
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
