@@ -261,47 +261,16 @@ vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
     return vector2f(mEvent.x, mEvent.y);
 }
 
-void display(sf::RenderWindow &window)
-{
-    window.clear(); // Clear the buffer
-
-    // glClearColor(0, 0, 0, 0);
-    // glClear(GL_COLOR_BUFFER_BIT);
-    // glColor3f(0, 1, 0);
-
-    // glEnable2D();
-    // glPushMatrix();
-
-    for (unsigned int i = 0; i < game.entities.size(); i++)
-    {
-        if (game.entities[i])
-            drawEntity(window, game.entities[i]);
-    }
-
-    // glTranslatef(50, 50, 0);
-
-    // glBegin(GL_TRIANGLES);
-    // glVertex2f(0, 0);
-    // glVertex2f(10, 0);
-    // glVertex2f(0, 10);
-    // glEnd();
-
-    // glPopMatrix();
-    // glDisable2D();
-
-    window.display(); // Update window contents
-}
-
-struct CommandUI
+struct UI
 {
     vector<boost::shared_ptr<Entity>> selectedEntities;
-} commandUI;
+} ui;
 
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
 {
     if (optional<vector2f> point = target.castToPoint())
     {
-        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(commandUI.selectedEntities), *point));
+        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(ui.selectedEntities), *point));
     }
     else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
     {
@@ -405,18 +374,18 @@ int main()
                 {
                     if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
                     {
-                        commandUI.selectedEntities.clear();
-                        commandUI.selectedEntities.push_back(clickedEntity);
+                        ui.selectedEntities.clear();
+                        ui.selectedEntities.push_back(clickedEntity);
                     }
                 }
-                else if (event.mouseButton.button == sf::Mouse::Right && commandUI.selectedEntities.size() > 0)
+                else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
                 {
-                    cmdToSend = makeRightclickCmd(game, commandUI.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
+                    cmdToSend = makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
                     
                 }
                 else if (event.mouseButton.button == sf::Mouse::Middle)
                 {
-                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(commandUI.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
+                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
                 }
                 break;
             case sf::Event::KeyPressed:
@@ -452,7 +421,7 @@ int main()
 
         game.iterate();
 
-        display(window);
+        display(game, window);
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

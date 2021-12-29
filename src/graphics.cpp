@@ -5,18 +5,11 @@
 #include "engine.h"
 
 sf::Font mainFont;
-sf::Text smallGrayText;
 
 sf::RenderWindow setupGraphics()
 {
     if (!mainFont.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
-
-    smallGrayText.setFont(mainFont);
-    smallGrayText.setCharacterSize(12);
-    smallGrayText.setFillColor(sf::Color(150, 150, 150));
-
-    smallGrayText.setString("Hello world");
 
     return sf::RenderWindow(sf::VideoMode(640, 480), "OpenGL Test", sf::Style::Close | sf::Style::Titlebar);
 }
@@ -53,7 +46,42 @@ void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity)
     {
         throw runtime_error("Can't cast that to any known entity!");
     }
-    window.draw(smallGrayText);
-    smallGrayText.setString("hiiiiii");
-    window.draw(smallGrayText);
 }
+
+void drawOutputStrings(sf::RenderWindow &window, vector<sf::String> strings)
+{
+    for (uint i=0; i<strings.size(); i++)
+    {
+        sf::Text text(strings[i], mainFont, 12);
+        text.setFillColor(sf::Color(150, 150, 150));
+
+        float width = text.getLocalBounds().width;
+        int x, y;
+        x = window.getSize().x - width - 10;
+        y = 6 + i * 16;
+        text.setPosition(sf::Vector2f(x, y));
+
+        window.draw(text);
+    }
+}
+
+void display(const Game &game, sf::RenderWindow &window)
+{
+    window.clear();
+
+    for (unsigned int i = 0; i < game.entities.size(); i++)
+    {
+        if (game.entities[i])
+            drawEntity(window, game.entities[i]);
+    }
+
+    vector<sf::String> outputStrings;
+    
+    outputStrings.push_back("1111");
+    outputStrings.push_back("000000000");
+
+    drawOutputStrings(window, outputStrings);
+
+    window.display();
+}
+

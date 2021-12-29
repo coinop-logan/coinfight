@@ -8,6 +8,7 @@
 #define GRAPHICS_H
 
 sf::RenderWindow setupGraphics();
+void display(const Game &game, sf::RenderWindow &window);
 void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity);
 
 #endif // GRAPHICS_H
