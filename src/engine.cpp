@@ -493,10 +493,13 @@ void Game::testInit()
     boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
     boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
 
-    if (!(g->completeBuildingInstantly(&playerCredit)
+    if (!
+        (
+          g->completeBuildingInstantly(&playerCredit)
        && playerCredit.tryTransfer(500, &gp->gold)
        && p->completeBuildingInstantly(&playerCredit)
-    ))
+        )
+    )
         throw runtime_error("not enough playerCredit to initialize all of that");
 
     entities.push_back(g);
