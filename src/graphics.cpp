@@ -52,13 +52,13 @@ void drawOutputStrings(sf::RenderWindow &window, vector<sf::String> strings)
 {
     for (uint i=0; i<strings.size(); i++)
     {
-        sf::Text text(strings[i], mainFont, 12);
+        sf::Text text(strings[i], mainFont, 16);
         text.setFillColor(sf::Color(150, 150, 150));
 
         float width = text.getLocalBounds().width;
         int x, y;
         x = window.getSize().x - width - 10;
-        y = 6 + i * 16;
+        y = 6 + i * 20;
         text.setPosition(sf::Vector2f(x, y));
 
         window.draw(text);
@@ -77,8 +77,8 @@ void display(const Game &game, sf::RenderWindow &window)
 
     vector<sf::String> outputStrings;
     
-    outputStrings.push_back("1111");
-    outputStrings.push_back("000000000");
+    Coins playerCredit = game.playerCredit;
+    outputStrings.push_back(playerCredit.getDollarString());
 
     drawOutputStrings(window, outputStrings);
 

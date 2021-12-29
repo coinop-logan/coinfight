@@ -1,7 +1,10 @@
 #include <algorithm>
+#include <SFML/Graphics.hpp>
 
 #ifndef COINS_H
 #define COINS_H
+
+const float CREDIT_PER_DOLLAR = 1000;
 
 using namespace std;
 using vch = vector<unsigned char>;
@@ -21,6 +24,7 @@ private:
 public:
     coinsInt max;
     coinsInt getInt();
+    sf::String getDollarString();
     Coins(coinsInt);
     Coins(vchIter*);
     coinsInt getSpaceLeft();
