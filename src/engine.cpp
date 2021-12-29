@@ -544,10 +544,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() : playerCredit(MAX_COINS)
-{
-    playerCredit.createMoreByFiat(500000);
-}
+Game::Game() : playerCredit(MAX_COINS) {}
 Game::Game(vchIter *iter) : playerCredit(MAX_COINS)
 {
     unpackAndMoveIter(iter);
