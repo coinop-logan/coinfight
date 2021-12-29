@@ -509,7 +509,8 @@ void Game::pack(vch *dest)
 {
     packToVch(dest, "Q", frame);
 
-    packToVch(dest, "f", playerCredit);
+    playerCredit.pack(dest);
+    
     packToVch(dest, "H", (EntityRef)(entities.size()));
 
     for (EntityRef i = 0; i < entities.size(); i++)
@@ -527,7 +528,8 @@ void Game::pack(vch *dest)
 void Game::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackFromIter(*iter, "Q", &frame);
-    *iter = unpackFromIter(*iter, "f", &playerCredit);
+    
+    playerCredit = Coins(iter);
 
     uint16_t entitiesSize;
     *iter = unpackFromIter(*iter, "H", &entitiesSize);
