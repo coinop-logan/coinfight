@@ -20,6 +20,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
     case CMD_SENDGOLDTHROUGHGATEWAY_CHAR:
         return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(iter));
+    case CMD_PUSHGOLDTHROUGHGATEWAY_CHAR:
+        return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -283,6 +285,43 @@ void SendGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
 SendGoldThroughGatewayCmd::SendGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
 SendGoldThroughGatewayCmd::SendGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char PushGoldThroughGatewayCmd::getTypechar()
+{
+    return CMD_PUSHGOLDTHROUGHGATEWAY_CHAR;
+}
+string PushGoldThroughGatewayCmd::getTypename()
+{
+    return "PushGoldThroughGatewayCmd";
+}
+void PushGoldThroughGatewayCmd::pack(vch *dest)
+{
+    packCmd(dest);
+    packEntityRef(dest, gatewayRef);
+}
+void PushGoldThroughGatewayCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackEntityRef(*iter, &gatewayRef);
+}
+
+void PushGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (!unit->isActive())
+        return;
+    
+    boost::shared_ptr<Entity> gatewayEntity = entityRefToPtr(*(unit->game), gatewayRef);
+    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
+        {
+            prime->cmdPushGoldThroughGateway(gateway);
+        }
+}
+
+PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
+PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }

@@ -293,12 +293,12 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
             if (unitTypechar == PRIME_TYPECHAR)
             {
                 if (entity->typechar() == GOLDPILE_TYPECHAR)
-            {
-                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
+                {
+                    return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
                 }
                 else if (entity->typechar() == GATEWAY_TYPECHAR)
                 {
-                    return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
+                    return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
                 }
             }
         }
@@ -385,7 +385,18 @@ int main()
                 }
                 else if (event.mouseButton.button == sf::Mouse::Middle)
                 {
-                    cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), Target(mouseButtonToVec(event.mouseButton))));
+                    Target target = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton));
+                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+                    {
+                        if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                        {
+                            cmdToSend = boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref));
+                        }
+                    }
+                    else
+                    {
+                        cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target));
+                    }
                 }
                 break;
             case sf::Event::KeyPressed:

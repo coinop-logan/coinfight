@@ -322,6 +322,11 @@ void Prime::cmdSendGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
     state = SendGoldThroughGateway;
     setTarget(Target(gateway->ref), PRIME_RANGE);
 }
+void Prime::cmdPushGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
+{
+    state = PushGoldThroughGateway;
+    setTarget(Target(gateway->ref), PRIME_RANGE);
+}
 
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
@@ -390,7 +395,21 @@ void Prime::go()
                 {
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    cout << "Transferring through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                    cout << "Sending through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                }
+            }
+        }
+        break;
+    case PushGoldThroughGateway:
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
+        {
+            if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            {
+                if (boost::shared_ptr<Gateway> gw = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                {
+                    // cout << "held gold: " << this->heldGold.getInt() << endl;
+                    // cout << "player credit: " << game->playerCredit.getInt() << endl;
+                    cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
                 }
             }
         }
