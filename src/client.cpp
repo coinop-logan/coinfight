@@ -16,41 +16,41 @@
 using namespace std;
 using namespace boost::asio::ip;
 
-void glEnable2D()
-{
-    GLint iViewport[4];
+// void glEnable2D()
+// {
+//     GLint iViewport[4];
 
-    //get a copy of the viewport
-    glGetIntegerv(GL_VIEWPORT, iViewport);
+//     //get a copy of the viewport
+//     glGetIntegerv(GL_VIEWPORT, iViewport);
 
-    //save a copy of the projection matrix so we can restore it
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
+//     //save a copy of the projection matrix so we can restore it
+//     glMatrixMode(GL_PROJECTION);
+//     glPushMatrix();
 
-    //load identity projection matrix
-    glLoadIdentity();
+//     //load identity projection matrix
+//     glLoadIdentity();
 
-    //set up orthographic projection
-    glOrtho(iViewport[0], iViewport[0] + iViewport[2], iViewport[1] + iViewport[3], iViewport[1], -1, 1);
+//     //set up orthographic projection
+//     glOrtho(iViewport[0], iViewport[0] + iViewport[2], iViewport[1] + iViewport[3], iViewport[1], -1, 1);
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+//     glMatrixMode(GL_MODELVIEW);
+//     glPushMatrix();
+//     glLoadIdentity();
 
-    //ensure lighting and depth testing are disabled
-    glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-}
+//     //ensure lighting and depth testing are disabled
+//     glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
+//     glDisable(GL_DEPTH_TEST);
+//     glDisable(GL_LIGHTING);
+// }
 
-void glDisable2D()
-{
-    glPopAttrib();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-}
+// void glDisable2D()
+// {
+//     glPopAttrib();
+//     glMatrixMode(GL_PROJECTION);
+//     glPopMatrix();
+//     glMatrixMode(GL_MODELVIEW);
+//     glPopMatrix();
+// }
 
 Game game;
 
