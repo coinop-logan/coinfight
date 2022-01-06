@@ -181,7 +181,8 @@ public:
         PickupGold,
         PutdownGold,
         SendGoldThroughGateway,
-        PushGoldThroughGateway
+        PushGoldThroughGateway,
+        BuildingBuilding
     } state;
 
     void pack(vch *dest);
@@ -194,6 +195,7 @@ public:
     void cmdPutdown(Target);
     void cmdSendGoldThroughGateway(boost::shared_ptr<Gateway>);
     void cmdPushGoldThroughGateway(boost::shared_ptr<Gateway>);
+    void cmdBuild(boost::shared_ptr<Building>);
 
     float getSpeed();
     float getRange();

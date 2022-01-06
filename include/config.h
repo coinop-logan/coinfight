@@ -23,15 +23,15 @@ const float SEC_PER_FRAME = 1 / 30.0;
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 
-const coinsInt PRIME_COST = 2000;
+const coinsInt PRIME_COST = 100;
 const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 50;
 const coinsInt PRIME_PICKUP_RATE = 5;
 const coinsInt PRIME_PUTDOWN_RATE = 8;
 const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
-const coinsInt PRIME_BUILD_RATE = 100;
+const coinsInt PRIME_BUILD_RATE = 5;
 
-const coinsInt GATEWAY_COST = 10000;
+const coinsInt GATEWAY_COST = 100;
 const float GATEWAY_RANGE = 50;
 
 #endif // CONFIG_H

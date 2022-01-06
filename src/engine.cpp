@@ -327,6 +327,11 @@ void Prime::cmdPushGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
     state = PushGoldThroughGateway;
     setTarget(Target(gateway->ref), PRIME_RANGE);
 }
+void Prime::cmdBuild(boost::shared_ptr<Building> building)
+{
+    state = BuildingBuilding;
+    setTarget(Target(building->ref), PRIME_RANGE);
+}
 
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
@@ -410,6 +415,32 @@ void Prime::go()
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
                     cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
+                }
+            }
+        }
+        break;
+    case BuildingBuilding:
+        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
+        {
+            if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            {
+                if (boost::shared_ptr<Building> b = boost::dynamic_pointer_cast<Building, Entity>(e))
+                {
+                    coinsInt leftToBuild = b->getCost() - b->getBuilt();
+                    if (leftToBuild == 0)
+                    {
+                        state = Idle;
+                        cout << "built!" << endl;
+                    }
+                    else
+                    {
+                        coinsInt amountBuilt = b->build(PRIME_PICKUP_RATE, &(this->heldGold));
+                        cout << "building " << amountBuilt << endl;
+                        if (amountBuilt == 0)
+                        {
+                            state = Idle;
+                        }
+                    }
                 }
             }
         }
@@ -511,19 +542,25 @@ void Game::testInit()
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
     boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
     boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
+    boost::shared_ptr<Gateway> g2(new Gateway(this, 4, vector2f(50,50)));
 
     if (!
         (
           g->completeBuildingInstantly(&playerCredit)
        && playerCredit.tryTransfer(500, &gp->gold)
        && p->completeBuildingInstantly(&playerCredit)
+       && playerCredit.tryTransfer(200, &p->heldGold)
         )
     )
         throw runtime_error("not enough playerCredit to initialize all of that");
 
+    // ordering is important due to ref IDs passed earlier!
     entities.push_back(g);
     entities.push_back(gp);
     entities.push_back(p);
+    entities.push_back(g2);
+
+    p->cmdBuild(g2);
 }
 
 void Game::iterate()
