@@ -434,13 +434,7 @@ int main( void )
 
 	// Ensure we can capture the escape key being pressed below
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    // Hide the mouse and enable unlimited mouvement
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
-    // Set the mouse at the center of the screen
-    glfwPollEvents();
-    glfwSetCursorPos(window, 1024/2, 768/2);
-
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -457,7 +451,7 @@ int main( void )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "resources/TransformVertexShader.vertexshader", "resources/TextureFragmentShader.fragmentshader" );
+	GLuint programID = LoadShaders( "assets/TransformVertexShader.vertexshader", "assets/TextureFragmentShader.fragmentshader" );
     if (programID == 0)
     {
         fprintf(stderr, "programID is 0 from LoadShaders");
@@ -468,7 +462,7 @@ int main( void )
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
 	// Load the texture
-	GLuint Texture = loadDDS("resources/uvmap.DDS");
+	GLuint Texture = loadDDS("assets/uvmap.DDS");
     if (Texture == 0)
     {
         fprintf(stderr, "Texture is 0 from loadDDS");
@@ -482,7 +476,7 @@ int main( void )
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals; // Won't be used at the moment.
-	bool res = loadOBJ("resources/cube.obj", vertices, uvs, normals);
+	bool res = loadOBJ("assets/test.obj", vertices, uvs, normals);
 
     if (!res)
     {
