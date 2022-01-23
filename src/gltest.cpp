@@ -375,17 +375,6 @@ int main( void )
 	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
-	// // Load the texture
-	// GLuint Texture = loadDDS("assets/uvmap.DDS");
-    // if (Texture == 0)
-    // {
-    //     fprintf(stderr, "Texture is 0 from loadDDS");
-    //     return EXIT_FAILURE;
-    // }
-	
-	// // Get a handle for our "myTextureSampler" uniform
-	// GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
-
 	// Read our .obj file
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
@@ -438,12 +427,6 @@ int main( void )
 
         glm::vec3 lightPos = glm::vec3(10,10,10);
 		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-		// // Bind our texture in Texture Unit 0
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, Texture);
-		// // Set our "myTextureSampler" sampler to use Texture Unit 0
-		// glUniform1i(TextureID, 0);
 
 		// 1st attribute buffer : vertices
 		glEnableVertexAttribArray(0);
