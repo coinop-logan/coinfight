@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
 
 INC=-I/usr/include -I../common -I./include/
-LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
+LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW -lglfw
 
 all: bin/client bin/server bin/test bin/gltest
 
