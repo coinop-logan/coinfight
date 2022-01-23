@@ -469,6 +469,7 @@ int main( void )
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
