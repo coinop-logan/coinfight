@@ -362,7 +362,7 @@ int main( void )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "assets/TransformVertexShader.vertexshader", "assets/TextureFragmentShader.fragmentshader" );
+	GLuint programID = LoadShaders( "assets/TransformVertexShader.vert", "assets/TextureFragmentShader.frag" );
     if (programID == 0)
     {
         fprintf(stderr, "programID is 0 from LoadShaders");
@@ -397,15 +397,20 @@ int main( void )
 
 	// Load it into a VBO
 
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	GLuint vertexBuffer;
+	glGenBuffers(1, &vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	GLuint uvbuffer;
-	glGenBuffers(1, &uvbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+	GLuint uvBuffer;
+	glGenBuffers(1, &uvBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
 	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+    GLuint normalBuffer;
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 
 	do{
 
@@ -432,9 +437,9 @@ int main( void )
 		// // Set our "myTextureSampler" sampler to use Texture Unit 0
 		// glUniform1i(TextureID, 0);
 
-		// 1rst attribute buffer : vertices
+		// 1st attribute buffer : vertices
 		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 		glVertexAttribPointer(
 			0,                  // attribute
 			3,                  // size
@@ -446,7 +451,7 @@ int main( void )
 
 		// 2nd attribute buffer : UVs
 		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
 		glVertexAttribPointer(
 			1,                                // attribute
 			2,                                // size
@@ -455,6 +460,18 @@ int main( void )
 			0,                                // stride
 			(void*)0                          // array buffer offset
 		);
+
+        // 3rd attribute buffer : normals
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+        glVertexAttribPointer(
+            2,                                // attribute
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+        );
 
 		// Draw the triangle !
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
@@ -471,8 +488,8 @@ int main( void )
 		   glfwWindowShouldClose(window) == 0 );
 
 	// Cleanup VBO and shader
-	glDeleteBuffers(1, &vertexbuffer);
-	glDeleteBuffers(1, &uvbuffer);
+	glDeleteBuffers(1, &vertexBuffer);
+	glDeleteBuffers(1, &uvBuffer);
 	glDeleteProgram(programID);
 	// glDeleteTextures(1, &Texture);
 	glDeleteVertexArrays(1, &VertexArrayID);
