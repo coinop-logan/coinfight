@@ -369,8 +369,11 @@ int main( void )
         return EXIT_FAILURE;
     }
 
-	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+    // get handles for uniforms in frag shader
+    GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
+	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+    GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
 	// // Load the texture
 	// GLuint Texture = loadDDS("assets/uvmap.DDS");
@@ -430,6 +433,11 @@ int main( void )
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+        glm::vec3 lightPos = glm::vec3(10,10,10);
+		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
 		// // Bind our texture in Texture Unit 0
 		// glActiveTexture(GL_TEXTURE0);
