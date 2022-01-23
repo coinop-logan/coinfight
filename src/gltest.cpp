@@ -290,6 +290,16 @@ bool loadOBJ(
         glm::vec3 vertex = tempVertices[vertexIndices[i] - 1]; // OBJ indices start at 1
         outVertices.push_back(vertex);
     }
+    for (uint i = 0; i < uvIndices.size(); i++)
+    {
+        glm::vec2 uv = tempUVs[uvIndices[i] - 1];
+        outUVs.push_back(uv);
+    }
+    for (uint i = 0; i < normalIndices.size(); i++)
+    {
+        glm::vec3 normal = tempNormals[normalIndices[i] - 1];
+        outNormals.push_back(normal);
+    }
 
     return true;
 }
