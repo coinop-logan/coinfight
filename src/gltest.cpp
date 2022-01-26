@@ -373,7 +373,6 @@ int main( void )
         fprintf(stderr, "programID is 0 from LoadShaders");
         return EXIT_FAILURE;
     }
-    cout << "hi" << endl;
 
     // get handles for uniforms in frag shader
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
