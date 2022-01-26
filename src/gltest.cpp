@@ -321,7 +321,7 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1920, 1080, "Tutorial 07 - Model Loading", glfwGetPrimaryMonitor(), NULL);
+	window = glfwCreateWindow( 1920, 1080, "Tutorial 07 - Model Loading", NULL, NULL);
 	if( window == NULL ) {
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -364,6 +364,7 @@ int main( void )
         fprintf(stderr, "programID is 0 from LoadShaders");
         return EXIT_FAILURE;
     }
+    cout << "hi" << endl;
 
     // get handles for uniforms in frag shader
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
