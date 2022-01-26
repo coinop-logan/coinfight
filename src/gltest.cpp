@@ -378,7 +378,8 @@ int main( void )
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
 	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
-    GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+    GLuint ProjectionMatrixID = glGetUniformLocation(programID, "P");
+    GLuint NormalMatrixID = glGetUniformLocation(programID, "NormalMatrix");
 
 	// Read our .obj file
 	std::vector<glm::vec3> vertices;
@@ -423,15 +424,15 @@ int main( void )
 		glm::mat4 ViewMatrix = getViewMatrix();
 		glm::mat4 ModelMatrix = glm::mat4(1.0);
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+        glm::mat4 NormalMatrix = glm::transpose(glm::inverse(ModelMatrix));
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
-        glm::vec3 lightPos = glm::vec3(10,10,10);
-		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+        glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &ProjectionMatrix[0][0]);
+        glUniformMatrix4fv(NormalMatrixID, 1, GL_FALSE, &NormalMatrix[0][0]);
 
 		// 1st attribute buffer : vertices
 		glEnableVertexAttribArray(0);

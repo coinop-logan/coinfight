@@ -7,8 +7,10 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
+uniform mat4 P;
 uniform mat4 V;
 uniform mat4 M;
+uniform mat4 NormalMatrix;
 
 // Output data ; will be interpolated for each fragment.
 // out vec2 UV;
@@ -20,7 +22,7 @@ out vec3 Normal;
 void main()
 {
 	gl_Position = MVP * vec4(vertexPosition_modelspace, 1);
-    Normal = vertexNormal_modelspace;
+    Normal = mat3(NormalMatrix) * vertexNormal_modelspace;
 	
 	// // Position of the vertex, in worldspace : M * position
 	// Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
