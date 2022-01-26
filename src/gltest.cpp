@@ -151,7 +151,15 @@ void computeMatricesFromInputs(){
 	// glfwSetCursorPos(window, 1024/2, 768/2);
 
 	// Compute new orientation
-	horizontalAngle += 0; // mouseSpeed * float(1024/2 - xpos );
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    {
+	    horizontalAngle += 0.03; // mouseSpeed * float(1024/2 - xpos );
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    {
+	    horizontalAngle -= 0.03; // mouseSpeed * float(1024/2 - xpos );
+    }
+
 	verticalAngle   += 0; // mouseSpeed * float( 768/2 - ypos );
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
@@ -322,7 +330,7 @@ int main( void )
     glfwWindowHint(GLFW_MAXIMIZED, GL_FALSE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1500, 1000, "Tutorial 07 - Model Loading", NULL, NULL);
+	window = glfwCreateWindow( 1500, 1000, "Coinfight", NULL, NULL);
 	if( window == NULL ) {
 		fprintf( stderr, "Failed to open GLFW window.\n");
 		getchar();
