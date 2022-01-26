@@ -21,7 +21,7 @@ out vec3 Normal;
 
 void main()
 {
-	gl_Position = MVP * vec4(vertexPosition_modelspace, 1);
+	gl_Position = P * V * M * vec4(vertexPosition_modelspace, 1);
     Normal = mat3(NormalMatrix) * vertexNormal_modelspace;
 	
 	// // Position of the vertex, in worldspace : M * position

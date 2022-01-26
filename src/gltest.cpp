@@ -472,6 +472,10 @@ int main( void )
 
 		// Draw the triangle !
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+        
+        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(10, 0 ,0));
+        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
