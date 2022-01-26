@@ -148,11 +148,11 @@ void computeMatricesFromInputs(){
 	glfwGetCursorPos(window, &xpos, &ypos);
 
 	// Reset mouse position for next frame
-	glfwSetCursorPos(window, 1024/2, 768/2);
+	// glfwSetCursorPos(window, 1024/2, 768/2);
 
 	// Compute new orientation
-	horizontalAngle += mouseSpeed * float(1024/2 - xpos );
-	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+	horizontalAngle += 0; // mouseSpeed * float(1024/2 - xpos );
+	verticalAngle   += 0; // mouseSpeed * float( 768/2 - ypos );
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	glm::vec3 direction(
@@ -319,11 +319,12 @@ int main( void )
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, GL_FALSE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1920, 1080, "Tutorial 07 - Model Loading", NULL, NULL);
+	window = glfwCreateWindow( 1500, 1000, "Tutorial 07 - Model Loading", NULL, NULL);
 	if( window == NULL ) {
-		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
+		fprintf( stderr, "Failed to open GLFW window.\n");
 		getchar();
 		glfwTerminate();
 		return -1;
