@@ -298,19 +298,23 @@ GLFWwindow* setupGraphics()
     return window;
 }
 
+float ypos = 0;
+
 void display(GLFWwindow *window)
 {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 1000.0f);
     glm::mat4 ViewMatrix = glm::lookAt(
-								glm::vec3(0, 0, -100), // camera pos
+								glm::vec3(0, ypos, 100), // camera pos
 								glm::vec3(0, 0, 0),    // look at
 								glm::vec3(0, 1, 0)     // camera 'up'
 						   );
     glm::mat4 ModelMatrix = glm::mat4(1.0);
     glm::mat4 NormalMatrix = glm::transpose(glm::inverse(ModelMatrix));
+
+    ypos -= 0.2;
 
     // Send our transformation to the currently bound shader, 
     // in the "MVP" uniform
