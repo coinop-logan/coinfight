@@ -1,12 +1,17 @@
-#include <SFML/Graphics.hpp>
-#include <GL/gl.h>
-#include <GL/glu.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "config.h"
 #include "cmds.h"
 #include "engine.h"
@@ -15,42 +20,6 @@
 
 using namespace std;
 using namespace boost::asio::ip;
-
-// void glEnable2D()
-// {
-//     GLint iViewport[4];
-
-//     //get a copy of the viewport
-//     glGetIntegerv(GL_VIEWPORT, iViewport);
-
-//     //save a copy of the projection matrix so we can restore it
-//     glMatrixMode(GL_PROJECTION);
-//     glPushMatrix();
-
-//     //load identity projection matrix
-//     glLoadIdentity();
-
-//     //set up orthographic projection
-//     glOrtho(iViewport[0], iViewport[0] + iViewport[2], iViewport[1] + iViewport[3], iViewport[1], -1, 1);
-
-//     glMatrixMode(GL_MODELVIEW);
-//     glPushMatrix();
-//     glLoadIdentity();
-
-//     //ensure lighting and depth testing are disabled
-//     glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
-//     glDisable(GL_DEPTH_TEST);
-//     glDisable(GL_LIGHTING);
-// }
-
-// void glDisable2D()
-// {
-//     glPopAttrib();
-//     glMatrixMode(GL_PROJECTION);
-//     glPopMatrix();
-//     glMatrixMode(GL_MODELVIEW);
-//     glPopMatrix();
-// }
 
 Game game;
 
@@ -256,10 +225,10 @@ Target getTargetAtScreenPos(vector2f screenPos)
     else
         return Target(gamePos);
 }
-vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
-{
-    return vector2f(mEvent.x, mEvent.y);
-}
+// vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
+// {
+//     return vector2f(mEvent.x, mEvent.y);
+// }
 
 struct UI
 {
@@ -315,130 +284,168 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     
 }
 
+bool handleInput(GLFWwindow *window)
+{
+    glfwPollEvents();
+
+    // glfwGetCursorPos(window, &xpos, &ypos);
+
+    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    // {
+	//     horizontalAngle += 0.03; // mouseSpeed * float(1024/2 - xpos );
+    // }
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS || glfwWindowShouldClose(window))
+    {
+        cleanupGraphics();
+        return true;
+    }
+
+    return false;
+}
+
 int main()
 {
-    boost::asio::io_service io_service;
-    tcp::socket socket(io_service);
+    // boost::asio::io_service io_service;
+    // tcp::socket socket(io_service);
 
-    cout << "Connecting..." << endl;
-    socket.connect(tcp::endpoint(tcp::v4(), 8473));
+    // cout << "Connecting..." << endl;
+    // socket.connect(tcp::endpoint(tcp::v4(), 8473));
 
-    cout << "Creating ConnectionHandler..." << endl;
+    // cout << "Creating ConnectionHandler..." << endl;
 
-    ConnectionHandler connectionHandler(io_service, socket);
+    // ConnectionHandler connectionHandler(io_service, socket);
 
-    connectionHandler.startReceiving();
+    // connectionHandler.startReceiving();
 
     // Get the first resync packet
     while (true)
     {
-        io_service.poll();
+        // io_service.poll();
 
-        if (receivedResyncs.size() > 0)
-        {
-            game = receivedResyncs[0];
-            game.reassignEntityGamePointers();
+        // if (receivedResyncs.size() > 0)
+        // {
+        //     game = receivedResyncs[0];
+        //     game.reassignEntityGamePointers();
 
-            receivedResyncs.erase(receivedResyncs.begin());
-            break;
-        }
+        //     receivedResyncs.erase(receivedResyncs.begin());
+        //     break;
+        // }
+        if (true) break;
     }
 
-    sf::RenderWindow window = setupGraphics();
-    sf::Event event;
-
-    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
-    while (window.isOpen())
+    GLFWwindow *window = setupGraphics();
+    if (window == NULL)
     {
-        io_service.poll();
-
-        if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
-        {
-            continue;
-        }
-
-        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
-        boost::shared_ptr<Cmd> cmdToSend;
-
-        while (window.pollEvent(event))
-        {
-            switch (event.type)
-            {
-            case sf::Event::Closed:
-                window.close();
-                break;
-            case sf::Event::MouseButtonPressed:
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
-                    {
-                        ui.selectedEntities.clear();
-                        ui.selectedEntities.push_back(clickedEntity);
-                    }
-                }
-                else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
-                {
-                    cmdToSend = makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
-                    
-                }
-                else if (event.mouseButton.button == sf::Mouse::Middle)
-                {
-                    Target target = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton));
-                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
-                    {
-                        if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                        {
-                            cmdToSend = boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref));
-                        }
-                    }
-                    else
-                    {
-                        cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target));
-                    }
-                }
-                break;
-            case sf::Event::KeyPressed:
-                // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
-                break;
-            default:
-                break;
-            }
-        }
-
-        if (cmdToSend)
-        {
-            connectionHandler.sendCmd(cmdToSend);
-        }
-
-        if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
-        {
-            game = receivedResyncs[0];
-            game.reassignEntityGamePointers();
-
-            receivedResyncs.erase(receivedResyncs.begin());
-        }
-
-        FrameCmdsPacket fcp = receivedFrameCmdsPackets[0];
-        receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
-
-        assert(fcp.frame == game.frame);
-
-        for (unsigned int i = 0; i < fcp.cmds.size(); i++)
-        {
-            fcp.cmds[i]->execute(&game);
-        }
-
-        game.iterate();
-
-        display(game, window);
-
-        if (game.frame % 200 == 0)
-            cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
+        fprintf(stderr, "setupGraphics returned NULL.");
+        return -1;
     }
+    // sf::Event event;
 
-    socket.close();
+    while (true)
+    {
+        bool shouldClose = handleInput(window);
 
-    return 0;
+        display(window);
+
+        if (shouldClose) return 0;
+    }
 }
+
+
+// void oldMainStuff() {
+//     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
+
+//     while (window.isOpen())
+//     {
+//         io_service.poll();
+
+//         if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
+//         {
+//             continue;
+//         }
+
+//         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
+
+//         boost::shared_ptr<Cmd> cmdToSend;
+
+//         while (window.pollEvent(event))
+//         {
+//             switch (event.type)
+//             {
+//             case sf::Event::Closed:
+//                 window.close();
+//                 break;
+//             case sf::Event::MouseButtonPressed:
+//                 if (event.mouseButton.button == sf::Mouse::Left)
+//                 {
+//                     if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+//                     {
+//                         ui.selectedEntities.clear();
+//                         ui.selectedEntities.push_back(clickedEntity);
+//                     }
+//                 }
+//                 else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
+//                 {
+//                     cmdToSend = makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
+                    
+//                 }
+//                 else if (event.mouseButton.button == sf::Mouse::Middle)
+//                 {
+//                     Target target = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton));
+//                     if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+//                     {
+//                         if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+//                         {
+//                             cmdToSend = boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref));
+//                         }
+//                     }
+//                     else
+//                     {
+//                         cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target));
+//                     }
+//                 }
+//                 break;
+//             case sf::Event::KeyPressed:
+//                 // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
+//                 break;
+//             default:
+//                 break;
+//             }
+//         }
+
+//         if (cmdToSend)
+//         {
+//             connectionHandler.sendCmd(cmdToSend);
+//         }
+
+//         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
+//         {
+//             game = receivedResyncs[0];
+//             game.reassignEntityGamePointers();
+
+//             receivedResyncs.erase(receivedResyncs.begin());
+//         }
+
+//         FrameCmdsPacket fcp = receivedFrameCmdsPackets[0];
+//         receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
+
+//         assert(fcp.frame == game.frame);
+
+//         for (unsigned int i = 0; i < fcp.cmds.size(); i++)
+//         {
+//             fcp.cmds[i]->execute(&game);
+//         }
+
+//         game.iterate();
+
+//         display(game, window);
+
+//         if (game.frame % 200 == 0)
+//             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
+//     }
+
+//     socket.close();
+
+//     return 0;
+// }
