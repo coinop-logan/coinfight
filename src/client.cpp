@@ -306,33 +306,34 @@ bool handleInput(GLFWwindow *window)
 
 int main()
 {
-    // boost::asio::io_service io_service;
-    // tcp::socket socket(io_service);
+    boost::asio::io_service io_service;
+    tcp::socket socket(io_service);
 
-    // cout << "Connecting..." << endl;
-    // socket.connect(tcp::endpoint(tcp::v4(), 8473));
+    cout << "Connecting..." << endl;
+    socket.connect(tcp::endpoint(tcp::v4(), 8473));
 
-    // cout << "Creating ConnectionHandler..." << endl;
+    cout << "Creating ConnectionHandler..." << endl;
 
-    // ConnectionHandler connectionHandler(io_service, socket);
+    ConnectionHandler connectionHandler(io_service, socket);
 
-    // connectionHandler.startReceiving();
+    connectionHandler.startReceiving();
 
     // Get the first resync packet
     while (true)
     {
-        // io_service.poll();
+        io_service.poll();
 
-        // if (receivedResyncs.size() > 0)
-        // {
-        //     game = receivedResyncs[0];
-        //     game.reassignEntityGamePointers();
+        if (receivedResyncs.size() > 0)
+        {
+            game = receivedResyncs[0];
+            game.reassignEntityGamePointers();
 
-        //     receivedResyncs.erase(receivedResyncs.begin());
-        //     break;
-        // }
-        if (true) break;
+            receivedResyncs.erase(receivedResyncs.begin());
+            break;
+        }
     }
+
+    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
     GLFWwindow *window = setupGraphics();
     if (window == NULL)
@@ -344,29 +345,54 @@ int main()
 
     while (true)
     {
+        io_service.poll();
+
+        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
+
         bool shouldClose = handleInput(window);
 
-        display(window);
-
         if (shouldClose) return 0;
+
+        if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
+        {
+            continue;
+        }
+
+        if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
+        {
+            game = receivedResyncs[0];
+            game.reassignEntityGamePointers();
+
+            receivedResyncs.erase(receivedResyncs.begin());
+        }
+
+        FrameCmdsPacket fcp = receivedFrameCmdsPackets[0];
+        receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
+
+        assert(fcp.frame == game.frame);
+
+        for (unsigned int i = 0; i < fcp.cmds.size(); i++)
+        {
+            fcp.cmds[i]->execute(&game);
+        }
+
+        game.iterate();
+
+        display(game, window);
+
+        if (game.frame % 200 == 0)
+            cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
     }
+
+    socket.close();
+
+    return 0;
 }
 
 
 // void oldMainStuff() {
-//     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
 //     while (window.isOpen())
 //     {
-//         io_service.poll();
-
-//         if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
-//         {
-//             continue;
-//         }
-
-//         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
 //         boost::shared_ptr<Cmd> cmdToSend;
 
 //         while (window.pollEvent(event))
@@ -419,33 +445,10 @@ int main()
 //             connectionHandler.sendCmd(cmdToSend);
 //         }
 
-//         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
-//         {
-//             game = receivedResyncs[0];
-//             game.reassignEntityGamePointers();
+        
 
-//             receivedResyncs.erase(receivedResyncs.begin());
-//         }
-
-//         FrameCmdsPacket fcp = receivedFrameCmdsPackets[0];
-//         receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
-
-//         assert(fcp.frame == game.frame);
-
-//         for (unsigned int i = 0; i < fcp.cmds.size(); i++)
-//         {
-//             fcp.cmds[i]->execute(&game);
-//         }
-
-//         game.iterate();
-
-//         display(game, window);
-
-//         if (game.frame % 200 == 0)
-//             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
+        
 //     }
-
-//     socket.close();
 
 //     return 0;
 // }

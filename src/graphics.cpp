@@ -259,15 +259,15 @@ GLFWwindow* setupGraphics()
 	glBindVertexArray(VertexArrayID);
 
     // Create and compile our GLSL program from the shaders
-	programID = loadShaders( "src/shaders/unit.vert", "src/shaders/unit.frag" );
+	programID = loadShaders( "../src/shaders/unit.vert", "../src/shaders/unit.frag" );
     if (programID == 0)
     {
-        fprintf(stderr, "programID is 0 from LoadShaders");
+        fprintf(stderr, "programID is 0 from LoadShaders\n");
         return NULL;
     }
     glUseProgram(programID);
 
-	bool res = loadOBJ("assets/test.obj", vertices, uvs, normals);
+	bool res = loadOBJ("../assets/test.obj", vertices, uvs, normals);
 
     if (!res)
     {
@@ -300,7 +300,7 @@ GLFWwindow* setupGraphics()
 
 float ypos = 0;
 
-void display(GLFWwindow *window)
+void display(const Game &game, GLFWwindow *window)
 {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
