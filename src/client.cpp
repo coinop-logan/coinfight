@@ -198,14 +198,21 @@ public:
     }
 };
 
-vector2f screenPosToGamePos(vector2f screenPos)
+vector2f screenPosToGroundPos(const CameraState &camera, vector2f screenPos)
 {
-    // glm::unProject()
+    glm::vec4 viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glm::vec3 clickNear = glm::unProject(glm::vec3(screenPos.x, (float)WINDOW_HEIGHT - screenPos.y, 0), camera.getViewMatrix(), ProjectionMatrix, viewport);
+    glm::vec3 clickFar = glm::unProject(glm::vec3(screenPos.x, (float)WINDOW_HEIGHT - screenPos.y, 1), camera.getViewMatrix(), ProjectionMatrix, viewport);
+
+    float interp = (0 - clickNear.z) / (clickFar.z - clickNear.z);
+    glm::vec3 interpolated = glm::mix(clickNear, clickFar, interp);
+
+    return vector2f(interpolated.x, interpolated.y);
 }
 
-Target getTargetFromScreenPos(vector2f screenPos)
+Target getTargetFromScreenPos(const CameraState &cameraState, vector2f screenPos)
 {
-    vector2f gamePos = screenPosToGamePos(screenPos);
+    vector2f gamePos = screenPosToGroundPos(cameraState, screenPos);
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
@@ -299,6 +306,27 @@ bool handleInput(GLFWwindow *window)
     return false;
 }
 
+vector2f getClickPosv2f(GLFWwindow *window)
+{
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    return vector2f(xpos, ypos);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        vector2f clickPos = getClickPosv2f(window);
+        screenPosToGroundPos(ui.camera, clickPos);
+    }
+}
+
+void setInputCallbacks(GLFWwindow *window)
+{
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+}
+
 int main()
 {
     boost::asio::io_service io_service;
@@ -339,6 +367,8 @@ int main()
     
     ui.camera.gamePosLookAt = vector2f(0, 0);
     ui.camera.cameraPos = glm::vec3(0, -10, 100);
+
+    setInputCallbacks(window);
 
     while (true)
     {

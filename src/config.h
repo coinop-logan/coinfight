@@ -1,4 +1,5 @@
 #include "coins.h"
+#include <glm/glm.hpp>
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -6,7 +7,8 @@
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
-const glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
+const int WINDOW_WIDTH = 1500;
+const int WINDOW_HEIGHT = 1000;
 
 const float DISTANCE_TOL = 0.0001;
 

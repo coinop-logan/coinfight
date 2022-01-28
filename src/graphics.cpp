@@ -125,12 +125,7 @@ vector<glm::vec3> vertices;
 vector<glm::vec2> uvs;
 vector<glm::vec3> normals;
 
-bool loadOBJ(
-    const char * path,
-    vector<glm::vec3> &outVertices,
-    vector<glm::vec2> &outUVs,
-    vector<glm::vec3> &outNormals
-) {
+bool loadOBJ(const char * path, vector<glm::vec3> &outVertices, vector<glm::vec2> &outUVs, vector<glm::vec3> &outNormals) {
     vector<unsigned int> vertexIndices, uvIndices, normalIndices;
     vector<glm::vec3> tempVertices;
     vector<glm::vec2> tempUVs;
@@ -240,7 +235,7 @@ GLFWwindow* setupGraphics()
     glfwWindowHint(GLFW_MAXIMIZED, GL_FALSE);
 
 	// Open a window and create its OpenGL context
-	GLFWwindow *window = glfwCreateWindow( 1500, 1000, "Coinfight", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow( WINDOW_WIDTH, WINDOW_HEIGHT, "Coinfight", NULL, NULL);
 	if( window == NULL ) {
 		fprintf( stderr, "Failed to open GLFW window.\n");
 		glfwTerminate();
