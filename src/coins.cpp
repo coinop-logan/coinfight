@@ -61,13 +61,13 @@ coinsInt Coins::getInt()
 {
     return heldAmount;
 }
-sf::String Coins::getDollarString()
-{
-    float dollars = getInt() / CREDIT_PER_DOLLAR;
-    char buf[100];
-    snprintf(buf, 100, "$%.2f", dollars);
-    return sf::String(buf);
-}
+// sf::String Coins::getDollarString()
+// {
+//     float dollars = getInt() / CREDIT_PER_DOLLAR;
+//     char buf[100];
+//     snprintf(buf, 100, "$%.2f", dollars);
+//     return sf::String(buf);
+// }
 unsigned long Coins::getSpaceLeft()
 {
     return max - heldAmount;
