@@ -4,7 +4,9 @@
 #include "input.h"
 #include "config.h"
 
+extern Game game;
 extern UI ui;
+extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector2f screenPosToGroundPos(const CameraState &camera, vector2f screenPos)
 {
@@ -99,6 +101,11 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     
 }
 
+void queueCmdForSending(boost::shared_ptr<Cmd> cmd)
+{
+    cmdsToSend.push_back(cmd);
+}
+
 vector2f getGlfwClickVector2f(GLFWwindow *window)
 {
     double xpos, ypos;
@@ -108,10 +115,11 @@ vector2f getGlfwClickVector2f(GLFWwindow *window)
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
         vector2f clickPos = getGlfwClickVector2f(window);
-        screenPosToGroundPos(ui.camera, clickPos);
+        Target target = getTargetFromScreenPos(game, ui.camera, clickPos);
+        queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
     }
 }
 

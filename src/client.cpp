@@ -25,6 +25,7 @@ using namespace boost::asio::ip;
 Game game;
 
 UI ui;
+vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<FrameCmdsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
@@ -243,8 +244,6 @@ int main()
         }
     }
 
-    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
     GLFWwindow *window = setupGraphics();
     if (window == NULL)
     {
@@ -252,8 +251,11 @@ int main()
         return -1;
     }
     
+    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
+    
     ui.camera.gamePosLookAt = vector2f(0, 0);
-    ui.camera.cameraPos = glm::vec3(0, -10, 100);
+    ui.camera.cameraPos = glm::vec3(0, -10, 1000);
+    ui.selectedEntities.push_back(game.entities[2]);
 
     setInputCallbacks(window);
 
@@ -261,16 +263,25 @@ int main()
     {
         io_service.poll();
 
-        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
-        bool shouldClose = handleInput(window); // also polls events and triggers input callbacks
-
-        if (shouldClose) return 0;
-
         if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
         {
             continue;
         }
+
+        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
+
+        // cmdsToSend will be filled up by any triggered input callbacks
+        bool shouldClose = handleInput(window);
+        if (shouldClose) return 0;
+        // cmdsToSend may now have more cmds in it
+        for (uint i=0; i < cmdsToSend.size(); i++)
+        {
+            if (!cmdsToSend[i])
+                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+            else
+                connectionHandler.sendCmd(cmdsToSend[i]);
+        }
+        cmdsToSend.clear();
 
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
@@ -354,10 +365,7 @@ int main()
 //             }
 //         }
 
-//         if (cmdToSend)
-//         {
-//             connectionHandler.sendCmd(cmdToSend);
-//         }
+
 
         
 

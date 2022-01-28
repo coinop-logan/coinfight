@@ -7,8 +7,8 @@
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
-const int WINDOW_WIDTH = 1500;
-const int WINDOW_HEIGHT = 1000;
+const int WINDOW_WIDTH = 500;
+const int WINDOW_HEIGHT = 400;
 
 const float DISTANCE_TOL = 0.0001;
 
