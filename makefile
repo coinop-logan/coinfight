@@ -12,13 +12,10 @@ obj/%.o: src/%.cpp
 bin/server: obj/server.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/coins.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-bin/client: obj/client.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/coins.o obj/graphics.o
+bin/client: obj/client.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/coins.o obj/graphics.o obj/input.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
 bin/test: obj/test.o obj/engine.o obj/vchpack.o obj/myvectors.o obj/cmds.o obj/common.o obj/graphics.o obj/coins.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
-
-bin/gltest: obj/gltest.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
 obj/vchpack.o:
