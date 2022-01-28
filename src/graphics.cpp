@@ -302,15 +302,15 @@ GLFWwindow* setupGraphics()
 
 float ypos = 0;
 
-void display(const Game &game, GLFWwindow *window)
+void display(GLFWwindow *window, const Game &game, const CameraState &cameraState)
 {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
     glm::mat4 ViewMatrix = glm::lookAt(
-								glm::vec3(0, ypos, 1000), // camera pos
-								glm::vec3(0, 0, 0), // look at
+								cameraState.cameraPos, // camera pos
+								glm::vec3(cameraState.gamePosLookAt.x, cameraState.gamePosLookAt.y, 0), // look at
 								glm::vec3(0, 1, 0) // camera 'up'
 						   );
     ypos -= 0.2;

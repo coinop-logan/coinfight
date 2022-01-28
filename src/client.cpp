@@ -198,9 +198,14 @@ public:
     }
 };
 
-Target getTargetAtScreenPos(vector2f screenPos)
+vector2f screenPosToGamePos(vector2f screenPos)
 {
-    vector2f gamePos = screenPos; // this will have to be changed when the screen can move
+    // glm::unProject()
+}
+
+Target getTargetFromScreenPos(vector2f screenPos)
+{
+    vector2f gamePos = screenPosToGamePos(screenPos);
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
@@ -225,14 +230,11 @@ Target getTargetAtScreenPos(vector2f screenPos)
     else
         return Target(gamePos);
 }
-// vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
-// {
-//     return vector2f(mEvent.x, mEvent.y);
-// }
 
 struct UI
 {
     vector<boost::shared_ptr<Entity>> selectedEntities;
+    CameraState camera;
 } ui;
 
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
@@ -288,13 +290,6 @@ bool handleInput(GLFWwindow *window)
 {
     glfwPollEvents();
 
-    // glfwGetCursorPos(window, &xpos, &ypos);
-
-    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    // {
-	//     horizontalAngle += 0.03; // mouseSpeed * float(1024/2 - xpos );
-    // }
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS || glfwWindowShouldClose(window))
     {
         cleanupGraphics();
@@ -341,7 +336,9 @@ int main()
         fprintf(stderr, "setupGraphics returned NULL.");
         return -1;
     }
-    // sf::Event event;
+    
+    ui.camera.gamePosLookAt = vector2f(0, 0);
+    ui.camera.cameraPos = glm::vec3(0, -10, 100);
 
     while (true)
     {
@@ -378,7 +375,7 @@ int main()
 
         game.iterate();
 
-        display(game, window);
+        display(window, game, ui.camera);
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
