@@ -315,18 +315,10 @@ int main()
 }
 
 
-// void oldMainStuff() {
-//     while (window.isOpen())
-//     {
-//         boost::shared_ptr<Cmd> cmdToSend;
-
 //         while (window.pollEvent(event))
 //         {
 //             switch (event.type)
 //             {
-//             case sf::Event::Closed:
-//                 window.close();
-//                 break;
 //             case sf::Event::MouseButtonPressed:
 //                 if (event.mouseButton.button == sf::Mouse::Left)
 //                 {
@@ -357,11 +349,6 @@ int main()
 //                     }
 //                 }
 //                 break;
-//             case sf::Event::KeyPressed:
-//                 // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
-//                 break;
-//             default:
-//                 break;
 //             }
 //         }
 
@@ -370,7 +357,3 @@ int main()
         
 
         
-//     }
-
-//     return 0;
-// }
