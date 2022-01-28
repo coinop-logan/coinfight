@@ -1,4 +1,5 @@
 #include <iostream>
+#include <glm/glm.hpp>
 #include "common.h"
 
 using namespace std;
@@ -64,4 +65,9 @@ std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
     else {
         return {sum};
     }
+}
+
+glm::vec3 toGlmVec3(vector3f v)
+{
+    return glm::vec3(v.x, v.y, v.z);
 }

@@ -1,7 +1,8 @@
-#include "myvectors.h"
-#include "vchpack.h"
 #include <stdint.h>
 #include <optional>
+#include <glm/glm.hpp>
+#include "myvectors.h"
+#include "vchpack.h"
 
 #ifndef COMMON_H
 #define COMMON_H
@@ -28,5 +29,7 @@ vchIter unpackEntityRef(vchIter iter, EntityRef *ref);
 
 bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
+
+glm::vec3 toGlmVec3(vector3f v);
 
 #endif // COMMON_H

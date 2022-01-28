@@ -1,9 +1,11 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <fstream>
+#include <glm/glm.hpp>
 
 #include "engine.h"
 #include "graphics.h"
+#include "common.h"
 
 using namespace std;
 using namespace glm;
@@ -305,23 +307,17 @@ void display(const Game &game, GLFWwindow *window)
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 1000.0f);
+    glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
     glm::mat4 ViewMatrix = glm::lookAt(
-								glm::vec3(0, ypos, 100), // camera pos
-								glm::vec3(0, 0, 0),    // look at
-								glm::vec3(0, 1, 0)     // camera 'up'
+								glm::vec3(0, ypos, 1000), // camera pos
+								glm::vec3(0, 0, 0), // look at
+								glm::vec3(0, 1, 0) // camera 'up'
 						   );
-    glm::mat4 ModelMatrix = glm::mat4(1.0);
-    glm::mat4 NormalMatrix = glm::transpose(glm::inverse(ModelMatrix));
-
     ypos -= 0.2;
 
     // Send our transformation to the currently bound shader, 
-    // in the "MVP" uniform
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
     glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &ProjectionMatrix[0][0]);
-    glUniformMatrix4fv(NormalMatrixID, 1, GL_FALSE, &NormalMatrix[0][0]);
 
     // 1st attribute buffer : vertices
     glEnableVertexAttribArray(0);
@@ -359,12 +355,19 @@ void display(const Game &game, GLFWwindow *window)
         (void*)0                          // array buffer offset
     );
 
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
-    
-    ModelMatrix = glm::translate(ModelMatrix, glm::vec3(10, 0 ,0));
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+    glm::mat4 ModelMatrix = glm::mat4(1.0);
+    glm::mat4 NormalMatrix = glm::transpose(glm::inverse(ModelMatrix)); // this will only get more complex if we start doing weird, non-uniform scaling with the ModelMatrix. For now we can just make one to use for all models.
+    glUniformMatrix4fv(NormalMatrixID, 1, GL_FALSE, &NormalMatrix[0][0]);
+    for (unsigned int i = 0; i < game.entities.size(); i++)
+    {
+        if (game.entities[i])
+        {
+            glm::vec3 translation = toGlmVec3(game.entities[i]->getPos());
+            ModelMatrix = glm::translate(glm::mat4(1.0), translation);
+            glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+            glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+        }
+    }
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
@@ -372,6 +375,15 @@ void display(const Game &game, GLFWwindow *window)
 
     // Swap buffers
     glfwSwapBuffers(window);
+}
+
+void oldDisplay() {
+    // vector<sf::String> outputStrings;
+    
+    // Coins playerCredit = game.playerCredit;
+    // outputStrings.push_back(playerCredit.getDollarString());
+
+    // drawOutputStrings(window, outputStrings);
 }
 
 void cleanupGraphics()
