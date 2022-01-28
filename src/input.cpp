@@ -48,6 +48,10 @@ Target getTargetFromScreenPos(const Game &game, const CameraState &cameraState, 
 
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
 {
+    if (selectedEntities.size() == 0)
+    {
+        return boost::shared_ptr<Cmd>();
+    }
     if (optional<vector2f> point = target.castToPoint())
     {
         return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(selectedEntities), *point));
