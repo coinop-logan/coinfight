@@ -6,6 +6,7 @@
 #include "engine.h"
 #include "graphics.h"
 #include "common.h"
+#include "config.h"
 
 using namespace std;
 using namespace glm;
@@ -22,6 +23,15 @@ GLuint uvBuffer;
 GLuint normalBuffer;
 
 GLuint programID;
+
+glm::mat4 CameraState::getViewMatrix() const
+{
+    return glm::lookAt(
+        cameraPos,
+        glm::vec3(gamePosLookAt.x, gamePosLookAt.y, 0),
+        glm::vec3(0, 1, 0)
+    );
+}
 
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path){
 	// Create the shaders
@@ -300,20 +310,12 @@ GLFWwindow* setupGraphics()
     return window;
 }
 
-float ypos = 0;
-
 void display(GLFWwindow *window, const Game &game, const CameraState &cameraState)
 {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
-    glm::mat4 ViewMatrix = glm::lookAt(
-								cameraState.cameraPos, // camera pos
-								glm::vec3(cameraState.gamePosLookAt.x, cameraState.gamePosLookAt.y, 0), // look at
-								glm::vec3(0, 1, 0) // camera 'up'
-						   );
-    ypos -= 0.2;
+    glm::mat4 ViewMatrix = cameraState.getViewMatrix();
 
     // Send our transformation to the currently bound shader, 
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);

@@ -6,6 +6,8 @@
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
+const glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
+
 const float DISTANCE_TOL = 0.0001;
 
 const EntityRef NULL_ENTITYREF = 0;

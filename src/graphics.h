@@ -14,6 +14,7 @@ struct CameraState
 {
     vector2f gamePosLookAt;
     glm::vec3 cameraPos;
+    glm::mat4 getViewMatrix() const;
 };
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 bool loadOBJ(const char * path, vector<glm::vec3> &outVertices, vector<glm::vec2> &outUVs, vector<glm::vec3> &outNormals);
