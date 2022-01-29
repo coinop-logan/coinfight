@@ -8,7 +8,12 @@ extern Game game;
 extern UI ui;
 extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
-vector2f screenPosToGroundPos(const CameraState &camera, vector2f screenPos)
+glm::vec3 gamePosToGlmVec3(vector2f gamePos)
+{
+    return glm::vec3(gamePos.x, gamePos.y, 0.0);
+}
+
+vector2f screenPosToGamePos(const CameraState &camera, vector2f screenPos)
 {
     glm::vec4 viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glm::vec3 clickNear = glm::unProject(glm::vec3(screenPos.x, (float)WINDOW_HEIGHT - screenPos.y, 0), camera.getViewMatrix(), ProjectionMatrix, viewport);
@@ -22,7 +27,7 @@ vector2f screenPosToGroundPos(const CameraState &camera, vector2f screenPos)
 
 Target getTargetFromScreenPos(const Game &game, const CameraState &cameraState, vector2f screenPos)
 {
-    vector2f gamePos = screenPosToGroundPos(cameraState, screenPos);
+    vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
@@ -123,7 +128,32 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    int remainingZoom = round(yoffset);
+    while (remainingZoom != 0)
+    {
+        //by what will we multiply the current camera-to-lookpos distance?
+        float distanceMultiplyFactor;
+        if (remainingZoom > 0)
+        {
+            distanceMultiplyFactor = 1/1.1;
+            remainingZoom--;
+        }
+        else
+        {
+            distanceMultiplyFactor = 1.1;
+            remainingZoom++;
+        }
+
+        glm::vec3 lookAtPosToCamera = (ui.camera.cameraPos - gamePosToGlmVec3(ui.camera.gamePosLookAt));
+        glm::vec3 newLookAtPosToCamera = lookAtPosToCamera * distanceMultiplyFactor;
+        ui.camera.cameraPos = gamePosToGlmVec3(ui.camera.gamePosLookAt) + newLookAtPosToCamera;
+    }
+}
+
 void setInputCallbacks(GLFWwindow *window)
 {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 }
