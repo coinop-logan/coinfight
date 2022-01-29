@@ -1,5 +1,6 @@
 #include <iostream>
 #include <glm/glm.hpp>
+#include <stdio.h>
 #include "common.h"
 
 using namespace std;
@@ -16,6 +17,21 @@ void debugOutputVch(vch out)
     {
         cout << hex << (unsigned int)(out[i]);
     }
+}
+void debugOutputVector(const char *label, vector2f v)
+{
+    fprintf(stdout, label);
+    fprintf(stdout, ": %f,%f", v.x, v.y);
+}
+void debugOutputVector(const char *label, vector3f v)
+{
+    fprintf(stdout, label);
+    fprintf(stdout, ": %f,%f,%f", v.x, v.y, v.z);
+}
+void debugOutputVector(const char *label, glm::vec3 v)
+{
+    fprintf(stdout, label);
+    fprintf(stdout, ": %f,%f,%f", v.x, v.y, v.z);
 }
 
 void prependVchWithSize(vch *vchDest)

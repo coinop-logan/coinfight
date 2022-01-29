@@ -19,6 +19,9 @@ using EntityRef = uint16_t;
 void packTypechar(vch *dest, unsigned char typechar);
 
 void debugOutputVch(vch);
+void debugOutputVector(const char *,vector2f);
+void debugOutputVector(const char *,vector3f);
+void debugOutputVector(const char *,glm::vec3);
 
 void prependVchWithSize(vch *vchDest);
 
