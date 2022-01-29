@@ -26,6 +26,11 @@ glm::vec3 gamePosToGlmVec3(vector2f gamePos)
     return glm::vec3(gamePos.x, gamePos.y, 0.0);
 }
 
+vector2f glmVec3ToGamePos(glm::vec3 v)
+{
+    return vector2f(v.x, v.y);
+}
+
 vector2f screenPosToGamePos(const CameraState &camera, vector2f screenPos)
 {
     glm::vec4 viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -167,27 +172,45 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
+    vector2f scrollTargetGamePos = screenPosToGamePos(ui.camera, getGlfwClickVector2f(window));
+    debugOutputVector("scrollTarget", scrollTargetGamePos);
+
     int remainingZoom = round(yoffset);
     while (remainingZoom != 0)
     {
-        //by what will we multiply the current camera-to-lookpos distance?
         float distanceMultiplyFactor;
+        bool reverseXY;
         if (remainingZoom > 0)
         {
             distanceMultiplyFactor = 1/1.1;
             remainingZoom--;
+            reverseXY = false;
         }
         else
         {
             distanceMultiplyFactor = 1.1;
             remainingZoom++;
+            reverseXY = true;
         }
 
-        glm::vec3 lookAtPosToCamera = (ui.camera.cameraPos - gamePosToGlmVec3(ui.camera.gamePosLookAt));
-        glm::vec3 newLookAtPosToCamera = lookAtPosToCamera * distanceMultiplyFactor;
-        ui.camera.cameraPos = gamePosToGlmVec3(ui.camera.gamePosLookAt) + newLookAtPosToCamera;
+        glm::vec3 targetPosToCamera = (ui.camera.cameraPos - gamePosToGlmVec3(scrollTargetGamePos));
+        glm::vec3 newTargetPosToCamera = targetPosToCamera * distanceMultiplyFactor;
+        glm::vec3 newCameraPosWithoutReverse = gamePosToGlmVec3(scrollTargetGamePos) + newTargetPosToCamera;
+
+        glm::vec3 cameraPosMove = newCameraPosWithoutReverse - ui.camera.cameraPos;
+        vector2f gameLookAtPosMove(cameraPosMove.x, cameraPosMove.y);
+        if (reverseXY)
+        {
+            gameLookAtPosMove.x *= -1;
+            gameLookAtPosMove.y *= -1;
+            cameraPosMove.x *= -1;
+            cameraPosMove.y *= -1;
+        }
+        ui.camera.cameraPos += cameraPosMove;
+        ui.camera.gamePosLookAt += gameLookAtPosMove;
     }
 }
+
 
 void setInputCallbacks(GLFWwindow *window)
 {
