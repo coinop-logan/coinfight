@@ -253,9 +253,7 @@ int main()
     
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
     
-    ui.camera.gamePosLookAt = vector2f(0, 0);
-    ui.camera.cameraPos = glm::vec3(0, -10, 1000);
-    ui.selectedEntities.push_back(game.entities[2]);
+    ui = UI();
 
     setInputCallbacks(window);
 

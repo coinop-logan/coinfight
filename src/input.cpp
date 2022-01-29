@@ -8,6 +8,19 @@ extern Game game;
 extern UI ui;
 extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
+UI::UI()
+{
+    lastMouseMovePos = vector2f(0, 0);
+
+    camera.gamePosLookAt = vector2f(0, 0);
+    camera.cameraPos = glm::vec3(0, -10, 1000);
+
+    for (uint i=0; i<8; i++)
+    {
+        mouseButtonsPressed[i] = false;
+    }
+}
+
 glm::vec3 gamePosToGlmVec3(vector2f gamePos)
 {
     return glm::vec3(gamePos.x, gamePos.y, 0.0);
@@ -118,8 +131,32 @@ vector2f getGlfwClickVector2f(GLFWwindow *window)
     return vector2f(xpos, ypos);
 }
 
+void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
+{
+    vector2f inGameDragVector = screenPosToGamePos(ui.camera, toScreenPos) - screenPosToGamePos(ui.camera, fromScreenPos);
+    fprintf(stdout, "dragvec %f,%f\n", inGameDragVector.x, inGameDragVector.y);
+    ui.camera.cameraPos -= gamePosToGlmVec3(inGameDragVector);
+    ui.camera.gamePosLookAt -= inGameDragVector;
+}
+
+void mouseMoveCallback(GLFWwindow *window, double xpos, double ypos)
+{
+    vector2f newMouseMovePos = vector2f(xpos, ypos);
+    if (ui.mouseButtonsPressed[GLFW_MOUSE_BUTTON_MIDDLE])
+    {
+        fprintf(stdout, "draggin\n");
+        processMiddleMouseDrag(ui.lastMouseMovePos, newMouseMovePos);
+    }
+
+    ui.lastMouseMovePos = newMouseMovePos;
+}
+
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+    // set mouseButtonsPressed
+    ui.mouseButtonsPressed[button] = (action == GLFW_PRESS);
+
+    // actions
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
         vector2f clickPos = getGlfwClickVector2f(window);
@@ -154,6 +191,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void setInputCallbacks(GLFWwindow *window)
 {
+    glfwSetCursorPosCallback(window, mouseMoveCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window, scrollCallback);
 }
