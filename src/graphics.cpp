@@ -29,7 +29,7 @@ glm::mat4 CameraState::getViewMatrix() const
     return glm::lookAt(
         cameraPos,
         glm::vec3(gamePosLookAt.x, gamePosLookAt.y, 0),
-        glm::vec3(0, 1, 0)
+        glm::vec3(0, 0, 1)
     );
 }
 
