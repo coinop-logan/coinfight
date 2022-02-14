@@ -231,11 +231,28 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     ui.mouseButtonsPressed[button] = (action == GLFW_PRESS);
 
     // actions
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+    // press
+    if (action == GLFW_PRESS)
     {
-        vector2f clickPos = getGlfwClickVector2f(window);
-        Target target = getTargetFromScreenPos(game, ui.camera, clickPos);
-        queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
+        // get target
+        Target target = getTargetFromScreenPos(game, ui.camera, getGlfwClickVector2f(window));
+        // left click
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            if (boost::shared_ptr<Entity> targetedEntity = target.castToEntityPtr(game))
+            {
+                if (!(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
+                    ui.selectedEntities.clear();
+
+                ui.selectedEntities.push_back(targetedEntity);
+                cout << ui.selectedEntities.size() << endl;
+            }
+        }
+        // right click
+        if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        {
+            queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
+        }
     }
 }
 
