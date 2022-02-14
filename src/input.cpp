@@ -157,10 +157,13 @@ void processRightMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
 
     // we will be directly manipulating mutLookAtToCameraPos, then setting the new cameraPos based on it.
     // start with where it's currently at:
-    glm::vec3 mutLookAtToCameraPos = ui.camera.cameraPos - gamePosToGlmVec3(ui.camera.gamePosLookAt);
+    const glm::vec3 oldLookAtToCameraPos = ui.camera.cameraPos - gamePosToGlmVec3(ui.camera.gamePosLookAt);
+    // copy to a mutable version ... to mutate!
+    glm::vec3 mutLookAtToCameraPos = glm::vec3(oldLookAtToCameraPos);
 
-    // get a matrix for the horizontal (x component of delta) rotation and apply
+    // get a matrix for the horizontal (x component of delta) rotation 
     glm::mat4 horizontalRotation = glm::rotate(glm::mat4(1), -delta.x / 100.0f, glm::vec3(0, 0, 1));
+    // apply to lookAtToCameraPos
     mutLookAtToCameraPos = horizontalRotation * glm::vec4(mutLookAtToCameraPos, 0);
 
     // I can't wrap my head around matrix math for this, so will use some trig to apply the y component.
@@ -176,6 +179,18 @@ void processRightMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
     // finally bring in delta.y
     float newAngle = angle + (delta.y / 100.0f);
     glm::vec2 newLookAtVector2d = glm::vec2(length*cos(newAngle), length*sin(newAngle));
+
+    // keep the angle in sane bounds
+    // don't do a goddamn summersault
+    if (newLookAtVector2d.x < 0)
+    {
+        newLookAtVector2d.x = 0.001;
+    }
+    else
+    {
+        // otherwise, stay above the ground
+        newLookAtVector2d.y = max(0.0f, newLookAtVector2d.y);
+    }
 
     // how much did our xy line (which we're handling as the x component of the 2d version) change?
     // this will relate to how we modify the XY components of our original mutLookAtToCameraPos
