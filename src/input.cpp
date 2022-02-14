@@ -241,7 +241,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         {
             if (boost::shared_ptr<Entity> targetedEntity = target.castToEntityPtr(game))
             {
-                if (!(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
+                if (!ui.shiftPressed)
                     ui.selectedEntities.clear();
 
                 ui.selectedEntities.push_back(targetedEntity);
@@ -297,10 +297,22 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     }
 }
 
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    bool keyIsPressed = (action == GLFW_PRESS || action == GLFW_REPEAT);
+    
+    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT)
+        ui.shiftPressed = keyIsPressed;
+    else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL)
+        ui.ctrlPressed = keyIsPressed;
+    else if (key == GLFW_KEY_LEFT_ALT || key == GLFW_KEY_RIGHT_ALT)
+        ui.altPressed = keyIsPressed;
+}
 
 void setInputCallbacks(GLFWwindow *window)
 {
     glfwSetCursorPosCallback(window, mouseMoveCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window, scrollCallback);
+    glfwSetKeyCallback(window, keyCallback);
 }

@@ -18,6 +18,7 @@ struct UI
     vector<boost::shared_ptr<Entity>> selectedEntities;
     CameraState camera;
     bool mouseButtonsPressed[8];
+    bool shiftPressed, ctrlPressed, altPressed;
 };
 vector2f screenPosToGamePos(const CameraState &, vector2f );
 Target getTargetFromScreenPos(const Game &, const CameraState &, vector2f );
