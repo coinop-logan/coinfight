@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <SFML/Graphics.hpp>
 
 #ifndef COINS_H
 #define COINS_H
@@ -24,7 +23,7 @@ private:
 public:
     coinsInt max;
     coinsInt getInt();
-    sf::String getDollarString();
+    // sf::String getDollarString();
     Coins(coinsInt);
     Coins(vchIter*);
     coinsInt getSpaceLeft();

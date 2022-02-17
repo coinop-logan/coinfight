@@ -1,6 +1,11 @@
 #include <iostream>
 #include <optional>
 #include <typeinfo>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "engine.h"
 #include "config.h"
 #include "myvectors.h"
@@ -54,7 +59,7 @@ void testCoins()
 
 int main()
 {
-    testCoins();
+    // glm::mat4 firstRotation = glm::rotate(glm::mat4(1.0), 90.0f, glm::vec3(0, 1, 0));
 
     return 0;
 }

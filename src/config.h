@@ -1,10 +1,14 @@
 #include "coins.h"
+#include <glm/glm.hpp>
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
+
+const int WINDOW_WIDTH = 1500;
+const int WINDOW_HEIGHT = 800;
 
 const float DISTANCE_TOL = 0.0001;
 

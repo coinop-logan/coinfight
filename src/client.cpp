@@ -1,58 +1,31 @@
-#include <SFML/Graphics.hpp>
-#include <GL/gl.h>
-#include <GL/glu.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "config.h"
 #include "cmds.h"
 #include "engine.h"
 #include "graphics.h"
 #include "common.h"
+#include "input.h"
 
 using namespace std;
 using namespace boost::asio::ip;
 
-// void glEnable2D()
-// {
-//     GLint iViewport[4];
-
-//     //get a copy of the viewport
-//     glGetIntegerv(GL_VIEWPORT, iViewport);
-
-//     //save a copy of the projection matrix so we can restore it
-//     glMatrixMode(GL_PROJECTION);
-//     glPushMatrix();
-
-//     //load identity projection matrix
-//     glLoadIdentity();
-
-//     //set up orthographic projection
-//     glOrtho(iViewport[0], iViewport[0] + iViewport[2], iViewport[1] + iViewport[3], iViewport[1], -1, 1);
-
-//     glMatrixMode(GL_MODELVIEW);
-//     glPushMatrix();
-//     glLoadIdentity();
-
-//     //ensure lighting and depth testing are disabled
-//     glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
-//     glDisable(GL_DEPTH_TEST);
-//     glDisable(GL_LIGHTING);
-// }
-
-// void glDisable2D()
-// {
-//     glPopAttrib();
-//     glMatrixMode(GL_PROJECTION);
-//     glPopMatrix();
-//     glMatrixMode(GL_MODELVIEW);
-//     glPopMatrix();
-// }
-
 Game game;
+
+UI ui;
+vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<FrameCmdsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
@@ -229,90 +202,17 @@ public:
     }
 };
 
-Target getTargetAtScreenPos(vector2f screenPos)
+bool handleInput(GLFWwindow *window)
 {
-    vector2f gamePos = screenPos; // this will have to be changed when the screen can move
+    glfwPollEvents();
 
-    boost::shared_ptr<Entity> closestValidEntity;
-    float closestValidEntityDistance;
-    for (unsigned int i = 0; i < game.entities.size(); i++)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS || glfwWindowShouldClose(window))
     {
-        boost::shared_ptr<Entity> e = game.entities[i];
-        if (e)
-        {
-            if (e->collidesWithPoint(gamePos))
-            {
-                float distance = (gamePos - e->pos).getMagnitude();
-                if (!closestValidEntity || distance < closestValidEntityDistance)
-                {
-                    closestValidEntity = e;
-                    closestValidEntityDistance = distance;
-                }
-            }
-        }
+        cleanupGraphics();
+        return true;
     }
-    if (closestValidEntity)
-        return Target(closestValidEntity->ref);
-    else
-        return Target(gamePos);
-}
-vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
-{
-    return vector2f(mEvent.x, mEvent.y);
-}
 
-struct UI
-{
-    vector<boost::shared_ptr<Entity>> selectedEntities;
-} ui;
-
-boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
-{
-    if (optional<vector2f> point = target.castToPoint())
-    {
-        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(ui.selectedEntities), *point));
-    }
-    else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
-    {
-        boost::shared_ptr<Entity> entity = *entityPtrPtr;
-
-        // Get typechar of units if they are all of same type
-        unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
-        bool allSameType = true;
-        for (uint i = 0; i < selectedEntities.size(); i++)
-        {
-            if (selectedEntities[i]->typechar() != unitTypechar)
-            {
-                allSameType = false;
-                break;
-            }
-        }
-
-        if (allSameType)
-        {
-            if (unitTypechar == PRIME_TYPECHAR)
-            {
-                if (entity->typechar() == GOLDPILE_TYPECHAR)
-                {
-                    return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
-                }
-                else if (entity->typechar() == GATEWAY_TYPECHAR)
-                {
-                    return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
-                }
-            }
-        }
-        else
-        {
-            // maybe in future can do a "follow" type action. Or attack if all enemies.
-            return boost::shared_ptr<Cmd>();
-        }
-    }
-    
-    // couldn't cast target to a point or an entity...
-    cout << "issue casting target to a point or entity in makeRightclickCmd" << endl;
-    return boost::shared_ptr<Cmd>(); // return null cmd
-    
+    return false;
 }
 
 int main()
@@ -344,12 +244,20 @@ int main()
         }
     }
 
-    sf::RenderWindow window = setupGraphics();
-    sf::Event event;
-
+    GLFWwindow *window = setupGraphics();
+    if (window == NULL)
+    {
+        fprintf(stderr, "setupGraphics returned NULL.");
+        return -1;
+    }
+    
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
+    
+    ui = UI();
 
-    while (window.isOpen())
+    setInputCallbacks(window);
+
+    while (true)
     {
         io_service.poll();
 
@@ -360,57 +268,18 @@ int main()
 
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        boost::shared_ptr<Cmd> cmdToSend;
-
-        while (window.pollEvent(event))
+        // cmdsToSend will be filled up by any triggered input callbacks
+        bool shouldClose = handleInput(window);
+        if (shouldClose) return 0;
+        // cmdsToSend may now have more cmds in it
+        for (uint i=0; i < cmdsToSend.size(); i++)
         {
-            switch (event.type)
-            {
-            case sf::Event::Closed:
-                window.close();
-                break;
-            case sf::Event::MouseButtonPressed:
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
-                    {
-                        ui.selectedEntities.clear();
-                        ui.selectedEntities.push_back(clickedEntity);
-                    }
-                }
-                else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
-                {
-                    cmdToSend = makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(mouseButtonToVec(event.mouseButton)));
-                    
-                }
-                else if (event.mouseButton.button == sf::Mouse::Middle)
-                {
-                    Target target = getTargetAtScreenPos(mouseButtonToVec(event.mouseButton));
-                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
-                    {
-                        if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                        {
-                            cmdToSend = boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref));
-                        }
-                    }
-                    else
-                    {
-                        cmdToSend = boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target));
-                    }
-                }
-                break;
-            case sf::Event::KeyPressed:
-                // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
-                break;
-            default:
-                break;
-            }
+            if (!cmdsToSend[i])
+                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+            else
+                connectionHandler.sendCmd(cmdsToSend[i]);
         }
-
-        if (cmdToSend)
-        {
-            connectionHandler.sendCmd(cmdToSend);
-        }
+        cmdsToSend.clear();
 
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
@@ -432,7 +301,7 @@ int main()
 
         game.iterate();
 
-        display(game, window);
+        display(window, game, ui.camera);
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

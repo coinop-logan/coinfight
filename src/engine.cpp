@@ -539,7 +539,7 @@ void Game::testInit()
     frame = 0;
     playerCredit.createMoreByFiat(100000);
 
-    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
+    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(0, 0)));
     boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
     boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
     boost::shared_ptr<Gateway> g2(new Gateway(this, 4, vector2f(50,50)));
