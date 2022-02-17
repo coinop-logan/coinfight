@@ -274,7 +274,7 @@ GLFWwindow* setupGraphics()
     }
     glUseProgram(programID);
 
-	bool res = loadOBJ("../assets/test.obj", vertices, uvs, normals);
+	bool res = loadOBJ("../assets/placeholder.obj", vertices, uvs, normals);
 
     if (!res)
     {
