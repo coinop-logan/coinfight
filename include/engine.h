@@ -174,6 +174,7 @@ class Prime : public MobileUnit
 {
 public:
     Coins heldGold;
+    bool drawLineToTarget;
 
     enum State
     {

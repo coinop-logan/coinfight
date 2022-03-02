@@ -296,6 +296,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 
 Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, PRIME_COST, pos),
                                                        heldGold(PRIME_MAX_GOLD_HELD),
+                                                       drawLineToTarget(false),
                                                        state(Idle)
 {}
 Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter),
@@ -342,6 +343,7 @@ string Prime::getTypeName() { return "Prime"; }
 
 void Prime::go()
 {
+    drawLineToTarget = false;
     switch (state)
     {
     case Idle:
@@ -353,7 +355,12 @@ void Prime::go()
             {
                 if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
-                    cout << "Prime picking up " << gp->gold.transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold)) << endl;
+                    int amount = gp->gold.transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
+                    cout << "Prime picking up " << amount << endl;
+                    if (amount > 0)
+                    {
+                        drawLineToTarget = true;
+                    }
                 }
             }
         }
@@ -373,6 +380,10 @@ void Prime::go()
                         if (amountPutDown == 0)
                         {
                             state = Idle;
+                        }
+                        else
+                        {
+                            drawLineToTarget = true;
                         }
                     }
                     else
@@ -400,7 +411,10 @@ void Prime::go()
                 {
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    cout << "Sending through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                    int amount = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit));
+                    cout << "Sending through gateway: " << amount << endl;
+                    if (amount > 0)
+                        drawLineToTarget = true;
                 }
             }
         }
@@ -414,7 +428,10 @@ void Prime::go()
                 {
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
+                    int amount = game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold));
+                    cout << "Pushing through gateway: " << amount << endl;
+                    if (amount > 0)
+                        drawLineToTarget = true;
                 }
             }
         }

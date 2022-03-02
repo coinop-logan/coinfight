@@ -14,22 +14,37 @@ sf::RenderWindow setupGraphics()
     return sf::RenderWindow(sf::VideoMode(640, 480), "OpenGL Test", sf::Style::Close | sf::Style::Titlebar);
 }
 
-void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity)
+void drawEntity(const Game &game, sf::RenderWindow &window, boost::shared_ptr<Entity> entity)
 {
-    if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
     {
+        if (prime->drawLineToTarget)
+        {
+            Target target = prime->getTarget();
+            if (optional<vector2f> targetPos = target.getPoint(game))
+            {
+                sf::Vertex line[] =
+                {
+                    sf::Vertex(sf::Vector2f(prime->pos.x, prime->pos.y)),
+                    sf::Vertex(sf::Vector2f(targetPos->x, targetPos->y))
+                };
+
+                window.draw(line, 2, sf::Lines);
+            }
+        }
+
         sf::CircleShape circle(7);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setFillColor(sf::Color::Blue);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
+        circle.setPosition(prime->pos.x, prime->pos.y);
         window.draw(circle);
     }
-    else if (boost::shared_ptr<Gateway> castedEntity = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
+    else if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
     {
         sf::CircleShape circle(10);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setFillColor(sf::Color::Red);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
+        circle.setPosition(gateway->pos.x, gateway->pos.y);
         window.draw(circle);
     }
     else if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -74,7 +89,7 @@ void display(const Game &game, sf::RenderWindow &window)
     for (unsigned int i = 0; i < game.entities.size(); i++)
     {
         if (game.entities[i])
-            drawEntity(window, game.entities[i]);
+            drawEntity(game, window, game.entities[i]);
     }
 
     vector<sf::String> outputStrings;
