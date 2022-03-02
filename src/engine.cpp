@@ -537,11 +537,11 @@ void Game::reassignEntityGamePointers()
 void Game::testInit()
 {
     frame = 0;
-    playerCredit.createMoreByFiat(33500);
+    playerCredit.createMoreByFiat(35500);
 
-    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
-    boost::shared_ptr<Prime> p1(new Prime(this, 2, vector2f(30, 30)));
-    boost::shared_ptr<Prime> p2(new Prime(this, 3, vector2f(50, 30)));
+    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(20, 20)));
+    boost::shared_ptr<Prime> p1(new Prime(this, 2, vector2f(50, 50)));
+    boost::shared_ptr<Prime> p2(new Prime(this, 3, vector2f(70, 50)));
 
     boost::shared_ptr<GoldPile> gp1(new GoldPile(this, 4, vector2f(150, 50)));
     boost::shared_ptr<GoldPile> gp2(new GoldPile(this, 5, vector2f(200, 60)));
@@ -552,7 +552,7 @@ void Game::testInit()
           g->completeBuildingInstantly(&playerCredit)
        && playerCredit.tryTransfer(500, &gp1->gold)
        && playerCredit.tryTransfer(1000, &gp2->gold)
-       && playerCredit.tryTransfer(2000, &gp3->gold)
+       && playerCredit.tryTransfer(4000, &gp3->gold)
        && p1->completeBuildingInstantly(&playerCredit)
        && p2->completeBuildingInstantly(&playerCredit)
         )
