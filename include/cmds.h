@@ -19,6 +19,7 @@ const unsigned char CMD_PICKUP_CHAR = 1;
 const unsigned char CMD_PUTDOWN_CHAR = 2;
 const unsigned char CMD_SENDGOLDTHROUGHGATEWAY_CHAR = 3;
 const unsigned char CMD_PUSHGOLDTHROUGHGATEWAY_CHAR = 4;
+const unsigned char CMD_SUICIDE_CHAR = 5;
 
 struct Cmd
 {
@@ -127,6 +128,19 @@ struct PushGoldThroughGatewayCmd : public Cmd
 
     PushGoldThroughGatewayCmd(vector<EntityRef>, EntityRef);
     PushGoldThroughGatewayCmd(vchIter *iter);
+};
+
+struct SuicideCmd : public Cmd
+{
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    SuicideCmd(vector<EntityRef>);
+    SuicideCmd(vchIter *iter);
 };
 
 #endif // CMDS_H

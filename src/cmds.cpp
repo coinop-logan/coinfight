@@ -22,6 +22,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(iter));
     case CMD_PUSHGOLDTHROUGHGATEWAY_CHAR:
         return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(iter));
+    case CMD_SUICIDE_CHAR:
+        return boost::shared_ptr<Cmd>(new SuicideCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -322,6 +324,34 @@ void PushGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
 PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
 PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char SuicideCmd::getTypechar()
+{
+    return CMD_SUICIDE_CHAR;
+}
+string SuicideCmd::getTypename()
+{
+    return "SuicideCmd";
+}
+void SuicideCmd::pack(vch *dest)
+{
+    packCmd(dest);
+}
+void SuicideCmd::unpackAndMoveIter(vchIter *iter)
+{
+    // do nothing, no extra data to extract
+}
+
+void SuicideCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    unit->dead = true;
+}
+
+SuicideCmd::SuicideCmd(vector<EntityRef> units) : Cmd(units) {}
+SuicideCmd::SuicideCmd(vchIter *iter) : Cmd(iter)
 {
     unpackAndMoveIter(iter);
 }

@@ -400,7 +400,11 @@ int main()
                 }
                 break;
             case sf::Event::KeyPressed:
-                // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
+                if (event.key.code == sf::Keyboard::S)
+                {
+                    cmdToSend = boost::shared_ptr<Cmd>(new SuicideCmd(entityPtrsToRefs(ui.selectedEntities)));
+                    cout << "cmd!" << endl;
+                }
                 break;
             default:
                 break;

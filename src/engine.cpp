@@ -576,7 +576,21 @@ void Game::iterate()
     for (uint i = 0; i < entities.size(); i++)
     {
         if (entities[i] && entities[i]->dead)
+        {
+            if (boost::shared_ptr<Unit> unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
+            {
+                boost::shared_ptr<GoldPile> gp(new GoldPile(this, getNextEntityRef(), unit->getPos()));
+                if (!unit->goldInvested.tryTransfer(unit->goldInvested.getInt(), &gp->gold))
+                {
+                    throw runtime_error("Error when trying to transfer a dead unit's gold into a new goldPile");
+                }
+                entities[i] = gp;
+            }
+            else
+            {
             entities[i].reset();
+            }
+        }
     }
 
     frame++;
