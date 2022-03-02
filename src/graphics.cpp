@@ -41,22 +41,22 @@ void drawEntity(const Game &game, sf::RenderWindow &window, boost::shared_ptr<En
     }
     else if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
     {
-        sf::CircleShape circle(10);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(sf::Color::Red);
-        circle.setPosition(gateway->pos.x, gateway->pos.y);
-        window.draw(circle);
+        sf::RectangleShape rectangle(sf::Vector2f(16,16));
+        rectangle.setOrigin(8, 8);
+        rectangle.setFillColor(sf::Color::Red);
+        rectangle.setPosition(gateway->pos.x, gateway->pos.y);
+        window.draw(rectangle);
     }
     else if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
-        int size = ceil(sqrt(goldPile->gold.getInt() / 70.0));
-        if (size > 0)
+        int size = ceil(sqrt(goldPile->gold.getInt() / 70.0)) + 1;
+        if (size > 1)
         {
-            sf::CircleShape circle(size);
-            circle.setOrigin(circle.getRadius(), circle.getRadius());
-            circle.setFillColor(sf::Color::Yellow);
-            circle.setPosition(goldPile->pos.x, goldPile->pos.y);
-            window.draw(circle);
+            sf::CircleShape triangle(size, 3);
+            triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
+            triangle.setFillColor(sf::Color::Yellow);
+            triangle.setPosition(goldPile->pos.x, goldPile->pos.y);
+            window.draw(triangle);
         }
     }
     else
