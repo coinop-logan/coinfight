@@ -32,15 +32,17 @@ void drawEntity(sf::RenderWindow &window, boost::shared_ptr<Entity> entity)
         circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
         window.draw(circle);
     }
-    else if (boost::shared_ptr<GoldPile> castedEntity = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+    else if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
-        sf::CircleShape circle(4);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setOutlineColor(sf::Color(100,100,100));
-        circle.setOutlineThickness(1);
-        circle.setFillColor(castedEntity->gold.getInt() > 0 ? sf::Color::Yellow : sf::Color::Transparent);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
-        window.draw(circle);
+        int size = ceil(sqrt(goldPile->gold.getInt() / 70.0));
+        if (size > 0)
+        {
+            sf::CircleShape circle(size);
+            circle.setOrigin(circle.getRadius(), circle.getRadius());
+            circle.setFillColor(sf::Color::Yellow);
+            circle.setPosition(goldPile->pos.x, goldPile->pos.y);
+            window.draw(circle);
+        }
     }
     else
     {

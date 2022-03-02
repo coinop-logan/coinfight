@@ -537,17 +537,22 @@ void Game::reassignEntityGamePointers()
 void Game::testInit()
 {
     frame = 0;
-    playerCredit.createMoreByFiat(100000);
+    playerCredit.createMoreByFiat(33500);
 
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
-    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
-    boost::shared_ptr<Prime> p1(new Prime(this, 3, vector2f(30, 30)));
-    boost::shared_ptr<Prime> p2(new Prime(this, 4, vector2f(40, 30)));
+    boost::shared_ptr<Prime> p1(new Prime(this, 2, vector2f(30, 30)));
+    boost::shared_ptr<Prime> p2(new Prime(this, 3, vector2f(50, 30)));
+
+    boost::shared_ptr<GoldPile> gp1(new GoldPile(this, 4, vector2f(150, 50)));
+    boost::shared_ptr<GoldPile> gp2(new GoldPile(this, 5, vector2f(200, 60)));
+    boost::shared_ptr<GoldPile> gp3(new GoldPile(this, 6, vector2f(200, 200)));
 
     if (!
         (
           g->completeBuildingInstantly(&playerCredit)
-       && playerCredit.tryTransfer(500, &gp->gold)
+       && playerCredit.tryTransfer(500, &gp1->gold)
+       && playerCredit.tryTransfer(1000, &gp2->gold)
+       && playerCredit.tryTransfer(2000, &gp3->gold)
        && p1->completeBuildingInstantly(&playerCredit)
        && p2->completeBuildingInstantly(&playerCredit)
         )
@@ -556,9 +561,11 @@ void Game::testInit()
 
     // ordering is important due to ref IDs passed earlier!
     entities.push_back(g);
-    entities.push_back(gp);
     entities.push_back(p1);
     entities.push_back(p2);
+    entities.push_back(gp1);
+    entities.push_back(gp2);
+    entities.push_back(gp3);
 }
 
 void Game::iterate()
@@ -582,12 +589,9 @@ void Game::iterate()
                 {
                     throw runtime_error("Error when trying to transfer a dead unit's gold into a new goldPile");
                 }
-                entities[i] = gp;
+                entities.push_back(gp);
             }
-            else
-            {
             entities[i].reset();
-            }
         }
     }
 
