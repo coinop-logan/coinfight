@@ -560,9 +560,9 @@ void Game::testInit()
     boost::shared_ptr<Prime> p1(new Prime(this, 2, vector2f(50, 50)));
     boost::shared_ptr<Prime> p2(new Prime(this, 3, vector2f(70, 50)));
 
-    boost::shared_ptr<GoldPile> gp1(new GoldPile(this, 4, vector2f(150, 50)));
-    boost::shared_ptr<GoldPile> gp2(new GoldPile(this, 5, vector2f(200, 60)));
-    boost::shared_ptr<GoldPile> gp3(new GoldPile(this, 6, vector2f(200, 200)));
+    boost::shared_ptr<GoldPile> gp1(new GoldPile(this, 4, vector2f(350, 50)));
+    boost::shared_ptr<GoldPile> gp2(new GoldPile(this, 5, vector2f(400, 60)));
+    boost::shared_ptr<GoldPile> gp3(new GoldPile(this, 6, vector2f(400, 200)));
 
     if (!
         (
