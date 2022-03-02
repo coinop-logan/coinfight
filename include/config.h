@@ -31,7 +31,7 @@ const coinsInt PRIME_PUTDOWN_RATE = 10;
 const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
 const coinsInt PRIME_BUILD_RATE = 5;
 
-const coinsInt GATEWAY_COST = 20000;
+const coinsInt GATEWAY_COST = 16000;
 const float GATEWAY_RANGE = 50;
 
 #endif // CONFIG_H

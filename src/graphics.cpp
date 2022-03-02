@@ -38,6 +38,19 @@ void drawEntity(const Game &game, sf::RenderWindow &window, boost::shared_ptr<En
         circle.setFillColor(sf::Color::Blue);
         circle.setPosition(prime->pos.x, prime->pos.y);
         window.draw(circle);
+
+        int heldGold = prime->heldGold.getInt();
+        if (heldGold > 0)
+        {
+            int goldBarWidth = heldGold / 30;
+            sf::RectangleShape goldBar(sf::Vector2f(goldBarWidth, 2));
+            goldBar.setOrigin(sf::Vector2f(goldBarWidth/2, 1));
+            goldBar.setOutlineColor(sf::Color(100, 100, 100));
+            goldBar.setOutlineThickness(1);
+            goldBar.setFillColor(sf::Color::Yellow);
+            goldBar.setPosition(prime->pos.x, prime->pos.y + 12);
+            window.draw(goldBar);
+        }
     }
     else if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
     {
