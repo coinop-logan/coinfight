@@ -606,6 +606,13 @@ void Game::iterate()
                 {
                     throw runtime_error("Error when trying to transfer a dead unit's gold into a new goldPile");
                 }
+                if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                {
+                    if (!prime->heldGold.tryTransfer(prime->heldGold.getInt(), &gp->gold))
+                    {
+                        throw runtime_error("Error when trying to transfer a dead prime's heldGold into a new goldPile");
+                    }
+                }
                 entities.push_back(gp);
             }
             entities[i].reset();
