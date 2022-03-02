@@ -541,15 +541,15 @@ void Game::testInit()
 
     boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(10, 12)));
     boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
-    boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
-    boost::shared_ptr<Gateway> g2(new Gateway(this, 4, vector2f(50,50)));
+    boost::shared_ptr<Prime> p1(new Prime(this, 3, vector2f(30, 30)));
+    boost::shared_ptr<Prime> p2(new Prime(this, 4, vector2f(40, 30)));
 
     if (!
         (
           g->completeBuildingInstantly(&playerCredit)
        && playerCredit.tryTransfer(500, &gp->gold)
-       && p->completeBuildingInstantly(&playerCredit)
-       && playerCredit.tryTransfer(200, &p->heldGold)
+       && p1->completeBuildingInstantly(&playerCredit)
+       && p2->completeBuildingInstantly(&playerCredit)
         )
     )
         throw runtime_error("not enough playerCredit to initialize all of that");
@@ -557,10 +557,8 @@ void Game::testInit()
     // ordering is important due to ref IDs passed earlier!
     entities.push_back(g);
     entities.push_back(gp);
-    entities.push_back(p);
-    entities.push_back(g2);
-
-    p->cmdBuild(g2);
+    entities.push_back(p1);
+    entities.push_back(p2);
 }
 
 void Game::iterate()
