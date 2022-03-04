@@ -16,6 +16,7 @@ See [this tag](https://github.com/coinop-logan/coinfight/releases/tag/pre-hackat
 * Combat
 * Full set of units - still need Factory, Fighter, and Turret
 * Blockchain deposits/withdrawals
+* Any kind of menu or UX other than a few hard-coded click commands for testing the above
 
 ## Completed during the hackathon
 
