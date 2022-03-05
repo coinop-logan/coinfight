@@ -221,7 +221,11 @@ int main()
     tcp::socket socket(io_service);
 
     cout << "Connecting..." << endl;
+    // this is "connecting" to INADDR_ANY, which is very weird, but translates (at least on linux) to
+    // "connect to the loopback network". This is why this works on local tests.
     socket.connect(tcp::endpoint(tcp::v4(), 8473));
+
+    // socket will now have its own local port.
 
     cout << "Creating ConnectionHandler..." << endl;
 
