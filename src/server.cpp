@@ -230,13 +230,15 @@ int main()
 
     while (true)
     {
+        // poll io_service, which will populate pendingCmds with anything the ClientChannels have received
         io_service.poll();
+
+        // rate limit iteration to a maximum of SEC_PER_FRAME
         if (clock() < nextFrameStart)
             continue;
-
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        // build FrameCmdsPacket
+        // build FrameCmdsPacket for this frame with all cmds we've received from clients since last time
         FrameCmdsPacket fcp(game.frame, pendingCmds);
 
         // send the packet out to all clients
@@ -245,6 +247,7 @@ int main()
             clientChannels[i]->sendFrameCmdsPacket(fcp);
         }
 
+        // execute all cmds on server-side game
         for (unsigned int i = 0; i < pendingCmds.size(); i++)
         {
             pendingCmds[i]->execute(&game);
