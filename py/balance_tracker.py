@@ -5,7 +5,7 @@ from pprint import pprint
 import os
 
 neededConfirmations = 5
-serverAccountingDir = "../../../cpp/coinfight-simple/bin/accounting/"
+serverAccountingDir = "accounting/"
 
 def getLastBlockProcessed():
     with open("lastblock.txt", "r") as f:
@@ -39,7 +39,7 @@ def scanForAndRecordDeposits(w3, contract):
         print("uh oh, the filter broke!")
         return
     
-    filename = str(startBlock) + "-" + str(endBlock) + ".json"
+    filename = str(startBlock) + "-" + str(endBlock) + ".dat"
     recordNewDeposits(newLogs, filename)
 
     setLastBlockProcessed(endBlock)
@@ -50,11 +50,12 @@ def executePendingWithdrawals(w3, ethAccount):
     withdrawCmdFiles = os.listdir(serverAccountingDir + "pending_withdrawals/")
     for fname in withdrawCmdFiles:
         with open(serverAccountingDir + "pending_withdrawals/" + fname, 'r') as f:
-            withdrawCmd = json.load(f)
+            withdrawCmdData = f.read().split(' ')
+            (address, amount) = withdrawCmdData[0], withdrawCmdData[1]
 
         tx = {
-            'to': withdrawCmd['for'],
-            'value': int(withdrawCmd['amount']),
+            'to': address,
+            'value': int(amount),
             'gas': 21000,
             'gasPrice': 2000000000,
             'nonce': nextNonce
@@ -65,7 +66,7 @@ def executePendingWithdrawals(w3, ethAccount):
         txHash = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
         nextNonce += 1
 
-        print("withdrawal", txHash, withdrawCmd['for'], withdrawCmd['amount'])
+        print("withdrawal", txHash, address, amount)
 
         os.remove(serverAccountingDir + "pending_withdrawals/" + fname)
 
@@ -74,7 +75,7 @@ def main():
     w3 = Web3(provider)
 
     address = "0x94e45e32aCEF6d92ca6DC92541B95e8F62De9b84"
-    abi = json.load(open('../build/contracts/CoinfightDepositsWithdrawals.json','r'))['abi']
+    abi = json.load(open('CoinfightDepositsWithdrawals.json','r'))['abi']
     contract = w3.eth.contract(address=address, abi=abi)
 
     ethAccount = loadEthAccount(w3)
@@ -97,14 +98,14 @@ def recordNewDeposits(newLogs, filename):
     else:
         print("processing", len(newLogs), "logs")
 
-        depositRecords = []
+        depositLines = []
         for log in newLogs:
             forAccount = log.args.forAccount
             amountStr = str(log.args.amount)
-            depositRecords.append({'for':forAccount, 'amount':amountStr})
-        
+            depositLines.append(forAccount + " " + amountStr)
+            
         print("writing deposit events to file for game server")
         with open(serverAccountingDir + "pending_deposits/" + filename, 'w') as f:
-            json.dump(depositRecords, f)
+            f.write('\n'.join(depositLines))
 
 main()
