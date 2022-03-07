@@ -20,4 +20,14 @@ See [this tag](https://github.com/coinop-logan/coinfight/releases/tag/pre-hackat
 
 ## Completed during the hackathon
 
-I'll fill this in later, near the end of the hackathon!
+### Sun
+
+* Built/deployed deposit/withdraw smart contract.
+
+Shockingly, there isn't a solid Ethereum library for C++. So:
+
+* Built Python "accounting" script to
+    * Watch for deposits, then record these in files for the server to consume
+    * Watch for files from server requesting withdrawals, and execute them
+
+Only missing piece is for the C++ server to look for these deposit descriptors and consume them, which is tangled up with a conception of separate players, something still yet to do. This is what I'm working on for Mon.
