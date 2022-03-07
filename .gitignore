@@ -2,3 +2,6 @@
 org/
 obj/
 bin/
+sol/build
+sol/node_modules
+secret.txt
