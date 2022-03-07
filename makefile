@@ -7,6 +7,7 @@ LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
 all: bin/client bin/server bin/test bin/gltest
 	cp py/sig_to_address.py bin/sig_to_address.py
 	cp secret.txt bin/secret.txt
+	cp cpp/src/shaders/* bin/
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)

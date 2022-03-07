@@ -266,7 +266,7 @@ GLFWwindow* setupGraphics()
 	glBindVertexArray(VertexArrayID);
 
     // Create and compile our GLSL program from the shaders
-	programID = loadShaders( "../src/shaders/unit.vert", "../src/shaders/unit.frag" );
+	programID = loadShaders( "unit.vert", "unit.frag" );
     if (programID == 0)
     {
         fprintf(stderr, "programID is 0 from LoadShaders\n");
