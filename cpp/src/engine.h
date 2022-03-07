@@ -79,11 +79,23 @@ public:
     boost::shared_ptr<Entity> castToEntityPtr(const Game&);
 };
 
+struct Player
+{
+    string address;
+    Coins credit;
+    
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Player(string address);
+    Player(vchIter *iter);
+};
+
 class Game
 {
 public:
-    Coins playerCredit;
     uint64_t frame;
+    vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
 
     boost::shared_ptr<Entity> entityRefToPtr(EntityRef);

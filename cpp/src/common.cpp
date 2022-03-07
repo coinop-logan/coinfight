@@ -110,16 +110,21 @@ glm::vec3 toGlmVec3(vector3f v)
 void BalanceUpdate::pack(vch *dest)
 {
     packStringToVch(dest, userAddress);
-    packToVch(dest, "L", newBalance);
+    packToVch(dest, "L", amount);
+    packToVch(dest, "C", (unsigned char)isDeposit);
 }
 void BalanceUpdate::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackStringFromIter(*iter, 50, &userAddress);
-    *iter = unpackFromIter(*iter, "L", &newBalance);
+    cout << "userAddress after unpack: " << userAddress << endl;
+    *iter = unpackFromIter(*iter, "L", &amount);
+    unsigned char isDepositBoolChar;
+    *iter = unpackFromIter(*iter, "C", &isDepositBoolChar);
+    isDeposit = (bool)isDepositBoolChar;
 }
 
-BalanceUpdate::BalanceUpdate(string userAddress, coinsInt newBalance)
-    : userAddress(userAddress), newBalance(newBalance){}
+BalanceUpdate::BalanceUpdate(string userAddress, coinsInt amount, bool isDeposit)
+    : userAddress(userAddress), amount(amount), isDeposit(isDeposit) {}
 
 BalanceUpdate::BalanceUpdate(vchIter *iter)
 {

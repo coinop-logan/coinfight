@@ -27,6 +27,7 @@ public:
     coinsInt max;
     coinsInt getInt();
     // sf::String getDollarString();
+    Coins();
     Coins(coinsInt);
     Coins(vchIter*);
     coinsInt getSpaceLeft();

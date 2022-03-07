@@ -3,6 +3,8 @@
 #include "vchpack.h"
 
 extern const unsigned long MAX_COINS = UINT32_MAX;
+Coins::Coins()
+    : heldAmount(0), max(MAX_COINS) {}
 
 Coins::Coins(coinsInt max) :  heldAmount(0), max(max)
 {

@@ -228,7 +228,7 @@ struct DepositEvent
         : userAddress(userAddress), amountInCoins(amountInCoins) {}
     boost::shared_ptr<BalanceUpdate> toBalanceUpdateSharedPtr()
     {
-        return boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(userAddress, amountInCoins));
+        return boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(userAddress, amountInCoins, true));
     }
 };
 
@@ -308,6 +308,7 @@ int main()
         vector<DepositEvent> depositEvents = pollPendingDeposits();
         for (uint i=0; i < depositEvents.size(); i++)
         {
+            cout << "hi" << endl;
             pendingBalanceUpdates.push_back(depositEvents[i].toBalanceUpdateSharedPtr());
         }
 

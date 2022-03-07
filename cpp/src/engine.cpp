@@ -400,7 +400,7 @@ void Prime::go()
                 {
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    cout << "Sending through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                    // cout << "Sending through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
                 }
             }
         }
@@ -414,7 +414,7 @@ void Prime::go()
                 {
                     // cout << "held gold: " << this->heldGold.getInt() << endl;
                     // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
+                    // cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
                 }
             }
         }
@@ -478,14 +478,36 @@ EntityRef Game::getNextEntityRef()
     return entities.size() + 1;
 }
 
+void Player::pack(vch *dest)
+{
+    packStringToVch(dest, address);
+    credit.pack(dest);
+}
+void Player::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackStringFromIter(*iter, 50, &address);
+    credit = Coins(iter);
+}
+
+Player::Player(string address)
+    : address(address), credit() {}
+
+Player::Player(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
+}
+
 void Game::pack(vch *dest)
 {
     packToVch(dest, "Q", frame);
 
-    playerCredit.pack(dest);
+    packToVch(dest, "C", (unsigned char)(players.size()));
+    for (uint i=0; i < players.size(); i++)
+    {
+        players[i].pack(dest);
+    }
 
     packToVch(dest, "H", (EntityRef)(entities.size()));
-
     for (EntityRef i = 0; i < entities.size(); i++)
     {
         unsigned char typechar = getMaybeNullEntityTypechar(entities[i]);
@@ -502,16 +524,21 @@ void Game::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackFromIter(*iter, "Q", &frame);
     
-    playerCredit = Coins(iter);
+    uint8_t playersSize;
+    *iter = unpackFromIter(*iter, "C", &playersSize);
+    players.clear();
+
+    for (int i = 0; i < playersSize; i++)
+    {
+        players.push_back(Player(iter));
+    }
 
     uint16_t entitiesSize;
     *iter = unpackFromIter(*iter, "H", &entitiesSize);
-    cout << "s:" << entitiesSize << endl;
     entities.clear();
 
     for (int i = 0; i < entitiesSize; i++)
     {
-        cout << i << "|" << endl;
         unsigned char typechar;
         *iter = unpackTypecharFromIter(*iter, &typechar);
 
@@ -519,8 +546,8 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() : playerCredit(MAX_COINS) {}
-Game::Game(vchIter *iter) : playerCredit(MAX_COINS)
+Game::Game() {}
+Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -537,30 +564,30 @@ void Game::reassignEntityGamePointers()
 void Game::testInit()
 {
     frame = 0;
-    playerCredit.createMoreByFiat(100000);
+    // playerCredit.createMoreByFiat(100000);
 
-    boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(0, 0)));
-    boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
-    boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
-    boost::shared_ptr<Gateway> g2(new Gateway(this, 4, vector2f(50,50)));
+    // boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(0, 0)));
+    // boost::shared_ptr<GoldPile> gp(new GoldPile(this, 2, vector2f(200, 50)));
+    // boost::shared_ptr<Prime> p(new Prime(this, 3, vector2f(30, 30)));
+    // boost::shared_ptr<Gateway> g2(new Gateway(this, 4, vector2f(50,50)));
 
-    if (!
-        (
-          g->completeBuildingInstantly(&playerCredit)
-       && playerCredit.tryTransfer(500, &gp->gold)
-       && p->completeBuildingInstantly(&playerCredit)
-       && playerCredit.tryTransfer(200, &p->heldGold)
-        )
-    )
-        throw runtime_error("not enough playerCredit to initialize all of that");
+    // if (!
+    //     (
+    //       g->completeBuildingInstantly(&playerCredit)
+    //    && playerCredit.tryTransfer(500, &gp->gold)
+    //    && p->completeBuildingInstantly(&playerCredit)
+    //    && playerCredit.tryTransfer(200, &p->heldGold)
+    //     )
+    // )
+    //     throw runtime_error("not enough playerCredit to initialize all of that");
 
-    // ordering is important due to ref IDs passed earlier!
-    entities.push_back(g);
-    entities.push_back(gp);
-    entities.push_back(p);
-    entities.push_back(g2);
+    // // ordering is important due to ref IDs passed earlier!
+    // entities.push_back(g);
+    // entities.push_back(gp);
+    // entities.push_back(p);
+    // entities.push_back(g2);
 
-    p->cmdBuild(g2);
+    // p->cmdBuild(g2);
 }
 
 void Game::iterate()
@@ -583,13 +610,43 @@ void Game::iterate()
 
     if (frame % 40 == 0)
     {
-        cout << "c:" << playerCredit.getInt() << endl;
+        for (uint i=0; i<players.size(); i++)
+        {
+            cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
+        }
     }
 }
 
 void Game::executeBalanceUpdate(boost::shared_ptr<BalanceUpdate> balanceUpdate)
 {
-    cout << "wow I'm gonna do a balance update of " << balanceUpdate->newBalance << " for " << balanceUpdate->userAddress << endl;
+    if (balanceUpdate->isDeposit)
+    {
+        cout << 1 << endl;
+        // see if player exists for this address
+        bool found = false;
+        int playerId;
+        for (uint i=0; i<players.size(); i++)
+        {
+            if (players[i].address == balanceUpdate->userAddress)
+            {
+                found = true;
+                playerId = i;
+            }
+        }
+        // if no user for this address, create one
+        if (!found)
+        {
+            players.push_back(Player(balanceUpdate->userAddress));
+            playerId = players.size() - 1;
+        }
+
+        players[playerId].credit.createMoreByFiat(balanceUpdate->amount);
+        cout << 2 << endl;
+    }
+    else
+    {
+        throw runtime_error("woah, we haven't done withdrawals yet!!");
+    }
 }
 
 void Target::pack(vch *dest)
