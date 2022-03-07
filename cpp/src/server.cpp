@@ -2,6 +2,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 #include <vector>
 #include <string>
 #include "cmds.h"
@@ -218,6 +220,62 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
     startAccept();
 }
 
+struct DepositEvent
+{
+    string userAddress;
+    coinsInt amountInCoins;
+    DepositEvent(string userAddress, coinsInt amountInCoins)
+        : userAddress(userAddress), amountInCoins(amountInCoins) {}
+    boost::shared_ptr<BalanceUpdate> toBalanceUpdateSharedPtr()
+    {
+        return boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(userAddress, amountInCoins));
+    }
+};
+
+vector<DepositEvent> pollPendingDeposits()
+{
+    vector<DepositEvent> depositEvents;
+
+    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
+
+    for (boost::filesystem::directory_iterator dirIter(accountingDirPath); dirIter != directoryEndIter; dirIter++)
+    {
+        if (boost::filesystem::is_regular_file(dirIter->path())) {
+            string depositFilePath = dirIter->path().string();
+            std::ifstream depositFile(depositFilePath);
+            string depositData;
+
+            if (depositFile.is_open())
+            {
+                while (depositFile)
+                {
+                    string depositCmdData;
+                    getline(depositFile, depositCmdData);
+                    if (depositCmdData.length() == 0)
+                        continue;
+
+                    vector<string> splitted;
+                    boost::split(splitted, depositCmdData, boost::is_any_of(" "));
+                    string userAddress = splitted[0];
+                    string depositWeiString = splitted[1];
+                    coinsInt depositInCoins = weiDepositStringToCoinsInt(depositWeiString);
+                    
+                    depositEvents.push_back(DepositEvent(userAddress, depositInCoins));
+                }
+            }
+            else
+            {
+                throw runtime_error("Couldn't open a deposit file...\n");
+            }
+            depositFile.close();
+            // delete the file, having processed it
+            boost::filesystem::remove(dirIter->path());
+        }
+    }
+    return depositEvents;
+}
+
 int main()
 {
     game.testInit();
@@ -229,6 +287,10 @@ int main()
 
     clock_t nextFrameStart = clock();
 
+    // server will scan this directory for pending deposits (supplied by py/balance_tracker.py)
+    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
+
     while (true)
     {
         // poll io_service, which will populate pendingCmds with anything the ClientChannels have received
@@ -239,12 +301,15 @@ int main()
             continue;
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        vector<boost::shared_ptr<BalanceUpdate>> balanceUpdatesFromDeposits;
-        // just for testing:
-        if (game.frame == 100)
-            balanceUpdatesFromDeposits.push_back(boost::shared_ptr<BalanceUpdate>(new BalanceUpdate("testaddr", 10)));
-        // here we'd also check for withdrawals - worrying about that in a bit...
-        vector<boost::shared_ptr<BalanceUpdate>> pendingBalanceUpdates(balanceUpdatesFromDeposits);
+
+        // let's count up deposits
+        vector<boost::shared_ptr<BalanceUpdate>> pendingBalanceUpdates;
+        // scan for any pending deposits
+        vector<DepositEvent> depositEvents = pollPendingDeposits();
+        for (uint i=0; i < depositEvents.size(); i++)
+        {
+            pendingBalanceUpdates.push_back(depositEvents[i].toBalanceUpdateSharedPtr());
+        }
 
         // build FrameEventsPacket for this frame
         // includes all cmds we've received from clients since last time and all pending deposits

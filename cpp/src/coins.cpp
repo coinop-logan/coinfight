@@ -10,7 +10,13 @@ Coins::Coins(coinsInt max) :  heldAmount(0), max(max)
         throw invalid_argument("Can't set Coins max to be greater than MAX_COINS");
 }
 
-// PRIVATE
+coinsInt weiDepositStringToCoinsInt(string weiString)
+{
+    int digitsToRemove = WEI_PER_DOLLAR_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
+    string newString(weiString);
+    newString.erase(newString.length() - digitsToRemove);
+    return stoi(newString);
+}
 
 unsigned long Coins::deductUpTo(unsigned long deductAmount)
 {

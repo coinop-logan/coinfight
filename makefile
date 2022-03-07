@@ -2,10 +2,11 @@ CXX = g++
 CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie `pkg-config --cflags glfw3`
 
 INC=-I/usr/include -I../common -I./include/ -I../../git-external/glfw/include/
-LIB=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `pkg-config --static --libs glfw3`
+LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `pkg-config --static --libs glfw3`
 
 all: bin/client bin/server bin/test bin/gltest
-	cp py/sig_to_address.py bin/sig_to_address.py
+	cd sol && truffle compile && cd .. && cp sol/build/contracts/CoinfightDepositsWithdrawals.json bin/
+	cp py/* bin/
 	cp secret.txt bin/secret.txt
 	cp cpp/src/shaders/* bin/
 

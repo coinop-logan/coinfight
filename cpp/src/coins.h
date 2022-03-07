@@ -3,7 +3,8 @@
 #ifndef COINS_H
 #define COINS_H
 
-const float CREDIT_PER_DOLLAR = 1000;
+const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
+const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
 using namespace std;
 using vch = vector<unsigned char>;
@@ -11,6 +12,8 @@ using vchIter = vector<unsigned char>::iterator;
 using coinsInt = unsigned long;
 
 extern const coinsInt MAX_COINS;
+
+coinsInt weiDepositStringToCoinsInt(string weiString);
 
 class Coins
 {
