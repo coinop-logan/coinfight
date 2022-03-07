@@ -33,6 +33,9 @@ vchIter unpackTypecharFromIter(vchIter src, unsigned char *typechar);
 void packEntityRef(vch *destVch, EntityRef ref);
 vchIter unpackEntityRef(vchIter iter, EntityRef *ref);
 
+void packStringToVch(std::vector<unsigned char> *vch, string s);
+vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s);
+
 bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 

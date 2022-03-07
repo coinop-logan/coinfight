@@ -49,7 +49,7 @@ void testHandler(const boost::system::error_code &error, size_t numSent)
     }
 }
 
-void clearVchAndBuildResyncPacket(vch *dest)
+void clearVchAndPackResyncPacket(vch *dest)
 {
     dest->clear();
     game.pack(dest);
@@ -60,7 +60,7 @@ void clearVchAndBuildResyncPacket(vch *dest)
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
 }
-void clearVchAndBuildFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
+void clearVchAndPackFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
 {
     dest->clear();
 
@@ -68,6 +68,19 @@ void clearVchAndBuildFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
 
     vch prepended;
     packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);
+    packToVch(&prepended, "Q", (uint64_t)dest->size());
+
+    dest->insert(dest->begin(), prepended.begin(), prepended.end());
+}
+
+void clearVchAndPackBalanceUpdatePacket(vch *dest, BalanceUpdatePacket bup)
+{
+    dest->clear();
+
+    bup.pack(dest);
+
+    vch prepended;
+    packToVch(&prepended, "C", PACKET_BALANCEUPDATE_CHAR);
     packToVch(&prepended, "Q", (uint64_t)dest->size());
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
@@ -96,7 +109,7 @@ public:
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndBuildResyncPacket(packetsToSend.back());
+        clearVchAndPackResyncPacket(packetsToSend.back());
 
         sendNextPacketIfNotBusy();
     }
@@ -105,7 +118,16 @@ public:
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndBuildFrameCmdsPacket(packetsToSend.back(), fcp);
+        clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fcp);
+
+        sendNextPacketIfNotBusy();
+    }
+
+    void sendBalanceUpdatePacket(BalanceUpdatePacket bup)
+    {
+        packetsToSend.push_back(new vch);
+
+        clearVchAndPackBalanceUpdatePacket(packetsToSend.back(), bup);
 
         sendNextPacketIfNotBusy();
     }

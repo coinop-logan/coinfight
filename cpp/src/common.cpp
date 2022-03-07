@@ -67,6 +67,24 @@ vchIter unpackEntityRef(vchIter iter, EntityRef *ref)
     return unpackFromIter(iter, "H", ref);
 }
 
+void packStringToVch(std::vector<unsigned char> *vch, string s)
+{
+    char* cstr;
+    cstr = &s[0];
+    packToVch(vch, "s", cstr);
+}
+vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s)
+{
+    char formatStr[7];
+    snprintf(formatStr, sizeof(formatStr), "%ds", maxSize);
+
+    char cstr[maxSize+1];
+    vchIter newIter = unpackFromIter(iter, formatStr, cstr);
+    *s = string(cstr);
+
+    return newIter;
+}
+
 bool entityRefIsNull(EntityRef ref)
 {
     return ref == 0;

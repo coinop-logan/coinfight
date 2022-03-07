@@ -59,3 +59,29 @@ FrameCmdsPacket::FrameCmdsPacket(vchIter *iter)
 {
     unpackAndMoveIter(iter);
 }
+
+unsigned char BalanceUpdatePacket::typechar()
+{
+    return PACKET_BALANCEUPDATE_CHAR;
+}
+
+void BalanceUpdatePacket::pack(vch *dest)
+{
+    packPacket(dest);
+
+    packStringToVch(dest, userAddress);
+    packToVch(dest, "L", newBalance);
+}
+void BalanceUpdatePacket::unpackAndMoveIter(vchIter *iter)
+{
+    // *iter = unpackStringFromIter(*iter, )
+}
+
+BalanceUpdatePacket::BalanceUpdatePacket(string userAddress, coinsInt newBalance)
+{
+
+}
+BalanceUpdatePacket::BalanceUpdatePacket(vchIter *iter)
+{
+
+}
