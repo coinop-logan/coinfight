@@ -23,65 +23,50 @@ Packet::Packet(vchIter *iter)
     unpackPacketAndMoveIter(iter);
 }
 
-unsigned char FrameCmdsPacket::typechar()
+unsigned char FrameEventsPacket::typechar()
 {
     return PACKET_FRAMECMDS_CHAR;
 }
-void FrameCmdsPacket::pack(vch *dest)
+void FrameEventsPacket::pack(vch *dest)
 {
     packPacket(dest);
 
-    packToVch(dest, "QC", frame, (unsigned char)(cmds.size()));
+    packToVch(dest, "QCC", frame, (unsigned char)(cmds.size()), (unsigned char)(balanceUpdates.size()));
 
     for (unsigned int i = 0; i < cmds.size(); i++)
     {
         packTypechar(dest, cmds[i]->getTypechar());
         cmds[i]->pack(dest);
     }
+
+    for (unsigned int i = 0; i < balanceUpdates.size(); i++)
+    {
+        balanceUpdates[i]->pack(dest);
+    }
 }
 
-void FrameCmdsPacket::unpackAndMoveIter(vchIter *iter)
+void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
 {
-    unsigned char numCmds;
-    *iter = unpackFromIter(*iter, "QC", &frame, &numCmds);
+    unsigned char numCmds, numBalanceUpdates;
+    *iter = unpackFromIter(*iter, "QCC", &frame, &numCmds, &numBalanceUpdates);
 
     cmds.clear();
     for (unsigned int i = 0; i < numCmds; i++)
     {
         cmds.push_back(unpackFullCmdAndMoveIter(iter));
     }
+
+    balanceUpdates.clear();
+    for (unsigned int i = 0; i < numBalanceUpdates; i++)
+    {
+        balanceUpdates.push_back(boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(iter)));
+    }
 }
 
-FrameCmdsPacket::FrameCmdsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds)
-    : frame(frame), cmds(cmds) {}
+FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates)
+    : frame(frame), cmds(cmds), balanceUpdates(balanceUpdates) {}
 
-FrameCmdsPacket::FrameCmdsPacket(vchIter *iter)
+FrameEventsPacket::FrameEventsPacket(vchIter *iter)
 {
     unpackAndMoveIter(iter);
-}
-
-unsigned char BalanceUpdatePacket::typechar()
-{
-    return PACKET_BALANCEUPDATE_CHAR;
-}
-
-void BalanceUpdatePacket::pack(vch *dest)
-{
-    packPacket(dest);
-
-    packStringToVch(dest, userAddress);
-    packToVch(dest, "L", newBalance);
-}
-void BalanceUpdatePacket::unpackAndMoveIter(vchIter *iter)
-{
-    // *iter = unpackStringFromIter(*iter, )
-}
-
-BalanceUpdatePacket::BalanceUpdatePacket(string userAddress, coinsInt newBalance)
-{
-
-}
-BalanceUpdatePacket::BalanceUpdatePacket(vchIter *iter)
-{
-
 }

@@ -587,6 +587,11 @@ void Game::iterate()
     }
 }
 
+void Game::executeBalanceUpdate(boost::shared_ptr<BalanceUpdate> balanceUpdate)
+{
+    cout << "wow I'm gonna do a balance update of " << balanceUpdate->newBalance << " for " << balanceUpdate->userAddress << endl;
+}
+
 void Target::pack(vch *dest)
 {
     packToVch(dest, "C", (unsigned char)(type));

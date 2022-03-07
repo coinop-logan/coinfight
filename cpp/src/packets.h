@@ -25,32 +25,19 @@ public:
 
 // note that a resync packet is so simple that it's just made directly in server and client
 
-struct FrameCmdsPacket : public Packet
+struct FrameEventsPacket : public Packet
 {
     unsigned char typechar();
 
     uint64_t frame;
     vector<boost::shared_ptr<Cmd>> cmds;
+    vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    FrameCmdsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds);
-    FrameCmdsPacket(vchIter *iter);
-};
-
-struct BalanceUpdatePacket : public Packet
-{
-    unsigned char typechar();
-
-    string userAddress;
-    coinsInt newBalance;
-
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
-
-    BalanceUpdatePacket(string userAddress, coinsInt newBalance);
-    BalanceUpdatePacket(vchIter *iter);
+    FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates);
+    FrameEventsPacket(vchIter *iter);
 };
 
 #endif // PACKETS_H

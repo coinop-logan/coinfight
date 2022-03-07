@@ -28,7 +28,7 @@ Game game;
 UI ui;
 vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
-vector<FrameCmdsPacket> receivedFrameCmdsPackets;
+vector<FrameEventsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
 
 void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
@@ -154,7 +154,7 @@ public:
         {
             vchIter place = receivedBytes.begin();
 
-            receivedFrameCmdsPackets.push_back(FrameCmdsPacket(&place));
+            receivedFrameCmdsPackets.push_back(FrameEventsPacket(&place));
 
             clearVchAndReceiveNextPacket();
         }
@@ -294,14 +294,20 @@ int main()
             receivedResyncs.erase(receivedResyncs.begin());
         }
 
-        FrameCmdsPacket fcp = receivedFrameCmdsPackets[0];
+        FrameEventsPacket fcp = receivedFrameCmdsPackets[0];
         receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
 
         assert(fcp.frame == game.frame);
 
+        // go through cmds
         for (unsigned int i = 0; i < fcp.cmds.size(); i++)
         {
             fcp.cmds[i]->execute(&game);
+        }
+        // go through balance updates
+        for (unsigned int i = 0; i < fcp.balanceUpdates.size(); i++)
+        {
+            game.executeBalanceUpdate(fcp.balanceUpdates[i]);
         }
 
         game.iterate();

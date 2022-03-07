@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <stdio.h>
 #include "common.h"
+#include "coins.h"
 
 using namespace std;
 
@@ -104,4 +105,23 @@ std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
 glm::vec3 toGlmVec3(vector3f v)
 {
     return glm::vec3(v.x, v.y, v.z);
+}
+
+void BalanceUpdate::pack(vch *dest)
+{
+    packStringToVch(dest, userAddress);
+    packToVch(dest, "L", newBalance);
+}
+void BalanceUpdate::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackStringFromIter(*iter, 50, &userAddress);
+    *iter = unpackFromIter(*iter, "L", &newBalance);
+}
+
+BalanceUpdate::BalanceUpdate(string userAddress, coinsInt newBalance)
+    : userAddress(userAddress), newBalance(newBalance){}
+
+BalanceUpdate::BalanceUpdate(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
 }

@@ -60,7 +60,7 @@ void clearVchAndPackResyncPacket(vch *dest)
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
 }
-void clearVchAndPackFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
+void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
 {
     dest->clear();
 
@@ -68,19 +68,6 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
 
     vch prepended;
     packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);
-    packToVch(&prepended, "Q", (uint64_t)dest->size());
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
-}
-
-void clearVchAndPackBalanceUpdatePacket(vch *dest, BalanceUpdatePacket bup)
-{
-    dest->clear();
-
-    bup.pack(dest);
-
-    vch prepended;
-    packToVch(&prepended, "C", PACKET_BALANCEUPDATE_CHAR);
     packToVch(&prepended, "Q", (uint64_t)dest->size());
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
@@ -114,20 +101,11 @@ public:
         sendNextPacketIfNotBusy();
     }
 
-    void sendFrameCmdsPacket(FrameCmdsPacket fcp)
+    void sendFrameCmdsPacket(FrameEventsPacket fcp)
     {
         packetsToSend.push_back(new vch);
 
         clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fcp);
-
-        sendNextPacketIfNotBusy();
-    }
-
-    void sendBalanceUpdatePacket(BalanceUpdatePacket bup)
-    {
-        packetsToSend.push_back(new vch);
-
-        clearVchAndPackBalanceUpdatePacket(packetsToSend.back(), bup);
 
         sendNextPacketIfNotBusy();
     }
@@ -261,8 +239,16 @@ int main()
             continue;
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        // build FrameCmdsPacket for this frame with all cmds we've received from clients since last time
-        FrameCmdsPacket fcp(game.frame, pendingCmds);
+        vector<boost::shared_ptr<BalanceUpdate>> balanceUpdatesFromDeposits;
+        // just for testing:
+        if (game.frame == 100)
+            balanceUpdatesFromDeposits.push_back(boost::shared_ptr<BalanceUpdate>(new BalanceUpdate("testaddr", 10)));
+        // here we'd also check for withdrawals - worrying about that in a bit...
+        vector<boost::shared_ptr<BalanceUpdate>> pendingBalanceUpdates(balanceUpdatesFromDeposits);
+
+        // build FrameEventsPacket for this frame
+        // includes all cmds we've received from clients since last time and all pending deposits
+        FrameEventsPacket fcp(game.frame, pendingCmds, pendingBalanceUpdates);
 
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
@@ -276,6 +262,13 @@ int main()
             pendingCmds[i]->execute(&game);
         }
         pendingCmds.clear();
+
+        // execute all balance updates
+        for (unsigned int i = 0; i < pendingBalanceUpdates.size(); i++)
+        {
+            game.executeBalanceUpdate(pendingBalanceUpdates[i]);
+        }
+        pendingBalanceUpdates.clear();
 
         game.iterate();
     }

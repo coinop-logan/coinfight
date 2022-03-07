@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "myvectors.h"
 #include "vchpack.h"
+#include "coins.h"
 
 #ifndef COMMON_H
 #define COMMON_H
@@ -40,5 +41,17 @@ bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
 glm::vec3 toGlmVec3(vector3f v);
+
+struct BalanceUpdate
+{
+    string userAddress;
+    coinsInt newBalance;
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    BalanceUpdate(string userAddress, coinsInt newBalance);
+    BalanceUpdate(vchIter *iter);
+};
 
 #endif // COMMON_H

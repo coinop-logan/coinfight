@@ -99,6 +99,7 @@ public:
 
     void testInit();
     void iterate();
+    void executeBalanceUpdate(boost::shared_ptr<BalanceUpdate> balanceUpdate);
 };
 
 class GoldPile : public Entity
