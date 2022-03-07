@@ -18,6 +18,7 @@
 #include "graphics.h"
 #include "common.h"
 #include "input.h"
+#include "packets.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -86,11 +87,11 @@ public:
 
             switch (packetTypechar)
             {
-            case RESYNC_PACKET_CHAR:
+            case PACKET_RESYNC_CHAR:
                 clearVchAndReceiveResyncPacket(size);
                 break;
 
-            case FRAMECMDS_PACKET_CHAR:
+            case PACKET_FRAMECMDS_CHAR:
                 clearVchAndReceiveFrameCmdsPacket(size);
                 break;
             }

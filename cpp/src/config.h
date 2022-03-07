@@ -16,8 +16,8 @@ const EntityRef NULL_ENTITYREF = 0;
 
 const unsigned char NULL_TYPECHAR = 0;
 
-const unsigned char RESYNC_PACKET_CHAR = 'R';
-const unsigned char FRAMECMDS_PACKET_CHAR = 'C';
+const unsigned char PACKET_RESYNC_CHAR = 'R';
+const unsigned char PACKET_FRAMECMDS_CHAR = 'C';
 
 const unsigned char GOLDPILE_TYPECHAR = 'g';
 const unsigned char PRIME_TYPECHAR = 'P';

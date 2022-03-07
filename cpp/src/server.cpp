@@ -7,6 +7,7 @@
 #include "cmds.h"
 #include "engine.h"
 #include "config.h"
+#include "packets.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -54,7 +55,7 @@ void clearVchAndBuildResyncPacket(vch *dest)
     game.pack(dest);
 
     vch prepended;
-    packToVch(&prepended, "C", RESYNC_PACKET_CHAR);
+    packToVch(&prepended, "C", PACKET_RESYNC_CHAR);
     packToVch(&prepended, "Q", (uint64_t)(dest->size()));
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
@@ -66,7 +67,7 @@ void clearVchAndBuildFrameCmdsPacket(vch *dest, FrameCmdsPacket fcp)
     fcp.pack(dest);
 
     vch prepended;
-    packToVch(&prepended, "C", FRAMECMDS_PACKET_CHAR);
+    packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);
     packToVch(&prepended, "Q", (uint64_t)dest->size());
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());

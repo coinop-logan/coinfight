@@ -105,37 +105,6 @@ Cmd::Cmd(vchIter *iter)
     unpackCmdAndMoveIter(iter);
 }
 
-void FrameCmdsPacket::pack(vch *dest)
-{
-    packToVch(dest, "QC", frame, (unsigned char)(cmds.size()));
-
-    for (unsigned int i = 0; i < cmds.size(); i++)
-    {
-        packTypechar(dest, cmds[i]->getTypechar());
-        cmds[i]->pack(dest);
-    }
-}
-
-void FrameCmdsPacket::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char numCmds;
-    *iter = unpackFromIter(*iter, "QC", &frame, &numCmds);
-
-    cmds.clear();
-    for (unsigned int i = 0; i < numCmds; i++)
-    {
-        cmds.push_back(unpackFullCmdAndMoveIter(iter));
-    }
-}
-
-FrameCmdsPacket::FrameCmdsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds)
-    : frame(frame), cmds(cmds) {}
-
-FrameCmdsPacket::FrameCmdsPacket(vchIter *iter)
-{
-    unpackAndMoveIter(iter);
-}
-
 unsigned char MoveCmd::getTypechar()
 {
     return CMD_MOVE_CHAR;

@@ -42,18 +42,6 @@ struct Cmd
 
 boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter);
 
-struct FrameCmdsPacket
-{
-    uint64_t frame;
-    vector<boost::shared_ptr<Cmd>> cmds;
-
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
-
-    FrameCmdsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds);
-    FrameCmdsPacket(vchIter *iter);
-};
-
 struct MoveCmd : public Cmd
 {
     vector2f pos;
