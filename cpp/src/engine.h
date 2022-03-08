@@ -101,6 +101,8 @@ public:
     boost::shared_ptr<Entity> entityRefToPtr(EntityRef);
     EntityRef getNextEntityRef();
 
+    int playerAddressToIdOrNegativeOne(string address);
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -131,12 +133,13 @@ public:
 class Unit : public Entity
 {
 public:
+    int ownerId;
     Coins goldInvested;
     virtual coinsInt getCost();
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
-    Unit(Game *, EntityRef, coinsInt, vector2f);
+    Unit(Game *, EntityRef, int, coinsInt, vector2f);
     Unit(Game *, EntityRef, vchIter *);
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
@@ -151,7 +154,7 @@ public:
     void packBuilding(vch *destVch);
     void unpackBuildingAndMoveIter(vchIter *iter);
 
-    Building(Game *, EntityRef, coinsInt, vector2f);
+    Building(Game *, EntityRef, int, coinsInt, vector2f);
     Building(Game *, EntityRef, vchIter *);
 };
 
@@ -179,7 +182,7 @@ public:
 
     void cmdMove(vector2f target);
 
-    MobileUnit(Game *game, EntityRef ref, coinsInt totalCost, vector2f pos);
+    MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, vector2f pos);
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
@@ -201,7 +204,7 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Prime(Game *game, EntityRef ref, vector2f pos);
+    Prime(Game *game, EntityRef ref, int ownerId, vector2f pos);
     Prime(Game *game, EntityRef ref, vchIter *iter);
 
     void cmdPickup(EntityRef);
@@ -225,7 +228,7 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Gateway(Game *game, EntityRef ref, vector2f pos);
+    Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos);
     Gateway(Game *game, EntityRef ref, vchIter *iter);
 
     unsigned char typechar();

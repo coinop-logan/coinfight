@@ -27,6 +27,14 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
     }
 }
 
+AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress)
+    : cmd(cmd), playerAddress(playerAddress){}
+
+void AuthdCmd::execute(Game *game)
+{
+    cmd->executeIfOwnedBy(game, playerAddress);
+}
+
 unsigned char Cmd::getTypechar()
 {
     throw runtime_error("getTypechar is not defined for '" + getTypename() + "'");
@@ -64,12 +72,25 @@ vector<boost::shared_ptr<Unit>> Cmd::getUnits(Game *game)
     }
     return units;
 }
-void Cmd::execute(Game *game)
+void Cmd::executeIfOwnedBy(Game *game, string userAddress)
 {
+    int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
+    cout << "address " << userAddress << " translates to playerId " << playerId << endl;
+    if (playerId == -1)
+        return;
+        
     vector<boost::shared_ptr<Unit>> units = getUnits(game);
     for (uint i = 0; i < units.size(); i++)
     {
-        executeOnUnit(units[i]);
+        if (units[i]->ownerId == playerId)
+        {
+            cout << "executing!" << endl;
+            executeOnUnit(units[i]);
+        }
+        else
+        {
+            cout << "not executing." << endl;
+        }
     }
 }
 

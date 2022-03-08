@@ -30,13 +30,13 @@ struct FrameEventsPacket : public Packet
     unsigned char typechar();
 
     uint64_t frame;
-    vector<boost::shared_ptr<Cmd>> cmds;
+    vector<boost::shared_ptr<AuthdCmd>> authdCmds;
     vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates);
+    FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates);
     FrameEventsPacket(vchIter *iter);
 };
 

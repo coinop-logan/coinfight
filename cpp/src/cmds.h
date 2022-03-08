@@ -30,7 +30,7 @@ struct Cmd
     virtual void unpackAndMoveIter(vchIter *iter);
 
     vector<boost::shared_ptr<Unit>> getUnits(Game *game);
-    void execute(Game *);
+    void executeIfOwnedBy(Game *, string userAddress);
     virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
 
     void packCmd(vch *dest);
@@ -38,6 +38,14 @@ struct Cmd
 
     Cmd(vector<EntityRef>);
     Cmd(vchIter *);
+};
+
+struct AuthdCmd
+{
+    boost::shared_ptr<Cmd> cmd;
+    string playerAddress;
+    void execute(Game *);
+    AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress);
 };
 
 boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter);

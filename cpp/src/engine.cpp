@@ -152,15 +152,24 @@ coinsInt Unit::getCost()
 void Unit::packUnit(vch *destVch)
 {
     packEntity(destVch);
+
+    packToVch(destVch, "C", (unsigned char)ownerId);
+
     goldInvested.pack(destVch);
 }
 
 void Unit::unpackUnitAndMoveIter(vchIter *iter)
 {
+    unsigned char ownerIdChar;
+    *iter = unpackFromIter(*iter, "C", &ownerIdChar);
+    ownerId = ownerIdChar;
+
     goldInvested = Coins(iter);
 }
 
-Unit::Unit(Game *game, EntityRef ref, coinsInt totalCost, vector2f pos) : Entity(game, ref, pos), goldInvested(totalCost) {}
+Unit::Unit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, vector2f pos)
+    : Entity(game, ref, pos), ownerId(ownerId), goldInvested(totalCost) {}
+
 Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
                                                        goldInvested((coinsInt)0) // will get overwritten in unpack below
 {
@@ -197,7 +206,8 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, uint16_t ref, coinsInt totalCost, vector2f pos) : Unit(game, ref, totalCost, pos) {}
+Building::Building(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, vector2f pos)
+    : Unit(game, ref, ownerId, totalCost, pos) {}
 Building::Building(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter)
 {
     unpackBuildingAndMoveIter(iter);
@@ -215,8 +225,8 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t ref, coinsInt totalCost, vector2f pos) : Unit(game, ref, totalCost, pos),
-                                                                                     target(NULL_ENTITYREF)
+MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, vector2f pos)
+    : Unit(game, ref, ownerId, totalCost, pos), target(NULL_ENTITYREF)
 {
     targetRange = 0;
 }
@@ -294,9 +304,9 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     heldGold = Coins(iter);
 }
 
-Prime::Prime(Game *game, uint16_t ref, vector2f pos) : MobileUnit(game, ref, PRIME_COST, pos),
-                                                       heldGold(PRIME_MAX_GOLD_HELD),
-                                                       state(Idle)
+Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos) : MobileUnit(game, ref, ownerId, PRIME_COST, pos),
+                                                                    heldGold(PRIME_MAX_GOLD_HELD),
+                                                                    state(Idle)
 {}
 Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter),
                                                         heldGold(PRIME_MAX_GOLD_HELD)
@@ -462,7 +472,7 @@ void Gateway::pack(vch *dest)
 void Gateway::unpackAndMoveIter(vchIter *iter)
 {}
 
-Gateway::Gateway(Game *game, uint16_t ref, vector2f pos) : Building(game, ref, GATEWAY_COST, pos)
+Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos) : Building(game, ref, ownerId, GATEWAY_COST, pos)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -495,6 +505,18 @@ Player::Player(string address)
 Player::Player(vchIter *iter)
 {
     unpackAndMoveIter(iter);
+}
+
+int Game::playerAddressToIdOrNegativeOne(string address)
+{
+    for (uint i=0; i<players.size(); i++)
+    {
+        if (players[i].address == address)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void Game::pack(vch *dest)
@@ -564,6 +586,14 @@ void Game::reassignEntityGamePointers()
 void Game::testInit()
 {
     frame = 0;
+
+    players.push_back(Player("0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92"));
+
+    boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
+    boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(30, 30))); // create with playerId 1, to test if player 0 can't move it.
+    entities.push_back(p1);
+    entities.push_back(p2);
+
     // playerCredit.createMoreByFiat(100000);
 
     // boost::shared_ptr<Gateway> g(new Gateway(this, 1, vector2f(0, 0)));

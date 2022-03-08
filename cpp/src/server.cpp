@@ -76,7 +76,7 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
 }
 
-vector<boost::shared_ptr<Cmd>> pendingCmds;
+vector<boost::shared_ptr<AuthdCmd>> pendingCmds;
 
 class ClientChannel
 {
@@ -115,7 +115,7 @@ public:
         ReadyForFirstSync,
         UpToDate
     } state;
-    string userAddress;
+    string connectionAuthdUserAddress;
     ClientChannel(boost::asio::io_service &ioService_, boost::shared_ptr<tcp::socket> socket_)
         : ioService(ioService_), socket(socket_), receivedSig(150)
     {
@@ -168,10 +168,9 @@ public:
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
             
             // now have sig and sentChallenge as strings.
-            userAddress = signedMsgToAddress(sentChallenge, sig);
+            connectionAuthdUserAddress = signedMsgToAddress(sentChallenge, sig);
 
-            string delimitedAddress = userAddress;
-            boost::asio::write(*socket, boost::asio::buffer(delimitedAddress));
+            boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress));
 
             state = ReadyForFirstSync;
             startReceivingLoop();
@@ -284,8 +283,9 @@ public:
             vchIter place = receivedBytes.begin();
 
             boost::shared_ptr<Cmd> cmd = unpackFullCmdAndMoveIter(&place);
+            boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, this->connectionAuthdUserAddress));
 
-            pendingCmds.push_back(cmd);
+            pendingCmds.push_back(authdCmd);
 
             clearVchAndReceiveNextCmd();
         }

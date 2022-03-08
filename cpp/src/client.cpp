@@ -330,9 +330,9 @@ int main()
         assert(fcp.frame == game.frame);
 
         // go through cmds
-        for (unsigned int i = 0; i < fcp.cmds.size(); i++)
+        for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
         {
-            fcp.cmds[i]->execute(&game);
+            fcp.authdCmds[i]->execute(&game);
         }
         // go through balance updates
         for (unsigned int i = 0; i < fcp.balanceUpdates.size(); i++)

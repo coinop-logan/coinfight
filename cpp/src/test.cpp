@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include "sigWrapper.h"
 // #include "engine.h"
 #include "common.h"
 // #include "config.h"
@@ -26,18 +27,15 @@ using namespace std;
 //     cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
 // }
 
+
 int main()
 {
-    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
-    boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
+    string msg("hi");
+    string sig("f9ec9c22e31782f5397c8ee1ec63fed83aad060c0a0899b1dc5562348728bb196974bbd5d1fe24ff665228becaa051b57413a3a7f6969cc992fe1b72e1bc2c5d1c");
 
-    for (boost::filesystem::directory_iterator dirIter(accountingDirPath); dirIter != directoryEndIter; dirIter++)
-    {
-        if (boost::filesystem::is_regular_file(dirIter->path())) {
-            string current_file = dirIter->path().string();
-            cout << current_file << endl;
-        }
-    }
+    string result = signedMsgToAddress(msg, sig);
+
+    cout << "result: " << result << endl;
 
     return 0;
 }

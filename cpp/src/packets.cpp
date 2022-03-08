@@ -31,12 +31,13 @@ void FrameEventsPacket::pack(vch *dest)
 {
     packPacket(dest);
 
-    packToVch(dest, "QCC", frame, (unsigned char)(cmds.size()), (unsigned char)(balanceUpdates.size()));
+    packToVch(dest, "QCC", frame, (unsigned char)(authdCmds.size()), (unsigned char)(balanceUpdates.size()));
 
-    for (unsigned int i = 0; i < cmds.size(); i++)
+    for (unsigned int i = 0; i < authdCmds.size(); i++)
     {
-        packTypechar(dest, cmds[i]->getTypechar());
-        cmds[i]->pack(dest);
+        packStringToVch(dest, authdCmds[i]->playerAddress);
+        packTypechar(dest, authdCmds[i]->cmd->getTypechar());
+        authdCmds[i]->cmd->pack(dest);
     }
 
     for (unsigned int i = 0; i < balanceUpdates.size(); i++)
@@ -50,10 +51,14 @@ void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
     unsigned char numCmds, numBalanceUpdates;
     *iter = unpackFromIter(*iter, "QCC", &frame, &numCmds, &numBalanceUpdates);
 
-    cmds.clear();
+    authdCmds.clear();
     for (unsigned int i = 0; i < numCmds; i++)
     {
-        cmds.push_back(unpackFullCmdAndMoveIter(iter));
+        string playerAddress;
+        *iter = unpackStringFromIter(*iter, 42, &playerAddress);
+        boost::shared_ptr<Cmd> unauthdCmd = unpackFullCmdAndMoveIter(iter);
+
+        authdCmds.push_back(boost::shared_ptr<AuthdCmd>(new AuthdCmd(unauthdCmd, playerAddress)));
     }
 
     balanceUpdates.clear();
@@ -63,8 +68,8 @@ void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<Cmd>> cmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates)
-    : frame(frame), cmds(cmds), balanceUpdates(balanceUpdates) {}
+FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates)
+    : frame(frame), authdCmds(authdCmds), balanceUpdates(balanceUpdates) {}
 
 FrameEventsPacket::FrameEventsPacket(vchIter *iter)
 {
