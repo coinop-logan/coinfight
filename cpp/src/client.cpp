@@ -59,7 +59,17 @@ public:
     {
         sending = false;
     }
-    void startReceiving()
+    string receiveSigChallenge()
+    {
+        boost::asio::streambuf buf(50);
+        boost::asio::read(socket, buf);
+        return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size());
+    }
+    void sendSignature(string sig)
+    {
+        boost::asio::write(socket, boost::asio::buffer(sig));
+    }
+    void startReceivingLoop()
     {
         clearVchAndReceiveNextPacket();
     }
@@ -232,7 +242,19 @@ int main()
 
     ConnectionHandler connectionHandler(io_service, socket);
 
-    connectionHandler.startReceiving();
+    // HANDSHAKE
+
+    // Wait for the sig challenge and respond with the user's help
+    string sigChallenge = connectionHandler.receiveSigChallenge();
+    cout << "Sign this with the address you deposited to:" << endl << sigChallenge << endl;
+    
+    string userResponse;
+    cout << "sig: ";
+    cin >> userResponse;
+
+    connectionHandler.sendSignature(userResponse + "\n");
+
+    connectionHandler.startReceivingLoop();
 
     // Get the first resync packet
     while (true)

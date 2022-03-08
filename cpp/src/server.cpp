@@ -86,12 +86,86 @@ class ClientChannel
     bool sending;
 
     vch receivedBytes;
+    boost::asio::streambuf receivedSig;
+
+    string sentChallenge;
+
+    string genRandomString(int len)
+    {
+        // hacky, untested, probably insecure!! Only good for the hackathon and a demo.
+        static const char alphanum[] =
+            "0123456789"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz";
+        std::string s;
+        s.reserve(len);
+
+        for (int i = 0; i < len; ++i) {
+            int randChoice = (int)((double)rand() / ((double)RAND_MAX + 1) * (sizeof(alphanum) - 1));
+            s += alphanum[randChoice];
+        }
+        
+        return s;
+    }
 
 public:
     ClientChannel(boost::asio::io_service &ioService_, boost::shared_ptr<tcp::socket> socket_)
-        : ioService(ioService_), socket(socket_)
+        : ioService(ioService_), socket(socket_), receivedSig(150)
     {
         sending = false;
+    }
+
+    void startHandshakeAsync()
+    {
+        generateAndSendSigChallenge();
+        receiveSigAsync();
+        //receiveAndHandleSig();
+
+        // clientChannel->sendResyncPacket();
+        // clientChannel->clearVchAndReceiveNextCmd();
+    }
+
+    void generateAndSendSigChallenge()
+    {
+        string challenge = genRandomString(50);
+
+        boost::asio::write(*socket, boost::asio::buffer(challenge));
+
+        cout << "sent challenge" << endl;
+
+        sentChallenge = challenge;
+    }
+
+    void receiveSigAsync()
+    {
+        boost::asio::async_read_until(*socket,
+                   receivedSig,
+                   '\n',
+                   boost::bind(&ClientChannel::sigReceived,
+                               this,
+                               boost::asio::placeholders::error,
+                               boost::asio::placeholders::bytes_transferred));
+
+        // boost::asio::streambuf buf(150);
+        // boost::asio::read_until(socket, buf, '\n');
+        // string sig(boost::asio::buffer_cast<const char*>(buf.data()), buf.size());
+        // cout << "got sig: " << sig << endl;
+    }
+
+    void sigReceived(const boost::system::error_code &error, size_t transferred)
+    {
+        if (error)
+        {
+            throw runtime_error("Error receiving sig: " + error.value());
+        }
+        else
+        {
+            //receivedBytes now has sig
+            string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size());
+            
+            // now have sig and sentChallenge as strings.
+            cout << "sig: " << sig << endl;
+        }
     }
 
     void sendResyncPacket()
@@ -212,10 +286,11 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
     else
     {
         cout << "client connected!" << endl;
-        clientChannels.push_back(new ClientChannel(ioService, socket));
+        ClientChannel *clientChannel = new ClientChannel(ioService, socket);
+        clientChannel->startHandshakeAsync();
+        
+        clientChannels.push_back(clientChannel);
 
-        clientChannels.back()->sendResyncPacket();
-        clientChannels.back()->clearVchAndReceiveNextCmd();
     }
     startAccept();
 }
@@ -278,6 +353,8 @@ vector<DepositEvent> pollPendingDeposits()
 
 int main()
 {
+    srand(time(0));
+
     game.testInit();
 
     boost::asio::io_service io_service;
