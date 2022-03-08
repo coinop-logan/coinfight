@@ -110,9 +110,16 @@ class ClientChannel
     }
 
 public:
+    enum State {
+        DoingHandshake,
+        ReadyForFirstSync,
+        UpToDate
+    } state;
+    string userAddress;
     ClientChannel(boost::asio::io_service &ioService_, boost::shared_ptr<tcp::socket> socket_)
         : ioService(ioService_), socket(socket_), receivedSig(150)
     {
+        state = DoingHandshake;
         sending = false;
     }
 
@@ -146,11 +153,6 @@ public:
                                this,
                                boost::asio::placeholders::error,
                                boost::asio::placeholders::bytes_transferred));
-
-        // boost::asio::streambuf buf(150);
-        // boost::asio::read_until(socket, buf, '\n');
-        // string sig(boost::asio::buffer_cast<const char*>(buf.data()), buf.size());
-        // cout << "got sig: " << sig << endl;
     }
 
     void sigReceived(const boost::system::error_code &error, size_t transferred)
@@ -166,9 +168,13 @@ public:
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
             
             // now have sig and sentChallenge as strings.
-            string address = signedMsgToAddress(sentChallenge, sig);
+            userAddress = signedMsgToAddress(sentChallenge, sig);
 
-            cout << "I think I'm hearing from address " << address << endl;
+            string delimitedAddress = userAddress;
+            boost::asio::write(*socket, boost::asio::buffer(delimitedAddress));
+
+            state = ReadyForFirstSync;
+            startReceivingLoop();
         }
     }
 
@@ -188,6 +194,11 @@ public:
         clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fcp);
 
         sendNextPacketIfNotBusy();
+    }
+
+    void startReceivingLoop()
+    {
+        clearVchAndReceiveNextCmd();
     }
 
     void sendNextPacketIfNotBusy()
@@ -400,7 +411,22 @@ int main()
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
         {
-            clientChannels[i]->sendFrameCmdsPacket(fcp);
+            switch (clientChannels[i]->state)
+            {
+                case ClientChannel::DoingHandshake:
+                    break;
+
+                case ClientChannel::ReadyForFirstSync:
+                    clientChannels[i]->sendResyncPacket();
+                    clientChannels[i]->sendFrameCmdsPacket(fcp);
+
+                    clientChannels[i]->state = ClientChannel::UpToDate;
+                    break;
+
+                case ClientChannel::UpToDate:
+                    clientChannels[i]->sendFrameCmdsPacket(fcp);
+                    break;
+            }
         }
 
         // execute all cmds on server-side game

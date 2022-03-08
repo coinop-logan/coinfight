@@ -5,7 +5,6 @@ INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ -I../../gi
 LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `pkg-config --static --libs glfw3` `python3-config --ldflags` -lpython3.8
 
 all: bin/client bin/server bin/test bin/gltest
-	cd sol && truffle compile && cd .. && cp sol/build/contracts/CoinfightDepositsWithdrawals.json bin/
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
 	cp cpp/src/shaders/* bin/

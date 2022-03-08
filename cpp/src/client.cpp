@@ -69,6 +69,13 @@ public:
     {
         boost::asio::write(socket, boost::asio::buffer(sig));
     }
+    string receiveAddress()
+    {
+        boost::asio::streambuf buf(42);
+        boost::asio::read(socket, buf);
+        cout << "s3 " << string(boost::asio::buffer_cast<const char*>(buf.data()), 5) << endl;
+        return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size() - 1); // -1 to remove trailing '\n'
+    }
     void startReceivingLoop()
     {
         clearVchAndReceiveNextPacket();
@@ -253,6 +260,7 @@ int main()
     cin >> userResponse;
 
     connectionHandler.sendSignature(userResponse + "\n");
+    string userAddress = connectionHandler.receiveAddress();
 
     connectionHandler.startReceivingLoop();
 
