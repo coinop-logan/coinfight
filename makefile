@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie `pkg-config --cflags glfw3` `python3-config --cflags`
+CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie `pkg-config --cflags glfw3`
 
 INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ -I../../git-external/glfw/include/ `python3-config --includes`
 LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `pkg-config --static --libs glfw3` `python3-config --ldflags` -lpython3.8
