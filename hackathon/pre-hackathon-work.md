@@ -31,3 +31,14 @@ Shockingly, there isn't a solid Ethereum library for C++. So:
     * Watch for files from server requesting withdrawals, and execute them
 
 Only missing piece is for the C++ server to look for these deposit descriptors and consume them, which is tangled up with a conception of separate players, something still yet to do. This is what I'm working on for Mon.
+
+### Mon
+
+Spent the whole day implementing deposits on the C++ server and clients.
+
+* Server watches a directory for deposit "alerts" (put there by the Python script)
+* Server encodes and sends this out to all clients
+* Server and clients "execute" the deposit by updating the player balance
+* Basic conception of Players implemented
+
+Next step will be to get a client connection to actually authenticate and connect to a specific player, probably with web3 sigs.
