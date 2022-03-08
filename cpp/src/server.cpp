@@ -10,6 +10,7 @@
 #include "engine.h"
 #include "config.h"
 #include "packets.h"
+#include "sigWrapper.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -160,11 +161,14 @@ public:
         }
         else
         {
-            //receivedBytes now has sig
-            string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size());
+            // receivedSig now has sig
+            // But leave out the trailing \n leftover
+            string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
             
             // now have sig and sentChallenge as strings.
-            cout << "sig: " << sig << endl;
+            string address = signedMsgToAddress(sentChallenge, sig);
+
+            cout << "I think I'm hearing from address " << address << endl;
         }
     }
 

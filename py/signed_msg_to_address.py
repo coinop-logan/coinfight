@@ -7,8 +7,6 @@ def signed_msg_to_address(msgStr, sigStr):
 
     encodedMsg = encode_defunct(text=msgStr)
 
-    if sigStr[:2] != "0x":
-        sigStr = "0x" + sigStr
     encodedSig = HexBytes(sigStr)
 
     return w3.eth.account.recover_message(encodedMsg, signature=encodedSig)
