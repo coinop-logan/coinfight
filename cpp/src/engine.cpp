@@ -265,7 +265,7 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
     }
 
     vector2f unitDir = toPoint.normalized();
-    angle = unitDir.getAngle();
+    angle_view = unitDir.getAngle();
 
     if (distanceLeft <= getSpeed())
     {
@@ -595,7 +595,6 @@ void Game::testInit()
 
     boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
     boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(70, 30)));
-    cout << "a tho " << p2->angle << endl;
 
     entities.push_back(p1);
     entities.push_back(p2);

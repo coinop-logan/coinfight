@@ -379,8 +379,7 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
             float angle;
             if (boost::shared_ptr<MobileUnit> mu = boost::dynamic_pointer_cast<MobileUnit, Entity>(game.entities[i]))
             {
-                angle = mu->angle;
-                cout << "a " << angle << endl;
+                angle = mu->angle_view;
             }
             else
             {
