@@ -30,15 +30,30 @@ Shockingly, there isn't a solid Ethereum library for C++. So:
     * Watch for deposits, then record these in files for the server to consume
     * Watch for files from server requesting withdrawals, and execute them
 
-Only missing piece is for the C++ server to look for these deposit descriptors and consume them, which is tangled up with a conception of separate players, something still yet to do. This is what I'm working on for Mon.
+Only missing piece is for the C++ server to look for these deposit descriptors and consume them, which is tangled up with a conception of separate players, which I have yet to do. This is what I plan to work on for Mon.
 
 ### Mon
 
 Spent the whole day implementing deposits on the C++ server and clients.
 
-* Server watches a directory for deposit "alerts" (put there by the Python script)
+* Server watches a directory for deposit descriptor files, put there by the Python script
 * Server encodes and sends this out to all clients
 * Server and clients "execute" the deposit by updating the player balance
-* Basic conception of Players implemented
+* Super basic conception of Players implemented
 
 Next step will be to get a client connection to actually authenticate and connect to a specific player, probably with web3 sigs.
+
+### Tue
+
+Big milestone: web3 auth for client.
+
+* Server sends "challenge text" for client to sign
+* Client prints challenge text and asks user sign it with the address they deposited credit to
+* Client returns user's submitted sig
+* Server recovers user's address from sig+challenge
+    * Server sends this address back to client
+    * Server records this address as that client connection's address
+* Relatedly, server now has separate players, which can only control their own units
+
+Today the first goal is to iron out any issues if client is on another pc
+Right after that, start making game game-like: re-implement commands like move or pickupGold
