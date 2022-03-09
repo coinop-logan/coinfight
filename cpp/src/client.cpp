@@ -73,7 +73,6 @@ public:
     {
         boost::asio::streambuf buf(42);
         boost::asio::read(socket, buf);
-        cout << "s3 " << string(boost::asio::buffer_cast<const char*>(buf.data()), 5) << endl;
         return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size() - 1); // -1 to remove trailing '\n'
     }
     void startReceivingLoop()
@@ -147,10 +146,9 @@ public:
         {
             vchIter place = receivedBytes.begin();
 
-            cout << "BYTES:" << endl;
-            debugOutputVch(receivedBytes);
-            cout << endl
-                 << ":FIN" << endl;
+            // cout << "BYTES:" << endl;
+            // debugOutputVch(receivedBytes);
+            // cout << endl << ":FIN" << endl;
 
             receivedResyncs.push_back(Game(&place));
 
