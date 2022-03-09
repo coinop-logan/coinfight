@@ -524,6 +524,7 @@ int Game::playerAddressToIdOrNegativeOne(string address)
 
 void Game::pack(vch *dest)
 {
+    packToVch(dest, "C", (unsigned char)(state));
     packToVch(dest, "Q", frame);
 
     packToVch(dest, "C", (unsigned char)(players.size()));
@@ -547,6 +548,10 @@ void Game::pack(vch *dest)
 }
 void Game::unpackAndMoveIter(vchIter *iter)
 {
+    unsigned char enumInt;
+    *iter = unpackFromIter(*iter, "C", &enumInt);
+    state = static_cast<State>(enumInt);
+    
     *iter = unpackFromIter(*iter, "Q", &frame);
     
     uint8_t playersSize;
@@ -571,7 +576,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() {}
+Game::Game() : state(Pregame) {}
 Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);

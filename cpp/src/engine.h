@@ -95,6 +95,10 @@ struct Player
 class Game
 {
 public:
+    enum State {
+        Pregame,
+        Active
+    } state;
     uint64_t frame;
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
