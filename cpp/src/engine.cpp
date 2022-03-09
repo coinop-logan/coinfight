@@ -551,7 +551,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     unsigned char enumInt;
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
-    
+
     *iter = unpackFromIter(*iter, "Q", &frame);
     
     uint8_t playersSize;
@@ -616,28 +616,35 @@ void Game::testInit()
 
 void Game::iterate()
 {
-    for (uint i = 0; i < entities.size(); i++)
+    switch (state)
     {
-        if (entities[i])
-        {
-            entities[i]->go();
-        }
-    }
+        case Pregame:
+            break;
+        case Active:
+            for (uint i = 0; i < entities.size(); i++)
+            {
+                if (entities[i])
+                {
+                    entities[i]->go();
+                }
+            }
 
-    for (uint i = 0; i < entities.size(); i++)
-    {
-        if (entities[i] && entities[i]->dead)
-            entities[i].reset();
-    }
+            for (uint i = 0; i < entities.size(); i++)
+            {
+                if (entities[i] && entities[i]->dead)
+                    entities[i].reset();
+            }
 
-    frame++;
+            frame++;
 
-    if (frame % 40 == 0)
-    {
-        for (uint i=0; i<players.size(); i++)
-        {
-            cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
-        }
+            if (frame % 200 == 0)
+            {
+                for (uint i=0; i<players.size(); i++)
+                {
+                    cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
+                }
+            }
+            break;
     }
 }
 
