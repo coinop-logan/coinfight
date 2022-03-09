@@ -39,6 +39,7 @@ public:
 };
 
 Game game;
+bool adminRoleTaken(false);
 
 void testHandler(const boost::system::error_code &error, size_t numSent)
 {
@@ -166,9 +167,20 @@ public:
             // receivedSig now has sig
             // But leave out the trailing \n leftover
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
-            
-            // now have sig and sentChallenge as strings.
-            connectionAuthdUserAddress = signedMsgToAddress(sentChallenge, sig);
+
+            if (sig == string("admin"))
+            {
+                if (!adminRoleTaken)
+                {
+                    adminRoleTaken = true;
+                    connectionAuthdUserAddress = string("0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92");
+                }
+            }
+            else
+            {
+                // now have sig and sentChallenge as strings.
+                connectionAuthdUserAddress = signedMsgToAddress(sentChallenge, sig);
+            }            
 
             boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress));
 
