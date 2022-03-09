@@ -374,8 +374,24 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
         if (game.entities[i])
         {
             glm::vec3 translation = toGlmVec3(game.entities[i]->getPos());
-            // todo: rotation here somewhere
+
+            // determine rotaton
+            float angle;
+            if (boost::shared_ptr<MobileUnit> mu = boost::dynamic_pointer_cast<MobileUnit, Entity>(game.entities[i]))
+            {
+                angle = mu->angle;
+                cout << "a " << angle << endl;
+            }
+            else
+            {
+                angle = 0;
+            }
+            
+            // apply translate and rotate
             ModelMatrix = glm::translate(glm::mat4(1.0), translation);
+            ModelMatrix = glm::rotate(ModelMatrix, angle, glm::vec3(0, 0, 1));
+
+            // finall set the ModelMatrix uniform for the shaders
             glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 
             // determine unit color
@@ -396,6 +412,7 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
             {
                 unitColor = glm::vec3(1, 1, 1);
             }
+            // set color uniform for shaders
             glUniform3fv(UnitColorUniformID, 1, &unitColor[0]);
 
             glDrawArrays(GL_TRIANGLES, 0, vertices.size() );

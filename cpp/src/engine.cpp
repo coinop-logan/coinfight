@@ -265,6 +265,7 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
     }
 
     vector2f unitDir = toPoint.normalized();
+    angle = unitDir.getAngle();
 
     if (distanceLeft <= getSpeed())
     {
@@ -304,9 +305,10 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     heldGold = Coins(iter);
 }
 
-Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos) : MobileUnit(game, ref, ownerId, PRIME_COST, pos),
-                                                                    heldGold(PRIME_MAX_GOLD_HELD),
-                                                                    state(Idle)
+Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos)
+    : MobileUnit(game, ref, ownerId, PRIME_COST, pos),
+      heldGold(PRIME_MAX_GOLD_HELD),
+      state(Idle)
 {}
 Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter),
                                                         heldGold(PRIME_MAX_GOLD_HELD)
@@ -593,6 +595,7 @@ void Game::testInit()
 
     boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
     boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(70, 30)));
+    cout << "a tho " << p2->angle << endl;
 
     entities.push_back(p1);
     entities.push_back(p2);

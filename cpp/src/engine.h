@@ -170,6 +170,7 @@ protected:
     void setTarget(Target _target, float range);
 
 public:
+    float angle;
     virtual float getSpeed();
     virtual float getRange();
 
