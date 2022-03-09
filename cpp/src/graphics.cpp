@@ -374,15 +374,6 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
     glfwSwapBuffers(window);
 }
 
-void oldDisplay() {
-    // vector<sf::String> outputStrings;
-    
-    // Coins playerCredit = game.playerCredit;
-    // outputStrings.push_back(playerCredit.getDollarString());
-
-    // drawOutputStrings(window, outputStrings);
-}
-
 void cleanupGraphics()
 {
     glDeleteVertexArrays(1, &VertexArrayID);
