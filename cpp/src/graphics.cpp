@@ -17,6 +17,7 @@ GLuint ViewMatrixID;
 GLuint ModelMatrixID;
 GLuint ProjectionMatrixID;
 GLuint NormalMatrixID;
+GLuint UnitColorUniformID;
 
 GLuint vertexBuffer;
 GLuint uvBuffer;
@@ -301,8 +302,21 @@ GLFWwindow* setupGraphics()
 	ModelMatrixID = glGetUniformLocation(programID, "M");
     ProjectionMatrixID = glGetUniformLocation(programID, "P");
     NormalMatrixID = glGetUniformLocation(programID, "NormalMatrix");
+    UnitColorUniformID = glGetUniformLocation(programID, "teamColor");
 
     return window;
+}
+
+glm::vec3 playerAddressToGlmColor(string address)
+{
+    float vals[3];
+    for (uint i=0; i<3; i++)
+    {
+        string charStr = address.substr(2 + i, 1);
+        unsigned int intVal = std::stoul(charStr, nullptr, 16);
+        vals[i] = intVal / 15.0;
+    }
+    return glm::vec3(vals[0], vals[1], vals[2]);
 }
 
 void display(GLFWwindow *window, const Game &game, const CameraState &cameraState)
@@ -360,8 +374,30 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
         if (game.entities[i])
         {
             glm::vec3 translation = toGlmVec3(game.entities[i]->getPos());
+            // todo: rotation here somewhere
             ModelMatrix = glm::translate(glm::mat4(1.0), translation);
             glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+
+            // determine unit color
+            glm::vec3 unitColor;
+            if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
+            {
+                if (u->ownerId >= game.players.size())
+                {
+                    cout << "Woah, I can't find that player to get the color! Just gonna make it gray..." << endl;
+                    unitColor = glm::vec3(0.5, 0.5, 0.5);
+                }
+                else
+                {
+                    unitColor = playerAddressToGlmColor(game.players[u->ownerId].address);
+                }
+            }
+            else
+            {
+                unitColor = glm::vec3(1, 1, 1);
+            }
+            glUniform3fv(UnitColorUniformID, 1, &unitColor[0]);
+
             glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
         }
     }

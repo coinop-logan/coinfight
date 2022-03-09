@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 #include <optional>
 #include <boost/filesystem.hpp>
 #include <typeinfo>
@@ -27,15 +28,22 @@ using namespace std;
 //     cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
 // }
 
+// glm::vec3 playerAddressToGlmColor(string address)
+// {
+//     float vals[3];
+//     for (uint i=0; i<3; i++)
+//     {
+//         string charStr = address.substr(2 + i, 1);
+//         unsigned int intVal = std::stoul(charStr, nullptr, 16);
+//         vals[i] = intVal / 15.0;
+//     }
+//     return glm::vec3(vals[0], vals[1], vals[2]);
+// }
 
 int main()
 {
-    string msg("hi");
-    string sig("f9ec9c22e31782f5397c8ee1ec63fed83aad060c0a0899b1dc5562348728bb196974bbd5d1fe24ff665228becaa051b57413a3a7f6969cc992fe1b72e1bc2c5d1c");
-
-    string result = signedMsgToAddress(msg, sig);
-
-    cout << "result: " << result << endl;
+    // glm::vec3 color = playerAddressToGlmColor("0xf3f000");
+    // cout << color.x << "," << color.y << "," << color.z << endl;
 
     return 0;
 }
