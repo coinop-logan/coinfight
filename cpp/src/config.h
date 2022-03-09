@@ -18,7 +18,9 @@ const unsigned char NULL_TYPECHAR = 0;
 
 const unsigned char PACKET_RESYNC_CHAR = 'R';
 const unsigned char PACKET_FRAMECMDS_CHAR = 'C';
-const unsigned char PACKET_BALANCEUPDATE_CHAR = 'B';
+
+const unsigned char EVENT_BALANCEUPDATE_CHAR = 1;
+const unsigned char EVENT_GAMESTART_CHAR = 2;
 
 const unsigned char GOLDPILE_TYPECHAR = 'g';
 const unsigned char PRIME_TYPECHAR = 'P';

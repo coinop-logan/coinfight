@@ -11,6 +11,7 @@
 #include "config.h"
 #include "packets.h"
 #include "sigWrapper.h"
+#include "events.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -328,9 +329,9 @@ struct DepositEvent
     coinsInt amountInCoins;
     DepositEvent(string userAddress, coinsInt amountInCoins)
         : userAddress(userAddress), amountInCoins(amountInCoins) {}
-    boost::shared_ptr<BalanceUpdate> toBalanceUpdateSharedPtr()
+    boost::shared_ptr<Event> toEventSharedPtr()
     {
-        return boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(userAddress, amountInCoins, true));
+        return boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddress, amountInCoins, true));
     }
 };
 
@@ -405,20 +406,18 @@ int main()
             continue;
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-
-        // let's count up deposits
-        vector<boost::shared_ptr<BalanceUpdate>> pendingBalanceUpdates;
+        // let's count up events
+        vector<boost::shared_ptr<Event>> pendingEvents;
         // scan for any pending deposits
         vector<DepositEvent> depositEvents = pollPendingDeposits();
         for (uint i=0; i < depositEvents.size(); i++)
         {
-            cout << "hi" << endl;
-            pendingBalanceUpdates.push_back(depositEvents[i].toBalanceUpdateSharedPtr());
+            pendingEvents.push_back(depositEvents[i].toEventSharedPtr());
         }
 
         // build FrameEventsPacket for this frame
         // includes all cmds we've received from clients since last time and all pending deposits
-        FrameEventsPacket fcp(game.frame, pendingCmds, pendingBalanceUpdates);
+        FrameEventsPacket fcp(game.frame, pendingCmds, pendingEvents);
 
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
@@ -448,12 +447,12 @@ int main()
         }
         pendingCmds.clear();
 
-        // execute all balance updates
-        for (unsigned int i = 0; i < pendingBalanceUpdates.size(); i++)
+        // execute all events
+        for (unsigned int i = 0; i < pendingEvents.size(); i++)
         {
-            game.executeBalanceUpdate(pendingBalanceUpdates[i]);
+            pendingEvents[i]->execute(&game);
         }
-        pendingBalanceUpdates.clear();
+        pendingEvents.clear();
 
         game.iterate();
     }

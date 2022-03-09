@@ -1,4 +1,5 @@
 #include "packets.h"
+#include "events.h"
 
 unsigned char Packet::typechar()
 {
@@ -31,7 +32,7 @@ void FrameEventsPacket::pack(vch *dest)
 {
     packPacket(dest);
 
-    packToVch(dest, "QCC", frame, (unsigned char)(authdCmds.size()), (unsigned char)(balanceUpdates.size()));
+    packToVch(dest, "QCC", frame, (unsigned char)(authdCmds.size()), (unsigned char)(events.size()));
 
     for (unsigned int i = 0; i < authdCmds.size(); i++)
     {
@@ -40,16 +41,17 @@ void FrameEventsPacket::pack(vch *dest)
         authdCmds[i]->cmd->pack(dest);
     }
 
-    for (unsigned int i = 0; i < balanceUpdates.size(); i++)
+    for (unsigned int i = 0; i < events.size(); i++)
     {
-        balanceUpdates[i]->pack(dest);
+        packTypechar(dest, events[i]->typechar());
+        events[i]->pack(dest);
     }
 }
 
 void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
 {
-    unsigned char numCmds, numBalanceUpdates;
-    *iter = unpackFromIter(*iter, "QCC", &frame, &numCmds, &numBalanceUpdates);
+    unsigned char numCmds, numEvents;
+    *iter = unpackFromIter(*iter, "QCC", &frame, &numCmds, &numEvents);
 
     authdCmds.clear();
     for (unsigned int i = 0; i < numCmds; i++)
@@ -61,15 +63,15 @@ void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
         authdCmds.push_back(boost::shared_ptr<AuthdCmd>(new AuthdCmd(unauthdCmd, playerAddress)));
     }
 
-    balanceUpdates.clear();
-    for (unsigned int i = 0; i < numBalanceUpdates; i++)
+    events.clear();
+    for (unsigned int i = 0; i < numEvents; i++)
     {
-        balanceUpdates.push_back(boost::shared_ptr<BalanceUpdate>(new BalanceUpdate(iter)));
+        events.push_back(unpackFullEventAndMoveIter(iter));
     }
 }
 
-FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<BalanceUpdate>> balanceUpdates)
-    : frame(frame), authdCmds(authdCmds), balanceUpdates(balanceUpdates) {}
+FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<Event>> events)
+    : frame(frame), authdCmds(authdCmds), events(events) {}
 
 FrameEventsPacket::FrameEventsPacket(vchIter *iter)
 {

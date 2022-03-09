@@ -9,6 +9,7 @@
 #include "vchpack.h"
 #include "engine.h"
 #include "coins.h"
+#include "events.h"
 
 //using namespace std;
 
@@ -632,38 +633,6 @@ void Game::iterate()
         {
             cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
         }
-    }
-}
-
-void Game::executeBalanceUpdate(boost::shared_ptr<BalanceUpdate> balanceUpdate)
-{
-    if (balanceUpdate->isDeposit)
-    {
-        cout << 1 << endl;
-        // see if player exists for this address
-        bool found = false;
-        int playerId;
-        for (uint i=0; i<players.size(); i++)
-        {
-            if (players[i].address == balanceUpdate->userAddress)
-            {
-                found = true;
-                playerId = i;
-            }
-        }
-        // if no user for this address, create one
-        if (!found)
-        {
-            players.push_back(Player(balanceUpdate->userAddress));
-            playerId = players.size() - 1;
-        }
-
-        players[playerId].credit.createMoreByFiat(balanceUpdate->amount);
-        cout << 2 << endl;
-    }
-    else
-    {
-        throw runtime_error("woah, we haven't done withdrawals yet!!");
     }
 }
 

@@ -9,6 +9,7 @@
 #include "myvectors.h"
 #include "vchpack.h"
 #include "common.h"
+#include "events.h"
 
 #ifndef ENGINE_H
 #define ENGINE_H
@@ -113,7 +114,6 @@ public:
 
     void testInit();
     void iterate();
-    void executeBalanceUpdate(boost::shared_ptr<BalanceUpdate> balanceUpdate);
 };
 
 class GoldPile : public Entity

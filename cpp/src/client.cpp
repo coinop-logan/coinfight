@@ -333,9 +333,9 @@ int main()
             fcp.authdCmds[i]->execute(&game);
         }
         // go through balance updates
-        for (unsigned int i = 0; i < fcp.balanceUpdates.size(); i++)
+        for (unsigned int i = 0; i < fcp.events.size(); i++)
         {
-            game.executeBalanceUpdate(fcp.balanceUpdates[i]);
+            fcp.events[i]->execute(&game);
         }
 
         game.iterate();

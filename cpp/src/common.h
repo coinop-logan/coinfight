@@ -42,17 +42,4 @@ std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
 glm::vec3 toGlmVec3(vector3f v);
 
-struct BalanceUpdate
-{
-    string userAddress;
-    coinsInt amount;
-    bool isDeposit;
-
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
-
-    BalanceUpdate(string userAddress, coinsInt amount, bool isDeposit);
-    BalanceUpdate(vchIter *iter);
-};
-
 #endif // COMMON_H

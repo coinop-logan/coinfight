@@ -397,7 +397,7 @@ void display(GLFWwindow *window, const Game &game, const CameraState &cameraStat
             glm::vec3 unitColor;
             if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
             {
-                if (u->ownerId >= game.players.size())
+                if ((uint)u->ownerId >= game.players.size())
                 {
                     cout << "Woah, I can't find that player to get the color! Just gonna make it gray..." << endl;
                     unitColor = glm::vec3(0.5, 0.5, 0.5);
