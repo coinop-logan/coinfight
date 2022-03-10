@@ -113,10 +113,10 @@ public:
 
     Game();
     Game(vchIter *);
+    void startMatchOrPrintError();
 
     void reassignEntityGamePointers();
 
-    void testInit();
     void iterate();
 };
 

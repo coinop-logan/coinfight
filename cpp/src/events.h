@@ -43,4 +43,17 @@ struct BalanceUpdateEvent : public Event
     BalanceUpdateEvent(vchIter *iter);
 };
 
+struct GameStartEvent : public Event
+{
+    unsigned char typechar();
+
+    void execute(Game *game);
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    GameStartEvent();
+    GameStartEvent(vchIter *iter);
+};
+
 #endif // EVENTS_H

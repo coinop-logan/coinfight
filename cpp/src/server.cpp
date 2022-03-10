@@ -128,11 +128,7 @@ public:
     void startHandshakeAsync()
     {
         generateAndSendSigChallenge();
-        receiveSigAsync();
-        //receiveAndHandleSig();
-
-        // clientChannel->sendResyncPacket();
-        // clientChannel->clearVchAndReceiveNextCmd();
+        receiveSigAsync(); // also kicks off receiving loop
     }
 
     void generateAndSendSigChallenge()
@@ -383,8 +379,6 @@ int main()
 {
     srand(time(0));
 
-    game.testInit();
-
     boost::asio::io_service io_service;
 
     Listener listener(io_service);
@@ -415,8 +409,15 @@ int main()
             pendingEvents.push_back(depositEvents[i].toEventSharedPtr());
         }
 
+        // after enough players join, start game
+        if (game.players.size() >= 2 && game.state == Game::Pregame)
+        {
+            pendingEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent()));
+            cout << "starting game!" << endl;
+        }
+
         // build FrameEventsPacket for this frame
-        // includes all cmds we've received from clients since last time and all pending deposits
+        // includes all cmds we've received from clients since last time and all new events
         FrameEventsPacket fcp(game.frame, pendingCmds, pendingEvents);
 
         // send the packet out to all clients

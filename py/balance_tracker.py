@@ -4,7 +4,7 @@ import json
 from pprint import pprint
 import os
 
-neededConfirmations = 5
+neededConfirmations = 2
 serverAccountingDir = "accounting/"
 
 def getLastBlockProcessed():

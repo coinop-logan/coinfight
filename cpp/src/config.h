@@ -41,4 +41,6 @@ const coinsInt PRIME_BUILD_RATE = 5;
 const coinsInt GATEWAY_COST = 100;
 const float GATEWAY_RANGE = 50;
 
+const float SPACE_BETWEEN_SPAWNS = 300;
+
 #endif // CONFIG_H

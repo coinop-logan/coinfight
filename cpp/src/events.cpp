@@ -20,8 +20,11 @@ boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter)
     case EVENT_BALANCEUPDATE_CHAR:
         return boost::shared_ptr<Event>(new BalanceUpdateEvent(iter));
         break;
+    case EVENT_GAMESTART_CHAR:
+        return boost::shared_ptr<Event>(new GameStartEvent(iter));
+        break;
     default:
-        throw runtime_error("Trying to unpack an unrecognized entity");
+        throw runtime_error("Trying to unpack an unrecognized event");
     }
 }
 
@@ -109,6 +112,31 @@ BalanceUpdateEvent::BalanceUpdateEvent(string userAddress, coinsInt amount, bool
       userAddress(userAddress), amount(amount), isDeposit(isDeposit) {}
 
 BalanceUpdateEvent::BalanceUpdateEvent(vchIter *iter)
+    : Event(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char GameStartEvent::typechar()
+{
+    return EVENT_GAMESTART_CHAR;
+}
+
+void GameStartEvent::execute(Game *game)
+{
+    game->startMatchOrPrintError();
+}
+
+void GameStartEvent::pack(vch *dest)
+{
+    packEvent(dest);
+}
+void GameStartEvent::unpackAndMoveIter(vchIter *iter) {}
+
+GameStartEvent::GameStartEvent()
+    : Event()
+    {}
+GameStartEvent::GameStartEvent(vchIter *iter)
     : Event(iter)
 {
     unpackAndMoveIter(iter);

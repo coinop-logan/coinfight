@@ -582,6 +582,44 @@ Game::Game(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
+void Game::startMatchOrPrintError()
+{
+    if (players.size() == 0)
+    {
+        cout << "No players to start the game with!" << endl;
+        return;
+    }
+
+    coinsInt neededCreditPerPlayer = PRIME_COST;
+    for (uint i=0; i<players.size(); i++)
+    {
+        if (players[i].credit.getInt() < neededCreditPerPlayer)
+        {
+            cout << "Player " << players[i].address << " doesn't have enough credit! They currently have " << players[i].credit.getInt() << " but they need " << neededCreditPerPlayer << "." << endl;
+            return;            
+        }
+    }
+
+    float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
+    float spawnCircleRadius = spawnCircleCircumference / 2;
+    for (uint i=0; i<players.size(); i++)
+    {
+        float positionAlongCircumference = ((float)i)/players.size();
+        float spawnAngle = positionAlongCircumference * 2 * M_PI;
+        vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
+
+        // if you're going to change this, you should change neededCostPerPlayer above too!
+        boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos));
+        if (!primeUnit->completeBuildingInstantly(&players[i].credit))
+        {
+            throw logic_error("This player doesn't have enough credit for a Gateway - but I thought we checked that in the previous for loop!");
+        }
+        entities.push_back(primeUnit);
+    }
+
+    state = Active;
+}
+
 void Game::reassignEntityGamePointers()
 {
     for (EntityRef i = 0; i < entities.size(); i++)
@@ -591,28 +629,28 @@ void Game::reassignEntityGamePointers()
     }
 }
 
-void Game::testInit()
-{
-    frame = 0;
+// void Game::testInit()
+// {
+//     frame = 0;
 
-    players.push_back(Player("0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92"));
-    cout << "PRETENDING that 0xBB5e.. has $10 credit" << endl;
-    players[0].credit.createMoreByFiat(5000);
+//     players.push_back(Player("0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92"));
+//     cout << "PRETENDING that 0xBB5e.. has $10 credit" << endl;
+//     players[0].credit.createMoreByFiat(5000);
 
-    boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
-    boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(70, 30)));
+//     boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
+//     boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(70, 30)));
 
-    entities.push_back(p1);
-    entities.push_back(p2);
+//     entities.push_back(p1);
+//     entities.push_back(p2);
 
-    if (!
-        p1->completeBuildingInstantly(&players[0].credit)
-     && p2->completeBuildingInstantly(&players[0].credit)
-    )
-    {
-        throw runtime_error("not credit in player[0] to run testInit");
-    }
-}
+//     if (!
+//         p1->completeBuildingInstantly(&players[0].credit)
+//      && p2->completeBuildingInstantly(&players[0].credit)
+//     )
+//     {
+//         throw runtime_error("not credit in player[0] to run testInit");
+//     }
+// }
 
 void Game::iterate()
 {
