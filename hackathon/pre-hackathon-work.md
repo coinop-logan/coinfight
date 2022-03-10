@@ -55,5 +55,13 @@ Big milestone: web3 auth for client.
     * Server records this address as that client connection's address
 * Relatedly, server now has separate players, which can only control their own units
 
-Today the first goal is to iron out any issues if client is on another pc
+Tomorrow the first goal is to iron out any issues if client is on another pc
 Right after that, start making game game-like: re-implement commands like move or pickupGold
+
+### Wed
+
+Took quite a rest day today. Needed. But was able to complete many small tasks.
+
+* Units can move around again, and point where they're going.
+* Each player has a different color (derived from first 3 chars of ETH address, as RGB val in hex)
+* Lots of work toward a better game "state" which has distinct pregame and game states
