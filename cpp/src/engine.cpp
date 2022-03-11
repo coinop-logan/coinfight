@@ -82,6 +82,10 @@ void Entity::go()
 {
     throw runtime_error("go() has not been defined for " + getTypeName() + ".");
 }
+sf::Color Entity::getPrimaryColor()
+{
+    throw runtime_error("getPrimaryColor() has not been defined for " + getTypeName() + ".");
+}
 void Entity::pack(vch *dest)
 {
     throw runtime_error("pack() has not been defined for " + getTypeName() + ".");
@@ -132,6 +136,10 @@ void GoldPile::unpackAndMoveIter(vchIter *iter)
 {
     gold = Coins(iter);
 }
+sf::Color GoldPile::getPrimaryColor()
+{
+    return sf::Color(sf::Color::Yellow);
+}
 
 GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
                                                               gold(MAX_COINS)
@@ -145,6 +153,18 @@ GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref,
 unsigned char GoldPile::typechar() { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() { return "GoldPile"; }
 void GoldPile::go() {}
+
+sf::Color playerAddressToColor(string address)
+{
+    int vals[3];
+    for (uint i=0; i<3; i++)
+    {
+        string charStr = address.substr(2 + i, 1);
+        unsigned int intVal = std::stoul(charStr, nullptr, 16);
+        vals[i] = (intVal / 15.0) * 255;
+    }
+    return sf::Color(vals[0], vals[1], vals[2]);
+}
 
 coinsInt Unit::getCost()
 {
@@ -197,6 +217,10 @@ bool Unit::isActive()
         getBuilt() >= getCost() &&
         (!dead)
     );
+}
+sf::Color Unit::getPrimaryColor()
+{
+    return playerAddressToColor(game->playerIdToAddress(ownerId));
 }
 
 void Building::packBuilding(vch *destVch)
@@ -520,6 +544,10 @@ int Game::playerAddressToIdOrNegativeOne(string address)
         }
     }
     return -1;
+}
+string Game::playerIdToAddress(uint playerId)
+{
+    return players[playerId].address;
 }
 
 void Game::pack(vch *dest)

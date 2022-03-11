@@ -36,6 +36,7 @@ public:
     virtual void pack(vch *dest);
     virtual void unpackAndMoveIter(vchIter *iter, Game &game);
     virtual void go();
+    virtual sf::Color getPrimaryColor();
     void die();
 
     bool collidesWithPoint(vector2f);
@@ -107,6 +108,7 @@ public:
     EntityRef getNextEntityRef();
 
     int playerAddressToIdOrNegativeOne(string address);
+    string playerIdToAddress(uint playerId);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
@@ -128,6 +130,7 @@ public:
     void unpackAndMoveIter(vchIter *iter);
     GoldPile(Game *, EntityRef, vector2f);
     GoldPile(Game *, EntityRef, vchIter *);
+    sf::Color getPrimaryColor();
 
     unsigned char typechar();
     string getTypeName();
@@ -145,6 +148,7 @@ public:
     void unpackUnitAndMoveIter(vchIter *iter);
     Unit(Game *, EntityRef, int, coinsInt, vector2f);
     Unit(Game *, EntityRef, vchIter *);
+    sf::Color getPrimaryColor();
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
     bool completeBuildingInstantly(Coins* fromCoins);

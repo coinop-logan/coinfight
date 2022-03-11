@@ -18,26 +18,16 @@ sf::RenderWindow setupGraphics()
     return sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
 }
 
-sf::Color playerAddressToColor(string address)
-{
-    int vals[3];
-    for (uint i=0; i<3; i++)
-    {
-        string charStr = address.substr(2 + i, 1);
-        unsigned int intVal = std::stoul(charStr, nullptr, 16);
-        vals[i] = (intVal / 15.0) * 255;
-    }
-    return sf::Color(vals[0], vals[1], vals[2]);
-}
-
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
 {
     vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
+    sf::Color primaryColor = entity->getPrimaryColor();
+
     if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
     {
         sf::CircleShape circle(3);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(sf::Color::Blue);
+        circle.setFillColor(primaryColor);
         circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
@@ -45,7 +35,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
     {
         sf::CircleShape circle(5);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(sf::Color::Red);
+        circle.setFillColor(primaryColor);
         circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
@@ -55,7 +45,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setOutlineColor(sf::Color(100,100,100));
         circle.setOutlineThickness(1);
-        circle.setFillColor(castedEntity->gold.getInt() > 0 ? sf::Color::Yellow : sf::Color::Transparent);
+        circle.setFillColor(primaryColor);
         circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
