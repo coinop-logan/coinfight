@@ -68,7 +68,7 @@ public:
     {
         boost::asio::streambuf buf(42);
         boost::asio::read(socket, buf);
-        return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size() - 1); // -1 to remove trailing '\n'
+        return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size());
     }
     void startReceivingLoop()
     {
