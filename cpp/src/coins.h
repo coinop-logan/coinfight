@@ -1,10 +1,9 @@
 #include <algorithm>
+#include <SFML/Graphics.hpp>
+#include "config.h"
 
 #ifndef COINS_H
 #define COINS_H
-
-const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
-const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
 using namespace std;
 using vch = vector<unsigned char>;
@@ -26,7 +25,7 @@ private:
 public:
     coinsInt max;
     coinsInt getInt();
-    // sf::String getDollarString();
+    sf::String getDollarString();
     Coins();
     Coins(coinsInt);
     Coins(vchIter*);

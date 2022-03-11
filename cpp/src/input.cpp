@@ -1,8 +1,3 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include "input.h"
 #include "config.h"
 
@@ -12,45 +7,20 @@ extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 UI::UI()
 {
-    lastMouseMovePos = vector2f(0, 0);
-
-    camera.gamePosLookAt = vector2f(0, 0);
-    camera.cameraPos = glm::vec3(0, -10, 1000);
-
-    for (uint i=0; i<8; i++)
-    {
-        mouseButtonsPressed[i] = false;
-    }
+    camera.pos = vector2f(0, 0);
 }
 
-glm::vec3 gamePosToGlmVec3(vector2f gamePos)
+vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
 {
-    return glm::vec3(gamePos.x, gamePos.y, 0.0);
+    return vector2f(cameraState.pos + screenPos);
 }
 
-vector2f glmVec3ToGamePos(glm::vec3 v)
+vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
 {
-    return vector2f(v.x, v.y);
+    return vector2f(mEvent.x, mEvent.y);
 }
 
-vector2f screenPosToGamePos(const CameraState &camera, vector2f screenPos)
-{
-    glm::vec4 viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    glm::vec3 clickNear = glm::unProject(glm::vec3(screenPos.x, (float)WINDOW_HEIGHT - screenPos.y, 0), camera.getViewMatrix(), ProjectionMatrix, viewport);
-    glm::vec3 clickFar = glm::unProject(glm::vec3(screenPos.x, (float)WINDOW_HEIGHT - screenPos.y, 1), camera.getViewMatrix(), ProjectionMatrix, viewport);
-
-    float interp = (0 - clickNear.z) / (clickFar.z - clickNear.z);
-    if (interp < 0 || interp > 1)
-    {
-        fprintf(stdout, "Unexpected error (can't find ground?) with screenPosToGamePos");
-        return vector2f(0,0);
-    }
-    glm::vec3 interpolated = glm::mix(clickNear, clickFar, interp);
-
-    return vector2f(interpolated.x, interpolated.y);
-}
-
-Target getTargetFromScreenPos(const Game &game, const CameraState &cameraState, vector2f screenPos)
+Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, vector2f screenPos)
 {
     vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
@@ -136,183 +106,39 @@ void queueCmdForSending(boost::shared_ptr<Cmd> cmd)
     cmdsToSend.push_back(cmd);
 }
 
-vector2f getGlfwClickVector2f(GLFWwindow *window)
-{
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    return vector2f(xpos, ypos);
-}
-
 void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
 {
     vector2f inGameDragVector = screenPosToGamePos(ui.camera, toScreenPos) - screenPosToGamePos(ui.camera, fromScreenPos);
-    fprintf(stdout, "dragvec %f,%f\n", inGameDragVector.x, inGameDragVector.y);
-    ui.camera.cameraPos -= gamePosToGlmVec3(inGameDragVector);
-    ui.camera.gamePosLookAt -= inGameDragVector;
+    ui.camera.pos -= inGameDragVector;
 }
 
-void processRightMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
-{
-    vector2f delta = toScreenPos - fromScreenPos;
+// void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+// {
+//     // set mouseButtonsPressed
+//     ui.mouseButtonsPressed[button] = (action == GLFW_PRESS);
 
-    // we will be directly manipulating mutLookAtToCameraPos, then setting the new cameraPos based on it.
-    // start with where it's currently at:
-    const glm::vec3 oldLookAtToCameraPos = ui.camera.cameraPos - gamePosToGlmVec3(ui.camera.gamePosLookAt);
-    // copy to a mutable version ... to mutate!
-    glm::vec3 mutLookAtToCameraPos = glm::vec3(oldLookAtToCameraPos);
+//     // actions
+//     // press
+//     if (action == GLFW_PRESS)
+//     {
+//         // get target
+//         Target target = getTargetFromScreenPos(game, ui.camera, getGlfwClickVector2f(window));
+//         // left click
+//         if (button == GLFW_MOUSE_BUTTON_LEFT)
+//         {
+//             if (boost::shared_ptr<Entity> targetedEntity = target.castToEntityPtr(game))
+//             {
+//                 if (!ui.shiftPressed)
+//                     ui.selectedEntities.clear();
 
-    // get a matrix for the horizontal (x component of delta) rotation 
-    glm::mat4 horizontalRotation = glm::rotate(glm::mat4(1), -delta.x / 100.0f, glm::vec3(0, 0, 1));
-    // apply to lookAtToCameraPos
-    mutLookAtToCameraPos = horizontalRotation * glm::vec4(mutLookAtToCameraPos, 0);
-
-    // I can't wrap my head around matrix math for this, so will use some trig to apply the y component.
-
-    // get the magnitude of the vector projected onto the XY plane (i.e. the "flattened" vector)
-    float xyMagnitude = glm::length(glm::vec2(mutLookAtToCameraPos.x, mutLookAtToCameraPos.y));
-    // use this with the z component of lookAtToCmaeraPos to form a 2d vector that we can work with
-    // Think of it as a vertical triangle that drops under the camera (y value, from camera z height) and extends toward the lookAt point (x value)
-    glm::vec2 lookAtVector2d = glm::vec2(xyMagnitude, mutLookAtToCameraPos.z);
-    // now we can use trig to rotate this vector
-    float angle = atan2(lookAtVector2d.y, lookAtVector2d.x);
-    float length = glm::length(lookAtVector2d);
-    // finally bring in delta.y
-    float newAngle = angle + (delta.y / 100.0f);
-    glm::vec2 newLookAtVector2d = glm::vec2(length*cos(newAngle), length*sin(newAngle));
-
-    // keep the angle in sane bounds
-    // don't do a goddamn summersault
-    if (newLookAtVector2d.x < 0)
-    {
-        newLookAtVector2d.x = 0.001;
-    }
-    else
-    {
-        // otherwise, stay above the ground
-        newLookAtVector2d.y = max(0.0f, newLookAtVector2d.y);
-    }
-
-    // how much did our xy line (which we're handling as the x component of the 2d version) change?
-    // this will relate to how we modify the XY components of our original mutLookAtToCameraPos
-    float xyMagnitudeChange = newLookAtVector2d.x / lookAtVector2d.x;
-    // for the new camera height we can just take the y component of our 2d vector
-    float newZ = newLookAtVector2d.y;
-
-    // finally apply this to the mutLookAtToCameraPos
-    mutLookAtToCameraPos = glm::vec3(
-        xyMagnitudeChange * mutLookAtToCameraPos.x,
-        xyMagnitudeChange * mutLookAtToCameraPos.y,
-        newZ
-    );
-    
-    debugOutputVector("mutLookAtToCameraPos", mutLookAtToCameraPos);
-
-    ui.camera.cameraPos = gamePosToGlmVec3(ui.camera.gamePosLookAt) + mutLookAtToCameraPos;
-}
-
-void mouseMoveCallback(GLFWwindow *window, double xpos, double ypos)
-{
-    vector2f newMouseMovePos = vector2f(xpos, ypos);
-    if (ui.mouseButtonsPressed[GLFW_MOUSE_BUTTON_MIDDLE])
-    {
-        processMiddleMouseDrag(ui.lastMouseMovePos, newMouseMovePos);
-    }
-    if (ui.mouseButtonsPressed[GLFW_MOUSE_BUTTON_RIGHT])
-    {
-        processRightMouseDrag(ui.lastMouseMovePos, newMouseMovePos);
-    }
-
-    ui.lastMouseMovePos = newMouseMovePos;
-}
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    // set mouseButtonsPressed
-    ui.mouseButtonsPressed[button] = (action == GLFW_PRESS);
-
-    // actions
-    // press
-    if (action == GLFW_PRESS)
-    {
-        // get target
-        Target target = getTargetFromScreenPos(game, ui.camera, getGlfwClickVector2f(window));
-        // left click
-        if (button == GLFW_MOUSE_BUTTON_LEFT)
-        {
-            if (boost::shared_ptr<Entity> targetedEntity = target.castToEntityPtr(game))
-            {
-                if (!ui.shiftPressed)
-                    ui.selectedEntities.clear();
-
-                ui.selectedEntities.push_back(targetedEntity);
-                cout << ui.selectedEntities.size() << endl;
-            }
-        }
-        // right click
-        if (button == GLFW_MOUSE_BUTTON_RIGHT)
-        {
-            queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
-        }
-    }
-}
-
-void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    vector2f scrollTargetGamePos = screenPosToGamePos(ui.camera, getGlfwClickVector2f(window));
-    debugOutputVector("scrollTarget", scrollTargetGamePos);
-
-    int remainingZoom = round(yoffset);
-    while (remainingZoom != 0)
-    {
-        float distanceMultiplyFactor;
-        bool reverseXY;
-        if (remainingZoom > 0)
-        {
-            distanceMultiplyFactor = 1/1.1;
-            remainingZoom--;
-            reverseXY = false;
-        }
-        else
-        {
-            distanceMultiplyFactor = 1.1;
-            remainingZoom++;
-            reverseXY = true;
-        }
-
-        glm::vec3 targetPosToCamera = (ui.camera.cameraPos - gamePosToGlmVec3(scrollTargetGamePos));
-        glm::vec3 newTargetPosToCamera = targetPosToCamera * distanceMultiplyFactor;
-        glm::vec3 newCameraPosWithoutReverse = gamePosToGlmVec3(scrollTargetGamePos) + newTargetPosToCamera;
-
-        glm::vec3 cameraPosMove = newCameraPosWithoutReverse - ui.camera.cameraPos;
-        vector2f gameLookAtPosMove(cameraPosMove.x, cameraPosMove.y);
-        if (reverseXY)
-        {
-            gameLookAtPosMove.x *= -1;
-            gameLookAtPosMove.y *= -1;
-            cameraPosMove.x *= -1;
-            cameraPosMove.y *= -1;
-        }
-        ui.camera.cameraPos += cameraPosMove;
-        ui.camera.gamePosLookAt += gameLookAtPosMove;
-    }
-}
-
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    bool keyIsPressed = (action == GLFW_PRESS || action == GLFW_REPEAT);
-    
-    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT)
-        ui.shiftPressed = keyIsPressed;
-    else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL)
-        ui.ctrlPressed = keyIsPressed;
-    else if (key == GLFW_KEY_LEFT_ALT || key == GLFW_KEY_RIGHT_ALT)
-        ui.altPressed = keyIsPressed;
-}
-
-void setInputCallbacks(GLFWwindow *window)
-{
-    glfwSetCursorPosCallback(window, mouseMoveCallback);
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    glfwSetScrollCallback(window, scrollCallback);
-    glfwSetKeyCallback(window, keyCallback);
-}
+//                 ui.selectedEntities.push_back(targetedEntity);
+//                 cout << ui.selectedEntities.size() << endl;
+//             }
+//         }
+//         // right click
+//         if (button == GLFW_MOUSE_BUTTON_RIGHT)
+//         {
+//             queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
+//         }
+//     }
+// }

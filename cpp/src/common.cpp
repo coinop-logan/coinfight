@@ -1,5 +1,4 @@
 #include <iostream>
-#include <glm/glm.hpp>
 #include <stdio.h>
 #include "common.h"
 #include "coins.h"
@@ -25,11 +24,6 @@ void debugOutputVector(const char *label, vector2f v)
     fprintf(stdout, ": %f,%f\n", v.x, v.y);
 }
 void debugOutputVector(const char *label, vector3f v)
-{
-    fprintf(stdout, label);
-    fprintf(stdout, ": %f,%f,%f\n", v.x, v.y, v.z);
-}
-void debugOutputVector(const char *label, glm::vec3 v)
 {
     fprintf(stdout, label);
     fprintf(stdout, ": %f,%f,%f\n", v.x, v.y, v.z);
@@ -100,9 +94,4 @@ std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
     else {
         return {sum};
     }
-}
-
-glm::vec3 toGlmVec3(vector3f v)
-{
-    return glm::vec3(v.x, v.y, v.z);
 }

@@ -1,7 +1,5 @@
 #include <stdint.h>
 #include <optional>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include "myvectors.h"
 #include "vchpack.h"
 #include "coins.h"
@@ -10,8 +8,6 @@
 #define COMMON_H
 
 using namespace std;
-
-const glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 10000.0f);
 
 using vch = vector<unsigned char>;
 using vchIter = vector<unsigned char>::iterator;
@@ -22,7 +18,6 @@ void packTypechar(vch *dest, unsigned char typechar);
 void debugOutputVch(vch);
 void debugOutputVector(const char *,vector2f);
 void debugOutputVector(const char *,vector3f);
-void debugOutputVector(const char *,glm::vec3);
 
 void prependVchWithSize(vch *vchDest);
 
@@ -39,7 +34,5 @@ vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s);
 
 bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
-
-glm::vec3 toGlmVec3(vector3f v);
 
 #endif // COMMON_H

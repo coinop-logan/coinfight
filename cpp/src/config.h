@@ -1,11 +1,10 @@
-#include "coins.h"
-#include <glm/glm.hpp>
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
+
+const unsigned long MAX_COINS = UINT32_MAX;
 
 const int WINDOW_WIDTH = 1500;
 const int WINDOW_HEIGHT = 800;
@@ -30,6 +29,9 @@ const float SEC_PER_FRAME = 1 / 30.0;
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 
+const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
+const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
+
 const coinsInt PRIME_COST = 100;
 const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 50;
@@ -41,6 +43,6 @@ const coinsInt PRIME_BUILD_RATE = 5;
 const coinsInt GATEWAY_COST = 100;
 const float GATEWAY_RANGE = 50;
 
-const float SPACE_BETWEEN_SPAWNS = 300;
+const float SPACE_BETWEEN_SPAWNS = 100;
 
 #endif // CONFIG_H

@@ -1,17 +1,12 @@
-// #include <GL/gl.h>
-// #include <GL/glu.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <stdio.h>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
-
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "config.h"
 #include "cmds.h"
 #include "engine.h"
@@ -218,19 +213,6 @@ public:
     }
 };
 
-bool handleInput(GLFWwindow *window)
-{
-    glfwPollEvents();
-
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS || glfwWindowShouldClose(window))
-    {
-        cleanupGraphics();
-        return true;
-    }
-
-    return false;
-}
-
 int main()
 {
     boost::asio::io_service io_service;
@@ -284,18 +266,12 @@ int main()
         }
     }
 
-    GLFWwindow *window = setupGraphics();
-    if (window == NULL)
-    {
-        fprintf(stderr, "setupGraphics returned NULL.");
-        return -1;
-    }
+    sf::RenderWindow window = setupGraphics();
+    sf::Event event;
     
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
     
     ui = UI();
-
-    setInputCallbacks(window);
 
     while (true)
     {
@@ -308,10 +284,53 @@ int main()
 
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        // cmdsToSend will be filled up by any triggered input callbacks
-        bool shouldClose = handleInput(window);
-        if (shouldClose) return 0;
-        // cmdsToSend may now have more cmds in it
+        vector<boost::shared_ptr<Cmd>> cmdsToSend;
+
+        while (window.pollEvent(event))
+        {
+            switch (event.type)
+            {
+            case sf::Event::Closed:
+                window.close();
+                break;
+            case sf::Event::MouseButtonPressed:
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                    {
+                        ui.selectedEntities.clear();
+                        ui.selectedEntities.push_back(clickedEntity);
+                    }
+                }
+                else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
+                {
+                    cmdsToSend.push_back(makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton))));
+                    
+                }
+                else if (event.mouseButton.button == sf::Mouse::Middle)
+                {
+                    Target target = getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton));
+                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+                    {
+                        if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                        {
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref)));
+                        }
+                    }
+                    else
+                    {
+                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target)));
+                    }
+                }
+                break;
+            case sf::Event::KeyPressed:
+                // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
+                break;
+            default:
+                break;
+            }
+        }
+
         for (uint i=0; i < cmdsToSend.size(); i++)
         {
             if (!cmdsToSend[i])
@@ -319,7 +338,6 @@ int main()
             else
                 connectionHandler.sendCmd(cmdsToSend[i]);
         }
-        cmdsToSend.clear();
 
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
@@ -347,7 +365,8 @@ int main()
 
         game.iterate();
 
-        display(window, game, ui.camera);
+        // display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(userAddress));
+        display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(userAddress));
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

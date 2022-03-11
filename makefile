@@ -1,13 +1,12 @@
 CXX = g++
-CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie `pkg-config --cflags glfw3`
+CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
 
-INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ -I../../git-external/glfw/include/ `python3-config --includes`
-LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `pkg-config --static --libs glfw3` `python3-config --ldflags` -lpython3.8
+INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-config --includes`
+LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `python3-config --ldflags` -lpython3.8
 
 all: bin/client bin/server bin/test bin/gltest
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
-	cp cpp/src/shaders/* bin/
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)

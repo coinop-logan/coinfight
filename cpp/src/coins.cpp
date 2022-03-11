@@ -1,8 +1,9 @@
 #include <string>
+#include <SFML/Graphics.hpp>
+#include <cmath>
 #include "coins.h"
 #include "vchpack.h"
 
-extern const unsigned long MAX_COINS = UINT32_MAX;
 Coins::Coins()
     : heldAmount(0), max(MAX_COINS) {}
 
@@ -69,13 +70,13 @@ coinsInt Coins::getInt()
 {
     return heldAmount;
 }
-// sf::String Coins::getDollarString()
-// {
-//     float dollars = getInt() / CREDIT_PER_DOLLAR;
-//     char buf[100];
-//     snprintf(buf, 100, "$%.2f", dollars);
-//     return sf::String(buf);
-// }
+sf::String Coins::getDollarString()
+{
+    float dollars = getInt() / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    char buf[100];
+    snprintf(buf, 100, "$%.2f", dollars);
+    return sf::String(buf);
+}
 unsigned long Coins::getSpaceLeft()
 {
     return max - heldAmount;
