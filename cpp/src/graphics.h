@@ -8,7 +8,7 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-sf::RenderWindow setupGraphics();
+sf::RenderWindow* setupGraphics();
 void display(sf::RenderWindow *window, Game *game, UI ui, int playerId);
 void cleanupGraphics();
 

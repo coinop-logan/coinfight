@@ -30,7 +30,7 @@ const unsigned char GOLDPILE_TYPECHAR = 'g';
 const unsigned char PRIME_TYPECHAR = 'P';
 const unsigned char GATEWAY_TYPECHAR = 'G';
 
-const float SEC_PER_FRAME = 1 / 30.0;
+const float SEC_PER_FRAME = 1 / 60.0;
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 

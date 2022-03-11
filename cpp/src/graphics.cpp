@@ -1,6 +1,7 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <fstream>
+#include <SFML/Graphics.hpp>
 #include "engine.h"
 #include "graphics.h"
 #include "common.h"
@@ -10,12 +11,33 @@ using namespace std;
 
 sf::Font mainFont;
 
-sf::RenderWindow setupGraphics()
+sf::RenderWindow* setupGraphics()
 {
     if (!mainFont.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
-    return sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
+    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
+
+    window->setMouseCursorVisible(false);
+
+    // const uint8_t pixels[] =
+    //     {255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
+    //     0, 0, 0, 0,   255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,
+    //     0, 0, 0, 0,   0, 0, 0, 0,   255, 0, 0, 255,   0, 0, 0, 0,
+    //     0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   255, 0, 0, 255
+    //     };
+    // sf::Vector2u size(4, 4);
+    // sf::Vector2u hotspot(0,0);
+
+    // sf::Cursor cursor;
+    // if (cursor.loadFromPixels(
+    //     pixels,
+    //     size,
+    //     hotspot
+    // ))
+    //     window->setMouseCursor(cursor);
+    
+    return window;
 }
 
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
@@ -80,6 +102,17 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
     }
 }
 
+void drawCursor(sf::RenderWindow *window, UI ui)
+{
+    sf::Transform mouseTransform;
+    mouseTransform.translate(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
+
+    sf::CircleShape circle(5);
+    circle.setFillColor(sf::Color::Red);
+
+    window->draw(circle, mouseTransform);
+}
+
 void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
 {
     window->clear();
@@ -99,6 +132,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegative
 
         drawOutputStrings(window, outputStrings);
     }
+
+    drawCursor(window, ui);
     
     window->display();
 }

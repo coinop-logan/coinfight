@@ -269,7 +269,7 @@ int main()
         }
     }
 
-    sf::RenderWindow window = setupGraphics();
+    sf::RenderWindow* window = setupGraphics();
     sf::Event event;
     
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
@@ -287,12 +287,12 @@ int main()
 
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        while (window.pollEvent(event))
+        while (window->pollEvent(event))
         {
             switch (event.type)
             {
             case sf::Event::Closed:
-                window.close();
+                window->close();
                 break;
             case sf::Event::MouseButtonPressed:
                 if (event.mouseButton.button == sf::Mouse::Left)
@@ -394,11 +394,13 @@ int main()
             }
         }
 
-        display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
+        display(window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
     }
+
+    delete window;
 
     socket.close();
 
