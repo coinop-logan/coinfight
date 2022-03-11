@@ -441,19 +441,19 @@ int main()
             }
         }
 
-        // execute all cmds on server-side game
-        for (unsigned int i = 0; i < pendingCmds.size(); i++)
-        {
-            pendingCmds[i]->execute(&game);
-        }
-        pendingCmds.clear();
-
         // execute all events
         for (unsigned int i = 0; i < pendingEvents.size(); i++)
         {
             pendingEvents[i]->execute(&game);
         }
         pendingEvents.clear();
+
+        // execute all cmds on server-side game
+        for (unsigned int i = 0; i < pendingCmds.size(); i++)
+        {
+            pendingCmds[i]->execute(&game);
+        }
+        pendingCmds.clear();
 
         game.iterate();
     }

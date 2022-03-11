@@ -28,7 +28,6 @@ vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos)
 
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
 {
-    cout << "x " << mEvent.x << endl;;
     return vector2i(mEvent.x, mEvent.y);
 }
 

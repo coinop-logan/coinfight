@@ -353,19 +353,32 @@ int main()
 
         assert(fcp.frame == game.frame);
 
+        // go through events
+        for (unsigned int i = 0; i < fcp.events.size(); i++)
+        {
+            fcp.events[i]->execute(&game);
+        }
+        
         // go through cmds
         for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
         {
             fcp.authdCmds[i]->execute(&game);
         }
-        // go through events
-        for (unsigned int i = 0; i < fcp.events.size(); i++)
+
+        game.iterate();
+
+        // check for game start cmd, and do some ux prep if we got one
+        for (uint i=0; i<fcp.events.size(); i++)
         {
-            fcp.events[i]->execute(&game);
             if (auto gse = boost::dynamic_pointer_cast<GameStartEvent, Event>(fcp.events[i]))
             {
                 // assign playerId
-                playerId = game.playerAddressToIdOrNegativeOne(playerAddress);
+                int playerIdOrNeg1 = game.playerAddressToIdOrNegativeOne(playerAddress);
+                if (playerIdOrNeg1 < 0)
+                {
+                    throw runtime_error("Can't get playerID from address after game start");
+                }
+                playerId = playerIdOrNeg1;
 
                 // find owned unit and center on it
                 for (uint i=0; i<game.entities.size(); i++)
@@ -380,8 +393,6 @@ int main()
                 }
             }
         }
-
-        game.iterate();
 
         display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
 

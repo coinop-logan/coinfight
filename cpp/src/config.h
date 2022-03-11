@@ -12,7 +12,7 @@ const int WINDOW_WIDTH = 1500;
 const int WINDOW_HEIGHT = 800;
 const vector2i HALF_SCREENDIM = vector2i(WINDOW_WIDTH, WINDOW_HEIGHT) / 2;
 
-const uint NEEDED_PLAYERS = 2;
+const uint NEEDED_PLAYERS = 1;
 
 const float DISTANCE_TOL = 0.0001;
 
