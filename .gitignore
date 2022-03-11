@@ -6,3 +6,4 @@ sol/build
 sol/node_modules
 secret.txt
 cpp/src/test.cpp
+testdep*
