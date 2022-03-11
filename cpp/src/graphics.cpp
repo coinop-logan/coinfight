@@ -30,14 +30,15 @@ sf::Color playerAddressToColor(string address)
     return sf::Color(vals[0], vals[1], vals[2]);
 }
 
-void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity)
+void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
 {
+    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
     if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
     {
         sf::CircleShape circle(3);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setFillColor(sf::Color::Blue);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
+        circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
     else if (boost::shared_ptr<Gateway> castedEntity = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
@@ -45,7 +46,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity)
         sf::CircleShape circle(5);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setFillColor(sf::Color::Red);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
+        circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
     else if (boost::shared_ptr<GoldPile> castedEntity = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -55,7 +56,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity)
         circle.setOutlineColor(sf::Color(100,100,100));
         circle.setOutlineThickness(1);
         circle.setFillColor(castedEntity->gold.getInt() > 0 ? sf::Color::Yellow : sf::Color::Transparent);
-        circle.setPosition(castedEntity->pos.x, castedEntity->pos.y);
+        circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
     }
     else
@@ -88,7 +89,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegative
     for (unsigned int i = 0; i < game->entities.size(); i++)
     {
         if (game->entities[i])
-            drawEntity(window, game->entities[i]);
+            drawEntity(window, game->entities[i], ui.camera);
     }
 
     vector<sf::String> outputStrings;

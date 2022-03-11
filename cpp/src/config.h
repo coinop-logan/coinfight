@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "myvectors.h"
+
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
@@ -8,6 +10,9 @@ const unsigned long MAX_COINS = UINT32_MAX;
 
 const int WINDOW_WIDTH = 1500;
 const int WINDOW_HEIGHT = 800;
+const vector2i HALF_SCREENDIM = vector2i(WINDOW_WIDTH, WINDOW_HEIGHT) / 2;
+
+const uint NEEDED_PLAYERS = 2;
 
 const float DISTANCE_TOL = 0.0001;
 

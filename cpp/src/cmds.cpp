@@ -75,7 +75,6 @@ vector<boost::shared_ptr<Unit>> Cmd::getUnits(Game *game)
 void Cmd::executeIfOwnedBy(Game *game, string userAddress)
 {
     int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
-    cout << "address " << userAddress << " translates to playerId " << playerId << endl;
     if (playerId == -1)
         return;
         
@@ -84,12 +83,7 @@ void Cmd::executeIfOwnedBy(Game *game, string userAddress)
     {
         if (units[i]->ownerId == playerId)
         {
-            cout << "executing!" << endl;
             executeOnUnit(units[i]);
-        }
-        else
-        {
-            cout << "not executing." << endl;
         }
     }
 }

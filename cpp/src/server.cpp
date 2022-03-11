@@ -410,7 +410,7 @@ int main()
         }
 
         // after enough players join, start game
-        if (game.players.size() >= 2 && game.state == Game::Pregame)
+        if (game.players.size() >= NEEDED_PLAYERS && game.state == Game::Pregame)
         {
             pendingEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent()));
             cout << "starting game!" << endl;

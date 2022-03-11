@@ -7,20 +7,32 @@ extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 UI::UI()
 {
-    camera.pos = vector2f(0, 0);
+    camera.gamePos = vector2f(0, 0);
 }
 
 vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
 {
-    return vector2f(cameraState.pos + screenPos);
+    vector2i screenPosFromCenter = screenPos - HALF_SCREENDIM;
+    vector2f result = cameraState.gamePos + vector2f(screenPosFromCenter.x, -screenPosFromCenter.y);
+
+    return result;
 }
 
-vector2f mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
+vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos)
 {
-    return vector2f(mEvent.x, mEvent.y);
+    vector2f subtractedFromCamera = gamePos - cameraState.gamePos;
+    subtractedFromCamera.y *= -1;
+    vector2i result = subtractedFromCamera + HALF_SCREENDIM;
+    return result;
 }
 
-Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, vector2f screenPos)
+vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
+{
+    cout << "x " << mEvent.x << endl;;
+    return vector2i(mEvent.x, mEvent.y);
+}
+
+Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, vector2i screenPos)
 {
     vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
@@ -101,16 +113,11 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     
 }
 
-void queueCmdForSending(boost::shared_ptr<Cmd> cmd)
-{
-    cmdsToSend.push_back(cmd);
-}
-
-void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
-{
-    vector2f inGameDragVector = screenPosToGamePos(ui.camera, toScreenPos) - screenPosToGamePos(ui.camera, fromScreenPos);
-    ui.camera.pos -= inGameDragVector;
-}
+// void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
+// {
+//     vector2f inGameDragVector = screenPosToGamePos(ui.camera, toScreenPos) - screenPosToGamePos(ui.camera, fromScreenPos);
+//     ui.camera.pos -= inGameDragVector;
+// }
 
 // void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 // {

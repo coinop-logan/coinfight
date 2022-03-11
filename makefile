@@ -4,7 +4,7 @@ CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
 INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-config --includes`
 LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `python3-config --ldflags` -lpython3.8
 
-all: bin/client bin/server bin/test bin/gltest
+all: bin/client bin/server bin/test
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
 
@@ -17,7 +17,7 @@ bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvector
 bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-bin/test: cpp/obj/test.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/graphics.o cpp/obj/coins.o cpp/obj/sigWrapper.o cpp/obj/graphics.o cpp/obj/events.o
+bin/test: cpp/obj/test.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/graphics.o cpp/obj/coins.o cpp/obj/input.o cpp/obj/sigWrapper.o cpp/obj/graphics.o cpp/obj/events.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
 cpp/obj/vchpack.o:

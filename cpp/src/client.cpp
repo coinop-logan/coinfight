@@ -238,6 +238,9 @@ int main()
 
     // HANDSHAKE
 
+    string playerAddress;
+    uint playerId;
+
     // Wait for the sig challenge and respond with the user's help
     string sigChallenge = connectionHandler.receiveSigChallenge();
     cout << "Sign this with the address you deposited to:" << endl << sigChallenge << endl;
@@ -247,7 +250,7 @@ int main()
     cin >> userResponse;
 
     connectionHandler.sendSignature(userResponse + "\n");
-    string userAddress = connectionHandler.receiveAddress();
+    playerAddress = connectionHandler.receiveAddress();
 
     connectionHandler.startReceivingLoop();
 
@@ -283,8 +286,6 @@ int main()
         }
 
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
-        vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
         while (window.pollEvent(event))
         {
@@ -324,7 +325,6 @@ int main()
                 }
                 break;
             case sf::Event::KeyPressed:
-                // cmdToSend = boost::shared_ptr<Cmd>(new PickupCmd(3, 2));
                 break;
             default:
                 break;
@@ -338,6 +338,7 @@ int main()
             else
                 connectionHandler.sendCmd(cmdsToSend[i]);
         }
+        cmdsToSend.clear();
 
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
@@ -357,16 +358,32 @@ int main()
         {
             fcp.authdCmds[i]->execute(&game);
         }
-        // go through balance updates
+        // go through events
         for (unsigned int i = 0; i < fcp.events.size(); i++)
         {
             fcp.events[i]->execute(&game);
+            if (auto gse = boost::dynamic_pointer_cast<GameStartEvent, Event>(fcp.events[i]))
+            {
+                // assign playerId
+                playerId = game.playerAddressToIdOrNegativeOne(playerAddress);
+
+                // find owned unit and center on it
+                for (uint i=0; i<game.entities.size(); i++)
+                {
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
+                    {
+                        if (unit->ownerId == playerId)
+                        {
+                            ui.camera.gamePos = unit->pos;
+                        }
+                    }
+                }
+            }
         }
 
         game.iterate();
 
-        // display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(userAddress));
-        display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(userAddress));
+        display(&window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
