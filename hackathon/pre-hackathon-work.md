@@ -65,3 +65,13 @@ Took quite a rest day today. Needed. But was able to complete many small tasks.
 * Units can move around again, and point where they're going.
 * Each player has a different color (derived from first 3 chars of ETH address, as RGB val in hex)
 * Lots of work toward a better game "state" which has distinct pregame and game states
+
+### Thu
+
+Made progress toward starting a "real" multiplayer game
+
+* Client can now specify server IP (or 'l' for localhost)
+* Server waits in pregame state until X players have joined
+* Starting the game checks if players can afford a Gateway, and spawns them in a circle around 0,0
+
+Also started reverting back to 2D graphics - I'm running out of time! D:
