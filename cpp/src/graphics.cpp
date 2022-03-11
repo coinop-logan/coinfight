@@ -15,7 +15,7 @@ sf::RenderWindow setupGraphics()
     if (!mainFont.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
-    return sf::RenderWindow(sf::VideoMode(640, 480), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
+    return sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
 }
 
 sf::Color playerAddressToColor(string address)
