@@ -18,8 +18,6 @@ sf::RenderWindow* setupGraphics()
 
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
 
-    window->setMouseCursorVisible(false);
-
     // const uint8_t pixels[] =
     //     {255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
     //     0, 0, 0, 0,   255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,
@@ -133,7 +131,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegative
         drawOutputStrings(window, outputStrings);
     }
 
-    drawCursor(window, ui);
+    // drawCursor(window, ui);
     
     window->display();
 }
