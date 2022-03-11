@@ -22,36 +22,44 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
 {
     vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
     sf::Color primaryColor = entity->getPrimaryColor();
+    float drawRotation = -entity->getRotation();
 
-    if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+    if (boost::shared_ptr<GoldPile> castedEntity = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
-        sf::CircleShape circle(3);
+        sf::CircleShape circle(5);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         circle.setFillColor(primaryColor);
         circle.setPosition(drawPos.x, drawPos.y);
         window->draw(circle);
+    }
+    else if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+    {
+        sf::ConvexShape oneSide;
+        oneSide.setPointCount(3);
+
+        oneSide.setFillColor(primaryColor);
+        oneSide.setPosition(drawPos.x, drawPos.y);
+        oneSide.setRotation(radToDeg(drawRotation));
+
+        // draw two triangles
+        oneSide.setPoint(1, sf::Vector2f(12, 0));
+        oneSide.setPoint(0, sf::Vector2f(-4, 0));
+        oneSide.setPoint(2, sf::Vector2f(-12, 8));
+        window->draw(oneSide);
+        oneSide.setPoint(2, sf::Vector2f(-12, -8));
+        window->draw(oneSide);
     }
     else if (boost::shared_ptr<Gateway> castedEntity = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
     {
-        sf::CircleShape circle(5);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(primaryColor);
-        circle.setPosition(drawPos.x, drawPos.y);
-        window->draw(circle);
-    }
-    else if (boost::shared_ptr<GoldPile> castedEntity = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
-    {
-        sf::CircleShape circle(5);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setOutlineColor(sf::Color(100,100,100));
-        circle.setOutlineThickness(1);
-        circle.setFillColor(primaryColor);
-        circle.setPosition(drawPos.x, drawPos.y);
-        window->draw(circle);
+        sf::RectangleShape rect(sf::Vector2f(20, 20));
+        rect.setOrigin(10, 10);
+        rect.setFillColor(primaryColor);
+        rect.setPosition(drawPos.x, drawPos.y);
+        window->draw(rect);
     }
     else
     {
-        throw runtime_error("Can't cast that to any known entity!");
+        throw runtime_error("No drawing code implemented for " + entity->getTypeName() + ".");
     }
 }
 

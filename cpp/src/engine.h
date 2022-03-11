@@ -37,6 +37,7 @@ public:
     virtual void unpackAndMoveIter(vchIter *iter, Game &game);
     virtual void go();
     virtual sf::Color getPrimaryColor();
+    virtual float getRotation() { return 0; }
     void die();
 
     bool collidesWithPoint(vector2f);
@@ -171,6 +172,9 @@ class MobileUnit : public Unit
 private:
     Target target;
     float targetRange;
+    float rotation;
+
+    float getRotation() { return rotation; };
 
     void moveTowardPoint(vector2f, float);
 

@@ -289,6 +289,7 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
         return;
     }
 
+    rotation = toPoint.getAngle();
     vector2f unitDir = toPoint.normalized();
     angle_view = unitDir.getAngle();
 
@@ -618,7 +619,7 @@ void Game::startMatchOrPrintError()
         return;
     }
 
-    coinsInt neededCreditPerPlayer = PRIME_COST;
+    coinsInt neededCreditPerPlayer = PRIME_COST + GATEWAY_COST;
     for (uint i=0; i<players.size(); i++)
     {
         if (players[i].credit.getInt() < neededCreditPerPlayer)
@@ -638,11 +639,14 @@ void Game::startMatchOrPrintError()
 
         // if you're going to change this, you should change neededCostPerPlayer above too!
         boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos));
-        if (!primeUnit->completeBuildingInstantly(&players[i].credit))
-        {
-            throw logic_error("This player doesn't have enough credit for a Gateway - but I thought we checked that in the previous for loop!");
-        }
+        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
         entities.push_back(primeUnit);
+        entities.push_back(gatewayUnit);
+
+        if (!primeUnit->completeBuildingInstantly(&players[i].credit) && gatewayUnit->completeBuildingInstantly(&players[i].credit))
+        {
+            throw logic_error("This player doesn't have enough credit for the starting units - but I thought we checked that in the previous for loop!");
+        }
     }
 
     state = Active;

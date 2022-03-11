@@ -95,3 +95,12 @@ std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
         return {sum};
     }
 }
+
+float degToRad(float deg)
+{
+    return deg / (180 / M_PI);
+}
+float radToDeg(float rad)
+{
+    return rad * (180 / M_PI);
+}
