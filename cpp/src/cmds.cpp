@@ -18,10 +18,6 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PickupCmd(iter));
     case CMD_PUTDOWN_CHAR:
         return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
-    case CMD_PULLGOLDTHROUGHGATEWAY_CHAR:
-        return boost::shared_ptr<Cmd>(new PullGoldThroughGatewayCmd(iter));
-    case CMD_PUSHGOLDTHROUGHGATEWAY_CHAR:
-        return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -232,80 +228,6 @@ void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
 PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : Cmd(units), target(target) {}
 PutdownCmd::PutdownCmd(vchIter *iter) : Cmd(iter), target(NULL_ENTITYREF)
-{
-    unpackAndMoveIter(iter);
-}
-
-unsigned char PullGoldThroughGatewayCmd::getTypechar()
-{
-    return CMD_PULLGOLDTHROUGHGATEWAY_CHAR;
-}
-string PullGoldThroughGatewayCmd::getTypename()
-{
-    return "SendGoldThroughGatewayCmd";
-}
-void PullGoldThroughGatewayCmd::pack(vch *dest)
-{
-    packCmd(dest);
-    packEntityRef(dest, gatewayRef);
-}
-void PullGoldThroughGatewayCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &gatewayRef);
-}
-
-void PullGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
-{
-    if (!unit->isActive())
-        return;
-    
-    if (boost::shared_ptr<Entity> gatewayEntity = entityRefToPtrOrNull(*(unit->game), gatewayRef))
-        if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-            if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
-            {
-                prime->cmdPullGoldThroughGateway(gateway);
-            }
-}
-
-PullGoldThroughGatewayCmd::PullGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
-PullGoldThroughGatewayCmd::PullGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
-{
-    unpackAndMoveIter(iter);
-}
-
-unsigned char PushGoldThroughGatewayCmd::getTypechar()
-{
-    return CMD_PUSHGOLDTHROUGHGATEWAY_CHAR;
-}
-string PushGoldThroughGatewayCmd::getTypename()
-{
-    return "PushGoldThroughGatewayCmd";
-}
-void PushGoldThroughGatewayCmd::pack(vch *dest)
-{
-    packCmd(dest);
-    packEntityRef(dest, gatewayRef);
-}
-void PushGoldThroughGatewayCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &gatewayRef);
-}
-
-void PushGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
-{
-    if (!unit->isActive())
-        return;
-    
-    if (boost::shared_ptr<Entity> gatewayEntity = entityRefToPtrOrNull(*(unit->game), gatewayRef))
-        if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-            if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
-            {
-                prime->cmdPushGoldThroughGateway(gateway);
-            }
-}
-
-PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
-PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }

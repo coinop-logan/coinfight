@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <optional>
+#include <boost/shared_ptr.hpp>
 #include "myvectors.h"
 #include "vchpack.h"
 #include "coins.h"
@@ -42,5 +43,31 @@ float degToRad(float);
 float radToDeg(float);
 
 vector2f randomVector(float magnitude);
+
+template<class T, class U> vector<boost::shared_ptr<T>> filterForType(vector<boost::shared_ptr<U>> v)
+{
+    vector<boost::shared_ptr<T>> filtered;
+    for (uint i=0; i<v.size(); i++)
+    {
+        if (boost::shared_ptr<T> found = boost::dynamic_pointer_cast<T, U>(v[i]))
+        {
+            filtered.push_back(found);
+        }
+    }
+    return filtered;
+}
+
+template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContainer(vector<boost::shared_ptr<U>> v)
+{
+    vector<boost::shared_ptr<U>> filtered;
+    for (uint i=0; i<v.size(); i++)
+    {
+        if (boost::shared_ptr<T> found = boost::dynamic_pointer_cast<T, U>(v[i]))
+        {
+            filtered.push_back(found);
+        }
+    }
+    return filtered;
+}
 
 #endif // COMMON_H

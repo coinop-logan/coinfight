@@ -9,7 +9,7 @@ UI::UI()
 {
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
-    cursorState = Normal;
+    cmdState = Default;
 }
 
 vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
@@ -79,36 +79,12 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     {
         boost::shared_ptr<Entity> entity = *entityPtrPtr;
 
-        // Get typechar of units if they are all of same type
-        unsigned char unitTypechar = getMaybeNullEntityTypechar(selectedEntities[0]);
-        bool allSameType = true;
-        for (uint i = 0; i < selectedEntities.size(); i++)
+        if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
         {
-            if (selectedEntities[i]->typechar() != unitTypechar)
+            vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(selectedEntities);
+            if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
             {
-                allSameType = false;
-                break;
-            }
-        }
-
-        if (allSameType)
-        {
-            if (unitTypechar == PRIME_TYPECHAR)
-            {
-                unsigned char unitTypechar = entity->typechar();
-                if (unitTypechar == GOLDPILE_TYPECHAR)
-                {
-                    return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
-                }
-                else if (unitTypechar == GATEWAY_TYPECHAR)
-                {
-                    return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
-                }
-                else
-                {
-                    cout << "I don't know how to make a right click cmd for that!" << endl;
-                    return boost::shared_ptr<Cmd>();
-                }
+                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(primesInSelection), entity->ref));
             }
         }
         else
@@ -137,35 +113,75 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
         case sf::Event::MouseMoved:
             {
                 Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
-                if (auto mouseoverEntity = target.castToEntityPtr(game))
-                {
-                    ui->cursorState = UI::CursorState::Selectable;
-                }
-                else
-                {
-                    ui->cursorState = UI::CursorState::Normal;
-                }
+                ui->mouseoverEntity = target.castToEntityPtr(game);
             }
             break;
         case sf::Event::MouseButtonPressed:
             if (event.mouseButton.button == sf::Mouse::Left)
             {
-                if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                if (ui->cmdState == UI::Default)
                 {
-                    ui->selectedEntities.clear();
-                    ui->selectedEntities.push_back(clickedEntity);
+                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                    {
+                        ui->selectedEntities.clear();
+                        ui->selectedEntities.push_back(clickedEntity);
+                    }
                 }
-           }
-            else if (event.mouseButton.button == sf::Mouse::Right && ui->selectedEntities.size() > 0)
-            {
-                cmdsToSend.push_back(makeRightclickCmd(game, ui->selectedEntities, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
-                
+                else if (ui->cmdState == UI::Deposit)
+                {
+                    if (auto clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                    {
+                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(clickedEntity))
+                        {
+                            vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
+                            if (primesInSelection.size() > 0)
+                            {
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), gateway->ref)));
+                            }
+                            ui->cmdState = UI::Default;
+                        }
+                    }
+                }
             }
+            else if (event.mouseButton.button == sf::Mouse::Right)
+            {
+                if (ui->cmdState == UI::Default)
+                {
+                    if (ui->selectedEntities.size() > 0)
+                    {
+                        cmdsToSend.push_back(makeRightclickCmd(game, ui->selectedEntities, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                    }
+                }
+                else
+                {
+                    ui->cmdState = UI::Default;
+                }
+            }
+                
             break;
         case sf::Event::KeyPressed:
-            if (event.key.code == sf::Keyboard::Tab)
+            switch (event.key.code)
             {
-                ui->debugInt ++;
+                case sf::Keyboard::Tab:
+                    ui->debugInt ++;
+                    break;
+                case sf::Keyboard::D:
+                    if (ui->selectedEntities.size() > 0)
+                    {
+                        ui->cmdState = UI::Deposit;
+                    }
+                    break;
+                case sf::Keyboard::Escape:
+                    if (ui->cmdState != UI::Default)
+                    {
+                        ui->cmdState = UI::Default;
+                    }
+                    else
+                    {
+                        ui->selectedEntities.clear();
+                    }
+                default:
+                    break;
             }
         default:
             break;

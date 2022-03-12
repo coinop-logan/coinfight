@@ -178,23 +178,93 @@ void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, uint radius,
     window->draw(circle, mouseTransform);
 }
 
+void drawNormalCursor(sf::RenderWindow *window)
+{
+    window->setMouseCursorVisible(true);
+}
+
+void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
+{
+    window->setMouseCursorVisible(false);
+    
+    sf::VertexArray lines(sf::Lines, 2);
+    lines[0].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
+    lines[1].position = sf::Vector2f(4, 4);
+    lines[0].color = color;
+    lines[1].color = color;
+
+    sf::Transform transform;
+    transform.translate(mousePos.x, mousePos.y);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+
+    sf::VertexArray dots(sf::Points, 1);
+    dots[0].position = sf::Vector2f(0, 0);
+    dots[0].color = color;
+    
+    transform = sf::Transform();
+    transform.translate(mousePos.x, mousePos.y);
+    window->draw(dots, transform);
+}
+void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
+{
+    window->setMouseCursorVisible(false);
+    
+    sf::VertexArray lines(sf::LinesStrip, 3);
+    lines[0].position = sf::Vector2f(CURSOR_SIZE/2 - 6, CURSOR_SIZE/2);
+    lines[1].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
+    lines[2].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2 - 6);
+    lines[0].color = color;
+    lines[1].color = color;
+    lines[2].color = color;
+
+    sf::Transform transform;
+    transform.translate(mousePos.x, mousePos.y);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+    transform.rotate(90);
+    window->draw(lines, transform);
+}
+
 void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
 {
-    drawCircleAround(window, mousePos, 10, 2, sf::Color::Green);
+    drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
 void drawCursor(sf::RenderWindow *window, UI ui)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
-    switch (ui.cursorState)
+    // depending on cmdState and mouseoverEntity
+    switch (ui.cmdState)
     {
-        case UI::CursorState::Normal:
-            window->setMouseCursorVisible(true);
+        case UI::Default:
+            if (ui.mouseoverEntity)
+            {
+                drawSelectableCursor(window, mousePos);
+            }
+            else
+            {
+                drawNormalCursor(window);
+            }
             break;
-        case UI::CursorState::Selectable:
-            window->setMouseCursorVisible(false);
-            drawSelectableCursor(window, mousePos);
+        case UI::Deposit:
+            if (ui.mouseoverEntity)
+            {
+                drawTargetCursor(window, mousePos, sf::Color::Blue);
+            }
+            else
+            {
+                drawBracketsCursor(window, mousePos, sf::Color::Blue);
+            }
             break;
     }
 }
@@ -210,7 +280,6 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     particles->drawParticles(window, ui.camera);
     particles->iterateParticles(*game);
-    cout << "P: " << particles->particles.size() << endl;
 
     for (unsigned int i = 0; i < game->entities.size(); i++)
     {

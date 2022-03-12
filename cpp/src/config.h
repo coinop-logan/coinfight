@@ -54,4 +54,6 @@ const float SPACE_BETWEEN_SPAWNS = 200;
 const float PARTICLE_MAGNET_STRENGTH = 1;
 const float PARTICLE_FRICTION_CONSTANT = 0.9;
 
+const int CURSOR_SIZE = 26;
+
 #endif // CONFIG_H

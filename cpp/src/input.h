@@ -13,10 +13,11 @@ struct CameraState
 struct UI
 {
     UI();
-    enum CursorState {
-        Normal,
-        Selectable
-    } cursorState;
+    boost::shared_ptr<Entity> mouseoverEntity;
+    enum CmdState {
+        Default,
+        Deposit
+    } cmdState;
     vector<boost::shared_ptr<Entity>> selectedEntities;
     CameraState camera;
     int debugInt;

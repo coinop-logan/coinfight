@@ -208,10 +208,7 @@ public:
     {
         Idle,
         PickupGold,
-        PutdownGold,
-        PullGoldThroughGateway,
-        PushGoldThroughGateway,
-        BuildingBuilding
+        PutdownGold
     } state;
 
     enum GoldTransferState
@@ -227,11 +224,9 @@ public:
     Prime(Game *game, EntityRef ref, int ownerId, vector2f pos);
     Prime(Game *game, EntityRef ref, vchIter *iter);
 
-    void cmdPickup(EntityRef);
+    void cmdPickup(Target);
     void cmdPutdown(Target);
-    void cmdPullGoldThroughGateway(boost::shared_ptr<Gateway>);
-    void cmdPushGoldThroughGateway(boost::shared_ptr<Gateway>);
-    void cmdBuild(boost::shared_ptr<Building>);
+    // void cmdBuild(boost::shared_ptr<Building>);
 
     float getSpeed();
     float getRange();
