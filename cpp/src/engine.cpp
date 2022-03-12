@@ -398,7 +398,11 @@ void Prime::go()
         }
         break;
     case PutdownGold:
-        if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
+        if (this->heldGold.getInt() == 0)
+        {
+            state = Idle;
+        }
+        else if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
         {
             if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
@@ -428,15 +432,19 @@ void Prime::go()
                     boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point));
                     game->entities.push_back(gp);
                     coinsToPushTo = &gp->gold;
+                    setTarget(Target(gp->ref), PRIME_RANGE);
                 }
 
                 if (coinsToPushTo)
                 {
                     coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, (*coinsToPushTo));
-                    goldTransferState = Pushing;
                     if (amountPutDown == 0)
                     {
                         state = Idle;
+                    }
+                    else
+                    {
+                        goldTransferState = Pushing;
                     }
                 }
                 else
@@ -625,29 +633,6 @@ void Game::reassignEntityGamePointers()
             entities[i]->game = this;
     }
 }
-
-// void Game::testInit()
-// {
-//     frame = 0;
-
-//     players.push_back(Player("0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92"));
-//     cout << "PRETENDING that 0xBB5e.. has $10 credit" << endl;
-//     players[0].credit.createMoreByFiat(5000);
-
-//     boost::shared_ptr<Prime> p1(new Prime(this, 1, 0, vector2f(50, 30)));
-//     boost::shared_ptr<Prime> p2(new Prime(this, 2, 1, vector2f(70, 30)));
-
-//     entities.push_back(p1);
-//     entities.push_back(p2);
-
-//     if (!
-//         p1->completeBuildingInstantly(&players[0].credit)
-//      && p2->completeBuildingInstantly(&players[0].credit)
-//     )
-//     {
-//         throw runtime_error("not credit in player[0] to run testInit");
-//     }
-// }
 
 void Game::iterate()
 {

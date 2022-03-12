@@ -129,17 +129,27 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                 }
                 else if (ui->cmdState == UI::Deposit)
                 {
-                    if (auto clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                    Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                    if (auto clickedEntity = target.castToEntityPtr(game))
                     {
-                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(clickedEntity))
+                        if (clickedEntity->typechar() == GATEWAY_TYPECHAR || clickedEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
                             vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
                             if (primesInSelection.size() > 0)
                             {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), gateway->ref)));
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
                             }
                             ui->cmdState = UI::Default;
                         }
+                    }
+                    else
+                    {
+                        vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
+                        if (primesInSelection.size() > 0)
+                        {
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), target)));
+                        }
+                        ui->cmdState = UI::Default;
                     }
                 }
             }
