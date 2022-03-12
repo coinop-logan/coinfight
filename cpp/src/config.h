@@ -39,7 +39,7 @@ const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
 const coinsInt PRIME_COST = 1000;
-const float PRIME_SPEED = 4;
+const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 150;
 const coinsInt PRIME_PICKUP_RATE = 5;
 const coinsInt PRIME_PUTDOWN_RATE = 8;
