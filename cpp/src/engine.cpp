@@ -640,8 +640,8 @@ void Game::startMatchOrPrintError()
 
         // if you're going to change this, you should change neededCostPerPlayer above too!
         boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos));
-        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
         entities.push_back(primeUnit);
+        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
         entities.push_back(gatewayUnit);
 
         if (!primeUnit->completeBuildingInstantly(&players[i].credit) && gatewayUnit->completeBuildingInstantly(&players[i].credit))
