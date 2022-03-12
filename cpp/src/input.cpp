@@ -123,43 +123,6 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     return boost::shared_ptr<Cmd>(); // return null cmd
 }
 
-// void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)
-// {
-//     vector2f inGameDragVector = screenPosToGamePos(ui.camera, toScreenPos) - screenPosToGamePos(ui.camera, fromScreenPos);
-//     ui.camera.pos -= inGameDragVector;
-// }
-
-// void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-// {
-//     // set mouseButtonsPressed
-//     ui.mouseButtonsPressed[button] = (action == GLFW_PRESS);
-
-//     // actions
-//     // press
-//     if (action == GLFW_PRESS)
-//     {
-//         // get target
-//         Target target = getTargetFromScreenPos(game, ui.camera, getGlfwClickVector2f(window));
-//         // left click
-//         if (button == GLFW_MOUSE_BUTTON_LEFT)
-//         {
-//             if (boost::shared_ptr<Entity> targetedEntity = target.castToEntityPtr(game))
-//             {
-//                 if (!ui.shiftPressed)
-//                     ui.selectedEntities.clear();
-
-//                 ui.selectedEntities.push_back(targetedEntity);
-//                 cout << ui.selectedEntities.size() << endl;
-//             }
-//         }
-//         // right click
-//         if (button == GLFW_MOUSE_BUTTON_RIGHT)
-//         {
-//             queueCmdForSending(makeRightclickCmd(game, ui.selectedEntities, target));
-//         }
-//     }
-// }
-
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
