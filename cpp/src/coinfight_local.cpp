@@ -63,6 +63,8 @@ int main(int argc, char *argv[])
         cout << "Need an argument for how much money to put in for the honeypot!" << endl;
         return 1;
     }
+    int honeypotStartingDollars = stoi(argv[1]);
+    coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
 
     game = Game();
 
@@ -70,6 +72,7 @@ int main(int argc, char *argv[])
 
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", 10000, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", 10000, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent(honeypotStartingAmount)));
     
     for (uint i=0; i<firstEvents.size(); i++)
     {
