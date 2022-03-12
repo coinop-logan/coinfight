@@ -115,7 +115,8 @@ public:
     enum State {
         DoingHandshake,
         ReadyForFirstSync,
-        UpToDate
+        UpToDate,
+        Closed
     } state;
     string connectionAuthdUserAddress;
     ClientChannel(boost::asio::io_service &ioService_, boost::shared_ptr<tcp::socket> socket_)
@@ -157,7 +158,8 @@ public:
     {
         if (error)
         {
-            throw runtime_error("Error receiving sig: " + error.value());
+            cout << "Error receiving sig from " << connectionAuthdUserAddress << ". Kicking." << endl;
+            state = Closed;
         }
         else
         {
@@ -228,7 +230,8 @@ public:
     {
         if (error)
         {
-            throw("ClientHandler error sending packet:" + error.value());
+            cout << "Error sending packet to " << connectionAuthdUserAddress << ". Kicking." << endl;
+            state = Closed;
         }
         else
         {
@@ -258,7 +261,8 @@ public:
     {
         if (error)
         {
-            throw runtime_error("Error receiving cmd size: " + error.value());
+            cout << "Error receiving cmd size from " << connectionAuthdUserAddress << ". Kicking." << endl;
+            state = Closed;
         }
         else
         {
@@ -285,7 +289,8 @@ public:
     {
         if (error)
         {
-            throw runtime_error("Error receiving cmd body: " + error.value());
+            cout << "Error receiving cmd body from " << connectionAuthdUserAddress << ". Kicking." << endl;
+            state = Closed;
         }
         else
         {
@@ -447,6 +452,11 @@ int main(int argc, char *argv[])
 
                 case ClientChannel::UpToDate:
                     clientChannels[i]->sendFrameCmdsPacket(fcp);
+                    break;
+                
+                case ClientChannel::Closed:
+                    clientChannels.erase(clientChannels.begin()+i);
+                    i--;
                     break;
             }
         }
