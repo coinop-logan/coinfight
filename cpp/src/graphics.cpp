@@ -104,15 +104,34 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
     }
 }
 
-void drawCursor(sf::RenderWindow *window, UI ui)
+void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
 {
     sf::Transform mouseTransform;
-    mouseTransform.translate(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
+    mouseTransform.translate(mousePos.x, mousePos.y);
 
-    sf::CircleShape circle(5);
-    circle.setFillColor(sf::Color::Red);
+    sf::CircleShape circle(10);
+    circle.setOrigin(5, 5);
+    circle.setOutlineColor(sf::Color::Green);
+    circle.setFillColor(sf::Color::Transparent);
+    circle.setOutlineThickness(2);
 
     window->draw(circle, mouseTransform);
+}
+
+void drawCursor(sf::RenderWindow *window, UI ui)
+{
+    vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
+
+    switch (ui.cursorState)
+    {
+        case UI::CursorState::Normal:
+            window->setMouseCursorVisible(true);
+            break;
+        case UI::CursorState::Selectable:
+            window->setMouseCursorVisible(false);
+            drawSelectableCursor(window, mousePos);
+            break;
+    }
 }
 
 void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
@@ -135,7 +154,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegative
         drawOutputStrings(window, outputStrings);
     }
 
-    // drawCursor(window, ui);
+    drawCursor(window, ui);
     
     window->display();
 }

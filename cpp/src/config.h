@@ -33,7 +33,7 @@ const unsigned char GATEWAY_TYPECHAR = 'G';
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
-const float ENTITY_COLLIDE_RADIUS = 10;
+const float ENTITY_COLLIDE_RADIUS = 15;
 
 const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18

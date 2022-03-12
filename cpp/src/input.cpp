@@ -9,6 +9,7 @@ UI::UI()
 {
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
+    cursorState = Normal;
 }
 
 vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
@@ -28,6 +29,10 @@ vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos)
 }
 
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
+{
+    return vector2i(mEvent.x, mEvent.y);
+}
+vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
 {
     return vector2i(mEvent.x, mEvent.y);
 }
@@ -155,7 +160,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
 //     }
 // }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEvents(const Game &game, UI *ui, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
@@ -165,6 +170,19 @@ vector<boost::shared_ptr<Cmd>> pollWindowEvents(const Game &game, UI *ui, sf::Re
         {
         case sf::Event::Closed:
             window->close();
+            break;
+        case sf::Event::MouseMoved:
+            {
+                Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
+                if (auto mouseoverEntity = target.castToEntityPtr(game))
+                {
+                    ui->cursorState = UI::CursorState::Selectable;
+                }
+                else
+                {
+                    ui->cursorState = UI::CursorState::Normal;
+                }
+            }
             break;
         case sf::Event::MouseButtonPressed:
             if (event.mouseButton.button == sf::Mouse::Left)

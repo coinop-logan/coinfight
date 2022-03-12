@@ -283,7 +283,7 @@ int main()
         
         nextFrameStart += ONE_FRAME;
 
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEvents(game, &ui, window);
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(game, &ui, window);
 
         for (uint i=0; i < cmdsToSend.size(); i++)
         {
