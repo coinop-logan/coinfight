@@ -8,6 +8,7 @@ extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 UI::UI()
 {
     camera.gamePos = vector2f(0, 0);
+    debugInt = 0;
 }
 
 vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
@@ -89,13 +90,19 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
         {
             if (unitTypechar == PRIME_TYPECHAR)
             {
-                if (entity->typechar() == GOLDPILE_TYPECHAR)
+                unsigned char unitTypechar = entity->typechar();
+                if (unitTypechar == GOLDPILE_TYPECHAR)
                 {
                     return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(selectedEntities), entity->ref));
                 }
-                else if (entity->typechar() == GATEWAY_TYPECHAR)
+                else if (unitTypechar == GATEWAY_TYPECHAR)
                 {
                     return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(entityPtrsToRefs(selectedEntities), entity->ref));
+                }
+                else
+                {
+                    cout << "I don't know how to make a right click cmd for that!" << endl;
+                    return boost::shared_ptr<Cmd>();
                 }
             }
         }
@@ -147,3 +154,56 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
 //         }
 //     }
 // }
+
+vector<boost::shared_ptr<Cmd>> pollWindowEvents(const Game &game, UI *ui, sf::RenderWindow *window)
+{
+    vector<boost::shared_ptr<Cmd>> cmdsToSend;
+    sf::Event event;
+    while (window->pollEvent(event))
+    {
+        switch (event.type)
+        {
+        case sf::Event::Closed:
+            window->close();
+            break;
+        case sf::Event::MouseButtonPressed:
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                {
+                    ui->selectedEntities.clear();
+                    ui->selectedEntities.push_back(clickedEntity);
+                }
+           }
+            else if (event.mouseButton.button == sf::Mouse::Right && ui->selectedEntities.size() > 0)
+            {
+                cmdsToSend.push_back(makeRightclickCmd(game, ui->selectedEntities, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                
+            }
+            else if (event.mouseButton.button == sf::Mouse::Middle)
+            {
+                Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
+                {
+                    if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                    {
+                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui->selectedEntities), g->ref)));
+                    }
+                }
+                else
+                {
+                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui->selectedEntities), target)));
+                }
+            }
+            break;
+        case sf::Event::KeyPressed:
+            if (event.key.code == sf::Keyboard::Tab)
+            {
+                ui->debugInt ++;
+            }
+        default:
+            break;
+        }
+    }
+    return cmdsToSend;
+}

@@ -4,12 +4,15 @@ CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
 INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-config --includes`
 LIB=-lboost_system -lboost_filesystem -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW `python3-config --ldflags` -lpython3.8
 
-all: bin/client bin/server bin/test
+all: bin/client bin/server bin/coinfight_local bin/test
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
+
+bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)

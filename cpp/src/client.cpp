@@ -21,7 +21,6 @@ using namespace boost::asio::ip;
 Game game;
 
 UI ui;
-vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<FrameEventsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
@@ -270,7 +269,6 @@ int main()
     }
 
     sf::RenderWindow* window = setupGraphics();
-    sf::Event event;
     
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
     
@@ -287,52 +285,11 @@ int main()
 
         nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
 
-        while (window->pollEvent(event))
-        {
-            switch (event.type)
-            {
-            case sf::Event::Closed:
-                window->close();
-                break;
-            case sf::Event::MouseButtonPressed:
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
-                    {
-                        ui.selectedEntities.clear();
-                        ui.selectedEntities.push_back(clickedEntity);
-                    }
-                }
-                else if (event.mouseButton.button == sf::Mouse::Right && ui.selectedEntities.size() > 0)
-                {
-                    cmdsToSend.push_back(makeRightclickCmd(game, ui.selectedEntities, getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton))));
-                    
-                }
-                else if (event.mouseButton.button == sf::Mouse::Middle)
-                {
-                    Target target = getTargetAtScreenPos(game, ui.camera, mouseButtonToVec(event.mouseButton));
-                    if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
-                    {
-                        if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                        {
-                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui.selectedEntities), g->ref)));
-                        }
-                    }
-                    else
-                    {
-                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui.selectedEntities), target)));
-                    }
-                }
-                break;
-            case sf::Event::KeyPressed:
-                break;
-            default:
-                break;
-            }
-        }
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEvents(game, &ui, window);
 
         for (uint i=0; i < cmdsToSend.size(); i++)
         {
+            cout << 1 << endl;
             if (!cmdsToSend[i])
                 cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
             else
