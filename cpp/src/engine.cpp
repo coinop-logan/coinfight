@@ -152,7 +152,11 @@ GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref,
 
 unsigned char GoldPile::typechar() { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() { return "GoldPile"; }
-void GoldPile::go() {}
+void GoldPile::go()
+{
+    if (gold.getInt() == 0)
+        die();
+}
 
 sf::Color playerAddressToColor(string address)
 {
