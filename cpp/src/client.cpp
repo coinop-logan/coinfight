@@ -270,20 +270,18 @@ int main()
 
     sf::RenderWindow* window = setupGraphics();
     
-    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
-    
     ui = UI();
 
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (true)
     {
         io_service.poll();
 
-        if (clock() < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
-        {
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
             continue;
-        }
-
-        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
+        
+        nextFrameStart += ONE_FRAME;
 
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEvents(game, &ui, window);
 
@@ -351,7 +349,10 @@ int main()
             }
         }
 
-        display(window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
+        // only display if we're not behind schedule
+        now = chrono::system_clock::now();
+        if (now <= nextFrameStart)
+            display(window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

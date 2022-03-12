@@ -393,21 +393,22 @@ int main(int argc, char *argv[])
     Listener listener(io_service);
     listener.startAccept();
 
-    clock_t nextFrameStart = clock();
-
     // server will scan this directory for pending deposits (supplied by py/balance_tracker.py)
     boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+    
     while (true)
     {
         // poll io_service, which will populate pendingCmds with anything the ClientChannels have received
         io_service.poll();
 
         // rate limit iteration to a maximum of SEC_PER_FRAME
-        if (clock() < nextFrameStart)
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
             continue;
-        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
+        nextFrameStart += ONE_FRAME;
 
         // let's count up events
         vector<boost::shared_ptr<Event>> pendingEvents;

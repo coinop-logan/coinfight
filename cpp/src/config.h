@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <chrono>
 #include "myvectors.h"
 
 using EntityRef = uint16_t;
@@ -30,7 +31,7 @@ const unsigned char GOLDPILE_TYPECHAR = 'g';
 const unsigned char PRIME_TYPECHAR = 'P';
 const unsigned char GATEWAY_TYPECHAR = 'G';
 
-const float SEC_PER_FRAME = 1 / 60.0;
+const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
 const float ENTITY_COLLIDE_RADIUS = 10;
 

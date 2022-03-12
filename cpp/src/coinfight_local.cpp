@@ -5,6 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <string>
+#include <chrono>
 #include "config.h"
 #include "cmds.h"
 #include "engine.h"
@@ -81,65 +82,72 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics();
 
-    clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
     ui = UI();
     uint currentPlayerId = 0;
 
+    vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
+
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (true)
     {
-        if (clock() < nextFrameStart)
-            continue;
-        
-        nextFrameStart += (CLOCKS_PER_SEC * SEC_PER_FRAME);
-
-        // poll for cmds from input
-        // (also updates UI)
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEvents(game, &ui, window);
-
-        // use ui.debugInt to switch playerIds
-        int newPlayerId = ui.debugInt % game.players.size();
-        if (newPlayerId != currentPlayerId)
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
         {
-            currentPlayerId = newPlayerId;
-            cout << "now controlling player " << currentPlayerId << endl;
-        }
+            // if we have time, display and perform UX.
 
-        // gonna pack all these up
-        vector<vch*> packages;
-        for (uint i=0; i < cmdsToSend.size(); i++)
-        {
-            if (!cmdsToSend[i])
-                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
-            else
+            // poll for cmds from input
+            // (also updates UI)
+            vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEvents(game, &ui, window);
+            pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
+
+            // use ui.debugInt to switch playerIds
+            int newPlayerId = ui.debugInt % game.players.size();
+            if (newPlayerId != currentPlayerId)
             {
-                packages.push_back(new vch);
-                clearVchAndBuildCmdPacket(packages.back(), cmdsToSend[i]);
+                currentPlayerId = newPlayerId;
+                cout << "now controlling player " << currentPlayerId << endl;
             }
+
+            display(window, &game, ui, currentPlayerId);
         }
+        else {
+            nextFrameStart += ONE_FRAME;
 
-        // now unpack them like the server does
-        vector<boost::shared_ptr<AuthdCmd>> authdCmds;
-        for (uint i=0; i<packages.size(); i++)
-        {
-            vchIter place = packages[i]->begin() + 2; // we're looking past the size specifier, because in this case we already know...
+            // gonna pack queued cmds up and clear list
+            vector<vch*> packages;
+            for (uint i=0; i < pendingCmdsToSend.size(); i++)
+            {
+                if (!pendingCmdsToSend[i])
+                    cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+                else
+                {
+                    packages.push_back(new vch);
+                    clearVchAndBuildCmdPacket(packages.back(), pendingCmdsToSend[i]);
+                }
+            }
+            pendingCmdsToSend.clear();
 
-            boost::shared_ptr<Cmd> cmd = unpackFullCmdAndMoveIter(&place);
-            boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
+            // now unpack them like the server does
+            vector<boost::shared_ptr<AuthdCmd>> authdCmds;
+            for (uint i=0; i<packages.size(); i++)
+            {
+                vchIter place = packages[i]->begin() + 2; // we're looking past the size specifier, because in this case we already know...
 
-            authdCmds.push_back(authdCmd);
+                boost::shared_ptr<Cmd> cmd = unpackFullCmdAndMoveIter(&place);
+                boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
 
-            delete packages[i];
+                authdCmds.push_back(authdCmd);
+
+                delete packages[i];
+            }
+
+            // now execute all authd cmds
+            for (uint i=0; i<authdCmds.size(); i++)
+            {
+                authdCmds[i]->execute(&game);
+            }
+
+            game.iterate();
         }
-
-        // now execute all authd cmds
-        for (uint i=0; i<authdCmds.size(); i++)
-        {
-            authdCmds[i]->execute(&game);
-        }
-
-        game.iterate();
-
-        display(window, &game, ui, currentPlayerId);
     }
 }
