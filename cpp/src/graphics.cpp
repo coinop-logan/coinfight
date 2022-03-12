@@ -104,18 +104,23 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
     }
 }
 
-void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
+void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, uint radius, uint thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
-    mouseTransform.translate(mousePos.x, mousePos.y);
+    mouseTransform.translate(screenPos.x, screenPos.y);
 
-    sf::CircleShape circle(10);
-    circle.setOrigin(5, 5);
-    circle.setOutlineColor(sf::Color::Green);
+    sf::CircleShape circle(radius);
+    circle.setOrigin(radius, radius);
+    circle.setOutlineColor(color);
     circle.setFillColor(sf::Color::Transparent);
-    circle.setOutlineThickness(2);
+    circle.setOutlineThickness(thickness);
 
     window->draw(circle, mouseTransform);
+}
+
+void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
+{
+    drawCircleAround(window, mousePos, 10, 2, sf::Color::Green);
 }
 
 void drawCursor(sf::RenderWindow *window, UI ui)
@@ -134,6 +139,11 @@ void drawCursor(sf::RenderWindow *window, UI ui)
     }
 }
 
+void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camera, boost::shared_ptr<Entity> entity)
+{
+    drawCircleAround(window, gamePosToScreenPos(camera, entity->pos), 15, 1, sf::Color::Green);
+}
+
 void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
 {
     window->clear();
@@ -142,6 +152,10 @@ void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegative
     {
         if (game->entities[i])
             drawEntity(window, game->entities[i], ui.camera);
+    }
+    for (uint i=0; i<ui.selectedEntities.size(); i++)
+    {
+        drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedEntities[i]);
     }
 
     vector<sf::String> outputStrings;
