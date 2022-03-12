@@ -109,7 +109,6 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     // couldn't cast target to a point or an entity...
     cout << "issue casting target to a point or entity in makeRightclickCmd" << endl;
     return boost::shared_ptr<Cmd>(); // return null cmd
-    
 }
 
 // void processMiddleMouseDrag(vector2f fromScreenPos, vector2f toScreenPos)

@@ -375,8 +375,17 @@ vector<DepositEvent> pollPendingDeposits()
     return depositEvents;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc-1 == 0)
+    {
+        cout << "Need an argument for how much money to put in for the honeypot!" << endl;
+        return 1;
+    }
+    
+    int honeypotStartingDollars = stoi(argv[1]);
+    coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
+
     srand(time(0));
 
     boost::asio::io_service io_service;
@@ -412,7 +421,7 @@ int main()
         // after enough players join, start game
         if (game.players.size() >= NEEDED_PLAYERS && game.state == Game::Pregame)
         {
-            pendingEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent()));
+            pendingEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent(honeypotStartingAmount)));
             cout << "starting game!" << endl;
         }
 

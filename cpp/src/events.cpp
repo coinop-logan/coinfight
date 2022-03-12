@@ -124,17 +124,25 @@ unsigned char GameStartEvent::typechar()
 
 void GameStartEvent::execute(Game *game)
 {
+    boost::shared_ptr<GoldPile> honeypotGoldPile = boost::shared_ptr<GoldPile>(new GoldPile(game, game->getNextEntityRef(), vector2f(0,0)));
+    honeypotGoldPile->gold.createMoreByFiat(honeypotAmount);
+    game->entities.push_back(honeypotGoldPile);
+
     game->startMatchOrPrintError();
 }
 
 void GameStartEvent::pack(vch *dest)
 {
+    packToVch(dest, "L", honeypotAmount);
     packEvent(dest);
 }
-void GameStartEvent::unpackAndMoveIter(vchIter *iter) {}
+void GameStartEvent::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackFromIter(*iter, "L", &honeypotAmount);
+}
 
-GameStartEvent::GameStartEvent()
-    : Event()
+GameStartEvent::GameStartEvent(coinsInt honeypotAmount)
+    : Event(), honeypotAmount(honeypotAmount)
     {}
 GameStartEvent::GameStartEvent(vchIter *iter)
     : Event(iter)

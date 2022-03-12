@@ -96,6 +96,15 @@ std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
     }
 }
 
+coinsInt dollarsToCoinsInt(float dollars)
+{
+    return dollars * (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+}
+float coinsIntToDollars(coinsInt coins)
+{
+    return coins / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+}
+
 float degToRad(float deg)
 {
     return deg / (180 / M_PI);

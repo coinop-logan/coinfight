@@ -61,7 +61,7 @@ vector<boost::shared_ptr<Unit>> Cmd::getUnits(Game *game)
     vector<boost::shared_ptr<Unit>> units;
     for (uint i = 0; i < unitRefs.size(); i++)
     {
-        if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtr(*game, unitRefs[i])))
+        if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, unitRefs[i])))
         {
             units.push_back(u);
         }
@@ -259,12 +259,12 @@ void SendGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     if (!unit->isActive())
         return;
     
-    boost::shared_ptr<Entity> gatewayEntity = entityRefToPtr(*(unit->game), gatewayRef);
-    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
-        {
-            prime->cmdSendGoldThroughGateway(gateway);
-        }
+    if (boost::shared_ptr<Entity> gatewayEntity = entityRefToPtrOrNull(*(unit->game), gatewayRef))
+        if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
+            {
+                prime->cmdSendGoldThroughGateway(gateway);
+            }
 }
 
 SendGoldThroughGatewayCmd::SendGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
@@ -296,12 +296,12 @@ void PushGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     if (!unit->isActive())
         return;
     
-    boost::shared_ptr<Entity> gatewayEntity = entityRefToPtr(*(unit->game), gatewayRef);
-    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-        if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
-        {
-            prime->cmdPushGoldThroughGateway(gateway);
-        }
+    if (boost::shared_ptr<Entity> gatewayEntity = entityRefToPtrOrNull(*(unit->game), gatewayRef))
+        if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
+            {
+                prime->cmdPushGoldThroughGateway(gateway);
+            }
 }
 
 PushGoldThroughGatewayCmd::PushGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}

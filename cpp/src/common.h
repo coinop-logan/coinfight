@@ -35,6 +35,9 @@ vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s);
 bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
+coinsInt dollarsToCoinsInt(float dollars);
+float coinsIntToDollars(coinsInt coins);
+
 float degToRad(float);
 float radToDeg(float);
 

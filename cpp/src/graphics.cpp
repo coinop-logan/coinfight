@@ -13,7 +13,7 @@ sf::Font mainFont;
 
 sf::RenderWindow* setupGraphics()
 {
-    if (!mainFont.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Andale_Mono.ttf"))
+    if (!mainFont.loadFromFile("Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
@@ -44,13 +44,17 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
     sf::Color primaryColor = entity->getPrimaryColor();
     float drawRotation = -entity->getRotation();
 
-    if (boost::shared_ptr<GoldPile> castedEntity = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+    if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
-        sf::CircleShape circle(5);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
-        circle.setFillColor(primaryColor);
-        circle.setPosition(drawPos.x, drawPos.y);
-        window->draw(circle);
+        int size = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
+        if (size > 1)
+        {
+            sf::CircleShape triangle(size, 3);
+            triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
+            triangle.setFillColor(primaryColor);
+            triangle.setPosition(drawPos.x, drawPos.y);
+            window->draw(triangle);
+        }
     }
     else if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
     {

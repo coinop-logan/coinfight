@@ -45,6 +45,8 @@ struct BalanceUpdateEvent : public Event
 
 struct GameStartEvent : public Event
 {
+    coinsInt honeypotAmount;
+
     unsigned char typechar();
 
     void execute(Game *game);
@@ -52,7 +54,7 @@ struct GameStartEvent : public Event
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    GameStartEvent();
+    GameStartEvent(coinsInt honeypotAmount);
     GameStartEvent(vchIter *iter);
 };
 
