@@ -17,7 +17,7 @@ using EntityRef = uint16_t;
 const unsigned char CMD_MOVE_CHAR = 0;
 const unsigned char CMD_PICKUP_CHAR = 1;
 const unsigned char CMD_PUTDOWN_CHAR = 2;
-const unsigned char CMD_SENDGOLDTHROUGHGATEWAY_CHAR = 3;
+const unsigned char CMD_PULLGOLDTHROUGHGATEWAY_CHAR = 3;
 const unsigned char CMD_PUSHGOLDTHROUGHGATEWAY_CHAR = 4;
 
 struct Cmd
@@ -95,7 +95,7 @@ struct PutdownCmd : public Cmd
     PutdownCmd(vchIter *iter);
 };
 
-struct SendGoldThroughGatewayCmd : public Cmd
+struct PullGoldThroughGatewayCmd : public Cmd
 {
     EntityRef gatewayRef;
 
@@ -106,8 +106,8 @@ struct SendGoldThroughGatewayCmd : public Cmd
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    SendGoldThroughGatewayCmd(vector<EntityRef>, EntityRef);
-    SendGoldThroughGatewayCmd(vchIter *iter);
+    PullGoldThroughGatewayCmd(vector<EntityRef>, EntityRef);
+    PullGoldThroughGatewayCmd(vchIter *iter);
 };
 
 struct PushGoldThroughGatewayCmd : public Cmd

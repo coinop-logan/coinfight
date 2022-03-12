@@ -198,21 +198,6 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                 cmdsToSend.push_back(makeRightclickCmd(game, ui->selectedEntities, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
                 
             }
-            else if (event.mouseButton.button == sf::Mouse::Middle)
-            {
-                Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
-                if (boost::shared_ptr<Entity> e = target.castToEntityPtr(game))
-                {
-                    if (boost::shared_ptr<Gateway> g = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                    {
-                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(entityPtrsToRefs(ui->selectedEntities), g->ref)));
-                    }
-                }
-                else
-                {
-                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(ui->selectedEntities), target)));
-                }
-            }
             break;
         case sf::Event::KeyPressed:
             if (event.key.code == sf::Keyboard::Tab)

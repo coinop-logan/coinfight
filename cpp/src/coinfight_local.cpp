@@ -87,28 +87,36 @@ int main(int argc, char *argv[])
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
 
+    ParticlesContainer particles;
+
+    int lastDisplayedFrame = -1;
+
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (true)
     {
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
         if (now < nextFrameStart)
         {
-            // if we have time, display and perform UX.
-
-            // poll for cmds from input
-            // (also updates UI)
-            vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(game, &ui, window);
-            pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
-
-            // use ui.debugInt to switch playerIds
-            int newPlayerId = ui.debugInt % game.players.size();
-            if (newPlayerId != currentPlayerId)
+            if (lastDisplayedFrame < (int)game.frame)
             {
-                currentPlayerId = newPlayerId;
-                cout << "now controlling player " << currentPlayerId << endl;
-            }
+                lastDisplayedFrame = game.frame;
+                // if we have time, display and perform UX.
 
-            display(window, &game, ui, currentPlayerId);
+                // poll for cmds from input
+                // (also updates UI)
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(game, &ui, window);
+                pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
+
+                // use ui.debugInt to switch playerIds
+                int newPlayerId = ui.debugInt % game.players.size();
+                if (newPlayerId != currentPlayerId)
+                {
+                    currentPlayerId = newPlayerId;
+                    cout << "now controlling player " << currentPlayerId << endl;
+                }
+
+                display(window, &game, ui, &particles, currentPlayerId);
+            }
         }
         else {
             nextFrameStart += ONE_FRAME;

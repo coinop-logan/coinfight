@@ -356,9 +356,9 @@ void Prime::cmdPutdown(Target _target)
 
     setTarget(_target, PRIME_RANGE);
 }
-void Prime::cmdSendGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
+void Prime::cmdPullGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
 {
-    state = SendGoldThroughGateway;
+    state = PullGoldThroughGateway;
     setTarget(Target(gateway->ref), PRIME_RANGE);
 }
 void Prime::cmdPushGoldThroughGateway(boost::shared_ptr<Gateway> gateway)
@@ -381,6 +381,7 @@ string Prime::getTypeName() { return "Prime"; }
 
 void Prime::go()
 {
+    goldTransferState = None;
     switch (state)
     {
     case Idle:
@@ -392,7 +393,11 @@ void Prime::go()
             {
                 if (boost::shared_ptr<GoldPile> gp = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
                 {
-                    cout << "Prime picking up " << gp->gold.transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold)) << endl;
+                    coinsInt pickedUp = gp->gold.transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
+                    if (pickedUp == 0)
+                        state = Idle;
+                    else
+                        goldTransferState = Pulling;
                 }
             }
         }
@@ -409,6 +414,7 @@ void Prime::go()
                         // goldPile already exists
                         coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(gp->gold));
                         cout << "Prime putting down " << amountPutDown << endl;
+                        goldTransferState = Pushing;
                         if (amountPutDown == 0)
                         {
                             state = Idle;
@@ -430,16 +436,21 @@ void Prime::go()
             }
         }
         break;
-    case SendGoldThroughGateway:
+    case PullGoldThroughGateway:
         if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
         {
             if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
                 if (boost::shared_ptr<Gateway> gw = boost::dynamic_pointer_cast<Gateway, Entity>(e))
                 {
-                    // cout << "held gold: " << this->heldGold.getInt() << endl;
-                    // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    // cout << "Sending through gateway: " << this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &(game->playerCredit)) << endl;
+                    if (gw->ownerId == this->ownerId)
+                    {
+                        coinsInt amountPulled = game->players[ownerId].credit.transferUpTo(PRIME_PICKUP_RATE, &this->heldGold);
+                        if (amountPulled == 0)
+                            state = Idle;
+                        else
+                            goldTransferState = Pulling;
+                    }
                 }
             }
         }
@@ -451,9 +462,14 @@ void Prime::go()
             {
                 if (boost::shared_ptr<Gateway> gw = boost::dynamic_pointer_cast<Gateway, Entity>(e))
                 {
-                    // cout << "held gold: " << this->heldGold.getInt() << endl;
-                    // cout << "player credit: " << game->playerCredit.getInt() << endl;
-                    // cout << "Pushing through gateway: " << game->playerCredit.transferUpTo(PRIME_PUTDOWN_RATE, &(this->heldGold)) << endl;
+                    if (gw->ownerId == this->ownerId)
+                    {
+                        coinsInt amountPushed = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, &game->players[ownerId].credit);
+                        if (amountPushed == 0)
+                            state = Idle;
+                        else
+                            goldTransferState = Pushing;
+                    }
                 }
             }
         }

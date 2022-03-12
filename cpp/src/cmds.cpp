@@ -18,8 +18,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PickupCmd(iter));
     case CMD_PUTDOWN_CHAR:
         return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
-    case CMD_SENDGOLDTHROUGHGATEWAY_CHAR:
-        return boost::shared_ptr<Cmd>(new SendGoldThroughGatewayCmd(iter));
+    case CMD_PULLGOLDTHROUGHGATEWAY_CHAR:
+        return boost::shared_ptr<Cmd>(new PullGoldThroughGatewayCmd(iter));
     case CMD_PUSHGOLDTHROUGHGATEWAY_CHAR:
         return boost::shared_ptr<Cmd>(new PushGoldThroughGatewayCmd(iter));
     default:
@@ -236,25 +236,25 @@ PutdownCmd::PutdownCmd(vchIter *iter) : Cmd(iter), target(NULL_ENTITYREF)
     unpackAndMoveIter(iter);
 }
 
-unsigned char SendGoldThroughGatewayCmd::getTypechar()
+unsigned char PullGoldThroughGatewayCmd::getTypechar()
 {
-    return CMD_SENDGOLDTHROUGHGATEWAY_CHAR;
+    return CMD_PULLGOLDTHROUGHGATEWAY_CHAR;
 }
-string SendGoldThroughGatewayCmd::getTypename()
+string PullGoldThroughGatewayCmd::getTypename()
 {
     return "SendGoldThroughGatewayCmd";
 }
-void SendGoldThroughGatewayCmd::pack(vch *dest)
+void PullGoldThroughGatewayCmd::pack(vch *dest)
 {
     packCmd(dest);
     packEntityRef(dest, gatewayRef);
 }
-void SendGoldThroughGatewayCmd::unpackAndMoveIter(vchIter *iter)
+void PullGoldThroughGatewayCmd::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackEntityRef(*iter, &gatewayRef);
 }
 
-void SendGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+void PullGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (!unit->isActive())
         return;
@@ -263,12 +263,12 @@ void SendGoldThroughGatewayCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
             if (boost::shared_ptr<Gateway> gateway = boost::dynamic_pointer_cast<Gateway, Entity>(gatewayEntity))
             {
-                prime->cmdSendGoldThroughGateway(gateway);
+                prime->cmdPullGoldThroughGateway(gateway);
             }
 }
 
-SendGoldThroughGatewayCmd::SendGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
-SendGoldThroughGatewayCmd::SendGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
+PullGoldThroughGatewayCmd::PullGoldThroughGatewayCmd(vector<EntityRef> units, EntityRef gatewayRef) : Cmd(units), gatewayRef(gatewayRef){}
+PullGoldThroughGatewayCmd::PullGoldThroughGatewayCmd(vchIter *iter) : Cmd(iter), gatewayRef(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }

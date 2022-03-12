@@ -272,6 +272,8 @@ int main()
     
     ui = UI();
 
+    ParticlesContainer particles;
+
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (true)
     {
@@ -352,7 +354,7 @@ int main()
         // only display if we're not behind schedule
         now = chrono::system_clock::now();
         if (now <= nextFrameStart)
-            display(window, &game, ui, game.playerAddressToIdOrNegativeOne(playerAddress));
+            display(window, &game, ui, &particles, game.playerAddressToIdOrNegativeOne(playerAddress));
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

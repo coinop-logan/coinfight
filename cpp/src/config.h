@@ -49,6 +49,9 @@ const coinsInt PRIME_BUILD_RATE = 5;
 const coinsInt GATEWAY_COST = 100;
 const float GATEWAY_RANGE = 150;
 
-const float SPACE_BETWEEN_SPAWNS = 100;
+const float SPACE_BETWEEN_SPAWNS = 200;
+
+const float PARTICLE_MAGNET_STRENGTH = 1;
+const float PARTICLE_FRICTION_CONSTANT = 0.9;
 
 #endif // CONFIG_H

@@ -209,10 +209,17 @@ public:
         Idle,
         PickupGold,
         PutdownGold,
-        SendGoldThroughGateway,
+        PullGoldThroughGateway,
         PushGoldThroughGateway,
         BuildingBuilding
     } state;
+
+    enum GoldTransferState
+    {
+        None,
+        Pushing,
+        Pulling
+    } goldTransferState;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
@@ -222,7 +229,7 @@ public:
 
     void cmdPickup(EntityRef);
     void cmdPutdown(Target);
-    void cmdSendGoldThroughGateway(boost::shared_ptr<Gateway>);
+    void cmdPullGoldThroughGateway(boost::shared_ptr<Gateway>);
     void cmdPushGoldThroughGateway(boost::shared_ptr<Gateway>);
     void cmdBuild(boost::shared_ptr<Building>);
 

@@ -41,4 +41,6 @@ float coinsIntToDollars(coinsInt coins);
 float degToRad(float);
 float radToDeg(float);
 
+vector2f randomVector(float magnitude);
+
 #endif // COMMON_H

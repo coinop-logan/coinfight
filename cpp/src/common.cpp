@@ -113,3 +113,9 @@ float radToDeg(float rad)
 {
     return rad * (180 / M_PI);
 }
+
+vector2f randomVector(float magnitude)
+{
+    float angle = ((double)rand() / RAND_MAX) * M_PI * 2;
+    return composeVector2f(angle, magnitude);
+}

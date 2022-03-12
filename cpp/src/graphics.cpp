@@ -104,6 +104,66 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
     }
 }
 
+Particle::Particle(vector2f pos, Target target, sf::Color color)
+    : pos(pos), target(target), velocity(velocity), color(color), dead(false)
+{
+    velocity = randomVector(3);
+}
+
+void Particle::iterate(const Game &game)
+{
+    if (auto targetPos = target.getPointUnlessTargetDeleted(game))
+    {
+        vector2f toTarget = *targetPos - pos;
+        if (toTarget.getMagnitude() < 10)
+        {
+            dead = true;
+            return;
+        }
+        
+        velocity += toTarget.normalized() * PARTICLE_MAGNET_STRENGTH;
+        velocity *= PARTICLE_FRICTION_CONSTANT;
+        pos += velocity;
+    }
+    else
+        dead = true;
+
+}
+void Particle::draw(sf::RenderWindow *window, CameraState camera)
+{
+    sf::RectangleShape pixel(sf::Vector2f(1,1));
+    vector2i drawPos = gamePosToScreenPos(camera, pos);
+    pixel.setPosition(drawPos.x, drawPos.y);
+    pixel.setFillColor(color);
+
+    window->draw(pixel);
+}
+
+void ParticlesContainer::iterateParticles(const Game &game)
+{
+    for (uint i=0; i<particles.size(); i++)
+    {
+        if (!particles[i]->dead)
+            particles[i]->iterate(game);
+        else
+        {
+            particles.erase(particles.begin()+i);
+            i--;
+        }
+    }
+}
+void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState camera)
+{
+    for (uint i=0; i<particles.size(); i++)
+    {
+        particles[i]->draw(window, camera);
+    }
+}
+void ParticlesContainer::add(boost::shared_ptr<Particle> particle)
+{
+    particles.push_back(particle);
+}
+
 void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, uint radius, uint thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
@@ -144,14 +204,40 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
     drawCircleAround(window, gamePosToScreenPos(camera, entity->pos), 15, 1, sf::Color::Green);
 }
 
-void display(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
     window->clear();
+
+    particles->drawParticles(window, ui.camera);
+    particles->iterateParticles(*game);
+    cout << "P: " << particles->particles.size() << endl;
 
     for (unsigned int i = 0; i < game->entities.size(); i++)
     {
         if (game->entities[i])
+        {
             drawEntity(window, game->entities[i], ui.camera);
+
+            // and add some particles every now and then
+            if (game->frame % 3 == 0)
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
+                {
+                    if (prime->goldTransferState == Prime::Pulling)
+                    {
+                        if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
+                        {
+                            vector2f targetPos = *maybeTargetPos;
+                            particles->add(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
+                        }
+                    }
+                    else if (prime->goldTransferState == Prime::Pushing)
+                    {
+                        particles->add(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
+                    }
+                }
+            }
+        }
     }
     for (uint i=0; i<ui.selectedEntities.size(); i++)
     {
