@@ -42,7 +42,8 @@ float coinsIntToDollars(coinsInt coins);
 float degToRad(float);
 float radToDeg(float);
 
-vector2f randomVector(float magnitude);
+vector2f randomVectorWithMagnitude(float magnitude);
+vector2f randomVectorWithMagnitudeRange(float min, float max);
 
 template<class T, class U> vector<boost::shared_ptr<T>> filterForType(vector<boost::shared_ptr<U>> v)
 {

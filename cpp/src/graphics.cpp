@@ -107,7 +107,7 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
 Particle::Particle(vector2f pos, Target target, sf::Color color)
     : pos(pos), target(target), velocity(velocity), color(color), dead(false)
 {
-    velocity = randomVector(3);
+    velocity = randomVectorWithMagnitude(3);
 }
 
 void Particle::iterate(const Game &game)
@@ -303,6 +303,13 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     else if (prime->goldTransferState == Prime::Pushing)
                     {
                         particles->add(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
+                    }
+                }
+                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
+                {
+                    if (gateway->maybeBuildingUnit)
+                    {
+                        particles->add(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeBuildingUnit->ref), sf::Color::Yellow)));
                     }
                 }
             }

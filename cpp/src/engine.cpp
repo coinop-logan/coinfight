@@ -255,13 +255,14 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 }
 
 MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, pos), target(NULL_ENTITYREF)
+    : Unit(game, ref, ownerId, totalCost, pos), target(NULL_ENTITYREF), rotation(0)
 {
     targetRange = 0;
     setTarget(Target(pos), 0);
 }
 MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter),
-                                                                  target(NULL_ENTITYREF)
+                                                                  target(NULL_ENTITYREF),
+                                                                  rotation(0)
 {
     unpackMobileUnitAndMoveIter(iter);
 }
@@ -469,6 +470,31 @@ unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() { return "Gateway"; }
 coinsInt Gateway::getCost() { return GATEWAY_COST; }
 
+void Gateway::cmdBuildUnit(unsigned char unitTypechar)
+{
+    vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+    switch (unitTypechar)
+    {
+        case PRIME_TYPECHAR:
+            {
+                auto prime = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+                this->game->entities.push_back(prime);
+                this->maybeBuildingUnit = prime;
+            }
+            break;
+        default:
+            cout << "Gateway doesn't know how to build that unit..." << endl;
+            break;
+    }
+}
+float Gateway::buildQueueWeight()
+{
+    if (!maybeBuildingUnit)
+        return 0;
+    else
+        return 1;
+}
+
 void Gateway::pack(vch *dest)
 {
     packBuilding(dest);
@@ -484,7 +510,16 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 }
 
 void Gateway::go()
-{}
+{
+    if (maybeBuildingUnit)
+    {
+        coinsInt builtAmount = maybeBuildingUnit->build(GATEWAY_BUILD_RATE, &game->players[this->ownerId].credit);
+        if (builtAmount == 0)
+        {
+            maybeBuildingUnit.reset();
+        }
+    }
+}
 
 
 EntityRef Game::getNextEntityRef()
@@ -619,7 +654,7 @@ void Game::startMatchOrPrintError()
         boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
         entities.push_back(gatewayUnit);
 
-        if (!primeUnit->completeBuildingInstantly(&players[i].credit) && gatewayUnit->completeBuildingInstantly(&players[i].credit))
+        if (!(primeUnit->completeBuildingInstantly(&players[i].credit) && gatewayUnit->completeBuildingInstantly(&players[i].credit)))
         {
             throw logic_error("This player doesn't have enough credit for the starting units - but I thought we checked that in the previous for loop!");
         }

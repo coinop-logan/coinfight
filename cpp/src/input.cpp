@@ -181,6 +181,32 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                         ui->cmdState = UI::Deposit;
                     }
                     break;
+                case sf::Keyboard::Q:
+                    {
+                        auto selectedGateways = filterForType<Gateway, Entity>(ui->selectedEntities);
+                        if (selectedGateways.size() > 0)
+                        {
+                            boost::shared_ptr<Gateway> bestChoice;
+                            for (uint i=0; i<selectedGateways.size(); i++)
+                            {
+                                if (!bestChoice)
+                                {
+                                    bestChoice = selectedGateways[i];
+                                    continue;
+                                }
+
+                                if (selectedGateways[i]->buildQueueWeight() < bestChoice->buildQueueWeight())
+                                {
+                                    bestChoice = selectedGateways[i];
+                                }
+                            }
+
+                            vector<EntityRef> onlyOneGateway;
+                            onlyOneGateway.push_back(bestChoice->ref);
+                            cmdsToSend.push_back(boost::shared_ptr<GatewayBuildCmd>(new GatewayBuildCmd(onlyOneGateway, PRIME_TYPECHAR)));
+                        }
+                    }
+                    break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
                     {

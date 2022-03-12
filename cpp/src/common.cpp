@@ -114,8 +114,14 @@ float radToDeg(float rad)
     return rad * (180 / M_PI);
 }
 
-vector2f randomVector(float magnitude)
+vector2f randomVectorWithMagnitude(float magnitude)
 {
     float angle = ((double)rand() / RAND_MAX) * M_PI * 2;
     return composeVector2f(angle, magnitude);
+}
+
+vector2f randomVectorWithMagnitudeRange(float min, float max)
+{
+    float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + max;
+    return randomVectorWithMagnitude(magnitude);
 }

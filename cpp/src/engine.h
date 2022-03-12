@@ -240,11 +240,16 @@ public:
 class Gateway : public Building
 {
 public:
+    boost::shared_ptr<Unit> maybeBuildingUnit;
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
     Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos);
     Gateway(Game *game, EntityRef ref, vchIter *iter);
+
+    void cmdBuildUnit(unsigned char unitTypechar);
+    float buildQueueWeight();
 
     unsigned char typechar();
     string getTypeName();
