@@ -79,8 +79,6 @@ int main(int argc, char *argv[])
         firstEvents[i]->execute(&game);
     }
 
-    game.startMatchOrPrintError();
-
     sf::RenderWindow* window = setupGraphics();
 
     clock_t nextFrameStart = clock() + (CLOCKS_PER_SEC * SEC_PER_FRAME);
