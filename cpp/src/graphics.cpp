@@ -203,13 +203,13 @@ void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color col
     transform.rotate(90);
     window->draw(lines, transform);
 
-    sf::VertexArray dots(sf::Points, 1);
-    dots[0].position = sf::Vector2f(0, 0);
-    dots[0].color = color;
+    sf::RectangleShape rect(sf::Vector2f(2,2));
+    rect.setPosition(-1, -1);
+    rect.setFillColor(color);
     
     transform = sf::Transform();
     transform.translate(mousePos.x, mousePos.y);
-    window->draw(dots, transform);
+    window->draw(rect, transform);
 }
 void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
 {
@@ -259,11 +259,11 @@ void drawCursor(sf::RenderWindow *window, UI ui)
         case UI::Deposit:
             if (ui.mouseoverEntity)
             {
-                drawTargetCursor(window, mousePos, sf::Color::Blue);
+                drawBracketsCursor(window, mousePos, sf::Color::Blue);
             }
             else
             {
-                drawBracketsCursor(window, mousePos, sf::Color::Blue);
+                drawTargetCursor(window, mousePos, sf::Color::Blue);
             }
             break;
     }
