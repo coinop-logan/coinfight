@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     int lastDisplayedFrame = -1;
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
-    while (true)
+    while (window->isOpen())
     {
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
         if (now < nextFrameStart)

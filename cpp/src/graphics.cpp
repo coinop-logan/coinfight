@@ -274,6 +274,76 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
     drawCircleAround(window, gamePosToScreenPos(camera, entity->pos), 15, 1, sf::Color::Green);
 }
 
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
+{
+    for (uint i=0; i<game->entities.size(); i++)
+    {
+        if (!game->entities[i])
+            continue;
+        Coins *displayAboveCoins = NULL;
+        Coins *displayBelowCoins = NULL;
+
+        sf::Color textColor;
+
+        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
+        {
+            displayAboveCoins = &goldpile->gold;
+            textColor = sf::Color::Yellow;
+        }
+        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+        {
+            displayAboveCoins = &unit->goldInvested;
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            {
+                displayBelowCoins = &prime->heldGold;
+            }
+            textColor = (unit->ownerId == playerIdOrNegativeOne) ? sf::Color::Green : sf::Color::Red;
+        }
+
+        vector2f entityPos = game->entities[i]->pos;
+        if (displayAboveCoins)
+        {
+            sf::Text aboveText(displayAboveCoins->getDollarString(), mainFont, 16);
+            sf::FloatRect textRec = aboveText.getLocalBounds();
+
+            vector2f textGamePos = entityPos + vector2f(0, 30);
+            vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+
+            aboveText.setColor(textColor);
+            aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
+            aboveText.setPosition(textScreenPos.x, textScreenPos.y);
+
+            sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
+            drawRect.setOrigin(textRec.width / 2, textRec.height / 2);
+            drawRect.setPosition(textScreenPos.x, textScreenPos.y + 3);
+            drawRect.setFillColor(sf::Color(0, 0, 0, 150));
+
+            window->draw(drawRect);
+            window->draw(aboveText);
+        }
+        if (displayBelowCoins)
+        {
+            sf::Text belowText(displayBelowCoins->getDollarString(), mainFont, 16);
+            sf::FloatRect textRec = belowText.getLocalBounds();
+
+            vector2f textGamePos = entityPos + vector2f(0, -20);
+            vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+
+            belowText.setColor(textColor);
+            belowText.setOrigin(textRec.width / 2, textRec.height / 2);
+            belowText.setPosition(textScreenPos.x, textScreenPos.y);
+
+            sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
+            drawRect.setOrigin(textRec.width / 2, textRec.height / 2);
+            drawRect.setPosition(textScreenPos.x, textScreenPos.y + 3);
+            drawRect.setFillColor(sf::Color(0, 0, 0, 150));
+
+            window->draw(drawRect);
+            window->draw(belowText);
+        }
+    }
+}
+
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
     window->clear();
@@ -319,6 +389,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     {
         drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedEntities[i]);
     }
+
+    drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
 
     vector<sf::String> outputStrings;
 
