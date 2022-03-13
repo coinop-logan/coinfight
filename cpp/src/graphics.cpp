@@ -366,7 +366,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             vector2f textGamePos = entityPos + vector2f(0, -20);
             vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
-            belowText.setColor(sf::Color(100, 100, 255));
+            belowText.setColor(sf::Color(200, 200, 255));
             belowText.setOrigin(textRec.width / 2, textRec.height / 2);
             belowText.setPosition(textScreenPos.x, textScreenPos.y);
 
