@@ -55,8 +55,6 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
 }
 
-uint playerId;
-
 int main(int argc, char *argv[])
 {
     if (argc-1 == 0)
@@ -104,7 +102,7 @@ int main(int argc, char *argv[])
 
                 // poll for cmds from input
                 // (also updates UI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(game, &ui, playerId, window);
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(game, &ui, currentPlayerId, window);
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds

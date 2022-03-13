@@ -153,14 +153,14 @@ void Entity::die()
 {
     dead = true;
 }
-Coins* Entity::getDroppableCoins()
+vector<Coins*> Entity::getDroppableCoins()
 {
     throw runtime_error("getDroppableCoins has not been defined for " + getTypeName() + ".");
 }
 
-Coins* GoldPile::getDroppableCoins()
+vector<Coins*> GoldPile::getDroppableCoins()
 {
-    return &gold;
+    return vector<Coins*>{&gold};
 }
 void GoldPile::pack(vch *dest)
 {
@@ -205,9 +205,9 @@ sf::Color playerAddressToColor(string address)
     return sf::Color(vals[0], vals[1], vals[2]);
 }
 
-Coins* Unit::getDroppableCoins()
+vector<Coins*> Unit::getDroppableCoins()
 {
-    return &goldInvested;
+    return vector<Coins*>{&goldInvested};
 }
 coinsInt Unit::getCost()
 {
@@ -538,13 +538,10 @@ void Prime::go()
     mobileUnitGo();
 }
 
-    enum State
-    {
-        Idle,
-        AttackingUnit
-    } state;
-
-    int shootCooldown;
+vector<Coins*> Prime::getDroppableCoins()
+{
+    return vector<Coins*>{&goldInvested, &heldGold};
+}
 
 void Fighter::pack(vch *dest)
 {
@@ -867,12 +864,15 @@ void Game::iterate()
             {
                 if (entities[i] && entities[i]->dead)
                 {
-                    Coins *coins = entities[i]->getDroppableCoins();
-                    if (coins->getInt() > 0)
+                    vector<Coins*> coins = entities[i]->getDroppableCoins();
+                    for (uint j=0; j<coins.size(); j++)
                     {
-                        boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
-                        entities.push_back(goldPile);
-                        coins->transferUpTo(coins->getInt(), &goldPile->gold);
+                        if (coins[j]->getInt() > 0)
+                        {
+                            boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
+                            entities.push_back(goldPile);
+                            coins[j]->transferUpTo(coins[j]->getInt(), &goldPile->gold);
+                        }
                     }
                     entities[i].reset();
                 }
