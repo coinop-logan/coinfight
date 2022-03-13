@@ -275,7 +275,7 @@ int main()
     ParticlesContainer particles;
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
-    while (true)
+    while (window->isOpen())
     {
         io_service.poll();
 
@@ -370,8 +370,10 @@ int main()
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
     }
-
     delete window;
+
+    cout << "Okay bye! Withdrawing your " << game.players[playerId].credit.getDollarString().toAnsiString() << " now..." << endl;
+    connectionHandler.sendCmd(boost::shared_ptr<WithdrawCmd>(new WithdrawCmd(coinsInt(0))));
 
     socket.close();
 
