@@ -33,11 +33,11 @@ pre-build:
 	mkdir -p cpp/obj
 	mkdir -p bin/
 
-main-build: pre-build server-build client-build bin/coinfight_local prep-server
+main-build: server-build client-build bin/coinfight_local prep-server
 
-server-build: server
+server-build: bin/server
 
-client-build: client bin/coinfight_local
+client-build: bin/client bin/coinfight_local
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
