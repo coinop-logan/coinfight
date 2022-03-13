@@ -24,7 +24,7 @@ install: all
 install-client: client
 	sudo apt install libsfml-dev
 
-client: pre-build client-build
+client: pre-build client-build bin/coinfight_local
 	cp assets/Andale_Mono.ttf bin/
 
 server: pre-build server-build prep-server
