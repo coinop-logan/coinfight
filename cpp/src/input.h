@@ -18,6 +18,7 @@ struct UI
         Default,
         Deposit
     } cmdState;
+    vector2i lastMousePos;
     vector<boost::shared_ptr<Entity>> selectedEntities;
     CameraState camera;
     int debugInt;

@@ -55,12 +55,12 @@ const float FIGHTER_RANGE = 200;
 const int FIGHTER_SHOOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 
-const coinsInt GATEWAY_COST = 100;
+const coinsInt GATEWAY_COST = 10000;
 const uint16_t GATEWAY_HEALTH = 2000;
 const float GATEWAY_RANGE = 150;
 const coinsInt GATEWAY_BUILD_RATE = 8;
 
-const float SPACE_BETWEEN_SPAWNS = 200;
+const float SPACE_BETWEEN_SPAWNS = 500;
 
 const float PARTICLE_MAGNET_STRENGTH = 1;
 const float PARTICLE_FRICTION_CONSTANT = 0.9;

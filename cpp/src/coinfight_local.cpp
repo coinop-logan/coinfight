@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", 10000, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", 10000, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", 15000, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", 15000, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent(honeypotStartingAmount)));
     
     for (uint i=0; i<firstEvents.size(); i++)

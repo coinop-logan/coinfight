@@ -144,8 +144,16 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
             break;
         case sf::Event::MouseMoved:
             {
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+                {
+                    vector2i moveVector = mouseMoveToVec(event.mouseMove) - ui->lastMousePos;
+                    moveVector.y *= -1;
+                    ui->camera.gamePos -= moveVector;
+                }
                 Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
                 ui->mouseoverEntity = target.castToEntityPtr(game);
+
+                ui->lastMousePos = mouseMoveToVec(event.mouseMove);
             }
             break;
         case sf::Event::MouseButtonPressed:
