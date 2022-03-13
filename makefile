@@ -5,7 +5,28 @@ INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-c
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
 
-all: bin/client bin/server bin/coinfight_local bin/test
+install: all
+	sudo apt install libsfml-dev
+
+install-client: bin/client
+	sudo apt install libsfml-dev
+
+all: pre-build main-build
+
+client: pre-build client-build
+	cp assets/Andale_Mono.ttf bin/
+
+server: pre-build server-build
+
+pre-build:
+	mkdir -p cpp/obj
+	mkdir -p bin/
+
+main-build: server-build client-build bin/coinfight_local
+
+server-build: bin/server
+
+client-build: bin/client bin/coinfight_local
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
