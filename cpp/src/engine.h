@@ -38,6 +38,7 @@ public:
     virtual void go();
     virtual sf::Color getPrimaryColor();
     virtual float getRotation() { return 0; }
+    virtual Coins* getDroppableCoins();
     void die();
 
     bool collidesWithPoint(vector2f);
@@ -133,6 +134,7 @@ class GoldPile : public Entity
 {
 public:
     Coins gold;
+    Coins* getDroppableCoins();
     void pack(vch *destVch);
     void unpackAndMoveIter(vchIter *iter);
     GoldPile(Game *, EntityRef, vector2f);
@@ -150,6 +152,7 @@ class Unit : public Entity
 public:
     int ownerId;
     Coins goldInvested;
+    Coins* getDroppableCoins();
     virtual coinsInt getCost();
     virtual uint16_t getMaxHealth();
 

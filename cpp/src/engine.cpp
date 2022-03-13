@@ -153,7 +153,15 @@ void Entity::die()
 {
     dead = true;
 }
+Coins* Entity::getDroppableCoins()
+{
+    throw runtime_error("getDroppableCoins has not been defined for " + getTypeName() + ".");
+}
 
+Coins* GoldPile::getDroppableCoins()
+{
+    return &gold;
+}
 void GoldPile::pack(vch *dest)
 {
     packEntity(dest);
@@ -197,6 +205,10 @@ sf::Color playerAddressToColor(string address)
     return sf::Color(vals[0], vals[1], vals[2]);
 }
 
+Coins* Unit::getDroppableCoins()
+{
+    return &goldInvested;
+}
 coinsInt Unit::getCost()
 {
     throw runtime_error("getCost() has not been defined for " + getTypeName() + ".");
@@ -854,7 +866,16 @@ void Game::iterate()
             for (uint i = 0; i < entities.size(); i++)
             {
                 if (entities[i] && entities[i]->dead)
+                {
+                    Coins *coins = entities[i]->getDroppableCoins();
+                    if (coins->getInt() > 0)
+                    {
+                        boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
+                        entities.push_back(goldPile);
+                        coins->transferUpTo(coins->getInt(), &goldPile->gold);
+                    }
                     entities[i].reset();
+                }
             }
 
             frame++;
