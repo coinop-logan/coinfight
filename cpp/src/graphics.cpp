@@ -556,20 +556,20 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     if (playerIdOrNegativeOne >= 0)
     {
         uint playerId = playerIdOrNegativeOne;
-        outputStrings.push_back(game->players[playerId].credit.getDollarString());
+        outputStrings.push_back("Account balance: " + game->players[playerId].credit.getDollarString());
     }
 
-    for (uint i=0; i<game->entities.size(); i++)
-    {
-        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
-        {
-            outputStrings.push_back("prime: " + prime->heldGold.getDollarString());
-        }
-        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
-        {
-            outputStrings.push_back("goldpile: " + goldpile->gold.getDollarString());
-        }
-    }
+    // for (uint i=0; i<game->entities.size(); i++)
+    // {
+    //     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
+    //     {
+    //         outputStrings.push_back("prime: " + prime->heldGold.getDollarString());
+    //     }
+    //     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
+    //     {
+    //         outputStrings.push_back("goldpile: " + goldpile->gold.getDollarString());
+    //     }
+    // }
 
     drawOutputStrings(window, outputStrings);
 
