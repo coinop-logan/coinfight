@@ -5,6 +5,12 @@ INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-c
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
 
+all: pre-build main-build
+
+clean:
+	rm cpp/obj/* -f
+	rm bin/* -rf
+
 prep-server:
 	mkdir -p bin/accounting
 	mkdir -p bin/accounting/pending_deposits
@@ -15,10 +21,8 @@ prep-server:
 install: all
 	sudo apt install libsfml-dev
 
-install-client: bin/client
+install-client: client
 	sudo apt install libsfml-dev
-
-all: pre-build main-build
 
 client: pre-build client-build
 	cp assets/Andale_Mono.ttf bin/
@@ -29,11 +33,11 @@ pre-build:
 	mkdir -p cpp/obj
 	mkdir -p bin/
 
-main-build: server-build client-build bin/coinfight_local
+main-build: pre-build server-build client-build bin/coinfight_local prep-server
 
-server-build: bin/server
+server-build: server
 
-client-build: bin/client bin/coinfight_local
+client-build: client bin/coinfight_local
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
