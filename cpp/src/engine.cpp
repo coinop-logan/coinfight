@@ -29,6 +29,9 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
     case GOLDPILE_TYPECHAR:
         return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
         break;
+    case FIGHTER_TYPECHAR:
+        return boost::shared_ptr<Entity>(new Fighter(game, ref, iter));
+        break;
     default:
         throw runtime_error("Trying to unpack an unrecognized entity");
     }
@@ -198,11 +201,16 @@ coinsInt Unit::getCost()
 {
     throw runtime_error("getCost() has not been defined for " + getTypeName() + ".");
 }
+uint16_t Unit::getMaxHealth()
+{
+    throw runtime_error("getMaxHeatlh() has not been defined for " + getTypeName() + ".");
+}
 void Unit::packUnit(vch *destVch)
 {
     packEntity(destVch);
 
     packToVch(destVch, "C", (unsigned char)ownerId);
+    packToVch(destVch, "H", health);
 
     goldInvested.pack(destVch);
 }
@@ -212,12 +220,14 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
     unsigned char ownerIdChar;
     *iter = unpackFromIter(*iter, "C", &ownerIdChar);
     ownerId = ownerIdChar;
+    
+    *iter = unpackFromIter(*iter, "H", &health);
 
     goldInvested = Coins(iter);
 }
 
-Unit::Unit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, vector2f pos)
-    : Entity(game, ref, pos), ownerId(ownerId), goldInvested(totalCost) {}
+Unit::Unit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Entity(game, ref, pos), ownerId(ownerId), health(health), goldInvested(totalCost) {}
 
 Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
                                                        goldInvested((coinsInt)0) // will get overwritten in unpack below
@@ -255,6 +265,21 @@ sf::Color Unit::getPrimaryColor()
 {
     return playerAddressToColor(game->playerIdToAddress(ownerId));
 }
+void Unit::unitGo() {}
+void Unit::takeHit(uint16_t damage)
+{
+    if (damage >= health)
+    {
+        health = 0;
+        dead = true;
+    }
+    else
+    {
+        health -= damage;
+    }
+    cout << "took a hit! Health at " << health << endl;
+}
+uint16_t Unit::getHealth() { return health; }
 
 void Building::packBuilding(vch *destVch)
 {
@@ -264,11 +289,16 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, pos) {}
+Building::Building(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Unit(game, ref, ownerId, totalCost, health, pos) {}
 Building::Building(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter)
 {
     unpackBuildingAndMoveIter(iter);
+}
+
+void Building::buildingGo()
+{
+    unitGo();
 }
 
 void MobileUnit::packMobileUnit(vch *dest)
@@ -283,8 +313,8 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, pos), target(NULL_ENTITYREF), rotation(0)
+MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Unit(game, ref, ownerId, totalCost, health, pos), target(NULL_ENTITYREF), rotation(0)
 {
     targetRange = 0;
     setTarget(Target(pos), 0);
@@ -343,6 +373,7 @@ void MobileUnit::mobileUnitGo()
         moveTowardPoint(*p, targetRange);
     else
         setTarget(Target(pos), 0);
+    unitGo();
 }
 void MobileUnit::cmdMove(vector2f pointTarget)
 {
@@ -367,7 +398,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 }
 
 Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos)
-    : MobileUnit(game, ref, ownerId, PRIME_COST, pos),
+    : MobileUnit(game, ref, ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       state(Idle)
 {}
@@ -394,6 +425,7 @@ void Prime::cmdPutdown(Target _target)
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
 coinsInt Prime::getCost() { return PRIME_COST; }
+uint16_t Prime::getMaxHealth() { return PRIME_HEALTH; }
 
 unsigned char Prime::typechar() { return PRIME_TYPECHAR; }
 string Prime::getTypeName() { return "Prime"; }
@@ -495,26 +527,117 @@ void Prime::go()
     mobileUnitGo();
 }
 
+    enum State
+    {
+        Idle,
+        AttackingUnit
+    } state;
+
+    int shootCooldown;
+
+void Fighter::pack(vch *dest)
+{
+    packMobileUnit(dest);
+
+    packToVch(dest, "C", (unsigned char)(state));
+    packToVch(dest, "H", shootCooldown);
+}
+void Fighter::unpackAndMoveIter(vchIter *iter)
+{
+    unsigned char enumInt;
+    *iter = unpackFromIter(*iter, "C", &enumInt);
+    state = static_cast<State>(enumInt);
+
+    *iter = unpackFromIter(*iter, "H", &shootCooldown);
+}
+
+Fighter::Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos)
+    : MobileUnit(game, ref, ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
+      state(Idle), shootCooldown(0)
+{}
+Fighter::Fighter(Game *game, EntityRef ref, vchIter *iter)
+    : MobileUnit(game, ref, iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+void Fighter::cmdAttack(boost::shared_ptr<Unit> targetedUnit)
+{
+    state = AttackingUnit;
+    setTarget(Target(targetedUnit->ref), FIGHTER_RANGE);
+}
+void Fighter::go()
+{
+    if (shootCooldown > 0)
+        shootCooldown --;
+    
+    if (state == AttackingUnit)
+    {
+        bool returnToIdle = false;
+        if (auto targetEntity = getTarget().castToEntityPtr(*this->game)) // will return false if unit died (pointer will be empty)
+        {
+            if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+            {
+                if ((targetUnit->pos - pos).getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
+                {
+                    if (shootCooldown == 0)
+                    {
+                        shootAt(targetUnit);
+                    }
+                }
+            }
+            else
+                returnToIdle = true;
+        }
+        else
+            returnToIdle = true;
+        
+        if (returnToIdle)
+        {
+            cout << "fighter returning to idle" << endl;
+            state = Idle;
+        }
+    }
+    mobileUnitGo();
+}
+void Fighter::shootAt(boost::shared_ptr<Unit> unit)
+{
+    shootCooldown = FIGHTER_SHOOT_COOLDOWN;
+    unit->takeHit(FIGHTER_DAMAGE);
+}
+
+float Fighter::getSpeed() { return FIGHTER_SPEED; }
+float Fighter::getRange() { return FIGHTER_RANGE; }
+coinsInt Fighter::getCost() { return FIGHTER_COST; }
+uint16_t Fighter::getMaxHealth() { return FIGHTER_HEALTH; }
+
+unsigned char Fighter::typechar() { return FIGHTER_TYPECHAR; }
+string Fighter::getTypename() { return "Fighter"; }
+
+
 unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() { return "Gateway"; }
 coinsInt Gateway::getCost() { return GATEWAY_COST; }
+uint16_t Gateway::getMaxHealth() { return GATEWAY_HEALTH; }
 
 void Gateway::cmdBuildUnit(unsigned char unitTypechar)
 {
     vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+    boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
     switch (unitTypechar)
     {
         case PRIME_TYPECHAR:
-            {
-                auto prime = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
-                this->game->entities.push_back(prime);
-                this->maybeBuildingUnit = prime;
-            }
+            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+            break;
+        case FIGHTER_TYPECHAR:
+            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
             break;
         default:
             cout << "Gateway doesn't know how to build that unit..." << endl;
             break;
     }
+    this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
+    this->maybeBuildingUnit = littleBabyUnitAwwwwSoCute;
 }
 float Gateway::buildQueueWeight()
 {
@@ -531,7 +654,8 @@ void Gateway::pack(vch *dest)
 void Gateway::unpackAndMoveIter(vchIter *iter)
 {}
 
-Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos) : Building(game, ref, ownerId, GATEWAY_COST, pos)
+Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
+    : Building(game, ref, ownerId, GATEWAY_COST, FIGHTER_COST, pos)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -713,7 +837,13 @@ void Game::iterate()
             {
                 if (entities[i])
                 {
-                    entities[i]->go();
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
+                    {
+                        if (unit->isActive())
+                            unit->go();
+                    }
+                    else
+                        entities[i]->go();
                 }
             }
 

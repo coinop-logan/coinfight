@@ -99,6 +99,33 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_
     return boost::shared_ptr<Cmd>(); // return null cmd
 }
 
+boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Entity>> selectedEntities, unsigned char buildUnitTypechar)
+{
+    auto selectedGateways = filterForType<Gateway, Entity>(selectedEntities);
+    if (selectedGateways.size() > 0)
+    {
+        boost::shared_ptr<Gateway> bestChoice;
+        for (uint i=0; i<selectedGateways.size(); i++)
+        {
+            if (!bestChoice)
+            {
+                bestChoice = selectedGateways[i];
+                continue;
+            }
+
+            if (selectedGateways[i]->buildQueueWeight() < bestChoice->buildQueueWeight())
+            {
+                bestChoice = selectedGateways[i];
+            }
+        }
+
+        vector<EntityRef> onlyOneGateway;
+        onlyOneGateway.push_back(bestChoice->ref);
+        return boost::shared_ptr<GatewayBuildCmd>(new GatewayBuildCmd(onlyOneGateway, buildUnitTypechar));
+    }
+    return boost::shared_ptr<GatewayBuildCmd>();
+}
+
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
@@ -182,29 +209,18 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     }
                     break;
                 case sf::Keyboard::Q:
+                    if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, PRIME_TYPECHAR))
+                        cmdsToSend.push_back(cmd);
+                    break;
+                case sf::Keyboard::W:
+                    if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, FIGHTER_TYPECHAR))
+                        cmdsToSend.push_back(cmd);
+                    break;
+                case sf::Keyboard::Space:
+                    if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(ui->selectedEntities[0]))
                     {
-                        auto selectedGateways = filterForType<Gateway, Entity>(ui->selectedEntities);
-                        if (selectedGateways.size() > 0)
-                        {
-                            boost::shared_ptr<Gateway> bestChoice;
-                            for (uint i=0; i<selectedGateways.size(); i++)
-                            {
-                                if (!bestChoice)
-                                {
-                                    bestChoice = selectedGateways[i];
-                                    continue;
-                                }
-
-                                if (selectedGateways[i]->buildQueueWeight() < bestChoice->buildQueueWeight())
-                                {
-                                    bestChoice = selectedGateways[i];
-                                }
-                            }
-
-                            vector<EntityRef> onlyOneGateway;
-                            onlyOneGateway.push_back(bestChoice->ref);
-                            cmdsToSend.push_back(boost::shared_ptr<GatewayBuildCmd>(new GatewayBuildCmd(onlyOneGateway, PRIME_TYPECHAR)));
-                        }
+                        auto units = filterForType<Unit, Entity>(game.entities);
+                        fighter->cmdAttack(units[0]);
                     }
                     break;
                 case sf::Keyboard::Escape:

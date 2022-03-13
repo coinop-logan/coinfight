@@ -146,14 +146,16 @@ public:
 
 class Unit : public Entity
 {
+    uint16_t health;
 public:
     int ownerId;
     Coins goldInvested;
     virtual coinsInt getCost();
+    virtual uint16_t getMaxHealth();
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
-    Unit(Game *, EntityRef, int, coinsInt, vector2f);
+    Unit(Game *, EntityRef, int, coinsInt, uint16_t, vector2f);
     Unit(Game *, EntityRef, vchIter *);
     sf::Color getPrimaryColor();
 
@@ -162,6 +164,9 @@ public:
     coinsInt getBuilt();
     float getBuiltRatio();
     bool isActive();
+    void unitGo();
+    void takeHit(uint16_t damage);
+    uint16_t getHealth();
 };
 
 class Building : public Unit
@@ -170,8 +175,10 @@ public:
     void packBuilding(vch *destVch);
     void unpackBuildingAndMoveIter(vchIter *iter);
 
-    Building(Game *, EntityRef, int, coinsInt, vector2f);
+    Building(Game *, EntityRef, int, coinsInt, uint16_t, vector2f);
     Building(Game *, EntityRef, vchIter *);
+
+    void buildingGo();
 };
 
 class MobileUnit : public Unit
@@ -202,7 +209,7 @@ public:
 
     void cmdMove(vector2f target);
 
-    MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, vector2f pos);
+    MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t, vector2f pos);
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
@@ -241,7 +248,39 @@ public:
     unsigned char typechar();
     string getTypeName();
     coinsInt getCost();
+    uint16_t getMaxHealth();
     void go();
+};
+
+class Fighter : public MobileUnit
+{
+public:
+    enum State
+    {
+        Idle,
+        AttackingUnit
+    } state;
+
+    uint16_t shootCooldown;
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos);
+    Fighter(Game *game, EntityRef ref, vchIter *iter);
+
+    void cmdAttack(boost::shared_ptr<Unit> targetedUnit);
+
+    float getSpeed();
+    float getRange();
+
+    unsigned char typechar();
+    string getTypename();
+    coinsInt getCost();
+    uint16_t getMaxHealth();
+    void go();
+
+    void shootAt(boost::shared_ptr<Unit> targetUnit);
 };
 
 class Gateway : public Building
@@ -261,6 +300,7 @@ public:
     unsigned char typechar();
     string getTypeName();
     coinsInt getCost();
+    uint16_t getMaxHealth();
     void go();
 };
 

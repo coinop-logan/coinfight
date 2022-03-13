@@ -172,11 +172,6 @@ void MoveCmd::unpackAndMoveIter(vchIter *iter)
 
 void MoveCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (!unit->isActive())
-    {
-        return;
-    }
-
     if (boost::shared_ptr<MobileUnit> mUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
     {
         mUnit->cmdMove(pos);
@@ -212,11 +207,6 @@ void PickupCmd::unpackAndMoveIter(vchIter *iter)
 }
 void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (!unit->isActive())
-    {
-        return;
-    }
-
     if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
         prime->cmdPickup(goldRef);
@@ -253,9 +243,6 @@ void PutdownCmd::unpackAndMoveIter(vchIter *iter)
 
 void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (!unit->isActive())
-        return;
-
     if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         prime->cmdPutdown(target);
     else
@@ -288,9 +275,6 @@ void GatewayBuildCmd::unpackAndMoveIter(vchIter *iter)
 
 void GatewayBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (!unit->isActive())
-        return;
-    
     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
         gateway->cmdBuildUnit(buildTypechar);

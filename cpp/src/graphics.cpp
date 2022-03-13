@@ -66,7 +66,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             primaryColor.a = newAlpha;
         }
 
-        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
+        if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         {
             sf::ConvexShape oneSide;
             oneSide.setPointCount(3);
@@ -105,7 +105,46 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             transform.rotate(radToDeg(drawRotation));
             window->draw(lines, transform);
         }
-        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(unit))
+        else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
+        {
+            sf::ConvexShape oneSide;
+            oneSide.setPointCount(3);
+
+            oneSide.setFillColor(primaryColor);
+            oneSide.setPosition(drawPos.x, drawPos.y);
+            oneSide.setRotation(radToDeg(drawRotation));
+
+            sf::Vector2f front = sf::Vector2f(12, 0);
+            sf::Vector2f back = sf::Vector2f(-4, 0);
+            sf::Vector2f right = sf::Vector2f(-12, 16);
+            sf::Vector2f left = sf::Vector2f(-12, -16);
+
+            // draw two triangles
+            oneSide.setPoint(1, front);
+            oneSide.setPoint(0, back);
+            oneSide.setPoint(2, right);
+            window->draw(oneSide);
+            oneSide.setPoint(2, left);
+            window->draw(oneSide);
+
+            // draw outline
+            sf::VertexArray lines(sf::LinesStrip, 5);
+            lines[0].position = front;
+            lines[1].position = right;
+            lines[2].position = back;
+            lines[3].position = left;
+            lines[4].position = front;
+            lines[0].color = outlineColor;
+            lines[1].color = outlineColor;
+            lines[2].color = outlineColor;
+            lines[3].color = outlineColor;
+            lines[4].color = outlineColor;
+            sf::Transform transform;
+            transform.translate(drawPos.x, drawPos.y);
+            transform.rotate(radToDeg(drawRotation));
+            window->draw(lines, transform);
+        }
+        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
         {
             sf::RectangleShape rect(sf::Vector2f(20, 20));
             rect.setOrigin(10, 10);
