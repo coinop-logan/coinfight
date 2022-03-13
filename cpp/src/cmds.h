@@ -19,6 +19,7 @@ const unsigned char CMD_PICKUP_CHAR = 1;
 const unsigned char CMD_PUTDOWN_CHAR = 2;
 const unsigned char CMD_GATEWAYBUILD_CHAR = 3;
 const unsigned char CMD_WITHDRAW_CHAR = 4;
+const unsigned char CMD_ATTACK_CHAR = 5;
 
 struct Cmd
 {
@@ -129,6 +130,21 @@ struct GatewayBuildCmd : public UnitCmd
 
     GatewayBuildCmd(vector<EntityRef>, unsigned char buildTypechar);
     GatewayBuildCmd(vchIter *iter);
+};
+
+struct AttackCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    AttackCmd(vector<EntityRef>, EntityRef);
+    AttackCmd(vchIter *iter);
 };
 
 #endif // CMDS_H

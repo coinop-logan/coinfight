@@ -25,8 +25,8 @@ struct UI
 vector2f screenPosToGamePos(CameraState, vector2i);
 vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos);
 Target getTargetAtScreenPos(const Game &, const CameraState &, vector2i);
-boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target);
+boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, Target target);
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent);
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, sf::RenderWindow *window);
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, int playerId, sf::RenderWindow *window);
 
 #endif // INPUT_H

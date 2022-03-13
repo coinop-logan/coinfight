@@ -22,6 +22,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new GatewayBuildCmd(iter));
     case CMD_WITHDRAW_CHAR:
         return boost::shared_ptr<Cmd>(new WithdrawCmd(iter));
+    case CMD_ATTACK_CHAR:
+        return boost::shared_ptr<Cmd>(new AttackCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -289,6 +291,41 @@ GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, unsigned char buildTyp
     : UnitCmd(units), buildTypechar(buildTypechar) {}
 
 GatewayBuildCmd::GatewayBuildCmd(vchIter *iter)
+    : UnitCmd(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char AttackCmd::getTypechar()
+{
+    return CMD_ATTACK_CHAR;
+}
+string AttackCmd::getTypename()
+{
+    return "AttackCmd";
+}
+void AttackCmd::pack(vch *dest)
+{
+    packUnitCmd(dest);
+    packEntityRef(dest, targetUnit);
+}
+void AttackCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackEntityRef(*iter, &targetUnit);
+}
+
+void AttackCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(unit))
+    {
+        fighter->cmdAttack(targetUnit);
+    }
+}
+
+AttackCmd::AttackCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+AttackCmd::AttackCmd(vchIter *iter)
     : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);

@@ -278,7 +278,7 @@ public:
     Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos);
     Fighter(Game *game, EntityRef ref, vchIter *iter);
 
-    void cmdAttack(boost::shared_ptr<Unit> targetedUnit);
+    void cmdAttack(EntityRef ref);
 
     float getSpeed();
     float getRange();

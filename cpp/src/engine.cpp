@@ -572,10 +572,10 @@ Fighter::Fighter(Game *game, EntityRef ref, vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-void Fighter::cmdAttack(boost::shared_ptr<Unit> targetedUnit)
+void Fighter::cmdAttack(EntityRef ref)
 {
     state = AttackingUnit;
-    setTarget(Target(targetedUnit->ref), FIGHTER_RANGE);
+    setTarget(Target(ref), FIGHTER_RANGE);
 }
 void Fighter::go()
 {

@@ -65,32 +65,37 @@ Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, ve
         return Target(gamePos);
 }
 
-boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, vector<boost::shared_ptr<Entity>> selectedEntities, Target target)
+boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, Target target)
 {
-    if (selectedEntities.size() == 0)
+    if (ui.selectedEntities.size() == 0)
     {
         return boost::shared_ptr<Cmd>();
     }
     if (optional<vector2f> point = target.castToPoint())
     {
-        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(selectedEntities), *point));
+        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(ui.selectedEntities), *point));
     }
     else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
     {
         boost::shared_ptr<Entity> entity = *entityPtrPtr;
 
-        if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
+        if (getAllianceType(playerID, entity) == Enemy)
         {
-            vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(selectedEntities);
-            if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
-            {
-                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(primesInSelection), entity->ref));
-            }
+            vector<boost::shared_ptr<Entity>> fighters = filterForTypeKeepContainer<Fighter, Entity>(ui.selectedEntities);
+            return boost::shared_ptr<Cmd>(new AttackCmd(entityPtrsToRefs(fighters), entity->ref));
         }
         else
         {
-            // maybe in future can do a "follow" type action. Or attack if all enemies.
-            return boost::shared_ptr<Cmd>();
+            if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
+            {
+                vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui.selectedEntities);
+                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(primesInSelection), entity->ref));
+            }
+            else
+            {
+                // maybe in future can do a "follow" type action. Or attack if all enemies.
+                return boost::shared_ptr<Cmd>();
+            }
         }
     }
     
@@ -126,7 +131,7 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Entity>> sel
     return boost::shared_ptr<GatewayBuildCmd>();
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, int playerId, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
@@ -186,7 +191,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                 {
                     if (ui->selectedEntities.size() > 0)
                     {
-                        cmdsToSend.push_back(makeRightclickCmd(game, ui->selectedEntities, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                        cmdsToSend.push_back(makeRightclickCmd(game, *ui, playerId, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
                     }
                 }
                 else
@@ -194,7 +199,6 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     ui->cmdState = UI::Default;
                 }
             }
-                
             break;
         case sf::Event::KeyPressed:
             switch (event.key.code)
@@ -216,13 +220,13 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, FIGHTER_TYPECHAR))
                         cmdsToSend.push_back(cmd);
                     break;
-                case sf::Keyboard::Space:
-                    if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(ui->selectedEntities[0]))
-                    {
-                        auto units = filterForType<Unit, Entity>(game.entities);
-                        fighter->cmdAttack(units[0]);
-                    }
-                    break;
+                // case sf::Keyboard::Space:
+                //     if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(ui->selectedEntities[0]))
+                //     {
+                //         auto units = filterForType<Unit, Entity>(game.entities);
+                //         fighter->cmdAttack(units[0])->ref;
+                //     }
+                //     break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
                     {
