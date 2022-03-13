@@ -13,7 +13,7 @@ const int WINDOW_WIDTH = 1500;
 const int WINDOW_HEIGHT = 800;
 const vector2i HALF_SCREENDIM = vector2i(WINDOW_WIDTH, WINDOW_HEIGHT) / 2;
 
-const uint NEEDED_PLAYERS = 1;
+const uint NEEDED_PLAYERS = 3;
 
 const float DISTANCE_TOL = 0.0001;
 
@@ -39,7 +39,7 @@ const float ENTITY_COLLIDE_RADIUS = 15;
 const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
-const coinsInt PRIME_COST = 1000;
+const coinsInt PRIME_COST = 500;
 const uint16_t PRIME_HEALTH = 100;
 const float PRIME_SPEED = 2;
 const float PRIME_RANGE = 150;
@@ -48,14 +48,14 @@ const coinsInt PRIME_PUTDOWN_RATE = 8;
 const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
 const coinsInt PRIME_BUILD_RATE = 5;
 
-const coinsInt FIGHTER_COST = 3000;
+const coinsInt FIGHTER_COST = 1500;
 const uint16_t FIGHTER_HEALTH = 300;
 const float FIGHTER_SPEED = 3;
 const float FIGHTER_RANGE = 200;
 const int FIGHTER_SHOOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 
-const coinsInt GATEWAY_COST = 10000;
+const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 2000;
 const float GATEWAY_RANGE = 150;
 const coinsInt GATEWAY_BUILD_RATE = 8;
