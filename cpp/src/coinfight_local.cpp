@@ -152,7 +152,14 @@ int main(int argc, char *argv[])
             // now execute all authd cmds
             for (uint i=0; i<authdCmds.size(); i++)
             {
-                authdCmds[i]->execute(&game);
+                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(authdCmds[i]->cmd))
+                {
+                    unitCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
+                }
+                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(authdCmds[i]->cmd))
+                {
+                    // ignore for the purposes of this local binary
+                }
             }
 
             game.iterate();

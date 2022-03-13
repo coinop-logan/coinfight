@@ -319,7 +319,18 @@ int main()
         // go through cmds
         for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
         {
-            fcp.authdCmds[i]->execute(&game);
+            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            {
+                unitCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+            }
+            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            {
+                // ignore. Server processes withdrawals and creates an event.
+            }
+            else
+            {
+                cout << "Woah, I don't know how to handle that event as a client!" << endl;
+            }
         }
 
         game.iterate();

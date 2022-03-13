@@ -207,6 +207,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                         }
                     }
                     break;
+                case sf::Keyboard::W:
+                    cmdsToSend.push_back(boost::shared_ptr<WithdrawCmd>(new WithdrawCmd(500)));
+                    break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
                     {

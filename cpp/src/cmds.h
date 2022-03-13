@@ -18,24 +18,19 @@ const unsigned char CMD_MOVE_CHAR = 0;
 const unsigned char CMD_PICKUP_CHAR = 1;
 const unsigned char CMD_PUTDOWN_CHAR = 2;
 const unsigned char CMD_GATEWAYBUILD_CHAR = 3;
+const unsigned char CMD_WITHDRAW_CHAR = 4;
 
 struct Cmd
 {
-    vector<EntityRef> unitRefs;
-
     virtual string getTypename();
     virtual unsigned char getTypechar();
     virtual void pack(vch *dest);
     virtual void unpackAndMoveIter(vchIter *iter);
 
-    vector<boost::shared_ptr<Unit>> getUnits(Game *game);
-    void executeIfOwnedBy(Game *, string userAddress);
-    virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
-
     void packCmd(vch *dest);
     void unpackCmdAndMoveIter(vchIter *iter);
 
-    Cmd(vector<EntityRef>);
+    Cmd();
     Cmd(vchIter *);
 };
 
@@ -43,13 +38,40 @@ struct AuthdCmd
 {
     boost::shared_ptr<Cmd> cmd;
     string playerAddress;
-    void execute(Game *);
     AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress);
+};
+
+struct WithdrawCmd : public Cmd
+{
+    coinsInt amount;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    WithdrawCmd(coinsInt amount);
+    WithdrawCmd(vchIter *iter);
 };
 
 boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter);
 
-struct MoveCmd : public Cmd
+struct UnitCmd : public Cmd
+{
+    vector<EntityRef> unitRefs;
+    vector<boost::shared_ptr<Unit>> getUnits(Game *game);
+
+    void executeAsPlayer(Game *, string userAddress);
+    virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
+
+    void packUnitCmd(vch *dest);
+    void unpackUnitCmdAndMoveIter(vchIter *iter);
+
+    UnitCmd(vector<EntityRef> entityRefs);
+    UnitCmd(vchIter *iter);
+};
+
+struct MoveCmd : public UnitCmd
 {
     vector2f pos;
 
@@ -64,7 +86,7 @@ struct MoveCmd : public Cmd
     MoveCmd(vchIter *iter);
 };
 
-struct PickupCmd : public Cmd
+struct PickupCmd : public UnitCmd
 {
     EntityRef goldRef;
 
@@ -79,7 +101,7 @@ struct PickupCmd : public Cmd
     PickupCmd(vchIter *iter);
 };
 
-struct PutdownCmd : public Cmd
+struct PutdownCmd : public UnitCmd
 {
     Target target;
 
@@ -94,7 +116,7 @@ struct PutdownCmd : public Cmd
     PutdownCmd(vchIter *iter);
 };
 
-struct GatewayBuildCmd : public Cmd
+struct GatewayBuildCmd : public UnitCmd
 {
     unsigned char buildTypechar;
 

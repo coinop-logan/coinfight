@@ -13,6 +13,7 @@ using coinsInt = unsigned long;
 extern const coinsInt MAX_COINS;
 
 coinsInt weiDepositStringToCoinsInt(string weiString);
+string coinsIntToWeiDepositString(coinsInt coins);
 
 class Coins
 {

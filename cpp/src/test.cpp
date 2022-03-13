@@ -1,7 +1,5 @@
-using namespace std;
-
-#include "input.h"
-#include "graphics.h"
+#include <iostream>
+#include "coins.h"
 
 // void makeSure(bool condition) // hacky test function
 // {
@@ -13,12 +11,11 @@ using namespace std;
 //     cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
 // }
 
+using namespace std;
+
 int main()
 {
-    CameraState s;
-    s.gamePos = vector2f(0,0);
-    vector2f v(10, 10);
-    debugOutputVector("result", screenPosToGamePos(s, v));
+    cout << coinsIntToWeiDepositString(1000) << endl;
     
     return 0;
 }

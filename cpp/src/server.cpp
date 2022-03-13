@@ -336,6 +336,29 @@ struct DepositEvent
     }
 };
 
+struct WithdrawEvent
+{
+    string userAddress;
+    coinsInt amountInCoins;
+    WithdrawEvent(string userAddress, coinsInt amountInCoins)
+        : userAddress(userAddress), amountInCoins(amountInCoins) {}
+    boost::shared_ptr<Event> toEventSharedPtr()
+    {
+        return boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddress, amountInCoins, false));
+    }
+};
+
+void actuateWithdrawal(string userAddress, coinsInt amount)
+{
+    string weiString = coinsIntToWeiDepositString(amount);
+    string writeData = userAddress + " " + weiString;
+
+    string filename = to_string(time(0)) + "-" + to_string(clock());
+    ofstream withdrawDescriptorFile("./accounting/pending_withdrawals/" + filename);
+    withdrawDescriptorFile << writeData;
+    withdrawDescriptorFile.close();
+}
+
 vector<DepositEvent> pollPendingDeposits()
 {
     vector<DepositEvent> depositEvents;
@@ -403,6 +426,8 @@ int main(int argc, char *argv[])
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+
+    vector<WithdrawEvent> pendingWithdrawEvents;
     
     while (true)
     {
@@ -417,6 +442,24 @@ int main(int argc, char *argv[])
 
         // let's count up events
         vector<boost::shared_ptr<Event>> pendingEvents;
+
+        // did we see any withdrawals last loop?
+        // If so, actuate and queue for in-game processing
+        for (uint i=0; i<pendingWithdrawEvents.size(); i++)
+        {
+            // just make sure again the math works out
+            if (pendingWithdrawEvents[i].amountInCoins > game.players[game.playerAddressToIdOrNegativeOne(pendingWithdrawEvents[i].userAddress)].credit.getInt())
+            {
+                cout << "Somehow an invalid withdrawal event was about to get processed..." << endl;
+            }
+            else
+            {
+                actuateWithdrawal(pendingWithdrawEvents[i].userAddress, pendingWithdrawEvents[i].amountInCoins);
+                pendingEvents.push_back(pendingWithdrawEvents[i].toEventSharedPtr());
+            }
+        }
+        pendingWithdrawEvents.clear();
+
         // scan for any pending deposits
         vector<DepositEvent> depositEvents = pollPendingDeposits();
         for (uint i=0; i < depositEvents.size(); i++)
@@ -471,7 +514,24 @@ int main(int argc, char *argv[])
         // execute all cmds on server-side game
         for (unsigned int i = 0; i < pendingCmds.size(); i++)
         {
-            pendingCmds[i]->execute(&game);
+            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            {
+                unitCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+            }
+            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            {
+                int playerId = game.playerAddressToIdOrNegativeOne(fcp.authdCmds[i]->playerAddress);
+                if (playerId < 0)
+                {
+                    cout << "Woah, getting a negative playerId when processing a withdraw cmd..." << endl;
+                    continue;
+                }
+                // if 0, interpret this as "all"
+                coinsInt withdrawSpecified = withdrawCmd->amount > 0 ? withdrawCmd->amount : game.players[playerId].credit.getInt();
+                coinsInt amountToWithdraw = min(withdrawSpecified, game.players[playerId].credit.getInt());
+
+                pendingWithdrawEvents.push_back(WithdrawEvent(fcp.authdCmds[i]->playerAddress, amountToWithdraw));
+            }
         }
         pendingCmds.clear();
 

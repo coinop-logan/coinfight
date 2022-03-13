@@ -20,6 +20,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
     case CMD_GATEWAYBUILD_CHAR:
         return boost::shared_ptr<Cmd>(new GatewayBuildCmd(iter));
+    case CMD_WITHDRAW_CHAR:
+        return boost::shared_ptr<Cmd>(new WithdrawCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -27,11 +29,6 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
 
 AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress)
     : cmd(cmd), playerAddress(playerAddress){}
-
-void AuthdCmd::execute(Game *game)
-{
-    cmd->executeIfOwnedBy(game, playerAddress);
-}
 
 unsigned char Cmd::getTypechar()
 {
@@ -49,12 +46,96 @@ void Cmd::unpackAndMoveIter(vchIter *iter)
 {
     throw runtime_error("unpackAndMoveIter is not defined for the command '" + getTypename() + "'");
 }
-void Cmd::executeOnUnit(boost::shared_ptr<Unit> u)
+
+void Cmd::packCmd(vch *dest) {}
+
+void Cmd::unpackCmdAndMoveIter(vchIter *iter) {}
+
+Cmd::Cmd() {}
+
+Cmd::Cmd(vchIter *iter)
+{
+    unpackCmdAndMoveIter(iter);
+}
+
+
+unsigned char WithdrawCmd::getTypechar()
+{
+    return CMD_WITHDRAW_CHAR;
+}
+string WithdrawCmd::getTypename()
+{
+    return "WithdrawCmd";
+}
+void WithdrawCmd::pack(vch *dest)
+{
+    packCmd(dest);
+    packToVch(dest, "L", amount);
+}
+void WithdrawCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackFromIter(*iter, "L", &amount);
+}
+WithdrawCmd::WithdrawCmd(coinsInt amount)
+    : amount(amount)
+{}
+WithdrawCmd::WithdrawCmd(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+
+UnitCmd::UnitCmd(vector<EntityRef> unitRefs) : unitRefs(unitRefs) {}
+UnitCmd::UnitCmd(vchIter *iter)
+{
+    unpackUnitCmdAndMoveIter(iter);
+}
+void UnitCmd::packUnitCmd(vch *dest)
+{
+    if (unitRefs.size() > 65535)
+    {
+        throw runtime_error("too many units referenced in that command!");
+    }
+    uint16_t numUnitRefs = unitRefs.size();
+    packToVch(dest, "H", numUnitRefs);
+    for (unsigned i = 0; i < numUnitRefs; i++)
+    {
+        packEntityRef(dest, unitRefs[i]);
+    }
+}
+void UnitCmd::unpackUnitCmdAndMoveIter(vchIter *iter)
+{
+    uint16_t numUnitRefs;
+    *iter = unpackFromIter(*iter, "H", &numUnitRefs);
+    for (unsigned i = 0; i < numUnitRefs; i++)
+    {
+        EntityRef unitRef;
+        *iter = unpackEntityRef(*iter, &unitRef);
+        unitRefs.push_back(unitRef);
+    }
+}
+
+void UnitCmd::executeAsPlayer(Game *game, string userAddress)
+{
+    int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
+    if (playerId == -1)
+        return;
+        
+    vector<boost::shared_ptr<Unit>> units = getUnits(game);
+    for (uint i = 0; i < units.size(); i++)
+    {
+        if (units[i]->ownerId == playerId)
+        {
+            executeOnUnit(units[i]);
+        }
+    }
+}
+void UnitCmd::executeOnUnit(boost::shared_ptr<Unit> u)
 {
     throw runtime_error("executeOnUnit is not defined for the command '" + getTypename() + "'");
 }
 
-vector<boost::shared_ptr<Unit>> Cmd::getUnits(Game *game)
+vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
 {
     vector<boost::shared_ptr<Unit>> units;
     for (uint i = 0; i < unitRefs.size(); i++)
@@ -70,53 +151,6 @@ vector<boost::shared_ptr<Unit>> Cmd::getUnits(Game *game)
     }
     return units;
 }
-void Cmd::executeIfOwnedBy(Game *game, string userAddress)
-{
-    int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
-    if (playerId == -1)
-        return;
-        
-    vector<boost::shared_ptr<Unit>> units = getUnits(game);
-    for (uint i = 0; i < units.size(); i++)
-    {
-        if (units[i]->ownerId == playerId)
-        {
-            executeOnUnit(units[i]);
-        }
-    }
-}
-
-void Cmd::packCmd(vch *dest)
-{
-    if (unitRefs.size() > 65535)
-    {
-        throw runtime_error("too many units referenced in that command!");
-    }
-    uint16_t numUnitRefs = unitRefs.size();
-    packToVch(dest, "H", numUnitRefs);
-    for (unsigned i = 0; i < numUnitRefs; i++)
-    {
-        packEntityRef(dest, unitRefs[i]);
-    }
-}
-void Cmd::unpackCmdAndMoveIter(vchIter *iter)
-{
-    uint16_t numUnitRefs;
-    *iter = unpackFromIter(*iter, "H", &numUnitRefs);
-    for (unsigned i = 0; i < numUnitRefs; i++)
-    {
-        EntityRef unitRef;
-        *iter = unpackEntityRef(*iter, &unitRef);
-        unitRefs.push_back(unitRef);
-    }
-}
-
-Cmd::Cmd(vector<EntityRef> unitRefs) : unitRefs(unitRefs) {}
-
-Cmd::Cmd(vchIter *iter)
-{
-    unpackCmdAndMoveIter(iter);
-}
 
 unsigned char MoveCmd::getTypechar()
 {
@@ -128,7 +162,7 @@ string MoveCmd::getTypename()
 }
 void MoveCmd::pack(vch *dest)
 {
-    packCmd(dest);
+    packUnitCmd(dest);
     packVector2f(dest, pos);
 }
 void MoveCmd::unpackAndMoveIter(vchIter *iter)
@@ -153,8 +187,8 @@ void MoveCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-MoveCmd::MoveCmd(vector<EntityRef> units, vector2f pos) : Cmd(units), pos(pos) {}
-MoveCmd::MoveCmd(vchIter *iter) : Cmd(iter)
+MoveCmd::MoveCmd(vector<EntityRef> units, vector2f pos) : UnitCmd(units), pos(pos) {}
+MoveCmd::MoveCmd(vchIter *iter) : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -169,7 +203,7 @@ string PickupCmd::getTypename()
 }
 void PickupCmd::pack(vch *dest)
 {
-    packCmd(dest);
+    packUnitCmd(dest);
     packEntityRef(dest, goldRef);
 }
 void PickupCmd::unpackAndMoveIter(vchIter *iter)
@@ -193,8 +227,8 @@ void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-PickupCmd::PickupCmd(vector<EntityRef> units, EntityRef goldRef) : Cmd(units), goldRef(goldRef) {}
-PickupCmd::PickupCmd(vchIter *iter) : Cmd(iter)
+PickupCmd::PickupCmd(vector<EntityRef> units, EntityRef goldRef) : UnitCmd(units), goldRef(goldRef) {}
+PickupCmd::PickupCmd(vchIter *iter) : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -209,7 +243,7 @@ string PutdownCmd::getTypename()
 }
 void PutdownCmd::pack(vch *dest)
 {
-    packCmd(dest);
+    packUnitCmd(dest);
     target.pack(dest);
 }
 void PutdownCmd::unpackAndMoveIter(vchIter *iter)
@@ -228,8 +262,8 @@ void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         cout << "That's not a prime!!" << endl;
 }
 
-PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : Cmd(units), target(target) {}
-PutdownCmd::PutdownCmd(vchIter *iter) : Cmd(iter), target(NULL_ENTITYREF)
+PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : UnitCmd(units), target(target) {}
+PutdownCmd::PutdownCmd(vchIter *iter) : UnitCmd(iter), target(NULL_ENTITYREF)
 {
     unpackAndMoveIter(iter);
 }
@@ -244,7 +278,7 @@ string GatewayBuildCmd::getTypename()
 }
 void GatewayBuildCmd::pack(vch *dest)
 {
-    packCmd(dest);
+    packUnitCmd(dest);
     packTypechar(dest, buildTypechar);
 }
 void GatewayBuildCmd::unpackAndMoveIter(vchIter *iter)
@@ -268,10 +302,10 @@ void GatewayBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 }
 
 GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, unsigned char buildTypechar)
-    : Cmd(units), buildTypechar(buildTypechar) {}
+    : UnitCmd(units), buildTypechar(buildTypechar) {}
 
 GatewayBuildCmd::GatewayBuildCmd(vchIter *iter)
-    : Cmd(iter)
+    : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);
 }

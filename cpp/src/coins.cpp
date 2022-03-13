@@ -20,6 +20,13 @@ coinsInt weiDepositStringToCoinsInt(string weiString)
     newString.erase(newString.length() - digitsToRemove);
     return stoi(newString);
 }
+string coinsIntToWeiDepositString(coinsInt coins)
+{
+    int digitsToAdd = WEI_PER_DOLLAR_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
+    string coinsString = to_string(coins);
+    string weiString = coinsString + string(digitsToAdd, '0');
+    return weiString;
+}
 
 unsigned long Coins::deductUpTo(unsigned long deductAmount)
 {

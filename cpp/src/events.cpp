@@ -65,18 +65,10 @@ void BalanceUpdateEvent::execute(Game *game)
     if (isDeposit)
     {
         // see if player exists for this address
-        bool found = false;
-        int playerId;
-        for (uint i=0; i<game->players.size(); i++)
-        {
-            if (game->players[i].address == userAddress)
-            {
-                found = true;
-                playerId = i;
-            }
-        }
+        int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
+
         // if no user for this address, create one
-        if (!found)
+        if (playerId == -1)
         {
             game->players.push_back(Player(userAddress));
             playerId = game->players.size() - 1;
@@ -86,7 +78,15 @@ void BalanceUpdateEvent::execute(Game *game)
     }
     else
     {
-        throw runtime_error("woah, we haven't done withdrawals yet!!");
+        int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
+
+        if (playerId == -1)
+        {
+            cout << "Woah, we're executing a deposit for an address I can't find!" << endl;
+            return;
+        }
+        
+        game->players[playerId].credit.destroySomeByFiat(amount);
     }
 }
 void BalanceUpdateEvent::pack(vch *dest)
