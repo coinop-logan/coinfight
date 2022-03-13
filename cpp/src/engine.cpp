@@ -314,14 +314,14 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 }
 
 MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, health, pos), target(NULL_ENTITYREF), rotation(0)
+    : Unit(game, ref, ownerId, totalCost, health, pos), target(NULL_ENTITYREF), angle_view(0)
 {
     targetRange = 0;
     setTarget(Target(pos), 0);
 }
 MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter),
                                                                   target(NULL_ENTITYREF),
-                                                                  rotation(0)
+                                                                  angle_view(0)
 {
     unpackMobileUnitAndMoveIter(iter);
 }
@@ -354,7 +354,6 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
         return;
     }
 
-    rotation = toPoint.getAngle();
     vector2f unitDir = toPoint.normalized();
     angle_view = unitDir.getAngle();
 
@@ -553,7 +552,7 @@ void Fighter::unpackAndMoveIter(vchIter *iter)
 
 Fighter::Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos)
     : MobileUnit(game, ref, ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
-      state(Idle), shootCooldown(0)
+      state(Idle), shootCooldown(0), animateShot(None), lastShot(None)
 {}
 Fighter::Fighter(Game *game, EntityRef ref, vchIter *iter)
     : MobileUnit(game, ref, iter)
@@ -568,6 +567,7 @@ void Fighter::cmdAttack(boost::shared_ptr<Unit> targetedUnit)
 }
 void Fighter::go()
 {
+    animateShot = None;
     if (shootCooldown > 0)
         shootCooldown --;
     
@@ -578,11 +578,15 @@ void Fighter::go()
         {
             if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
             {
-                if ((targetUnit->pos - pos).getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
+                vector2f toTarget = (targetUnit->pos - pos);
+                angle_view = toTarget.getAngle();
+                if (toTarget.getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
                 {
                     if (shootCooldown == 0)
                     {
                         shootAt(targetUnit);
+                        animateShot = (lastShot != Left) ? Left : Right;
+                        lastShot = animateShot;
                     }
                 }
             }

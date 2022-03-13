@@ -215,6 +215,30 @@ void Particle::draw(sf::RenderWindow *window, CameraState camera)
     window->draw(pixel);
 }
 
+LineParticle::LineParticle(vector2f from, vector2f to, sf::Color color, int lifetime)
+    : from(from), to(to), color(color), lifetime(lifetime), timeLeft(lifetime), dead(false)
+{}
+void LineParticle::iterate()
+{
+    cout << timeLeft -- << endl;
+    if (timeLeft <= 0)
+        dead = true;
+}
+void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
+{
+    sf::VertexArray lines(sf::Lines, 2);
+    vector2i drawFrom = gamePosToScreenPos(camera, from);
+    vector2i drawTo = gamePosToScreenPos(camera, to);
+    lines[0].position = sf::Vector2f(drawFrom.x, drawFrom.y);
+    lines[1].position = sf::Vector2f(drawTo.x, drawTo.y);
+
+    color.a = ((float)timeLeft / lifetime) * 255;
+    lines[0].color = color;
+    lines[1].color = color;
+
+    window->draw(lines);
+}
+
 void ParticlesContainer::iterateParticles(const Game &game)
 {
     for (uint i=0; i<particles.size(); i++)
@@ -227,6 +251,16 @@ void ParticlesContainer::iterateParticles(const Game &game)
             i--;
         }
     }
+    for (uint i=0; i<lineParticles.size(); i++)
+    {
+        if (!lineParticles[i]->dead)
+            lineParticles[i]->iterate();
+        else
+        {
+            lineParticles.erase(lineParticles.begin()+i);
+            i--;
+        }
+    }
 }
 void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState camera)
 {
@@ -234,10 +268,18 @@ void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState cam
     {
         particles[i]->draw(window, camera);
     }
+    for (uint i=0; i<lineParticles.size(); i++)
+    {
+        lineParticles[i]->draw(window, camera);
+    }
 }
-void ParticlesContainer::add(boost::shared_ptr<Particle> particle)
+void ParticlesContainer::addParticle(boost::shared_ptr<Particle> particle)
 {
     particles.push_back(particle);
+}
+void ParticlesContainer::addLineParticle(boost::shared_ptr<LineParticle> lineParticle)
+{
+    lineParticles.push_back(lineParticle);
 }
 
 void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, uint radius, uint thickness, sf::Color color)
@@ -443,7 +485,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         {
             drawEntity(window, game->entities[i], ui.camera);
 
-            // and add some particles every now and then
+            // add some gold particles every now and then
             if (game->frame % 3 == 0)
             {
                 if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
@@ -453,19 +495,43 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
                         {
                             vector2f targetPos = *maybeTargetPos;
-                            particles->add(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
+                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
                         }
                     }
                     else if (prime->goldTransferState == Prime::Pushing)
                     {
-                        particles->add(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
+                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
                     }
                 }
                 if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                 {
                     if (gateway->maybeBuildingUnit)
                     {
-                        particles->add(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeBuildingUnit->ref), sf::Color::Yellow)));
+                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeBuildingUnit->ref), sf::Color::Yellow)));
+                    }
+                }
+            }
+
+            // fighter shots
+            if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[i]))
+            {
+                if (fighter->animateShot != Fighter::None)
+                {
+                    if (optional<vector2f> targetPos = fighter->getTarget().getPointUnlessTargetDeleted(*game))
+                    {
+                        vector2f relativeShotStartPos;
+                        if (fighter->animateShot == Fighter::Left)
+                        {
+                            relativeShotStartPos = vector2f(0, -10);
+                        }
+                        else
+                        {
+                            relativeShotStartPos = vector2f(0, 10);
+                        }
+                        vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
+                        vector2f final = fighter->pos + rotated;
+                        boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
+                        particles->addLineParticle(line);
                     }
                 }
             }

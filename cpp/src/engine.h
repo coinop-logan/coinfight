@@ -186,9 +186,8 @@ class MobileUnit : public Unit
 private:
     Target target;
     float targetRange;
-    float rotation;
 
-    float getRotation() { return rotation; };
+    float getRotation() { return angle_view; };
 
     void moveTowardPoint(vector2f, float);
 
@@ -260,6 +259,13 @@ public:
         Idle,
         AttackingUnit
     } state;
+
+    enum AnimateShot
+    {
+        None,
+        Right,
+        Left
+    } animateShot, lastShot;
 
     uint16_t shootCooldown;
 

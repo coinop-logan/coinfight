@@ -19,12 +19,24 @@ struct Particle
     void iterate(const Game &game);
     void draw(sf::RenderWindow *window, CameraState camera);
 };
+struct LineParticle
+{
+    vector2f from, to;
+    sf::Color color;
+    int lifetime, timeLeft;
+    bool dead;
+    LineParticle(vector2f from, vector2f to, sf::Color color, int lifetime);
+    void iterate();
+    void draw(sf::RenderWindow *window, CameraState camera);
+};
 struct ParticlesContainer
 {
     vector<boost::shared_ptr<Particle>> particles;
+    vector<boost::shared_ptr<LineParticle>> lineParticles;
     void iterateParticles(const Game &game);
     void drawParticles(sf::RenderWindow *window, CameraState camera);
-    void add(boost::shared_ptr<Particle> particle);
+    void addParticle(boost::shared_ptr<Particle> particle);
+    void addLineParticle(boost::shared_ptr<LineParticle> lineParticle);
 };
 
 sf::RenderWindow* setupGraphics();
