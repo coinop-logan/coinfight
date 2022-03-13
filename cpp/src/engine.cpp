@@ -165,7 +165,7 @@ sf::Color playerAddressToColor(string address)
     {
         string charStr = address.substr(2 + i, 1);
         unsigned int intVal = std::stoul(charStr, nullptr, 16);
-        vals[i] = (intVal / 15.0) * 255;
+        vals[i] = 55 + ((intVal / 15.0) * 200);
     }
     return sf::Color(vals[0], vals[1], vals[2]);
 }
