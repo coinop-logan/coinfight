@@ -357,7 +357,7 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
-void drawCursor(sf::RenderWindow *window, UI ui)
+void drawCursor(sf::RenderWindow *window, UI ui, int playerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
@@ -367,7 +367,14 @@ void drawCursor(sf::RenderWindow *window, UI ui)
         case UI::Default:
             if (ui.mouseoverEntity)
             {
-                drawSelectableCursor(window, mousePos);
+                if (getAllianceType(playerId, ui.mouseoverEntity) == Enemy)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                }
+                else
+                {
+                    drawSelectableCursor(window, mousePos);
+                }
             }
             else
             {
@@ -566,7 +573,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     drawOutputStrings(window, outputStrings);
 
-    drawCursor(window, ui);
+    drawCursor(window, ui, playerIdOrNegativeOne);
     
     window->display();
 }
