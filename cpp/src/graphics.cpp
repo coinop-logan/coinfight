@@ -41,7 +41,8 @@ sf::RenderWindow* setupGraphics()
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
 {
     vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
-    sf::Color primaryColor = entity->getPrimaryColor();
+    sf::Color primaryColor = entity->getPrimaryColor(); // may be modified later if unit is not yet active
+    sf::Color outlineColor(primaryColor);
     float drawRotation = -entity->getRotation();
 
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -56,30 +57,65 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             window->draw(triangle);
         }
     }
-    else if (boost::shared_ptr<Prime> castedEntity = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
     {
-        sf::ConvexShape oneSide;
-        oneSide.setPointCount(3);
+        // make transparent if not active
+        if (!unit->isActive())
+        {
+            float newAlpha = unit->getBuiltRatio() * 0.8 * 255;
+            primaryColor.a = newAlpha;
+        }
 
-        oneSide.setFillColor(primaryColor);
-        oneSide.setPosition(drawPos.x, drawPos.y);
-        oneSide.setRotation(radToDeg(drawRotation));
+        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
+        {
+            sf::ConvexShape oneSide;
+            oneSide.setPointCount(3);
 
-        // draw two triangles
-        oneSide.setPoint(1, sf::Vector2f(12, 0));
-        oneSide.setPoint(0, sf::Vector2f(-4, 0));
-        oneSide.setPoint(2, sf::Vector2f(-12, 8));
-        window->draw(oneSide);
-        oneSide.setPoint(2, sf::Vector2f(-12, -8));
-        window->draw(oneSide);
-    }
-    else if (boost::shared_ptr<Gateway> castedEntity = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
-    {
-        sf::RectangleShape rect(sf::Vector2f(20, 20));
-        rect.setOrigin(10, 10);
-        rect.setFillColor(primaryColor);
-        rect.setPosition(drawPos.x, drawPos.y);
-        window->draw(rect);
+            oneSide.setFillColor(primaryColor);
+            oneSide.setPosition(drawPos.x, drawPos.y);
+            oneSide.setRotation(radToDeg(drawRotation));
+
+            sf::Vector2f front = sf::Vector2f(12, 0);
+            sf::Vector2f back = sf::Vector2f(-4, 0);
+            sf::Vector2f right = sf::Vector2f(-12, 8);
+            sf::Vector2f left = sf::Vector2f(-12, -8);
+
+            // draw two triangles
+            oneSide.setPoint(1, front);
+            oneSide.setPoint(0, back);
+            oneSide.setPoint(2, right);
+            window->draw(oneSide);
+            oneSide.setPoint(2, left);
+            window->draw(oneSide);
+
+            // draw outline
+            sf::VertexArray lines(sf::LinesStrip, 5);
+            lines[0].position = front;
+            lines[1].position = right;
+            lines[2].position = back;
+            lines[3].position = left;
+            lines[4].position = front;
+            lines[0].color = outlineColor;
+            lines[1].color = outlineColor;
+            lines[2].color = outlineColor;
+            lines[3].color = outlineColor;
+            lines[4].color = outlineColor;
+            sf::Transform transform;
+            transform.translate(drawPos.x, drawPos.y);
+            window->draw(lines, transform);
+        }
+        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(unit))
+        {
+            sf::RectangleShape rect(sf::Vector2f(20, 20));
+            rect.setOrigin(10, 10);
+            rect.setFillColor(primaryColor);
+            rect.setPosition(drawPos.x, drawPos.y);
+            window->draw(rect);
+        }
+        else
+        {
+            throw runtime_error("No drawing code implemented for " + entity->getTypeName() + ".");
+        }
     }
     else
     {

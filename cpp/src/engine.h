@@ -154,6 +154,7 @@ public:
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
     bool completeBuildingInstantly(Coins* fromCoins);
     coinsInt getBuilt();
+    float getBuiltRatio();
     bool isActive();
 };
 

@@ -214,6 +214,11 @@ coinsInt Unit::getBuilt()
 {
     return goldInvested.getInt();
 }
+float Unit::getBuiltRatio()
+{
+    return (float)getBuilt() / getCost();
+}
+    
 bool Unit::isActive()
 {
     return
