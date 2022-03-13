@@ -321,11 +321,22 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
         Coins *displayBelowCoins = NULL;
 
         sf::Color topTextColor;
+        switch (getAllianceType(playerIdOrNegativeOne, game->entities[i]))
+        {
+            case Ally:
+                topTextColor = sf::Color::Green;
+                break;
+            case Enemy:
+                topTextColor = sf::Color::Red;
+                break;
+            case Neutral:
+                topTextColor = sf::Color::Yellow;
+                break;
+        }
 
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
         {
             displayAboveCoins = &goldpile->gold;
-            topTextColor = sf::Color::Yellow;
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
         {
@@ -334,7 +345,6 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             {
                 displayBelowCoins = &prime->heldGold;
             }
-            topTextColor = (unit->ownerId == playerIdOrNegativeOne) ? sf::Color::Green : sf::Color::Red;
         }
 
         vector2f entityPos = game->entities[i]->pos;

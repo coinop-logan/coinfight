@@ -56,6 +56,12 @@ vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>>);
 boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game&, EntityRef);
 
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
+enum AllianceType {
+    Ally,
+    Enemy,
+    Neutral
+};
+AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity> entity);
 
 class Target
 {

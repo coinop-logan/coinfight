@@ -64,6 +64,30 @@ unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity> e)
         return NULL_TYPECHAR;
 }
 
+AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity> entity)
+{
+    if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+    {
+        return Neutral;
+    }
+    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+    {
+        if (playerIdOrNegativeOne == unit->ownerId)
+        {
+            return Ally;
+        }
+        else
+        {
+            return Enemy;
+        }
+    }
+    else
+    {
+        cout << "Not sure how to getAllianceType for that. Defaulting to neutral." << endl;
+        return Neutral;
+    }
+}
+
 unsigned char Entity::typechar()
 {
     throw runtime_error("typechar() has not been defined for " + getTypeName() + ".");
