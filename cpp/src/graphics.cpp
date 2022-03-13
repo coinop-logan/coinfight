@@ -319,12 +319,12 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
         Coins *displayAboveCoins = NULL;
         Coins *displayBelowCoins = NULL;
 
-        sf::Color textColor;
+        sf::Color topTextColor;
 
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
         {
             displayAboveCoins = &goldpile->gold;
-            textColor = sf::Color::Yellow;
+            topTextColor = sf::Color::Yellow;
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
         {
@@ -333,7 +333,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             {
                 displayBelowCoins = &prime->heldGold;
             }
-            textColor = (unit->ownerId == playerIdOrNegativeOne) ? sf::Color::Green : sf::Color::Red;
+            topTextColor = (unit->ownerId == playerIdOrNegativeOne) ? sf::Color::Green : sf::Color::Red;
         }
 
         vector2f entityPos = game->entities[i]->pos;
@@ -345,7 +345,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             vector2f textGamePos = entityPos + vector2f(0, 30);
             vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
-            aboveText.setColor(textColor);
+            aboveText.setColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
             aboveText.setPosition(textScreenPos.x, textScreenPos.y);
 
@@ -357,7 +357,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             window->draw(drawRect);
             window->draw(aboveText);
         }
-        if (displayBelowCoins)
+        if (displayBelowCoins && displayBelowCoins->getInt() > 0)
         {
             sf::Text belowText(displayBelowCoins->getDollarString(), mainFont, 16);
             sf::FloatRect textRec = belowText.getLocalBounds();
@@ -365,7 +365,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             vector2f textGamePos = entityPos + vector2f(0, -20);
             vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
-            belowText.setColor(textColor);
+            belowText.setColor(sf::Color(100, 100, 255));
             belowText.setOrigin(textRec.width / 2, textRec.height / 2);
             belowText.setPosition(textScreenPos.x, textScreenPos.y);
 
