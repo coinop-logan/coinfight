@@ -102,6 +102,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[4].color = outlineColor;
             sf::Transform transform;
             transform.translate(drawPos.x, drawPos.y);
+            transform.rotate(radToDeg(drawRotation));
             window->draw(lines, transform);
         }
         else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(unit))
