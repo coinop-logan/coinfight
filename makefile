@@ -5,6 +5,13 @@ INC=-I/usr/include -I/usr/include/python3.8/ -I../common -I./include/ `python3-c
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
 
+prep-server:
+	mkdir -p bin/accounting
+	mkdir -p bin/accounting/pending_deposits
+	mkdir -p bin/accounting/pending_withdrawals
+	cp py/* bin/
+	cp secret.txt bin/secret.txt
+
 install: all
 	sudo apt install libsfml-dev
 
@@ -16,7 +23,7 @@ all: pre-build main-build
 client: pre-build client-build
 	cp assets/Andale_Mono.ttf bin/
 
-server: pre-build server-build
+server: pre-build server-build prep-server
 
 pre-build:
 	mkdir -p cpp/obj
@@ -36,8 +43,6 @@ bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/vchpack.
 
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
-	cp py/* bin/
-	cp secret.txt bin/secret.txt
 
 bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
