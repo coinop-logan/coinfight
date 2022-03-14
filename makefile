@@ -3,7 +3,7 @@ CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
 
 INC=-I/usr/include -I/usr/include/python3.8/ -I./include/ `python3-config --includes`
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
-LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU -lGLEW
+LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
 
 all: pre-build main-build
 
@@ -25,7 +25,6 @@ install-client: client
 	sudo apt install libsfml-dev
 
 client: pre-build client-build bin/coinfight_local
-	cp assets/Andale_Mono.ttf bin/
 
 server: pre-build server-build prep-server
 
@@ -38,6 +37,7 @@ main-build: server-build client-build bin/coinfight_local prep-server
 server-build: bin/server
 
 client-build: bin/client bin/coinfight_local
+	cp assets/Andale_Mono.ttf bin/
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
