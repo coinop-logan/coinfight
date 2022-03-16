@@ -20,12 +20,12 @@ void debugOutputVch(vch out)
 }
 void debugOutputVector(const char *label, vector2f v)
 {
-    fprintf(stdout, label);
+    fprintf(stdout, "%s", label);
     fprintf(stdout, ": %f,%f\n", v.x, v.y);
 }
 void debugOutputVector(const char *label, vector3f v)
 {
-    fprintf(stdout, label);
+    fprintf(stdout, "%s", label);
     fprintf(stdout, ": %f,%f,%f\n", v.x, v.y, v.z);
 }
 

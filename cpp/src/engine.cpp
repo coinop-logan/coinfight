@@ -239,7 +239,7 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
 }
 
 Unit::Unit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Entity(game, ref, pos), ownerId(ownerId), health(health), goldInvested(totalCost) {}
+    : Entity(game, ref, pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
 
 Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
                                                        goldInvested((coinsInt)0) // will get overwritten in unpack below

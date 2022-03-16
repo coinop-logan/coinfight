@@ -181,10 +181,8 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
 }
 
 Particle::Particle(vector2f pos, Target target, sf::Color color)
-    : pos(pos), target(target), velocity(velocity), color(color), dead(false)
-{
-    velocity = randomVectorWithMagnitude(3);
-}
+    : pos(pos), velocity(randomVectorWithMagnitude(3)), target(target), color(color), dead(false)
+{}
 
 void Particle::iterate(const Game &game)
 {
@@ -444,7 +442,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             vector2f textGamePos = entityPos + vector2f(0, 30);
             vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
-            aboveText.setColor(topTextColor);
+            aboveText.setFillColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
             aboveText.setPosition(textScreenPos.x, textScreenPos.y);
 
@@ -464,7 +462,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             vector2f textGamePos = entityPos + vector2f(0, -20);
             vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
-            belowText.setColor(sf::Color(200, 200, 255));
+            belowText.setFillColor(sf::Color(200, 200, 255));
             belowText.setOrigin(textRec.width / 2, textRec.height / 2);
             belowText.setPosition(textScreenPos.x, textScreenPos.y);
 

@@ -235,14 +235,14 @@ public:
         AttackingUnit
     } state;
 
+    uint16_t shootCooldown;
+
     enum AnimateShot
     {
         None,
         Right,
         Left
     } animateShot, lastShot;
-
-    uint16_t shootCooldown;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);

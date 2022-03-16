@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
-                int newPlayerId = ui.debugInt % game.players.size();
+                uint newPlayerId = ui.debugInt % game.players.size();
                 if (newPlayerId != currentPlayerId)
                 {
                     currentPlayerId = newPlayerId;
