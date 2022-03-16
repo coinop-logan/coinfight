@@ -5,9 +5,10 @@
 
 #include <Python.h>
 #include <string>
+#include <optional>
 
 using namespace std;
 
-string signedMsgToAddress(string message, string sig);
+optional<string> signedMsgToAddress(string message, string sig, string *error);
 
 #endif // SIGWARPPER_H

@@ -178,9 +178,21 @@ public:
             else
             {
                 // now have sig and sentChallenge as strings.
-                connectionAuthdUserAddress = signedMsgToAddress(sentChallenge, sig);
+                string error;
+                if (auto maybeRecoveredAddress = signedMsgToAddress(sentChallenge, sig, &error))
+                {
+                    connectionAuthdUserAddress = *maybeRecoveredAddress;
+                }
+                else
+                {
+                    cout << "Error recovering address from connection. Kicking. Here's the Python error message:" << endl;
+                    cout << error << endl;
+                    state = Closed;
+                    return;
+                }
             }            
 
+            // should really return a fail/success code here. On fail client just hangs atm.
             boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress));
 
             state = ReadyForFirstSync;
