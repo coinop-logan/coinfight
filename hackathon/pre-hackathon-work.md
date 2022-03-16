@@ -86,3 +86,4 @@ Forgot to take notes, but got quite a bit done before the deadline
 * coinfight_local binary to more rapidly test gameplay tweaks
 * Move camera with middle mouse
 * Cursor which changes with context
+* Move camera with middle mouse
