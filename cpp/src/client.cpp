@@ -14,6 +14,7 @@
 #include "common.h"
 #include "input.h"
 #include "packets.h"
+#include "events.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -238,7 +239,7 @@ int main()
     // HANDSHAKE
 
     string playerAddress;
-    uint playerId;
+    int playerIdOrNegativeOne = -1;
 
     // Wait for the sig challenge and respond with the user's help
     string sigChallenge = connectionHandler.receiveSigChallenge();
@@ -285,7 +286,7 @@ int main()
         
         nextFrameStart += ONE_FRAME;
 
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(game, &ui,playerId, window);
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(game, &ui, playerIdOrNegativeOne, window);
 
         for (uint i=0; i < cmdsToSend.size(); i++)
         {
@@ -335,27 +336,28 @@ int main()
 
         game.iterate();
 
+        // Try to update playerId if necessary
+        if (playerIdOrNegativeOne < 0)
+        {
+            playerIdOrNegativeOne = game.playerAddressToIdOrNegativeOne(playerAddress);
+        }
+
         // check for game start cmd, and do some ux prep if we got one
         for (uint i=0; i<fcp.events.size(); i++)
         {
             if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
             {
-                // assign playerId
-                int playerIdOrNeg1 = game.playerAddressToIdOrNegativeOne(playerAddress);
-                if (playerIdOrNeg1 < 0)
+                if (playerIdOrNegativeOne >= 0)
                 {
-                    throw runtime_error("Can't get playerID from address after game start");
-                }
-                playerId = playerIdOrNeg1;
-
-                // find owned unit and center on it
-                for (uint i=0; i<game.entities.size(); i++)
-                {
-                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
+                    // find owned unit and center on it
+                    for (uint i=0; i<game.entities.size(); i++)
                     {
-                        if (unit->ownerId == playerId)
+                        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
                         {
-                            ui.camera.gamePos = unit->pos;
+                            if (unit->ownerId == playerIdOrNegativeOne)
+                            {
+                                ui.camera.gamePos = unit->pos;
+                            }
                         }
                     }
                 }
@@ -372,8 +374,12 @@ int main()
     }
     delete window;
 
-    cout << "Okay bye! Withdrawing your " << game.players[playerId].credit.getDollarString().toAnsiString() << " now..." << endl;
-    connectionHandler.sendCmd(boost::shared_ptr<WithdrawCmd>(new WithdrawCmd(coinsInt(0))));
+    cout << "Okay bye!" << endl;
+    if (playerIdOrNegativeOne >= 0)
+    {
+        cout << "Withdrawing your " << game.players[playerIdOrNegativeOne].credit.getDollarString().toAnsiString() << " now..." << endl;
+        connectionHandler.sendCmd(boost::shared_ptr<WithdrawCmd>(new WithdrawCmd(coinsInt(0))));
+    } 
 
     socket.close();
 

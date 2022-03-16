@@ -157,6 +157,7 @@ public:
 
     void sigReceived(const boost::system::error_code &error, size_t transferred)
     {
+        cout << "sig received" << endl;
         if (error)
         {
             cout << "Error receiving sig from " << connectionAuthdUserAddress << ". Kicking." << endl;
@@ -191,7 +192,9 @@ public:
                     state = Closed;
                     return;
                 }
-            }            
+            }
+
+            cout << "Player authenticated and connected." << endl;
 
             // should really return a fail/success code here. On fail client just hangs atm.
             boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress));

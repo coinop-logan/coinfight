@@ -813,12 +813,6 @@ void Game::startMatch()
 
 void Game::startMatchOrPrintError()
 {
-    if (players.size() == 0)
-    {
-        cout << "No players to start the game with!" << endl;
-        return;
-    }
-
     coinsInt neededCreditPerPlayer = PRIME_COST + GATEWAY_COST;
     for (uint i=0; i<players.size(); i++)
     {
