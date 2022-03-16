@@ -788,6 +788,29 @@ Game::Game(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
+void Game::startMatch()
+{
+    float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
+    float spawnCircleRadius = spawnCircleCircumference / 2;
+    for (uint i=0; i<players.size(); i++)
+    {
+        float positionAlongCircumference = ((float)i)/players.size();
+        float spawnAngle = positionAlongCircumference * 2 * M_PI;
+        vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
+
+        // if you're going to change this, you should change neededCostPerPlayer above too!
+        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos));
+        entities.push_back(gatewayUnit);
+        gatewayUnit->completeBuildingInstantly(&players[i].credit);
+
+        boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
+        entities.push_back(primeUnit);
+        primeUnit->completeBuildingInstantly(&players[i].credit);
+    }
+
+    state = Active;
+}
+
 void Game::startMatchOrPrintError()
 {
     if (players.size() == 0)
@@ -806,27 +829,8 @@ void Game::startMatchOrPrintError()
         }
     }
 
-    float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
-    float spawnCircleRadius = spawnCircleCircumference / 2;
-    for (uint i=0; i<players.size(); i++)
-    {
-        float positionAlongCircumference = ((float)i)/players.size();
-        float spawnAngle = positionAlongCircumference * 2 * M_PI;
-        vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
-
-        // if you're going to change this, you should change neededCostPerPlayer above too!
-        boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos));
-        entities.push_back(primeUnit);
-        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
-        entities.push_back(gatewayUnit);
-
-        if (!(primeUnit->completeBuildingInstantly(&players[i].credit) && gatewayUnit->completeBuildingInstantly(&players[i].credit)))
-        {
-            throw logic_error("This player doesn't have enough credit for the starting units - but I thought we checked that in the previous for loop!");
-        }
-    }
-
-    state = Active;
+    startMatch();
+    
     cout << "game starting!" << endl;
 }
 

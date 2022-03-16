@@ -20,6 +20,19 @@ contract CoinfightDepositsWithdrawals is Ownable {
         payable(owner()).transfer(msg.value);
     }
 
+    event HoneypotAdded(uint amount);
+
+    function addHoneypot()
+        payable
+        external
+    {
+        require(msg.value > 0, "You're trying to create a honeypot with a value of 0...");
+
+        emit HoneypotAdded(msg.value);
+
+        payable(owner()).transfer(msg.value);
+    }
+
     // withdraw is called by server
     // event is emitted and amount is sent to player
     event WithdrawalMade(address payable toAccount, uint amount);
@@ -27,6 +40,7 @@ contract CoinfightDepositsWithdrawals is Ownable {
     function withdraw(address payable toAccount)
         payable
         external
+        onlyOwner
     {
         require (msg.value > 0, "You're trying to process a withdrawal value of 0...");
 

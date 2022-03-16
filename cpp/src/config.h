@@ -13,19 +13,14 @@ const int WINDOW_WIDTH = 1500;
 const int WINDOW_HEIGHT = 800;
 const vector2i HALF_SCREENDIM = vector2i(WINDOW_WIDTH, WINDOW_HEIGHT) / 2;
 
-const uint NEEDED_PLAYERS = 3;
-
 const float DISTANCE_TOL = 0.0001;
 
 const EntityRef NULL_ENTITYREF = 0;
 
 const unsigned char NULL_TYPECHAR = 0;
 
-const unsigned char PACKET_RESYNC_CHAR = 'R';
-const unsigned char PACKET_FRAMECMDS_CHAR = 'C';
-
-const unsigned char EVENT_BALANCEUPDATE_CHAR = 1;
-const unsigned char EVENT_GAMESTART_CHAR = 2;
+const unsigned char PACKET_RESYNC_CHAR = 1;
+const unsigned char PACKET_FRAMECMDS_CHAR = 2;
 
 const unsigned char GOLDPILE_TYPECHAR = 1;
 const unsigned char PRIME_TYPECHAR = 2;

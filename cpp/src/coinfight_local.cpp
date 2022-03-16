@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", 15000, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", 15000, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent(honeypotStartingAmount)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
     
     for (uint i=0; i<firstEvents.size(); i++)
     {

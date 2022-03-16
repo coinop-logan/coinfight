@@ -20,8 +20,8 @@ boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter)
     case EVENT_BALANCEUPDATE_CHAR:
         return boost::shared_ptr<Event>(new BalanceUpdateEvent(iter));
         break;
-    case EVENT_GAMESTART_CHAR:
-        return boost::shared_ptr<Event>(new GameStartEvent(iter));
+    case EVENT_HONEYPOT_CHAR:
+        return boost::shared_ptr<Event>(new HoneypotAddedEvent(iter));
         break;
     default:
         throw runtime_error("Trying to unpack an unrecognized event");
@@ -117,34 +117,40 @@ BalanceUpdateEvent::BalanceUpdateEvent(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-unsigned char GameStartEvent::typechar()
+unsigned char HoneypotAddedEvent::typechar()
 {
-    return EVENT_GAMESTART_CHAR;
+    return EVENT_HONEYPOT_CHAR;
 }
 
-void GameStartEvent::execute(Game *game)
+void HoneypotAddedEvent::execute(Game *game)
 {
-    boost::shared_ptr<GoldPile> honeypotGoldPile = boost::shared_ptr<GoldPile>(new GoldPile(game, game->getNextEntityRef(), vector2f(0,0)));
-    honeypotGoldPile->gold.createMoreByFiat(honeypotAmount);
-    game->entities.push_back(honeypotGoldPile);
+    if (game->honeypotGoldPileIfGameStarted)
+    {
+        game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
+    }
+    else
+    {
+        game->honeypotGoldPileIfGameStarted = boost::shared_ptr<GoldPile>(new GoldPile(game, game->getNextEntityRef(), vector2f(0,0)));
+        game->entities.push_back(game->honeypotGoldPileIfGameStarted);
 
-    game->startMatchOrPrintError();
+        game->startMatchOrPrintError();
+    }
 }
 
-void GameStartEvent::pack(vch *dest)
+void HoneypotAddedEvent::pack(vch *dest)
 {
     packToVch(dest, "L", honeypotAmount);
     packEvent(dest);
 }
-void GameStartEvent::unpackAndMoveIter(vchIter *iter)
+void HoneypotAddedEvent::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackFromIter(*iter, "L", &honeypotAmount);
 }
 
-GameStartEvent::GameStartEvent(coinsInt honeypotAmount)
+HoneypotAddedEvent::HoneypotAddedEvent(coinsInt honeypotAmount)
     : Event(), honeypotAmount(honeypotAmount)
     {}
-GameStartEvent::GameStartEvent(vchIter *iter)
+HoneypotAddedEvent::HoneypotAddedEvent(vchIter *iter)
     : Event(iter)
 {
     unpackAndMoveIter(iter);

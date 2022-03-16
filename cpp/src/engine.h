@@ -101,35 +101,6 @@ struct Player
     Player(vchIter *iter);
 };
 
-class Game
-{
-public:
-    enum State {
-        Pregame,
-        Active
-    } state;
-    uint64_t frame;
-    vector<Player> players;
-    vector<boost::shared_ptr<Entity>> entities;
-
-    boost::shared_ptr<Entity> entityRefToPtrOrNull(EntityRef);
-    EntityRef getNextEntityRef();
-
-    int playerAddressToIdOrNegativeOne(string address);
-    string playerIdToAddress(uint playerId);
-
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
-
-    Game();
-    Game(vchIter *);
-    void startMatchOrPrintError();
-
-    void reassignEntityGamePointers();
-
-    void iterate();
-};
-
 class GoldPile : public Entity
 {
 public:
@@ -315,5 +286,36 @@ public:
 };
 
 void packFrameCmdsPacket(vch *dest, uint64_t frame);
+
+class Game
+{
+public:
+    enum State {
+        Pregame,
+        Active
+    } state;
+    uint64_t frame;
+    vector<Player> players;
+    vector<boost::shared_ptr<Entity>> entities;
+    boost::shared_ptr<GoldPile> honeypotGoldPileIfGameStarted;
+
+    boost::shared_ptr<Entity> entityRefToPtrOrNull(EntityRef);
+    EntityRef getNextEntityRef();
+
+    int playerAddressToIdOrNegativeOne(string address);
+    string playerIdToAddress(uint playerId);
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Game();
+    Game(vchIter *);
+    void startMatch();
+    void startMatchOrPrintError();
+
+    void reassignEntityGamePointers();
+
+    void iterate();
+};
 
 #endif // ENGINE_H

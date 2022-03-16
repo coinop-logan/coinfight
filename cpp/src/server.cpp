@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <filesystem>
 #include <vector>
 #include <string>
 #include "cmds.h"
@@ -185,7 +186,7 @@ public:
                 }
                 else
                 {
-                    cout << "Error recovering address from connection. Kicking. Here's the Python error message:" << endl;
+                    cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
                     cout << error << endl;
                     state = Closed;
                     return;
@@ -336,18 +337,6 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
     startAccept();
 }
 
-struct DepositEvent
-{
-    string userAddress;
-    coinsInt amountInCoins;
-    DepositEvent(string userAddress, coinsInt amountInCoins)
-        : userAddress(userAddress), amountInCoins(amountInCoins) {}
-    boost::shared_ptr<Event> toEventSharedPtr()
-    {
-        return boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddress, amountInCoins, true));
-    }
-};
-
 struct WithdrawEvent
 {
     string userAddress;
@@ -366,14 +355,16 @@ void actuateWithdrawal(string userAddress, coinsInt amount)
     string writeData = userAddress + " " + weiString;
 
     string filename = to_string(time(0)) + "-" + to_string(clock());
-    ofstream withdrawDescriptorFile("./accounting/pending_withdrawals/" + filename);
+    ofstream withdrawDescriptorFile(filename);
     withdrawDescriptorFile << writeData;
     withdrawDescriptorFile.close();
+
+    filesystem::rename(filename, "./accounting/pending_withdrawals/" + filename);
 }
 
-vector<DepositEvent> pollPendingDeposits()
+vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
 {
-    vector<DepositEvent> depositEvents;
+    vector<boost::shared_ptr<Event>> events;
 
     boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
@@ -396,11 +387,18 @@ vector<DepositEvent> pollPendingDeposits()
 
                     vector<string> splitted;
                     boost::split(splitted, depositCmdData, boost::is_any_of(" "));
-                    string userAddress = splitted[0];
+                    string userAddressOrHoneypotString = splitted[0];
                     string depositWeiString = splitted[1];
                     coinsInt depositInCoins = weiDepositStringToCoinsInt(depositWeiString);
-                    
-                    depositEvents.push_back(DepositEvent(userAddress, depositInCoins));
+
+                    if (userAddressOrHoneypotString == "honeypot")
+                    {
+                        events.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(depositInCoins)));
+                    }
+                    else
+                    {
+                        events.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddressOrHoneypotString, depositInCoins, true)));
+                    }
                 }
             }
             else
@@ -412,20 +410,12 @@ vector<DepositEvent> pollPendingDeposits()
             boost::filesystem::remove(dirIter->path());
         }
     }
-    return depositEvents;
+
+    return events;
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc-1 == 0)
-    {
-        cout << "Need an argument for how much money to put in for the honeypot!" << endl;
-        return 1;
-    }
-    
-    int honeypotStartingDollars = stoi(argv[1]);
-    coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
-
     srand(time(0));
 
     boost::asio::io_service io_service;
@@ -472,19 +462,9 @@ int main(int argc, char *argv[])
         }
         pendingWithdrawEvents.clear();
 
-        // scan for any pending deposits
-        vector<DepositEvent> depositEvents = pollPendingDeposits();
-        for (uint i=0; i < depositEvents.size(); i++)
-        {
-            pendingEvents.push_back(depositEvents[i].toEventSharedPtr());
-        }
-
-        // after enough players join, start game
-        if (game.players.size() >= NEEDED_PLAYERS && game.state == Game::Pregame)
-        {
-            pendingEvents.push_back(boost::shared_ptr<Event>(new GameStartEvent(honeypotStartingAmount)));
-            cout << "starting game!" << endl;
-        }
+        // scan for any pending deposits or honeypotAdd events
+        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingDepositsAndHoneypotEvents();
+        pendingEvents.insert(pendingEvents.end(), depositAndHoneypotEvents.begin(), depositAndHoneypotEvents.end());
 
         // build FrameEventsPacket for this frame
         // includes all cmds we've received from clients since last time and all new events

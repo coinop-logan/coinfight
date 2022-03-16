@@ -338,7 +338,7 @@ int main()
         // check for game start cmd, and do some ux prep if we got one
         for (uint i=0; i<fcp.events.size(); i++)
         {
-            if (auto gse = boost::dynamic_pointer_cast<GameStartEvent, Event>(fcp.events[i]))
+            if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
             {
                 // assign playerId
                 int playerIdOrNeg1 = game.playerAddressToIdOrNegativeOne(playerAddress);

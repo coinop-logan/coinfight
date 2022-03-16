@@ -8,6 +8,9 @@
 
 using namespace std;
 
+const unsigned char EVENT_BALANCEUPDATE_CHAR = 1;
+const unsigned char EVENT_HONEYPOT_CHAR = 2;
+
 struct Event;
 
 boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter);
@@ -43,7 +46,7 @@ struct BalanceUpdateEvent : public Event
     BalanceUpdateEvent(vchIter *iter);
 };
 
-struct GameStartEvent : public Event
+struct HoneypotAddedEvent : public Event
 {
     coinsInt honeypotAmount;
 
@@ -54,8 +57,8 @@ struct GameStartEvent : public Event
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    GameStartEvent(coinsInt honeypotAmount);
-    GameStartEvent(vchIter *iter);
+    HoneypotAddedEvent(coinsInt honeypotAmount);
+    HoneypotAddedEvent(vchIter *iter);
 };
 
 #endif // EVENTS_H

@@ -1,10 +1,19 @@
 from time import sleep
 from web3 import Web3
-import json
-from pprint import pprint
-import os
+import json, os, requests
 
-neededConfirmations = 2
+def loadApiKey():
+    with open("web3-api-key","r") as f:
+        return f.read()
+
+apiKey = loadApiKey()
+web3RequestSession = requests.Session()
+web3RequestSession.headers.update({'x-api-key': apiKey})
+
+CONTRACT_ADDRESS = "0x4b21628532624867ac62875Db99dbBE21b830626"
+WEB3_PROVIDER = Web3.HTTPProvider("https://gno.getblock.io/mainnet/", session = web3RequestSession)
+
+neededConfirmations = 1
 serverAccountingDir = "accounting/"
 
 def getLastBlockProcessed():
@@ -32,15 +41,17 @@ def scanForAndRecordDeposits(w3, contract):
     
     print("scanning range", startBlock, endBlock)
         
-    eventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
+    depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
+    honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
     try:
-        newLogs = eventFilter.get_all_entries()
+        newDepositLogs = depositEventFilter.get_all_entries()
+        newHoneypotLogs = honeypotEventFilter.get_all_entries()
     except ValueError as e:
         print("uh oh, the filter broke!")
         return
-    
+
     filename = str(startBlock) + "-" + str(endBlock) + ".dat"
-    recordNewDeposits(newLogs, filename)
+    recordNewDeposits(newDepositLogs, newHoneypotLogs, filename)
 
     setLastBlockProcessed(endBlock)
 
@@ -71,16 +82,28 @@ def executePendingWithdrawals(w3, ethAccount):
         os.remove(serverAccountingDir + "pending_withdrawals/" + fname)
 
 def main():
-    provider = Web3.HTTPProvider("https://xdai-archive.blockscout.com")
+    provider = WEB3_PROVIDER
     w3 = Web3(provider)
 
-    address = "0x94e45e32aCEF6d92ca6DC92541B95e8F62De9b84"
+    try:
+        getLastBlockProcessed()
+    except FileNotFoundError:
+        print("No data found for last block scanned.")
+        startScanBlockInput = input("At which block should we start scanning? (enter for latest block)")
+        if startScanBlockInput == "":
+            startScanBlock = w3.eth.block_number
+        else:
+            startScanBlock = int(startScanBlockInput)
+        
+        setLastBlockProcessed(startScanBlock)
+
+    address = CONTRACT_ADDRESS
     abi = json.load(open('CoinfightDepositsWithdrawals.json','r'))['abi']
     contract = w3.eth.contract(address=address, abi=abi)
 
     ethAccount = loadEthAccount(w3)
-    # 0xC2da5397ba829F9C144fC46a4309e307366253F7
     print("loaded account", ethAccount.address)
+    # 0xC2da5397ba829F9C144fC46a4309e307366253F7
     
     global nextNonce
     nextNonce = w3.eth.getTransactionCount(ethAccount.address)
@@ -91,21 +114,27 @@ def main():
         sleep(10)
 
 
-def recordNewDeposits(newLogs, filename):
-    if len(newLogs) == 0:
+def recordNewDeposits(newDepositLogs, newHoneypotLogs, filename):
+    if len(newDepositLogs + newHoneypotLogs) == 0:
         print("no new events")
     
     else:
-        print("processing", len(newLogs), "logs")
+        print("processing", len(newDepositLogs), "deposits and", len(newHoneypotLogs), "new honeypot adds")
 
-        depositLines = []
-        for log in newLogs:
+        fileLines = []
+        for log in newDepositLogs:
             forAccount = log.args.forAccount
             amountStr = str(log.args.amount)
-            depositLines.append(forAccount + " " + amountStr)
+            fileLines.append(forAccount + " " + amountStr)
+        
+        for log in newHoneypotLogs:
+            amountStr = str(log.args.amount)
+            fileLines.append("honeypot " + amountStr)
             
-        print("writing deposit events to file for game server")
-        with open(serverAccountingDir + "pending_deposits/" + filename, 'w') as f:
-            f.write('\n'.join(depositLines))
+        print("writing events to file for game server")
+        with open(filename, 'w') as f:
+            f.write('\n'.join(fileLines))
+        
+        os.system("mv " + filename + " " + serverAccountingDir + "pending_deposits/")
 
 main()
