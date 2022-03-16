@@ -75,3 +75,13 @@ Made progress toward starting a "real" multiplayer game
 * Starting the game checks if players can afford a Gateway, and spawns them in a circle around 0,0
 
 Also started reverting back to 2D graphics - I'm running out of time! D:
+
+### Fri/Sat/Sun
+
+Forgot to take notes, but got quite a bit done before the deadline
+
+* Got particle effects for transferring gold
+* Deposit functionality, to bring gold back to gateway or make gold piles
+* COMBAT! With a fighter, which the Gateway can build
+* coinfight_local binary to more rapidly test gameplay tweaks
+* Move camera with middle mouse
