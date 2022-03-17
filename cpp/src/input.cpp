@@ -91,6 +91,14 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
         }
         else
         {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                if (unit->getBuiltRatio() < 1)
+                {
+                    vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui.selectedEntities);
+                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefs(primesInSelection), unit->ref));
+                }
+            } 
             if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
             {
                 vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui.selectedEntities);

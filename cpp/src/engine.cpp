@@ -427,20 +427,24 @@ void Prime::cmdPickup(Target _target)
 
     setTarget(_target, PRIME_RANGE);
 }
-
 void Prime::cmdPutdown(Target _target)
 {
     state = PutdownGold;
 
     setTarget(_target, PRIME_RANGE);
 }
-
 void Prime::cmdBuild(unsigned char buildTypechar, vector2f buildPos)
 {
     state = Build;
     gonnabuildTypechar = buildTypechar;
 
     setTarget(buildPos, PRIME_RANGE);
+}
+void Prime::cmdResumeBuilding(EntityRef targetUnit)
+{
+    state = Build;
+
+    setTarget(Target(targetUnit), PRIME_RANGE);
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }

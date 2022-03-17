@@ -218,6 +218,7 @@ public:
     void cmdPickup(Target);
     void cmdPutdown(Target);
     void cmdBuild(unsigned char buildTypechar, vector2f buildPos);
+    void cmdResumeBuilding(EntityRef targetUnit);
 
     float getSpeed();
     float getRange();

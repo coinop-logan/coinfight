@@ -26,6 +26,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new AttackCmd(iter));
     case CMD_PRIMEBUILD_CHAR:
         return boost::shared_ptr<Cmd>(new PrimeBuildCmd(iter));
+    case CMD_RESUMEBUILDING_CHAR:
+        return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -369,6 +371,41 @@ AttackCmd::AttackCmd(vector<EntityRef> units, EntityRef targetUnit)
     : UnitCmd(units), targetUnit(targetUnit)
 {}
 AttackCmd::AttackCmd(vchIter *iter)
+    : UnitCmd(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char ResumeBuildingCmd::getTypechar()
+{
+    return CMD_RESUMEBUILDING_CHAR;
+}
+string ResumeBuildingCmd::getTypename()
+{
+    return "ResumeBuildingCmd";
+}
+void ResumeBuildingCmd::pack(vch *dest)
+{
+    packUnitCmd(dest);
+    packEntityRef(dest, targetUnit);
+}
+void ResumeBuildingCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackEntityRef(*iter, &targetUnit);
+}
+
+void ResumeBuildingCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
+    {
+        prime->cmdResumeBuilding(targetUnit);
+    }
+}
+
+ResumeBuildingCmd::ResumeBuildingCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+ResumeBuildingCmd::ResumeBuildingCmd(vchIter *iter)
     : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);
