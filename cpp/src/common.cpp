@@ -122,6 +122,6 @@ vector2f randomVectorWithMagnitude(float magnitude)
 
 vector2f randomVectorWithMagnitudeRange(float min, float max)
 {
-    float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + max;
+    float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + min;
     return randomVectorWithMagnitude(magnitude);
 }
