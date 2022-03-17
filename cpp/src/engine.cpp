@@ -578,7 +578,11 @@ void Prime::go()
             {
                 if (building->getBuiltRatio() < 1)
                 {
-                    building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
+                    coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
+                    if (builtAmount > 0)
+                    {
+                        goldTransferState = Pushing;
+                    }
                 }
                 else
                 {
