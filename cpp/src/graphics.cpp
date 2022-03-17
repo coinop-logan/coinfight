@@ -149,6 +149,8 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             sf::RectangleShape rect(sf::Vector2f(20, 20));
             rect.setOrigin(10, 10);
             rect.setFillColor(primaryColor);
+            rect.setOutlineColor(outlineColor);
+            rect.setOutlineThickness(1);
             rect.setPosition(drawPos.x, drawPos.y);
             window->draw(rect);
         }
@@ -355,6 +357,14 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
+void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2f mousePos)
+{
+    window->setMouseCursorVisible(false);
+    
+    ui.ghostBuilding->pos = screenPosToGamePos(ui.camera, mousePos);
+    drawEntity(window, ui.ghostBuilding, ui.camera);
+}
+
 void drawCursor(sf::RenderWindow *window, UI ui, int playerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
@@ -388,6 +398,9 @@ void drawCursor(sf::RenderWindow *window, UI ui, int playerId)
             {
                 drawTargetCursor(window, mousePos, sf::Color::Blue);
             }
+            break;
+        case UI::Build:
+            drawGhostBuilding(window, ui, mousePos);
             break;
     }
 }

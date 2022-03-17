@@ -5,6 +5,11 @@ extern Game game;
 extern UI ui;
 extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
+bool isShiftPressed()
+{
+    return sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+}
+
 UI::UI()
 {
     camera.gamePos = vector2f(0, 0);
@@ -166,7 +171,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Entity>> selec
     return boost::shared_ptr<PrimeBuildCmd>();
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, int playerId, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, int playerId, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
@@ -185,8 +190,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     moveVector.y *= -1;
                     ui->camera.gamePos -= moveVector;
                 }
-                Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
-                ui->mouseoverEntity = target.castToEntityPtr(game);
+                Target target = getTargetAtScreenPos(*game, ui->camera, mouseMoveToVec(event.mouseMove));
+                ui->mouseoverEntity = target.castToEntityPtr(*game);
 
                 ui->lastMousePos = mouseMoveToVec(event.mouseMove);
             }
@@ -194,38 +199,54 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
         case sf::Event::MouseButtonPressed:
             if (event.mouseButton.button == sf::Mouse::Left)
             {
-                if (ui->cmdState == UI::Default)
+                switch (ui->cmdState)
                 {
-                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(game))
+                    case UI::Default:
                     {
-                        ui->selectedEntities.clear();
-                        ui->selectedEntities.push_back(clickedEntity);
+                        if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
+                        {
+                            ui->selectedEntities.clear();
+                            ui->selectedEntities.push_back(clickedEntity);
+                        }
                     }
-                }
-                else if (ui->cmdState == UI::Deposit)
-                {
-                    Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
-                    if (auto clickedEntity = target.castToEntityPtr(game))
+                    break;
+                    case UI::Deposit:
                     {
-                        if (clickedEntity->typechar() == GATEWAY_TYPECHAR || clickedEntity->typechar() == GOLDPILE_TYPECHAR)
+                        Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
+                        if (auto clickedEntity = target.castToEntityPtr(*game))
+                        {
+                            if (clickedEntity->typechar() == GATEWAY_TYPECHAR || clickedEntity->typechar() == GOLDPILE_TYPECHAR)
+                            {
+                                vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
+                                if (primesInSelection.size() > 0)
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
+                                }
+                                ui->cmdState = UI::Default;
+                            }
+                        }
+                        else
                         {
                             vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
                             if (primesInSelection.size() > 0)
                             {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), target)));
                             }
                             ui->cmdState = UI::Default;
                         }
                     }
-                    else
+                    break;
+                    case UI::Build:
                     {
                         vector<boost::shared_ptr<Entity>> primesInSelection = filterForTypeKeepContainer<Prime, Entity>(ui->selectedEntities);
-                        if (primesInSelection.size() > 0)
+                        vector2f buildPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
+                        cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedEntities, ui->ghostBuilding->typechar(), buildPos));
+                        if (!isShiftPressed())
                         {
-                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), target)));
+                            ui->cmdState = UI::Default;
                         }
-                        ui->cmdState = UI::Default;
                     }
+                    break;
                 }
             }
             else if (event.mouseButton.button == sf::Mouse::Right)
@@ -234,7 +255,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                 {
                     if (ui->selectedEntities.size() > 0)
                     {
-                        cmdsToSend.push_back(makeRightclickCmd(game, *ui, playerId, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                        cmdsToSend.push_back(makeRightclickCmd(*game, *ui, playerId, getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton))));
                     }
                 }
                 else
@@ -250,7 +271,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     ui->debugInt ++;
                     break;
                 case sf::Keyboard::D:
-                    if (ui->selectedEntities.size() > 0)
+                    if (filterForType<Prime, Entity>(ui->selectedEntities).size() > 0)
                     {
                         ui->cmdState = UI::Deposit;
                     }
@@ -264,8 +285,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                         cmdsToSend.push_back(cmd);
                     break;
                 case sf::Keyboard::E:
-                    if (auto cmd = makePrimeBuildCmd(ui->selectedEntities, GATEWAY_TYPECHAR, vector2f(0,50)))
-                        cmdsToSend.push_back(cmd);
+                    if (filterForType<Prime, Entity>(ui->selectedEntities).size() > 0)
+                    {
+                        ui->cmdState = UI::Build;
+                        ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(game, 0, playerId, vector2f(0,0)));
+                    }
                     break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)

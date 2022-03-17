@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
                 // poll for cmds from input
                 // (also updates UI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(game, &ui, currentPlayerId, window);
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window);
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
