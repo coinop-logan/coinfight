@@ -685,6 +685,23 @@ void Gateway::go()
             maybeBuildingUnit.reset();
         }
     }
+    else
+    {
+        // search for units near enough to complete
+        float rangeSquared = pow(GATEWAY_RANGE, 2);
+        for (uint i=0; i<game->entities.size(); i++)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+            {
+                if (unit->ownerId == this->ownerId)
+                    if (unit->getBuiltRatio() < 1)
+                        if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
+                            {
+                                maybeBuildingUnit = unit;
+                            }
+            }
+        }
+    }
 }
 
 
