@@ -131,6 +131,41 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Entity>> sel
     return boost::shared_ptr<GatewayBuildCmd>();
 }
 
+boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Entity>> selectedEntities, unsigned char buildUnitTypechar, vector2f buildPos)
+{
+    auto selectedPrimes = filterForType<Prime, Entity>(selectedEntities);
+    if (selectedPrimes.size() > 0)
+    {
+        boost::shared_ptr<Prime> bestChoice;
+        float bestDistanceSquared;
+        for (uint i=0; i<selectedPrimes.size(); i++)
+        {
+            if (!bestChoice)
+            {
+                bestChoice = selectedPrimes[i];
+                bestDistanceSquared = (selectedPrimes[i]->pos - buildPos).getMagnitudeSquared();
+                continue;
+            }
+
+            // if prime is already building something, not a great choice
+            if (selectedPrimes[i]->state == Prime::Build)
+                continue;
+
+            float distanceSquared = (selectedPrimes[i]->pos - buildPos).getMagnitudeSquared();
+            if (distanceSquared < bestDistanceSquared)
+            {
+                bestChoice = selectedPrimes[i];
+                bestDistanceSquared = distanceSquared;
+            }
+        }
+
+        vector<EntityRef> onlyOnePrime;
+        onlyOnePrime.push_back(bestChoice->ref);
+        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, buildPos));
+    }
+    return boost::shared_ptr<PrimeBuildCmd>();
+}
+
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI *ui, int playerId, sf::RenderWindow *window)
 {
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
@@ -228,13 +263,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(const Game &game, UI 
                     if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, FIGHTER_TYPECHAR))
                         cmdsToSend.push_back(cmd);
                     break;
-                // case sf::Keyboard::Space:
-                //     if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(ui->selectedEntities[0]))
-                //     {
-                //         auto units = filterForType<Unit, Entity>(game.entities);
-                //         fighter->cmdAttack(units[0])->ref;
-                //     }
-                //     break;
+                case sf::Keyboard::E:
+                    if (auto cmd = makePrimeBuildCmd(ui->selectedEntities, GATEWAY_TYPECHAR, vector2f(0,50)))
+                        cmdsToSend.push_back(cmd);
+                    break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
                     {

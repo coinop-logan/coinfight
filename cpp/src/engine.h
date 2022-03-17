@@ -81,6 +81,7 @@ public:
 
     Target(vector2f);
     Target(EntityRef);
+    Target(boost::shared_ptr<Entity>);
     Target(vchIter *iter);
 
     optional<vector2f> getPointUnlessTargetDeleted(const Game&);
@@ -195,7 +196,8 @@ public:
     {
         Idle,
         PickupGold,
-        PutdownGold
+        PutdownGold,
+        Build
     } state;
 
     enum GoldTransferState
@@ -205,6 +207,8 @@ public:
         Pulling
     } goldTransferState;
 
+    unsigned char gonnabuildTypechar;
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -213,7 +217,7 @@ public:
 
     void cmdPickup(Target);
     void cmdPutdown(Target);
-    // void cmdBuild(boost::shared_ptr<Building>);
+    void cmdBuild(unsigned char buildTypechar, vector2f buildPos);
 
     float getSpeed();
     float getRange();

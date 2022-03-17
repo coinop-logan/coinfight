@@ -24,6 +24,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new WithdrawCmd(iter));
     case CMD_ATTACK_CHAR:
         return boost::shared_ptr<Cmd>(new AttackCmd(iter));
+    case CMD_PRIMEBUILD_CHAR:
+        return boost::shared_ptr<Cmd>(new PrimeBuildCmd(iter));
     default:
         throw runtime_error("Trying to unpack an unrecognized cmd");
     }
@@ -291,6 +293,47 @@ GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, unsigned char buildTyp
     : UnitCmd(units), buildTypechar(buildTypechar) {}
 
 GatewayBuildCmd::GatewayBuildCmd(vchIter *iter)
+    : UnitCmd(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char PrimeBuildCmd::getTypechar()
+{
+    return CMD_PRIMEBUILD_CHAR;
+}
+string PrimeBuildCmd::getTypename()
+{
+    return "PrimeBuildCmd";
+}
+void PrimeBuildCmd::pack(vch *dest)
+{
+    packUnitCmd(dest);
+    packTypechar(dest, buildTypechar);
+    packVector2f(dest, buildPos);
+}
+void PrimeBuildCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackTypecharFromIter(*iter, &buildTypechar);
+    *iter = unpackVector2f(*iter, &buildPos);
+}
+
+void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        prime->cmdBuild(buildTypechar, buildPos);
+    }
+    else
+    {
+        cout << "trying to primeBuild on something other than a prime!" << endl;
+    }
+}
+
+PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, unsigned char buildTypechar, vector2f buildPos)
+    : UnitCmd(units), buildTypechar(buildTypechar), buildPos(buildPos) {}
+
+PrimeBuildCmd::PrimeBuildCmd(vchIter *iter)
     : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);

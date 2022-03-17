@@ -20,6 +20,7 @@ const unsigned char CMD_PUTDOWN_CHAR = 2;
 const unsigned char CMD_GATEWAYBUILD_CHAR = 3;
 const unsigned char CMD_WITHDRAW_CHAR = 4;
 const unsigned char CMD_ATTACK_CHAR = 5;
+const unsigned char CMD_PRIMEBUILD_CHAR = 6;
 
 struct Cmd
 {
@@ -130,6 +131,22 @@ struct GatewayBuildCmd : public UnitCmd
 
     GatewayBuildCmd(vector<EntityRef>, unsigned char buildTypechar);
     GatewayBuildCmd(vchIter *iter);
+};
+
+struct PrimeBuildCmd : public UnitCmd
+{
+    unsigned char buildTypechar;
+    vector2f buildPos;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    PrimeBuildCmd(vector<EntityRef>, unsigned char buildTypechar, vector2f buildPos);
+    PrimeBuildCmd(vchIter *iter);
 };
 
 struct AttackCmd : public UnitCmd

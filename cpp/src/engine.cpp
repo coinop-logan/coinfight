@@ -398,6 +398,7 @@ void Prime::pack(vch *dest)
     packToVch(dest, "C", (unsigned char)(state));
 
     heldGold.pack(dest);
+    packTypechar(dest, gonnabuildTypechar);
 }
 void Prime::unpackAndMoveIter(vchIter *iter)
 {
@@ -406,6 +407,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     state = static_cast<State>(enumInt);
 
     heldGold = Coins(iter);
+    *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
 }
 
 Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos)
@@ -431,6 +433,14 @@ void Prime::cmdPutdown(Target _target)
     state = PutdownGold;
 
     setTarget(_target, PRIME_RANGE);
+}
+
+void Prime::cmdBuild(unsigned char buildTypechar, vector2f buildPos)
+{
+    state = Build;
+    gonnabuildTypechar = buildTypechar;
+
+    setTarget(buildPos, PRIME_RANGE);
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }
@@ -530,6 +540,56 @@ void Prime::go()
                     state = Idle;
                 }
             }
+        }
+        break;
+    case Build:
+        if (optional<vector2f> point = getTarget().castToPoint())
+        {
+            if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            {
+                // create unit if typechar checks out and change target to new unit
+                boost::shared_ptr<Building> buildingToBuild;
+                switch (gonnabuildTypechar)
+                {
+                    case GATEWAY_TYPECHAR:
+                        buildingToBuild = boost::shared_ptr<Building>(new Gateway(game, game->getNextEntityRef(), this->ownerId, *point));
+                        break;
+                }
+
+                if (buildingToBuild)
+                {
+                    game->entities.push_back(buildingToBuild);
+                    setTarget(Target(buildingToBuild), PRIME_RANGE);
+                }
+                else
+                {
+                    cout << "Prime refuses to build for that typechar!" << endl;
+                    state = Idle;
+                }
+            }
+        }
+        else if (boost::shared_ptr<Entity> entity = getTarget().castToEntityPtr(*game))
+        {
+            if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
+            {
+                if (building->getBuiltRatio() < 1)
+                {
+                    building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
+                }
+                else
+                {
+                    state = Idle;
+                }
+            }
+            else
+            {
+                cout << "Prime trying to build a non-Building entity... What's going on???" << endl;
+            }
+        }
+        else
+        {
+            cout << "Can't cast that Target to a position OR an entity..." << endl;
+            state = Idle;
         }
         break;
     default:
@@ -679,8 +739,8 @@ void Gateway::go()
 {
     if (maybeBuildingUnit)
     {
-        coinsInt builtAmount = maybeBuildingUnit->build(GATEWAY_BUILD_RATE, &game->players[this->ownerId].credit);
-        if (builtAmount == 0)
+        maybeBuildingUnit->build(GATEWAY_BUILD_RATE, &game->players[this->ownerId].credit);
+        if (maybeBuildingUnit->getBuiltRatio() >= 1)
         {
             maybeBuildingUnit.reset();
         }
@@ -944,13 +1004,14 @@ Target::Target(vector2f _pointTarget)
     entityTarget = NULL_ENTITYREF;
     pointTarget = _pointTarget;
 }
-
 Target::Target(EntityRef _entityTarget)
 {
     type = EntityTarget;
     pointTarget = vector2f(0, 0);
     entityTarget = _entityTarget;
 }
+Target::Target(boost::shared_ptr<Entity> entity)
+    : Target(entity->ref) {}
 
 optional<vector2f> Target::getPointUnlessTargetDeleted(const Game &game)
 {

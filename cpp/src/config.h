@@ -41,7 +41,6 @@ const float PRIME_RANGE = 150;
 const coinsInt PRIME_PICKUP_RATE = 5;
 const coinsInt PRIME_PUTDOWN_RATE = 8;
 const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
-const coinsInt PRIME_BUILD_RATE = 5;
 
 const coinsInt FIGHTER_COST = 1500;
 const uint16_t FIGHTER_HEALTH = 300;
