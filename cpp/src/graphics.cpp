@@ -490,9 +490,77 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
     }
 }
 
-void drawHotkeyHelp(sf::RenderWindow *window, const UI &ui)
+const int HOTKEY_BOX_WIDTH = 40;
+const int HOTKEY_BOX_SPACING = 10;
+const int HOTKEY_BOTTOMROW_INDENT = 10;
+
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar)
 {
+    sf::Color outlineColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
+
+    sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
+    rectShape.setPosition(drawPos.x, drawPos.y);
+    rectShape.setFillColor(sf::Color::Transparent);
+    rectShape.setOutlineColor(outlineColor);
+    rectShape.setOutlineThickness(1);
+
+    window->draw(rectShape);
+}
+
+void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
+{
+    const tuple<sf::Keyboard::Key, char> keyCodesAndChars[] =
+    {
+        {sf::Keyboard::Q, 'Q'},
+        {sf::Keyboard::W, 'W'},
+        {sf::Keyboard::E, 'E'},
+        {sf::Keyboard::R, 'R'},
+        {sf::Keyboard::A, 'A'},
+        {sf::Keyboard::S, 'S'},
+        {sf::Keyboard::D, 'D'},
+        {sf::Keyboard::F, 'F'}
+    };
+
+    int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
+    int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
+    vector2i hotkeyHelpBoxUpperLeft = vector2f(10, WINDOW_HEIGHT - (hotkeyHelpBoxHeight + 10));
+
+    sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
+    hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
+    hotkeyHelpBoudingRect.setFillColor(sf::Color(0, 0, 0, 200));
+    hotkeyHelpBoudingRect.setOutlineColor(sf::Color(150, 150, 200));
+    hotkeyHelpBoudingRect.setOutlineThickness(1);
+    window->draw(hotkeyHelpBoudingRect);
     
+    for (uint i=0; i<8; i++)
+    {
+        sf::Keyboard::Key keyCode = get<0>(keyCodesAndChars[i]);
+        char keyChar = get<1>(keyCodesAndChars[i]);
+
+        UnitInterfaceCmdWithState* interfaceCmdWithState(NULL);
+        for (uint j=0; j<ui->interfaceCmdsWithState.size(); j++)
+        {
+            if (ui->interfaceCmdsWithState[j].interfaceCmd->getKey() == keyCode)
+            {
+                interfaceCmdWithState = &ui->interfaceCmdsWithState[j];
+                break;
+            }
+        }
+        if (!interfaceCmdWithState)
+            continue;
+
+        vector2i drawPosOffset;
+        if (i < 4)
+        {
+            drawPosOffset = vector2i(i * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), 0);
+        }
+        else
+        {
+            drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
+        }
+
+        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar);
+    }
 }
 
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
@@ -589,7 +657,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     drawOutputStrings(window, outputStrings);
 
-    drawHotkeyHelp(window, ui);
+    drawHotkeyHelp(window, &ui);
 
     drawCursor(window, ui, playerIdOrNegativeOne);
     
