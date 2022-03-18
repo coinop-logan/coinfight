@@ -29,18 +29,38 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
     vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
     
     sf::Color teamColor = entity->getTeamColor(); // may be modified later if unit is not yet active
+    sf::Color outlineColor(100, 100, 100);
     float drawRotation = -entity->getRotation();
 
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
-        int size = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
-        if (size > 1)
+        float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
+        float height = width * .4;
+        if (width > 1)
         {
-            sf::CircleShape triangle(size, 3);
-            triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
-            triangle.setFillColor(sf::Color::Yellow);
-            triangle.setPosition(drawPos.x, drawPos.y);
-            window->draw(triangle);
+            sf::Color goldBottomColor(sf::Color(255, 180, 0));
+            sf::Color goldTopColor(sf::Color::Yellow);
+
+            sf::VertexArray diamond(sf::Quads, 4);
+            diamond[0].position = sf::Vector2f(width/2, 0);
+            diamond[1].position = sf::Vector2f(width/3, -height);
+            diamond[2].position = sf::Vector2f(-width/3, -height);
+            diamond[3].position = sf::Vector2f(-width/2, 0);
+            diamond[0].color = goldBottomColor;
+            diamond[1].color = goldTopColor;
+            diamond[2].color = goldTopColor;
+            diamond[3].color = goldBottomColor;
+
+            sf::Transform transform;
+            transform.translate(drawPos.x, drawPos.y + height/2);
+
+            window->draw(diamond, transform);
+
+            // sf::CircleShape triangle(size, 3);
+            // triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
+            // triangle.setFillColor(sf::Color::Yellow);
+            // triangle.setPosition(drawPos.x, drawPos.y);
+            // window->draw(triangle);
         }
     }
     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
@@ -85,11 +105,11 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[2].position = back;
             lines[3].position = left;
             lines[4].position = front;
-            lines[0].color = teamColor;
-            lines[1].color = teamColor;
-            lines[2].color = teamColor;
-            lines[3].color = teamColor;
-            lines[4].color = teamColor;
+            lines[0].color = outlineColor;
+            lines[1].color = outlineColor;
+            lines[2].color = outlineColor;
+            lines[3].color = outlineColor;
+            lines[4].color = outlineColor;
             sf::Transform transform;
             transform.translate(drawPos.x, drawPos.y);
             transform.rotate(radToDeg(drawRotation));
@@ -124,11 +144,11 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[2].position = back;
             lines[3].position = left;
             lines[4].position = front;
-            lines[0].color = teamColor;
-            lines[1].color = teamColor;
-            lines[2].color = teamColor;
-            lines[3].color = teamColor;
-            lines[4].color = teamColor;
+            lines[0].color = outlineColor;
+            lines[1].color = outlineColor;
+            lines[2].color = outlineColor;
+            lines[3].color = outlineColor;
+            lines[4].color = outlineColor;
             sf::Transform transform;
             transform.translate(drawPos.x, drawPos.y);
             transform.rotate(radToDeg(drawRotation));
@@ -139,7 +159,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             sf::CircleShape outerHex(15, 6);
             outerHex.setOrigin(15, 15);
             outerHex.setFillColor(teamColorFaded);
-            outerHex.setOutlineColor(teamColor);
+            outerHex.setOutlineColor(outlineColor);
             outerHex.setOutlineThickness(1);
             outerHex.setPosition(drawPos.x, drawPos.y);
             outerHex.setRotation(90);
@@ -670,18 +690,6 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         uint playerId = playerIdOrNegativeOne;
         outputStrings.push_back("Account balance: " + game->players[playerId].credit.getDollarString());
     }
-
-    // for (uint i=0; i<game->entities.size(); i++)
-    // {
-    //     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
-    //     {
-    //         outputStrings.push_back("prime: " + prime->heldGold.getDollarString());
-    //     }
-    //     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
-    //     {
-    //         outputStrings.push_back("goldpile: " + goldpile->gold.getDollarString());
-    //     }
-    // }
 
     drawOutputStrings(window, outputStrings);
 
