@@ -12,6 +12,8 @@ using namespace std;
 const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,200);
 const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
+const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
+
 sf::Font mainFont;
 
 sf::RenderWindow* setupGraphics()
@@ -55,12 +57,6 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             transform.translate(drawPos.x, drawPos.y + height/2);
 
             window->draw(diamond, transform);
-
-            // sf::CircleShape triangle(size, 3);
-            // triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
-            // triangle.setFillColor(sf::Color::Yellow);
-            // triangle.setPosition(drawPos.x, drawPos.y);
-            // window->draw(triangle);
         }
     }
     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
@@ -137,6 +133,26 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             oneSide.setPoint(2, left);
             window->draw(oneSide);
 
+            // draw gun barrels
+            sf::Color fadedBarrelColor(FIGHTER_BARREL_COLOR.r, FIGHTER_BARREL_COLOR.g, FIGHTER_BARREL_COLOR.b, fadedAlpha);
+            sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
+            gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
+            gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
+            gunBarrelPoints[2].position = sf::Vector2f(FIGHTER_SHOT_OFFSET.x, FIGHTER_SHOT_OFFSET.y);
+            gunBarrelPoints[0].color = fadedBarrelColor;
+            gunBarrelPoints[1].color = fadedBarrelColor;
+            gunBarrelPoints[2].color = fadedBarrelColor;
+
+            sf::Transform transform = sf::Transform();
+            transform.translate(drawPos.x, drawPos.y);
+            transform.rotate(radToDeg(drawRotation));
+            window->draw(gunBarrelPoints, transform);
+
+            gunBarrelPoints[0].position.y *= -1;
+            gunBarrelPoints[1].position.y *= -1;
+            gunBarrelPoints[2].position.y *= -1;
+            window->draw(gunBarrelPoints, transform);
+
             // draw outline
             sf::VertexArray lines(sf::LinesStrip, 5);
             lines[0].position = front;
@@ -149,10 +165,13 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[2].color = outlineColor;
             lines[3].color = outlineColor;
             lines[4].color = outlineColor;
-            sf::Transform transform;
+
+            transform = sf::Transform();
             transform.translate(drawPos.x, drawPos.y);
             transform.rotate(radToDeg(drawRotation));
             window->draw(lines, transform);
+
+            
         }
         else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
         {
@@ -661,11 +680,13 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         vector2f relativeShotStartPos;
                         if (fighter->animateShot == Fighter::Left)
                         {
-                            relativeShotStartPos = vector2f(0, -10);
+                            relativeShotStartPos = FIGHTER_SHOT_OFFSET;
                         }
                         else
                         {
-                            relativeShotStartPos = vector2f(0, 10);
+                            vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
+                            reversedShotOffset.y *= -1;
+                            relativeShotStartPos = reversedShotOffset;
                         }
                         vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
                         vector2f final = fighter->pos + rotated;

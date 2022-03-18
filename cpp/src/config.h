@@ -49,6 +49,8 @@ const float FIGHTER_RANGE = 200;
 const int FIGHTER_SHOOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 
+const vector2f FIGHTER_SHOT_OFFSET(20, 10);
+
 const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 2000;
 const float GATEWAY_RANGE = 150;
