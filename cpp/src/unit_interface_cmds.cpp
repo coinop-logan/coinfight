@@ -26,7 +26,7 @@ vector<boost::shared_ptr<Cmd>> DepositInterfaceCmd::execute(UI *ui)
 }
 bool DepositInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
-    return (unit->typechar() == PRIME_TYPECHAR);
+    return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }
 
 sf::Keyboard::Key GatewayBuildPrimeInterfaceCmd::getKey()

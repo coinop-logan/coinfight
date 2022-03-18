@@ -745,11 +745,34 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
             break;
     }
     this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-    this->maybeBuildingUnit = littleBabyUnitAwwwwSoCute;
+    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute;
 }
+void Gateway::cmdDepositTo(Target target)
+{
+    // if target is a point, check range and create goldPile
+    if (auto point = target.castToPoint())
+    {
+        if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        {
+            return;
+        }
+        boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
+        game->entities.push_back(goldpile);
+        target = Target(goldpile);
+    }
+    else if (auto entity = target.castToEntityPtr(*game))
+    {
+        maybeDepositingToEntity = entity;
+    }
+    else
+    {
+        cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
+    }
+}
+
 float Gateway::buildQueueWeight()
 {
-    if (!maybeBuildingUnit)
+    if (!maybeDepositingToEntity)
         return 0;
     else
         return 1;
@@ -772,12 +795,50 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 
 void Gateway::go()
 {
-    if (maybeBuildingUnit)
+    if (maybeDepositingToEntity)
     {
-        maybeBuildingUnit->build(GATEWAY_BUILD_RATE, &game->players[this->ownerId].credit);
-        if (maybeBuildingUnit->getBuiltRatio() >= 1)
+        // stop if it's out range
+        if ((maybeDepositingToEntity->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
         {
-            maybeBuildingUnit.reset();
+            maybeDepositingToEntity.reset();
+        }
+        else
+        {
+            Coins* maybeCoinsToDepositTo;
+            boost::shared_ptr<Unit> maybeBuildingUnit;
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(maybeDepositingToEntity))
+            {
+                maybeCoinsToDepositTo = &goldpile->gold;
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeDepositingToEntity))
+            {
+                if (unit->getBuiltRatio() < 1)
+                {
+                    maybeCoinsToDepositTo = &unit->goldInvested;
+                    maybeBuildingUnit = unit;
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                {
+                    maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
+                }
+                else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                {
+                    maybeCoinsToDepositTo = &prime->heldGold;
+                }
+            }
+
+            if (maybeCoinsToDepositTo)
+            {
+                coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
+                if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
+                {
+                    maybeDepositingToEntity.reset();
+                }
+                if (amountDeposited == 0)
+                {
+                    maybeDepositingToEntity.reset();
+                }
+            }
         }
     }
     else
@@ -792,7 +853,7 @@ void Gateway::go()
                     if (unit->getBuiltRatio() < 1)
                         if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
                             {
-                                maybeBuildingUnit = unit;
+                                maybeDepositingToEntity = unit;
                             }
             }
         }

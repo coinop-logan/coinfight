@@ -249,8 +249,12 @@ void PutdownCmd::unpackAndMoveIter(vchIter *iter)
 
 void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         prime->cmdPutdown(target);
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdDepositTo(target);
+    }
     else
         cout << "That's not a prime!!" << endl;
 }

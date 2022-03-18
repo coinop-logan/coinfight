@@ -275,22 +275,15 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     case UI::Deposit:
                     {
                         Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
-                        if (auto clickedEntity = target.castToEntityPtr(*game))
+                        
+                        vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                        vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
+                        auto primesAndGateways = primesInSelection;
+                        primesAndGateways.insert(primesAndGateways.begin(), gatewaysInSelection.begin(), gatewaysInSelection.end());
+
+                        if (primesAndGateways.size() > 0)
                         {
-                            vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                            if (primesInSelection.size() > 0)
-                            {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
-                            }
-                            ui->cmdState = UI::Default;
-                        }
-                        else
-                        {
-                            vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                            if (primesInSelection.size() > 0)
-                            {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), target)));
-                            }
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesAndGateways), target)));
                             ui->cmdState = UI::Default;
                         }
                     }

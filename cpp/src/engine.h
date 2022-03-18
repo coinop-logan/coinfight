@@ -269,7 +269,7 @@ public:
 class Gateway : public Building
 {
 public:
-    boost::shared_ptr<Unit> maybeBuildingUnit;
+    boost::shared_ptr<Entity> maybeDepositingToEntity;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
@@ -278,6 +278,7 @@ public:
     Gateway(Game *game, EntityRef ref, vchIter *iter);
 
     void cmdBuildUnit(unsigned char unitTypechar);
+    void cmdDepositTo(Target target);
     float buildQueueWeight();
 
     unsigned char typechar();
