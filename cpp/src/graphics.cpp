@@ -9,6 +9,9 @@
 
 using namespace std;
 
+const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,200);
+const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
+
 sf::Font mainFont;
 
 sf::RenderWindow* setupGraphics()
@@ -17,23 +20,6 @@ sf::RenderWindow* setupGraphics()
         throw runtime_error("Can't load font");
 
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
-
-    // const uint8_t pixels[] =
-    //     {255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
-    //     0, 0, 0, 0,   255, 0, 0, 255,   0, 0, 0, 0,   0, 0, 0, 0,
-    //     0, 0, 0, 0,   0, 0, 0, 0,   255, 0, 0, 255,   0, 0, 0, 0,
-    //     0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   255, 0, 0, 255
-    //     };
-    // sf::Vector2u size(4, 4);
-    // sf::Vector2u hotspot(0,0);
-
-    // sf::Cursor cursor;
-    // if (cursor.loadFromPixels(
-    //     pixels,
-    //     size,
-    //     hotspot
-    // ))
-    //     window->setMouseCursor(cursor);
     
     return window;
 }
@@ -41,8 +27,8 @@ sf::RenderWindow* setupGraphics()
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
 {
     vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
-    sf::Color primaryColor = entity->getPrimaryColor(); // may be modified later if unit is not yet active
-    sf::Color outlineColor(primaryColor);
+    
+    sf::Color teamColor = entity->getTeamColor(); // may be modified later if unit is not yet active
     float drawRotation = -entity->getRotation();
 
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -52,26 +38,30 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
         {
             sf::CircleShape triangle(size, 3);
             triangle.setOrigin(triangle.getRadius(), triangle.getRadius());
-            triangle.setFillColor(primaryColor);
+            triangle.setFillColor(sf::Color::Yellow);
             triangle.setPosition(drawPos.x, drawPos.y);
             window->draw(triangle);
         }
     }
     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
     {
-        // make transparent if not active
+        float fadedAlpha;
         if (!unit->isActive())
         {
-            float newAlpha = unit->getBuiltRatio() * 0.8 * 255;
-            primaryColor.a = newAlpha;
+            fadedAlpha = unit->getBuiltRatio() * 0.8 * 255;
         }
+        else
+        {
+            fadedAlpha = 255;
+        }
+        sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.b, fadedAlpha);
 
         if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         {
             sf::ConvexShape oneSide;
             oneSide.setPointCount(3);
 
-            oneSide.setFillColor(primaryColor);
+            oneSide.setFillColor(teamColor);
             oneSide.setPosition(drawPos.x, drawPos.y);
             oneSide.setRotation(radToDeg(drawRotation));
 
@@ -95,11 +85,11 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[2].position = back;
             lines[3].position = left;
             lines[4].position = front;
-            lines[0].color = outlineColor;
-            lines[1].color = outlineColor;
-            lines[2].color = outlineColor;
-            lines[3].color = outlineColor;
-            lines[4].color = outlineColor;
+            lines[0].color = teamColor;
+            lines[1].color = teamColor;
+            lines[2].color = teamColor;
+            lines[3].color = teamColor;
+            lines[4].color = teamColor;
             sf::Transform transform;
             transform.translate(drawPos.x, drawPos.y);
             transform.rotate(radToDeg(drawRotation));
@@ -110,7 +100,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             sf::ConvexShape oneSide;
             oneSide.setPointCount(3);
 
-            oneSide.setFillColor(primaryColor);
+            oneSide.setFillColor(teamColorFaded);
             oneSide.setPosition(drawPos.x, drawPos.y);
             oneSide.setRotation(radToDeg(drawRotation));
 
@@ -134,11 +124,11 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             lines[2].position = back;
             lines[3].position = left;
             lines[4].position = front;
-            lines[0].color = outlineColor;
-            lines[1].color = outlineColor;
-            lines[2].color = outlineColor;
-            lines[3].color = outlineColor;
-            lines[4].color = outlineColor;
+            lines[0].color = teamColor;
+            lines[1].color = teamColor;
+            lines[2].color = teamColor;
+            lines[3].color = teamColor;
+            lines[4].color = teamColor;
             sf::Transform transform;
             transform.translate(drawPos.x, drawPos.y);
             transform.rotate(radToDeg(drawRotation));
@@ -146,13 +136,28 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
         }
         else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
         {
-            sf::RectangleShape rect(sf::Vector2f(20, 20));
-            rect.setOrigin(10, 10);
-            rect.setFillColor(primaryColor);
-            rect.setOutlineColor(outlineColor);
-            rect.setOutlineThickness(1);
-            rect.setPosition(drawPos.x, drawPos.y);
-            window->draw(rect);
+            sf::CircleShape outerHex(15, 6);
+            outerHex.setOrigin(15, 15);
+            outerHex.setFillColor(teamColorFaded);
+            outerHex.setOutlineColor(teamColor);
+            outerHex.setOutlineThickness(1);
+            outerHex.setPosition(drawPos.x, drawPos.y);
+            outerHex.setRotation(90);
+
+            window->draw(outerHex);
+
+            sf::Color fadedGatewayColor(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, fadedAlpha);
+            sf::Color fadedInnerOutlineColor(GATEWAY_INNEROUTLINE_COLOR.r, GATEWAY_INNEROUTLINE_COLOR.g, GATEWAY_INNEROUTLINE_COLOR.b, fadedAlpha);
+            sf::RectangleShape innerRect(sf::Vector2f(10, 10));
+            innerRect.setOrigin(5, 5);
+            innerRect.setFillColor(fadedGatewayColor);
+            innerRect.setOutlineColor(fadedInnerOutlineColor);
+            innerRect.setOutlineThickness(1.5);
+            innerRect.setRotation(45);
+            innerRect.setPosition(drawPos.x, drawPos.y);
+
+            window->draw(innerRect);
+            
         }
         else
         {

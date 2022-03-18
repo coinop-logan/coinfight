@@ -36,7 +36,7 @@ public:
     virtual void pack(vch *dest);
     virtual void unpackAndMoveIter(vchIter *iter, Game &game);
     virtual void go();
-    virtual sf::Color getPrimaryColor();
+    virtual sf::Color getTeamColor();
     virtual float getRotation() { return 0; }
     virtual vector<Coins*> getDroppableCoins();
     void die();
@@ -108,7 +108,7 @@ public:
     void unpackAndMoveIter(vchIter *iter);
     GoldPile(Game *, EntityRef, vector2f);
     GoldPile(Game *, EntityRef, vchIter *);
-    sf::Color getPrimaryColor();
+    sf::Color getTeamColor();
 
     unsigned char typechar();
     string getTypeName();
@@ -129,7 +129,7 @@ public:
     void unpackUnitAndMoveIter(vchIter *iter);
     Unit(Game *, EntityRef, int, coinsInt, uint16_t, vector2f);
     Unit(Game *, EntityRef, vchIter *);
-    sf::Color getPrimaryColor();
+    sf::Color getTeamColor();
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
     bool completeBuildingInstantly(Coins* fromCoins);
