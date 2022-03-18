@@ -490,11 +490,11 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
     }
 }
 
-const int HOTKEY_BOX_WIDTH = 40;
+const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
-const int HOTKEY_BOTTOMROW_INDENT = 10;
+const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar)
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines)
 {
     sf::Color mainColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
 
@@ -509,20 +509,38 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWith
     hotkeyText.setFillColor(mainColor);
     hotkeyText.setPosition(sf::Vector2f(drawPos.x + 2, drawPos.y-1));
     window->draw(hotkeyText);
+
+    float lineHeight = 12;
+    float allLinesHeight = lineHeight * cmdNameLines.size();
+    float topLineYFromCenter = - allLinesHeight / 2;
+    vector2f boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
+    for (uint i=0; i<cmdNameLines.size(); i++)
+    {
+        sf::Text lineText(cmdNameLines[i], mainFont, 12);
+
+        float width = lineText.getGlobalBounds().width;
+        float lineXFromCenter = - width / 2;
+        vector2f positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
+        vector2f position = drawPos + boxCenter + positionFromCenter;
+        lineText.setPosition(sf::Vector2f(position.x, position.y));
+
+        lineText.setFillColor(mainColor);
+        window->draw(lineText);
+    }
 }
 
 void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
 {
-    const tuple<sf::Keyboard::Key, char> keyCodesAndChars[] =
+    const tuple<sf::Keyboard::Key, char, vector<string>> hotkeyInfo[] =
     {
-        {sf::Keyboard::Q, 'Q'},
-        {sf::Keyboard::W, 'W'},
-        {sf::Keyboard::E, 'E'},
-        {sf::Keyboard::R, 'R'},
-        {sf::Keyboard::A, 'A'},
-        {sf::Keyboard::S, 'S'},
-        {sf::Keyboard::D, 'D'},
-        {sf::Keyboard::F, 'F'}
+        {sf::Keyboard::Q, 'Q', {"Build", "Prime"}},
+        {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
+        {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
+        {sf::Keyboard::R, 'R', {}},
+        {sf::Keyboard::A, 'A', {}},
+        {sf::Keyboard::S, 'S', {}},
+        {sf::Keyboard::D, 'D', {"Deposit"}},
+        {sf::Keyboard::F, 'F', {}}
     };
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
@@ -538,8 +556,9 @@ void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
     
     for (uint i=0; i<8; i++)
     {
-        sf::Keyboard::Key keyCode = get<0>(keyCodesAndChars[i]);
-        char keyChar = get<1>(keyCodesAndChars[i]);
+        sf::Keyboard::Key keyCode = get<0>(hotkeyInfo[i]);
+        char keyChar = get<1>(hotkeyInfo[i]);
+        vector<string> cmdNameLines = get<2>(hotkeyInfo[i]);
 
         UnitInterfaceCmdWithState* interfaceCmdWithState(NULL);
         for (uint j=0; j<ui->interfaceCmdsWithState.size(); j++)
@@ -563,7 +582,7 @@ void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
             drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
         }
 
-        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar);
+        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar, cmdNameLines);
     }
 }
 
