@@ -502,30 +502,44 @@ void Prime::go()
         }
         break;
     case PutdownGold:
-        if (this->heldGold.getInt() == 0)
-        {
-            state = Idle;
-        }
-        else if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
+        if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
         {
             if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
                 optional<Coins*> coinsToPushTo;
+                bool stopOnTransferZero = false;
                 if (auto entity = getTarget().castToEntityPtr(*game))
                 {
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                     {
                         coinsToPushTo = &goldpile->gold;
                     }
-                    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
+                    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                     {
-                        if (gateway->ownerId == this->ownerId)
+                        // first try to complete it if it's not yet built
+                        if (unit->getBuiltRatio() < 1)
                         {
-                            coinsToPushTo = &game->players[gateway->ownerId].credit;
+                            coinsToPushTo = &unit->goldInvested;
+                            stopOnTransferZero = true;
+                        }
+                        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                        {
+                            if (gateway->ownerId == this->ownerId)
+                            {
+                                coinsToPushTo = &game->players[gateway->ownerId].credit;
+                            }
+                        }
+                        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                        {
+                            coinsToPushTo = &prime->heldGold;
+                        }
+                        else
+                        {
+                            // nothing else to do then.
+                            state = Idle;
                         }
                     }
-                    else
-                    {
+                    else {
                         cout << "not sure how to execute a PutdownGold cmd for a unit other than a gateway or goldpile" << endl;
                         state = Idle;
                     }
@@ -542,11 +556,11 @@ void Prime::go()
                 if (coinsToPushTo)
                 {
                     coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, (*coinsToPushTo));
-                    if (amountPutDown == 0)
+                    if (amountPutDown == 0 && stopOnTransferZero)
                     {
                         state = Idle;
                     }
-                    else
+                    if (amountPutDown != 0)
                     {
                         goldTransferState = Pushing;
                     }

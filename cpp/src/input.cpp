@@ -277,15 +277,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
                         if (auto clickedEntity = target.castToEntityPtr(*game))
                         {
-                            if (clickedEntity->typechar() == GATEWAY_TYPECHAR || clickedEntity->typechar() == GOLDPILE_TYPECHAR)
+                            vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                            if (primesInSelection.size() > 0)
                             {
-                                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                if (primesInSelection.size() > 0)
-                                {
-                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
-                                }
-                                ui->cmdState = UI::Default;
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesInSelection), clickedEntity->ref)));
                             }
+                            ui->cmdState = UI::Default;
                         }
                         else
                         {
