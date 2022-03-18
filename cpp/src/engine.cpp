@@ -47,6 +47,16 @@ vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
     return refs;
 }
 
+vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>> unitPtrs)
+{
+    vector<EntityRef> refs;
+    for (uint i=0; i<unitPtrs.size(); i++)
+    {
+        refs.push_back(unitPtrs[i]->ref);
+    }
+    return refs;
+}
+
 boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game& game, EntityRef ref)
 {
     if (ref == 0)
@@ -275,7 +285,10 @@ bool Unit::isActive()
 }
 sf::Color Unit::getPrimaryColor()
 {
-    return playerAddressToColor(game->playerIdToAddress(ownerId));
+    if (ownerId == -1)
+        return sf::Color(150, 150, 150);
+    else
+        return playerAddressToColor(game->playerIdToAddress(ownerId));
 }
 void Unit::unitGo() {}
 void Unit::takeHit(uint16_t damage)

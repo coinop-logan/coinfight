@@ -53,9 +53,6 @@ public:
 
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
 
-vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>>);
-boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game&, EntityRef);
-
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
 enum AllianceType {
     Ally,
@@ -322,5 +319,9 @@ public:
 
     void iterate();
 };
+
+vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>>);
+vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>>);
+boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game&, EntityRef);
 
 #endif // ENGINE_H

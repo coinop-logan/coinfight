@@ -490,6 +490,11 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
     }
 }
 
+void drawHotkeyHelp(sf::RenderWindow *window, const UI &ui)
+{
+    
+}
+
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
     window->clear();
@@ -555,9 +560,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
             }
         }
     }
-    for (uint i=0; i<ui.selectedEntities.size(); i++)
+    for (uint i=0; i<ui.selectedUnits.size(); i++)
     {
-        drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedEntities[i]);
+        drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
     }
 
     drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
@@ -583,6 +588,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     // }
 
     drawOutputStrings(window, outputStrings);
+
+    drawHotkeyHelp(window, ui);
 
     drawCursor(window, ui, playerIdOrNegativeOne);
     
