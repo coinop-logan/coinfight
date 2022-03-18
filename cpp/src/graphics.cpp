@@ -496,15 +496,19 @@ const int HOTKEY_BOTTOMROW_INDENT = 10;
 
 void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar)
 {
-    sf::Color outlineColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
+    sf::Color mainColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
 
     sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
     rectShape.setPosition(drawPos.x, drawPos.y);
     rectShape.setFillColor(sf::Color::Transparent);
-    rectShape.setOutlineColor(outlineColor);
+    rectShape.setOutlineColor(mainColor);
     rectShape.setOutlineThickness(1);
-
     window->draw(rectShape);
+
+    sf::Text hotkeyText(string(1, keyChar), mainFont, 12);
+    hotkeyText.setFillColor(mainColor);
+    hotkeyText.setPosition(sf::Vector2f(drawPos.x + 2, drawPos.y-1));
+    window->draw(hotkeyText);
 }
 
 void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
