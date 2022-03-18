@@ -77,7 +77,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             sf::ConvexShape oneSide;
             oneSide.setPointCount(3);
 
-            oneSide.setFillColor(teamColor);
+            oneSide.setFillColor(teamColorFaded);
             oneSide.setPosition(drawPos.x, drawPos.y);
             oneSide.setRotation(radToDeg(drawRotation));
 
@@ -663,9 +663,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
                 if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                 {
-                    if (gateway->maybeBuildingUnit)
+                    if (gateway->maybeDepositingToEntity)
                     {
-                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeBuildingUnit->ref), sf::Color::Yellow)));
+                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeDepositingToEntity->ref), sf::Color::Yellow)));
                     }
                 }
             }
