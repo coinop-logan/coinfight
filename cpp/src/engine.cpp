@@ -867,7 +867,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() : state(Pregame) {}
+Game::Game() : state(Pregame), frame(0) {}
 Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);
