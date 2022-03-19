@@ -7,6 +7,8 @@ LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
 
 all: pre-build main-build
 
+release: pre-build main-build package-client
+
 clean:
 	rm cpp/obj/* -f
 	rm bin/* -rf
@@ -40,6 +42,8 @@ server-build: bin/server
 
 client-build: bin/client bin/coinfight_local
 	cp assets/Andale_Mono.ttf bin/
+
+package-client:
 	cd package-assets/client && ./package.sh && mv coinfight-client.zip ../../dist/ && cd ../..
 
 cpp/obj/%.o: cpp/src/%.cpp
