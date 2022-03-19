@@ -140,6 +140,7 @@ public:
     float angle_view;
     virtual float getSpeed();
     virtual float getRange();
+    virtual void onMoveCmd(vector2f moveTo);
 
     Target getTarget();
 
@@ -176,6 +177,10 @@ public:
 
     unsigned char gonnabuildTypechar;
 
+    float getSpeed();
+    float getRange();
+    void onMoveCmd(vector2f moveTo);
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -186,9 +191,6 @@ public:
     void cmdPutdown(Target);
     void cmdBuild(unsigned char buildTypechar, vector2f buildPos);
     void cmdResumeBuilding(EntityRef targetUnit);
-
-    float getSpeed();
-    float getRange();
 
     unsigned char typechar();
     string getTypeName();
@@ -216,6 +218,10 @@ public:
         Left
     } animateShot, lastShot;
 
+    float getSpeed();
+    float getRange();
+    void onMoveCmd(vector2f moveTo);
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -223,9 +229,6 @@ public:
     Fighter(Game *game, EntityRef ref, vchIter *iter);
 
     void cmdAttack(EntityRef ref);
-
-    float getSpeed();
-    float getRange();
 
     unsigned char typechar();
     string getTypename();

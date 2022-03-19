@@ -401,6 +401,10 @@ float MobileUnit::getRange()
 {
     throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
 }
+void MobileUnit::onMoveCmd(vector2f moveTo)
+{
+    throw runtime_error("onMoveCmd() has not been defined for '" + getTypeName() + "'");
+}
 
 void MobileUnit::setTarget(Target _target, float newRange)
 {
@@ -444,6 +448,7 @@ void MobileUnit::mobileUnitGo()
 void MobileUnit::cmdMove(vector2f pointTarget)
 {
     setTarget(Target(pointTarget), 0);
+    onMoveCmd(pointTarget);
 }
 
 void Prime::pack(vch *dest)
@@ -675,6 +680,11 @@ void Prime::go()
     mobileUnitGo();
 }
 
+void Prime::onMoveCmd(vector2f moveTo)
+{
+    state = Idle;
+}
+
 vector<Coins*> Prime::getDroppableCoins()
 {
     return vector<Coins*>{&goldInvested, &heldGold};
@@ -750,6 +760,11 @@ void Fighter::go()
     }
     mobileUnitGo();
 }
+void Fighter::onMoveCmd(vector2f moveTo)
+{
+    state = Idle;
+}
+
 void Fighter::shootAt(boost::shared_ptr<Unit> unit)
 {
     shootCooldown = FIGHTER_SHOOT_COOLDOWN;
