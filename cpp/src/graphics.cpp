@@ -410,43 +410,68 @@ void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2f mousePos
     drawEntity(window, ui.ghostBuilding, ui.camera);
 }
 
-void drawCursor(sf::RenderWindow *window, UI ui, int playerId)
+void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
+{
+    int rectLeft = min(p1.x, p2.x);
+    int rectRight = max(p1.x, p2.x);
+    int rectBottom = max(p1.y, p2.y);
+    int rectTop = min(p1.y, p2.y);
+    int width = rectRight - rectLeft;
+    int height = rectBottom - rectTop;
+
+    sf::RectangleShape rect(sf::Vector2f(width, height));
+    rect.setPosition(rectLeft, rectTop);
+    rect.setOutlineColor(sf::Color::Green);
+    rect.setOutlineThickness(1);
+    rect.setFillColor(sf::Color::Transparent);
+    
+    window->draw(rect);
+}
+
+void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
-    // depending on cmdState and mouseoverEntity
-    switch (ui.cmdState)
+    if (ui.maybeSelectionBoxStart)
     {
-        case UI::Default:
-            if (ui.mouseoverEntity)
-            {
-                if (getAllianceType(playerId, ui.mouseoverEntity) == Enemy)
+        drawSelectionBox(window, *ui.maybeSelectionBoxStart, mousePos);
+    }
+    else
+    {
+        // depending on cmdState and mouseoverEntity
+        switch (ui.cmdState)
+        {
+            case UI::Default:
+                if (ui.mouseoverEntity)
                 {
-                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                    if (getAllianceType(playerId, ui.mouseoverEntity) == Enemy)
+                    {
+                        drawBracketsCursor(window, mousePos, sf::Color::Red);
+                    }
+                    else
+                    {
+                        drawSelectableCursor(window, mousePos);
+                    }
                 }
                 else
                 {
-                    drawSelectableCursor(window, mousePos);
+                    drawNormalCursor(window);
                 }
-            }
-            else
-            {
-                drawNormalCursor(window);
-            }
-            break;
-        case UI::Deposit:
-            if (ui.mouseoverEntity)
-            {
-                drawBracketsCursor(window, mousePos, sf::Color::Blue);
-            }
-            else
-            {
-                drawTargetCursor(window, mousePos, sf::Color::Blue);
-            }
-            break;
-        case UI::Build:
-            drawGhostBuilding(window, ui, mousePos);
-            break;
+                break;
+            case UI::Deposit:
+                if (ui.mouseoverEntity)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Blue);
+                }
+                else
+                {
+                    drawTargetCursor(window, mousePos, sf::Color::Blue);
+                }
+                break;
+            case UI::Build:
+                drawGhostBuilding(window, ui, mousePos);
+                break;
+        }
     }
 }
 
@@ -717,7 +742,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     drawHotkeyHelp(window, &ui);
 
-    drawCursor(window, ui, playerIdOrNegativeOne);
+    drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
     
     window->display();
 }

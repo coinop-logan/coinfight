@@ -32,6 +32,7 @@ struct UI
         Build
     } cmdState;
     vector2i lastMousePos;
+    optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;
     CameraState camera;
     vector<UnitInterfaceCmdWithState> interfaceCmdsWithState;

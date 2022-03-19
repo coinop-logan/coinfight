@@ -15,6 +15,7 @@ UI::UI()
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
     cmdState = Default;
+    maybeSelectionBoxStart = {};
     interfaceCmdsWithState = vector<UnitInterfaceCmdWithState>
     {
         boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
@@ -255,6 +256,68 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                 ui->lastMousePos = mouseMoveToVec(event.mouseMove);
             }
             break;
+        case sf::Event::MouseButtonReleased:
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                if (ui->maybeSelectionBoxStart)
+                {
+                    vector2f mousePos = mouseButtonToVec(event.mouseButton);
+                    if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
+                    {
+                        vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
+                        if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(*game, ui->camera, averagedClick).castToEntityPtr(*game))
+                        {
+                            if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
+                            {
+                                if (clickedUnit->ownerId == playerId)
+                                {
+                                    if (!isShiftPressed())
+                                    {
+                                        ui->selectedUnits.clear();
+                                    }
+                                    ui->selectedUnits.push_back(clickedUnit);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        tuple<vector2i, vector2i> corners =
+                        {
+                            screenPosToGamePos(ui->camera, *ui->maybeSelectionBoxStart),
+                            screenPosToGamePos(ui->camera, mousePos)
+                        };
+                        int rectLeft = min(get<0>(corners).x, get<1>(corners).x);
+                        int rectRight = max(get<0>(corners).x, get<1>(corners).x);
+                        int rectBottom = min(get<0>(corners).y, get<1>(corners).y);
+                        int rectTop = max(get<0>(corners).y, get<1>(corners).y);
+
+                        // For arg 2 here, we use rectBottom instead of rectTop, since we're using +Y=up here, while SFML assumes +Y=down
+                        sf::Rect selectionRectGameCoords(rectLeft, rectBottom, (rectRight - rectLeft), (rectTop - rectBottom));
+
+                        if (!isShiftPressed())
+                        {
+                            ui->selectedUnits.clear();
+                        }
+                        for (uint i=0; i<game->entities.size(); i++) 
+                        {
+                            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                            {
+                                if (unit->ownerId == playerId)
+                                {
+                                    if (selectionRectGameCoords.contains(sf::Vector2i(unit->pos.x, unit->pos.y)))
+                                    {
+                                        ui->selectedUnits.push_back(unit);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ui->maybeSelectionBoxStart = {};
+                }
+            }
+            break;
         case sf::Event::MouseButtonPressed:
             if (event.mouseButton.button == sf::Mouse::Left)
             {
@@ -262,14 +325,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                 {
                     case UI::Default:
                     {
-                        if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
-                        {
-                            if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
-                            {
-                                ui->selectedUnits.clear();
-                                ui->selectedUnits.push_back(clickedUnit);
-                            }
-                        }
+                        ui->maybeSelectionBoxStart = {vector2i(mouseButtonToVec(event.mouseButton))};
                     }
                     break;
                     case UI::Deposit:
