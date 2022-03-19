@@ -215,7 +215,7 @@ public:
 
 int main(int argc, char *argv[])
 {
-    bool fullscreen;
+    bool fullscreen = true;
     if (argc-1 == 1)
     {
         if (string(argv[1]) == "no-fullscreen")
