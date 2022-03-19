@@ -10,6 +10,7 @@ all: pre-build main-build
 clean:
 	rm cpp/obj/* -f
 	rm bin/* -rf
+	rm dist/* -rf
 
 prep-server:
 	mkdir -p bin/accounting
@@ -31,6 +32,7 @@ server: pre-build server-build prep-server
 pre-build:
 	mkdir -p cpp/obj
 	mkdir -p bin/
+	mkdir -p dist/
 
 main-build: server-build client-build bin/coinfight_local prep-server
 
@@ -38,6 +40,7 @@ server-build: bin/server
 
 client-build: bin/client bin/coinfight_local
 	cp assets/Andale_Mono.ttf bin/
+	cd package-assets/client && ./package.sh && mv coinfight-client.zip ../../dist/ && cd ../..
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
