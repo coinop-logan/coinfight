@@ -1,11 +1,11 @@
 #!/bin/bash
 
-rm -f coinfight-client.zip
+rm -f coinfight-client-linux.zip
 
-mkdir coinfight-client
-cp install.sh coinfight-client/
-cp ../../bin/Andale_Mono.ttf coinfight-client/
-cp ../../bin/client coinfight-client/coinfight
+mkdir coinfight-client-linux
+cp install.sh coinfight-client-linux/
+cp ../../bin/Andale_Mono.ttf coinfight-client-linux/
+cp ../../bin/client coinfight-client-linux/coinfight
 
-zip -r coinfight-client.zip coinfight-client
-rm -rf coinfight-client
+zip -r coinfight-client-linux.zip coinfight-client-linux
+rm -rf coinfight-client-linux

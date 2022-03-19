@@ -44,7 +44,7 @@ client-build: bin/client bin/coinfight_local
 	cp assets/Andale_Mono.ttf bin/
 
 package-client:
-	cd package-assets/client && ./package.sh && mv coinfight-client.zip ../../dist/ && cd ../..
+	cd package-assets/client && ./package.sh && mv coinfight-client-linux.zip ../../dist/ && cd ../..
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
