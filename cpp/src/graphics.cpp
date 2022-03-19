@@ -21,7 +21,7 @@ sf::RenderWindow* setupGraphics()
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
-    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Titlebar);
+    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", sf::Style::Close | sf::Style::Fullscreen );
     
     return window;
 }
