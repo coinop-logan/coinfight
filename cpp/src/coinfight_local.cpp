@@ -57,13 +57,22 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
 
 int main(int argc, char *argv[])
 {
-    if (argc-1 == 0)
+    if (argc-1 < 1)
     {
         cout << "Need an argument for how much money to put in for the honeypot!" << endl;
         return 1;
     }
     int honeypotStartingDollars = stoi(argv[1]);
     coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
+
+    bool fullscreen = true;
+    if (argc-1 == 2)
+    {
+        if (string(argv[2]) == "no-fullscreen")
+        {
+            fullscreen = false;
+        }
+    }
 
     game = Game();
 
@@ -78,7 +87,7 @@ int main(int argc, char *argv[])
         firstEvents[i]->execute(&game);
     }
 
-    sf::RenderWindow* window = setupGraphics();
+    sf::RenderWindow* window = setupGraphics(fullscreen);
 
     ui = UI();
     uint currentPlayerId = 0;

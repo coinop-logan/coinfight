@@ -39,7 +39,7 @@ struct ParticlesContainer
     void addLineParticle(boost::shared_ptr<LineParticle> lineParticle);
 };
 
-sf::RenderWindow* setupGraphics();
+sf::RenderWindow* setupGraphics(bool fullscreen);
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerId);
 void cleanupGraphics();
 

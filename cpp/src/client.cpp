@@ -213,8 +213,16 @@ public:
     }
 };
 
-int main()
+int main(int argc, char *argv[])
 {
+    bool fullscreen;
+    if (argc-1 == 1)
+    {
+        if (string(argv[1]) == "no-fullscreen")
+        {
+            fullscreen = false;
+        }
+    }
     boost::asio::io_service io_service;
     tcp::socket socket(io_service);
 
@@ -269,7 +277,7 @@ int main()
         }
     }
 
-    sf::RenderWindow* window = setupGraphics();
+    sf::RenderWindow* window = setupGraphics(fullscreen);
     
     ui = UI();
 
