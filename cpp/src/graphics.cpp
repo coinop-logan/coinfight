@@ -23,6 +23,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
 
     auto flags = fullscreen ? sf::Style::Close | sf::Style::Fullscreen : sf::Style::Close | sf::Style::Titlebar ;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", flags);
+    window->setKeyRepeatEnabled(false);
     
     return window;
 }

@@ -7,6 +7,8 @@
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
+const uint ESCAPE_TO_QUIT_TICKS = 90;
+
 const unsigned long MAX_COINS = UINT32_MAX;
 
 const int WINDOW_WIDTH = 1920;

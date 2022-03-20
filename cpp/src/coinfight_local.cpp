@@ -170,6 +170,12 @@ int main(int argc, char *argv[])
             }
 
             game.iterate();
+
+            ui.iterate();
+            if (ui.quitNow)
+            {
+                window->close();
+            }
         }
     }
 }

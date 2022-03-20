@@ -23,6 +23,8 @@ UI::UI()
         boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd())
     };
+    quitNow = false;
+    countdownToQuitOrNeg1 = -1;
 }
 
 void UI::updateAvailableUnitInterfaceCmds()
@@ -50,6 +52,29 @@ void UI::updateAvailableUnitInterfaceCmds()
                 notYetEnabled.erase(notYetEnabled.begin() + j);
                 j--;
             }
+        }
+    }
+}
+
+void UI::startEscapeToQuit()
+{
+    countdownToQuitOrNeg1 = ESCAPE_TO_QUIT_TICKS;
+}
+void UI::cancelEscapeToQuit()
+{
+    countdownToQuitOrNeg1 = -1;
+}
+void UI::iterate()
+{
+    if (countdownToQuitOrNeg1 >= 0)
+    {
+        if (countdownToQuitOrNeg1 == 0)
+        {
+            quitNow = true;
+        }
+        else
+        {
+            countdownToQuitOrNeg1 --;
         }
     }
 }
@@ -383,15 +408,29 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     {
                         ui->cmdState = UI::Default;
                     }
-                    else
+                    else if (ui->selectedUnits.size() > 0)
                     {
                         ui->selectedUnits.clear();
                     }
+                    else
+                    {
+                        ui->startEscapeToQuit();
+                    }
+                    break;
                 default:
                     vector<boost::shared_ptr<Cmd>> cmds = ui->handlePossibleUnitInterfaceCmd(event.key.code);
                     cmdsToSend.insert(cmdsToSend.begin(), cmds.begin(), cmds.end());
                     break;
             }
+            break;
+        case sf::Event::KeyReleased:
+            switch (event.key.code)
+            {
+                case sf::Keyboard::Escape:
+                    ui->cancelEscapeToQuit();
+                    break;
+            }
+            break;
         default:
             break;
         }

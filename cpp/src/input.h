@@ -36,9 +36,14 @@ struct UI
     vector<boost::shared_ptr<Unit>> selectedUnits;
     CameraState camera;
     vector<UnitInterfaceCmdWithState> interfaceCmdsWithState;
+    int countdownToQuitOrNeg1;
+    bool quitNow;
     int debugInt;
     void updateAvailableUnitInterfaceCmds();
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
+    void startEscapeToQuit();
+    void cancelEscapeToQuit();
+    void iterate();
 };
 vector2f screenPosToGamePos(CameraState, vector2i);
 vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos);
