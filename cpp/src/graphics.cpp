@@ -657,6 +657,44 @@ void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
     }
 }
 
+void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int countdownToQuitOrNeg1)
+{
+    sf::Text escapeQuitText("Hold Escape to quit.", mainFont, 40);
+    sf::Text extraText("This will automatically withdraw your balance", mainFont, 20);
+
+    int alpha = ((float)escapeTextCountdown / ESCAPE_TO_QUIT_TEXT_LIFE) * 255;
+    escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
+    extraText.setFillColor(sf::Color(255, 255, 255, alpha));
+
+    escapeQuitText.setPosition(30, 30);
+    extraText.setPosition(30, 90);
+
+    window->draw(escapeQuitText);
+    window->draw(extraText);
+
+    if (countdownToQuitOrNeg1 >= 0)
+    {
+        float fractionLeft = (1 - ((float)countdownToQuitOrNeg1 / ESCAPE_TO_QUIT_TICKS));
+        float progressBarMaxWidth = escapeQuitText.getGlobalBounds().width;
+        float progressBarWidth = fractionLeft * progressBarMaxWidth;
+        sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
+        sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
+        
+        progressBar.setPosition(30, 80);
+        maxProgressBar.setPosition(30, 80);
+
+        int white = ((1-fractionLeft) * 255);
+        sf::Color fillColor(255, white, white);
+
+        progressBar.setFillColor(fillColor);
+        maxProgressBar.setOutlineColor(sf::Color::White);
+        maxProgressBar.setOutlineThickness(1);
+        maxProgressBar.setFillColor(sf::Color::Transparent);
+        window->draw(progressBar);
+        window->draw(maxProgressBar);
+    }
+}
+
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
     window->clear();
@@ -742,6 +780,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     drawOutputStrings(window, outputStrings);
 
     drawHotkeyHelp(window, &ui);
+
+    if (ui.escapeTextCountdownOrNeg1 >= 0)
+    {
+        drawEscapeQuitText(window, (uint)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
+    }
 
     drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
     

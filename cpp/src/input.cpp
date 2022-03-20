@@ -25,6 +25,7 @@ UI::UI()
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
+    escapeTextCountdownOrNeg1 = -1;
 }
 
 void UI::updateAvailableUnitInterfaceCmds()
@@ -59,6 +60,7 @@ void UI::updateAvailableUnitInterfaceCmds()
 void UI::startEscapeToQuit()
 {
     countdownToQuitOrNeg1 = ESCAPE_TO_QUIT_TICKS;
+    escapeTextCountdownOrNeg1 = ESCAPE_TO_QUIT_TEXT_LIFE;
 }
 void UI::cancelEscapeToQuit()
 {
@@ -66,8 +68,14 @@ void UI::cancelEscapeToQuit()
 }
 void UI::iterate()
 {
-    if (countdownToQuitOrNeg1 >= 0)
+    if (countdownToQuitOrNeg1 < 0)
     {
+        escapeTextCountdownOrNeg1 --;
+    }
+    else
+    {
+        // if still counting down, reset display countdown
+        escapeTextCountdownOrNeg1 = ESCAPE_TO_QUIT_TEXT_LIFE;
         if (countdownToQuitOrNeg1 == 0)
         {
             quitNow = true;

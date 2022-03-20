@@ -38,6 +38,7 @@ struct UI
     vector<UnitInterfaceCmdWithState> interfaceCmdsWithState;
     int countdownToQuitOrNeg1;
     bool quitNow;
+    int escapeTextCountdownOrNeg1;
     int debugInt;
     void updateAvailableUnitInterfaceCmds();
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
