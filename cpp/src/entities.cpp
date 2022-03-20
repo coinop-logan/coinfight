@@ -2,6 +2,14 @@
 #include "engine.h"
 #include "entities.h"
 
+
+
+
+// ------- TARGET -------
+
+
+
+
 void Target::pack(vch *dest)
 {
     packToVch(dest, "C", (unsigned char)(type));
@@ -91,6 +99,14 @@ boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
         return boost::shared_ptr<Entity>();
 }
 
+
+
+
+// ------- MISC -------
+
+
+
+
 vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
 {
     vector<EntityRef> refs;
@@ -154,6 +170,14 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
         return Neutral;
     }
 }
+
+
+
+
+// ------- ENTITY -------
+
+
+
 
 unsigned char Entity::typechar()
 {
@@ -222,6 +246,14 @@ vector<Coins*> Entity::getDroppableCoins()
     throw runtime_error("getDroppableCoins has not been defined for " + getTypeName() + ".");
 }
 
+
+
+
+// ------- GOLDPILE -------
+
+
+
+
 vector<Coins*> GoldPile::getDroppableCoins()
 {
     return vector<Coins*>{&gold};
@@ -256,6 +288,14 @@ void GoldPile::go()
     if (gold.getInt() == 0)
         die();
 }
+
+
+
+
+// ------- UNIT -------
+
+
+
 
 vector<Coins*> Unit::getDroppableCoins()
 {
@@ -348,6 +388,14 @@ void Unit::takeHit(uint16_t damage)
 }
 uint16_t Unit::getHealth() { return health; }
 
+
+
+
+// ------- BUILDING -------
+
+
+
+
 void Building::packBuilding(vch *destVch)
 {
     packUnit(destVch);
@@ -367,6 +415,14 @@ void Building::buildingGo()
 {
     unitGo();
 }
+
+
+
+
+// ------- MOBILEUNIT -------
+
+
+
 
 void MobileUnit::packMobileUnit(vch *dest)
 {
@@ -450,6 +506,159 @@ void MobileUnit::cmdMove(vector2f pointTarget)
     setTarget(Target(pointTarget), 0);
     onMoveCmd(pointTarget);
 }
+
+
+
+
+// ------- GATEWAY -------
+
+
+
+
+unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
+string Gateway::getTypeName() { return "Gateway"; }
+coinsInt Gateway::getCost() { return GATEWAY_COST; }
+uint16_t Gateway::getMaxHealth() { return GATEWAY_HEALTH; }
+
+void Gateway::cmdBuildUnit(unsigned char unitTypechar)
+{
+    vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+    boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
+    switch (unitTypechar)
+    {
+        case PRIME_TYPECHAR:
+            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+            break;
+        case FIGHTER_TYPECHAR:
+            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+            break;
+        default:
+            cout << "Gateway doesn't know how to build that unit..." << endl;
+            break;
+    }
+    this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
+    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute;
+}
+void Gateway::cmdDepositTo(Target target)
+{
+    // if target is a point, check range and create goldPile
+    if (auto point = target.castToPoint())
+    {
+        if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        {
+            return;
+        }
+        boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
+        game->entities.push_back(goldpile);
+        target = Target(goldpile);
+    }
+    else if (auto entity = target.castToEntityPtr(*game))
+    {
+        maybeDepositingToEntity = entity;
+    }
+    else
+    {
+        cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
+    }
+}
+
+float Gateway::buildQueueWeight()
+{
+    if (!maybeDepositingToEntity)
+        return 0;
+    else
+        return 1;
+}
+
+void Gateway::pack(vch *dest)
+{
+    packBuilding(dest);
+}
+void Gateway::unpackAndMoveIter(vchIter *iter)
+{}
+
+Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
+    : Building(game, ref, ownerId, GATEWAY_COST, FIGHTER_COST, pos)
+{}
+Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+void Gateway::go()
+{
+    if (maybeDepositingToEntity)
+    {
+        // stop if it's out range
+        if ((maybeDepositingToEntity->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        {
+            maybeDepositingToEntity.reset();
+        }
+        else
+        {
+            Coins* maybeCoinsToDepositTo;
+            boost::shared_ptr<Unit> maybeBuildingUnit;
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(maybeDepositingToEntity))
+            {
+                maybeCoinsToDepositTo = &goldpile->gold;
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeDepositingToEntity))
+            {
+                if (unit->getBuiltRatio() < 1)
+                {
+                    maybeCoinsToDepositTo = &unit->goldInvested;
+                    maybeBuildingUnit = unit;
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                {
+                    maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
+                }
+                else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                {
+                    maybeCoinsToDepositTo = &prime->heldGold;
+                }
+            }
+
+            if (maybeCoinsToDepositTo)
+            {
+                coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
+                if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
+                {
+                    maybeDepositingToEntity.reset();
+                }
+                if (amountDeposited == 0)
+                {
+                    maybeDepositingToEntity.reset();
+                }
+            }
+        }
+    }
+    else
+    {
+        // search for units near enough to complete
+        float rangeSquared = pow(GATEWAY_RANGE, 2);
+        for (uint i=0; i<game->entities.size(); i++)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+            {
+                if (unit->ownerId == this->ownerId)
+                    if (unit->getBuiltRatio() < 1)
+                        if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
+                            {
+                                maybeDepositingToEntity = unit;
+                            }
+            }
+        }
+    }
+}
+
+
+
+
+// ------- PRIME -------
+
+
+
 
 void Prime::pack(vch *dest)
 {
@@ -690,6 +899,14 @@ vector<Coins*> Prime::getDroppableCoins()
     return vector<Coins*>{&goldInvested, &heldGold};
 }
 
+
+
+
+// ------- FIGHTER -------
+
+
+
+
 void Fighter::pack(vch *dest)
 {
     packMobileUnit(dest);
@@ -780,142 +997,11 @@ unsigned char Fighter::typechar() { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() { return "Fighter"; }
 
 
-unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
-string Gateway::getTypeName() { return "Gateway"; }
-coinsInt Gateway::getCost() { return GATEWAY_COST; }
-uint16_t Gateway::getMaxHealth() { return GATEWAY_HEALTH; }
 
-void Gateway::cmdBuildUnit(unsigned char unitTypechar)
-{
-    vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
-    boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
-    switch (unitTypechar)
-    {
-        case PRIME_TYPECHAR:
-            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
-            break;
-        case FIGHTER_TYPECHAR:
-            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
-            break;
-        default:
-            cout << "Gateway doesn't know how to build that unit..." << endl;
-            break;
-    }
-    this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute;
-}
-void Gateway::cmdDepositTo(Target target)
-{
-    // if target is a point, check range and create goldPile
-    if (auto point = target.castToPoint())
-    {
-        if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
-        {
-            return;
-        }
-        boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
-        game->entities.push_back(goldpile);
-        target = Target(goldpile);
-    }
-    else if (auto entity = target.castToEntityPtr(*game))
-    {
-        maybeDepositingToEntity = entity;
-    }
-    else
-    {
-        cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
-    }
-}
 
-float Gateway::buildQueueWeight()
-{
-    if (!maybeDepositingToEntity)
-        return 0;
-    else
-        return 1;
-}
+// ------- UNPACKENTITY -------
 
-void Gateway::pack(vch *dest)
-{
-    packBuilding(dest);
-}
-void Gateway::unpackAndMoveIter(vchIter *iter)
-{}
 
-Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
-    : Building(game, ref, ownerId, GATEWAY_COST, FIGHTER_COST, pos)
-{}
-Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
-{
-    unpackAndMoveIter(iter);
-}
-
-void Gateway::go()
-{
-    if (maybeDepositingToEntity)
-    {
-        // stop if it's out range
-        if ((maybeDepositingToEntity->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
-        {
-            maybeDepositingToEntity.reset();
-        }
-        else
-        {
-            Coins* maybeCoinsToDepositTo;
-            boost::shared_ptr<Unit> maybeBuildingUnit;
-            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(maybeDepositingToEntity))
-            {
-                maybeCoinsToDepositTo = &goldpile->gold;
-            }
-            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeDepositingToEntity))
-            {
-                if (unit->getBuiltRatio() < 1)
-                {
-                    maybeCoinsToDepositTo = &unit->goldInvested;
-                    maybeBuildingUnit = unit;
-                }
-                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
-                {
-                    maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
-                }
-                else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-                {
-                    maybeCoinsToDepositTo = &prime->heldGold;
-                }
-            }
-
-            if (maybeCoinsToDepositTo)
-            {
-                coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
-                if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
-                {
-                    maybeDepositingToEntity.reset();
-                }
-                if (amountDeposited == 0)
-                {
-                    maybeDepositingToEntity.reset();
-                }
-            }
-        }
-    }
-    else
-    {
-        // search for units near enough to complete
-        float rangeSquared = pow(GATEWAY_RANGE, 2);
-        for (uint i=0; i<game->entities.size(); i++)
-        {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
-            {
-                if (unit->ownerId == this->ownerId)
-                    if (unit->getBuiltRatio() < 1)
-                        if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
-                            {
-                                maybeDepositingToEntity = unit;
-                            }
-            }
-        }
-    }
-}
 
 
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref)
@@ -925,14 +1011,14 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
     case NULL_TYPECHAR:
         return boost::shared_ptr<Entity>();
         break;
+    case GOLDPILE_TYPECHAR:
+        return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
+        break;
     case GATEWAY_TYPECHAR:
         return boost::shared_ptr<Entity>(new Gateway(game, ref, iter));
         break;
     case PRIME_TYPECHAR:
         return boost::shared_ptr<Entity>(new Prime(game, ref, iter));
-        break;
-    case GOLDPILE_TYPECHAR:
-        return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
         break;
     case FIGHTER_TYPECHAR:
         return boost::shared_ptr<Entity>(new Fighter(game, ref, iter));

@@ -155,6 +155,28 @@ public:
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
+class Gateway : public Building
+{
+public:
+    boost::shared_ptr<Entity> maybeDepositingToEntity;
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos);
+    Gateway(Game *game, EntityRef ref, vchIter *iter);
+
+    void cmdBuildUnit(unsigned char unitTypechar);
+    void cmdDepositTo(Target target);
+    float buildQueueWeight();
+
+    unsigned char typechar();
+    string getTypeName();
+    coinsInt getCost();
+    uint16_t getMaxHealth();
+    void go();
+};
+
 class Prime : public MobileUnit
 {
 public:
@@ -237,28 +259,6 @@ public:
     void go();
 
     void shootAt(boost::shared_ptr<Unit> targetUnit);
-};
-
-class Gateway : public Building
-{
-public:
-    boost::shared_ptr<Entity> maybeDepositingToEntity;
-
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
-
-    Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos);
-    Gateway(Game *game, EntityRef ref, vchIter *iter);
-
-    void cmdBuildUnit(unsigned char unitTypechar);
-    void cmdDepositTo(Target target);
-    float buildQueueWeight();
-
-    unsigned char typechar();
-    string getTypeName();
-    coinsInt getCost();
-    uint16_t getMaxHealth();
-    void go();
 };
 
 #endif // ENTITIES_H
