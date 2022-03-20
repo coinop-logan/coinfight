@@ -1,0 +1,1 @@
+sudo apt install python3-pip libsfml-dev libboost-all-dev mesa-common-dev libglu1-mesa-dev
