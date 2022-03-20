@@ -26,9 +26,10 @@ const unsigned char PACKET_RESYNC_CHAR = 1;
 const unsigned char PACKET_FRAMECMDS_CHAR = 2;
 
 const unsigned char GOLDPILE_TYPECHAR = 1;
-const unsigned char PRIME_TYPECHAR = 2;
-const unsigned char GATEWAY_TYPECHAR = 3;
-const unsigned char FIGHTER_TYPECHAR = 4;
+const unsigned char BEACON_TYPECHAR = 2;
+const unsigned char FIGHTER_TYPECHAR = 3;
+const unsigned char PRIME_TYPECHAR = 4;
+const unsigned char GATEWAY_TYPECHAR = 5;
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
@@ -36,6 +37,14 @@ const float ENTITY_COLLIDE_RADIUS = 15;
 
 const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
+
+const coinsInt BEACON_COST = 0;
+const uint16_t BEACON_HEALTH = 100;
+
+const coinsInt GATEWAY_COST = 4000;
+const uint16_t GATEWAY_HEALTH = 1500;
+const float GATEWAY_RANGE = 150;
+const coinsInt GATEWAY_BUILD_RATE = 8;
 
 const coinsInt PRIME_COST = 500;
 const uint16_t PRIME_HEALTH = 100;
@@ -53,11 +62,6 @@ const int FIGHTER_SHOOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 
 const vector2f FIGHTER_SHOT_OFFSET(20, 10);
-
-const coinsInt GATEWAY_COST = 4000;
-const uint16_t GATEWAY_HEALTH = 2000;
-const float GATEWAY_RANGE = 150;
-const coinsInt GATEWAY_BUILD_RATE = 8;
 
 const float SPACE_BETWEEN_SPAWNS = 500;
 

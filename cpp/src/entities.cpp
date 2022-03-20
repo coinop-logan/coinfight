@@ -510,6 +510,37 @@ void MobileUnit::cmdMove(vector2f pointTarget)
 
 
 
+// ------- BEACON -------
+
+
+
+
+unsigned char Beacon::typechar() { return BEACON_TYPECHAR; }
+string Beacon::getTypeName() { return "Beacon"; }
+coinsInt Beacon::getCost() { return BEACON_COST; }
+uint16_t Beacon::getMaxHealth() { return BEACON_HEALTH; }
+
+void Beacon::pack(vch *dest)
+{
+    packBuilding(dest);
+}
+void Beacon::unpackAndMoveIter(vchIter *iter)
+{}
+
+Beacon::Beacon(Game *game, uint16_t ref, int ownerId, vector2f pos)
+    : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos)
+{}
+Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+void Beacon::go()
+{}
+
+
+
+
 // ------- GATEWAY -------
 
 
@@ -578,7 +609,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 {}
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
-    : Building(game, ref, ownerId, GATEWAY_COST, FIGHTER_COST, pos)
+    : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -1013,6 +1044,9 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
         break;
     case GOLDPILE_TYPECHAR:
         return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
+        break;
+    case BEACON_TYPECHAR:
+        return boost::shared_ptr<Entity>(new Beacon(game, ref, iter));
         break;
     case GATEWAY_TYPECHAR:
         return boost::shared_ptr<Entity>(new Gateway(game, ref, iter));

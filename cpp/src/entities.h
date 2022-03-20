@@ -155,6 +155,22 @@ public:
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
+class Beacon : public Building
+{
+public:
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos);
+    Beacon(Game *game, EntityRef ref, vchIter *iter);
+
+    unsigned char typechar();
+    string getTypeName();
+    coinsInt getCost();
+    uint16_t getMaxHealth();
+    void go();
+};
+
 class Gateway : public Building
 {
 public:
