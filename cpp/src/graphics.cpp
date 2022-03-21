@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,200);
+const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,255);
 const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
 const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
@@ -28,189 +28,224 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     return window;
 }
 
-void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
+void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2f drawPos)
 {
-    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
-    
-    sf::Color teamColor = entity->getTeamColor(); // may be modified later if unit is not yet active
-    sf::Color outlineColor(100, 100, 100);
-    float drawRotation = -entity->getRotation();
-
-    if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+    float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
+    float height = width * .4;
+    if (width > 1)
     {
-        float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
-        float height = width * .4;
-        if (width > 1)
-        {
-            sf::Color goldBottomColor(sf::Color(255, 180, 0));
-            sf::Color goldTopColor(sf::Color::Yellow);
+        sf::Color goldBottomColor(sf::Color(255, 180, 0));
+        sf::Color goldTopColor(sf::Color::Yellow);
 
-            sf::VertexArray diamond(sf::Quads, 4);
-            diamond[0].position = sf::Vector2f(width/2, 0);
-            diamond[1].position = sf::Vector2f(width/3, -height);
-            diamond[2].position = sf::Vector2f(-width/3, -height);
-            diamond[3].position = sf::Vector2f(-width/2, 0);
-            diamond[0].color = goldBottomColor;
-            diamond[1].color = goldTopColor;
-            diamond[2].color = goldTopColor;
-            diamond[3].color = goldBottomColor;
+        sf::VertexArray diamond(sf::Quads, 4);
+        diamond[0].position = sf::Vector2f(width/2, 0);
+        diamond[1].position = sf::Vector2f(width/3, -height);
+        diamond[2].position = sf::Vector2f(-width/3, -height);
+        diamond[3].position = sf::Vector2f(-width/2, 0);
+        diamond[0].color = goldBottomColor;
+        diamond[1].color = goldTopColor;
+        diamond[2].color = goldTopColor;
+        diamond[3].color = goldBottomColor;
 
-            sf::Transform transform;
-            transform.translate(drawPos.x, drawPos.y + height/2);
+        sf::Transform transform;
+        transform.translate(drawPos.x, drawPos.y + height/2);
 
-            window->draw(diamond, transform);
-        }
+        window->draw(diamond, transform);
     }
-    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+}
+
+const sf::Color unitOutlineColor(100, 100, 100);
+
+void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, uint alpha)
+{
+    sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
+
+    sf::Color fadedInnerOutlineColor(GATEWAY_INNEROUTLINE_COLOR.r, GATEWAY_INNEROUTLINE_COLOR.g, GATEWAY_INNEROUTLINE_COLOR.b, alpha);
+    sf::RectangleShape innerRect(sf::Vector2f(10, 10));
+    innerRect.setOrigin(5, 5);
+    innerRect.setFillColor(teamColorFaded);
+    innerRect.setOutlineColor(teamColor);
+    innerRect.setOutlineThickness(1.5);
+    innerRect.setRotation(45);
+    innerRect.setPosition(drawPos.x, drawPos.y);
+
+    window->draw(innerRect);
+}
+
+void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, uint alpha)
+{
+    sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
+
+    sf::CircleShape outerHex(15, 6);
+    outerHex.setOrigin(15, 15);
+    outerHex.setFillColor(fillColorFaded);
+    outerHex.setOutlineColor(unitOutlineColor);
+    outerHex.setOutlineThickness(1);
+    outerHex.setPosition(drawPos.x, drawPos.y);
+    outerHex.setRotation(90);
+
+    window->draw(outerHex);
+
+    drawBeacon(window, drawPos, teamColor, alpha);
+}
+
+void drawPrime(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, uint alpha)
+{
+    sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
+
+    sf::ConvexShape oneSide;
+    oneSide.setPointCount(3);
+
+    oneSide.setFillColor(fillColorFaded);
+    oneSide.setPosition(drawPos.x, drawPos.y);
+    oneSide.setRotation(radToDeg(rotation));
+
+    sf::Vector2f front = sf::Vector2f(12, 0);
+    sf::Vector2f back = sf::Vector2f(-4, 0);
+    sf::Vector2f right = sf::Vector2f(-12, 8);
+    sf::Vector2f left = sf::Vector2f(-12, -8);
+
+    // draw two triangles
+    oneSide.setPoint(1, front);
+    oneSide.setPoint(0, back);
+    oneSide.setPoint(2, right);
+    window->draw(oneSide);
+    oneSide.setPoint(2, left);
+    window->draw(oneSide);
+
+    // draw outline
+    sf::VertexArray lines(sf::LinesStrip, 5);
+    lines[0].position = front;
+    lines[1].position = right;
+    lines[2].position = back;
+    lines[3].position = left;
+    lines[4].position = front;
+    lines[0].color = unitOutlineColor;
+    lines[1].color = unitOutlineColor;
+    lines[2].color = unitOutlineColor;
+    lines[3].color = unitOutlineColor;
+    lines[4].color = unitOutlineColor;
+    sf::Transform transform;
+    transform.translate(drawPos.x, drawPos.y);
+    transform.rotate(radToDeg(rotation));
+    window->draw(lines, transform);
+}
+
+void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, uint alpha)
+{
+    sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
+
+    sf::ConvexShape oneSide;
+    oneSide.setPointCount(3);
+
+    oneSide.setFillColor(fillColorFaded);
+    oneSide.setPosition(drawPos.x, drawPos.y);
+    oneSide.setRotation(radToDeg(rotation));
+
+    sf::Vector2f front = sf::Vector2f(12, 0);
+    sf::Vector2f back = sf::Vector2f(-4, 0);
+    sf::Vector2f right = sf::Vector2f(-12, 16);
+    sf::Vector2f left = sf::Vector2f(-12, -16);
+
+    // draw two triangles
+    oneSide.setPoint(1, front);
+    oneSide.setPoint(0, back);
+    oneSide.setPoint(2, right);
+    window->draw(oneSide);
+    oneSide.setPoint(2, left);
+    window->draw(oneSide);
+
+    // draw gun barrels
+    sf::Color fadedBarrelColor(FIGHTER_BARREL_COLOR.r, FIGHTER_BARREL_COLOR.g, FIGHTER_BARREL_COLOR.b, alpha);
+    sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
+    gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
+    gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
+    gunBarrelPoints[2].position = sf::Vector2f(FIGHTER_SHOT_OFFSET.x, FIGHTER_SHOT_OFFSET.y);
+    gunBarrelPoints[0].color = fadedBarrelColor;
+    gunBarrelPoints[1].color = fadedBarrelColor;
+    gunBarrelPoints[2].color = fadedBarrelColor;
+
+    sf::Transform transform = sf::Transform();
+    transform.translate(drawPos.x, drawPos.y);
+    transform.rotate(radToDeg(rotation));
+    window->draw(gunBarrelPoints, transform);
+
+    gunBarrelPoints[0].position.y *= -1;
+    gunBarrelPoints[1].position.y *= -1;
+    gunBarrelPoints[2].position.y *= -1;
+    window->draw(gunBarrelPoints, transform);
+
+    // draw outline
+    sf::VertexArray lines(sf::LinesStrip, 5);
+    lines[0].position = front;
+    lines[1].position = right;
+    lines[2].position = back;
+    lines[3].position = left;
+    lines[4].position = front;
+    lines[0].color = unitOutlineColor;
+    lines[1].color = unitOutlineColor;
+    lines[2].color = unitOutlineColor;
+    lines[3].color = unitOutlineColor;
+    lines[4].color = unitOutlineColor;
+
+    transform = sf::Transform();
+    transform.translate(drawPos.x, drawPos.y);
+    transform.rotate(radToDeg(rotation));
+    window->draw(lines, transform);
+}
+
+void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f drawPos)
+{
+    sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
+    float drawRotation = -unit->getRotation();
+
+    uint fadedAlpha;
+    if (!unit->isActive())
     {
-        float fadedAlpha;
-        if (!unit->isActive())
-        {
-            fadedAlpha = unit->getBuiltRatio() * 0.8 * 255;
-        }
-        else
-        {
-            fadedAlpha = 255;
-        }
-        sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.b, fadedAlpha);
-
-        if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-        {
-            sf::ConvexShape oneSide;
-            oneSide.setPointCount(3);
-
-            oneSide.setFillColor(teamColorFaded);
-            oneSide.setPosition(drawPos.x, drawPos.y);
-            oneSide.setRotation(radToDeg(drawRotation));
-
-            sf::Vector2f front = sf::Vector2f(12, 0);
-            sf::Vector2f back = sf::Vector2f(-4, 0);
-            sf::Vector2f right = sf::Vector2f(-12, 8);
-            sf::Vector2f left = sf::Vector2f(-12, -8);
-
-            // draw two triangles
-            oneSide.setPoint(1, front);
-            oneSide.setPoint(0, back);
-            oneSide.setPoint(2, right);
-            window->draw(oneSide);
-            oneSide.setPoint(2, left);
-            window->draw(oneSide);
-
-            // draw outline
-            sf::VertexArray lines(sf::LinesStrip, 5);
-            lines[0].position = front;
-            lines[1].position = right;
-            lines[2].position = back;
-            lines[3].position = left;
-            lines[4].position = front;
-            lines[0].color = outlineColor;
-            lines[1].color = outlineColor;
-            lines[2].color = outlineColor;
-            lines[3].color = outlineColor;
-            lines[4].color = outlineColor;
-            sf::Transform transform;
-            transform.translate(drawPos.x, drawPos.y);
-            transform.rotate(radToDeg(drawRotation));
-            window->draw(lines, transform);
-        }
-        else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
-        {
-            sf::ConvexShape oneSide;
-            oneSide.setPointCount(3);
-
-            oneSide.setFillColor(teamColorFaded);
-            oneSide.setPosition(drawPos.x, drawPos.y);
-            oneSide.setRotation(radToDeg(drawRotation));
-
-            sf::Vector2f front = sf::Vector2f(12, 0);
-            sf::Vector2f back = sf::Vector2f(-4, 0);
-            sf::Vector2f right = sf::Vector2f(-12, 16);
-            sf::Vector2f left = sf::Vector2f(-12, -16);
-
-            // draw two triangles
-            oneSide.setPoint(1, front);
-            oneSide.setPoint(0, back);
-            oneSide.setPoint(2, right);
-            window->draw(oneSide);
-            oneSide.setPoint(2, left);
-            window->draw(oneSide);
-
-            // draw gun barrels
-            sf::Color fadedBarrelColor(FIGHTER_BARREL_COLOR.r, FIGHTER_BARREL_COLOR.g, FIGHTER_BARREL_COLOR.b, fadedAlpha);
-            sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
-            gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
-            gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
-            gunBarrelPoints[2].position = sf::Vector2f(FIGHTER_SHOT_OFFSET.x, FIGHTER_SHOT_OFFSET.y);
-            gunBarrelPoints[0].color = fadedBarrelColor;
-            gunBarrelPoints[1].color = fadedBarrelColor;
-            gunBarrelPoints[2].color = fadedBarrelColor;
-
-            sf::Transform transform = sf::Transform();
-            transform.translate(drawPos.x, drawPos.y);
-            transform.rotate(radToDeg(drawRotation));
-            window->draw(gunBarrelPoints, transform);
-
-            gunBarrelPoints[0].position.y *= -1;
-            gunBarrelPoints[1].position.y *= -1;
-            gunBarrelPoints[2].position.y *= -1;
-            window->draw(gunBarrelPoints, transform);
-
-            // draw outline
-            sf::VertexArray lines(sf::LinesStrip, 5);
-            lines[0].position = front;
-            lines[1].position = right;
-            lines[2].position = back;
-            lines[3].position = left;
-            lines[4].position = front;
-            lines[0].color = outlineColor;
-            lines[1].color = outlineColor;
-            lines[2].color = outlineColor;
-            lines[3].color = outlineColor;
-            lines[4].color = outlineColor;
-
-            transform = sf::Transform();
-            transform.translate(drawPos.x, drawPos.y);
-            transform.rotate(radToDeg(drawRotation));
-            window->draw(lines, transform);
-
-            
-        }
-        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
-        {
-            sf::CircleShape outerHex(15, 6);
-            outerHex.setOrigin(15, 15);
-            outerHex.setFillColor(teamColorFaded);
-            outerHex.setOutlineColor(outlineColor);
-            outerHex.setOutlineThickness(1);
-            outerHex.setPosition(drawPos.x, drawPos.y);
-            outerHex.setRotation(90);
-
-            window->draw(outerHex);
-
-            sf::Color fadedGatewayColor(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, fadedAlpha);
-            sf::Color fadedInnerOutlineColor(GATEWAY_INNEROUTLINE_COLOR.r, GATEWAY_INNEROUTLINE_COLOR.g, GATEWAY_INNEROUTLINE_COLOR.b, fadedAlpha);
-            sf::RectangleShape innerRect(sf::Vector2f(10, 10));
-            innerRect.setOrigin(5, 5);
-            innerRect.setFillColor(fadedGatewayColor);
-            innerRect.setOutlineColor(fadedInnerOutlineColor);
-            innerRect.setOutlineThickness(1.5);
-            innerRect.setRotation(45);
-            innerRect.setPosition(drawPos.x, drawPos.y);
-
-            window->draw(innerRect);
-            
-        }
-        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
-        {
-            
-        }
-        else {
-            throw runtime_error("No drawing code implemented for " + entity->getTypeName() + ".");
-        }
+        fadedAlpha = unit->getBuiltRatio() * 0.8 * 255;
     }
     else
     {
-        throw runtime_error("No drawing code implemented for " + entity->getTypeName() + ".");
+        fadedAlpha = 255;
+    }
+    sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.b, fadedAlpha);
+
+    if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+    {
+        drawBeacon(window, drawPos, teamColor, fadedAlpha);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        drawGateway(window, drawPos, teamColor, fadedAlpha);
+    }
+    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        drawPrime(window, drawPos, drawRotation, teamColor, fadedAlpha);
+    }
+    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
+    {
+        drawFighter(window, drawPos, drawRotation, teamColor, fadedAlpha);
+    }
+    else {
+        throw runtime_error("No drawing code implemented for unit " + unit->getTypeName() + ".");
+    }
+}
+
+void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
+{
+    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
+
+    if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+    {
+        drawGoldPile(window, goldPile, drawPos);
+    }
+    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+    {
+        drawUnit(window, unit, drawPos);
+    }
+    else
+    {
+        throw runtime_error("No drawing code implemented for entity " + entity->getTypeName() + ".");
     }
 }
 
