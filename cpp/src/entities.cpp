@@ -129,7 +129,7 @@ vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>> unitPtrs)
 
 boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game& game, EntityRef ref)
 {
-    if (ref == 0)
+    if (ref == NULL_ENTITYREF)
     {
         return boost::shared_ptr<Entity>();
     }
@@ -536,7 +536,10 @@ Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, it
 }
 
 void Beacon::go()
-{}
+{
+    // Beacon only has one job - turn into a Gateway!
+    // .. but I don't want to mess with self-destruction here. Handled in Game::iterate.
+}
 
 
 
@@ -568,7 +571,7 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
             break;
     }
     this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute;
+    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute->ref;
 }
 void Gateway::cmdDepositTo(Target target)
 {
@@ -583,9 +586,9 @@ void Gateway::cmdDepositTo(Target target)
         game->entities.push_back(goldpile);
         target = Target(goldpile);
     }
-    else if (auto entity = target.castToEntityPtr(*game))
+    else if (auto entityRef = target.castToEntityRef())
     {
-        maybeDepositingToEntity = entity;
+        maybeDepositingToEntity = *entityRef;
     }
     else
     {
@@ -618,22 +621,22 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 
 void Gateway::go()
 {
-    if (maybeDepositingToEntity)
+    if (boost::shared_ptr<Entity> depositingToEntityPtr = entityRefToPtrOrNull(*game, maybeDepositingToEntity))
     {
         // stop if it's out range
-        if ((maybeDepositingToEntity->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        if ((depositingToEntityPtr->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
         {
-            maybeDepositingToEntity.reset();
+            maybeDepositingToEntity = NULL_ENTITYREF;
         }
         else
         {
             Coins* maybeCoinsToDepositTo;
             boost::shared_ptr<Unit> maybeBuildingUnit;
-            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(maybeDepositingToEntity))
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(depositingToEntityPtr))
             {
                 maybeCoinsToDepositTo = &goldpile->gold;
             }
-            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeDepositingToEntity))
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(depositingToEntityPtr))
             {
                 if (unit->getBuiltRatio() < 1)
                 {
@@ -655,11 +658,11 @@ void Gateway::go()
                 coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
                 if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
                 {
-                    maybeDepositingToEntity.reset();
+                    maybeDepositingToEntity = NULL_ENTITYREF;
                 }
                 if (amountDeposited == 0)
                 {
-                    maybeDepositingToEntity.reset();
+                    maybeDepositingToEntity = NULL_ENTITYREF;
                 }
             }
         }
@@ -676,7 +679,7 @@ void Gateway::go()
                     if (unit->getBuiltRatio() < 1)
                         if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
                             {
-                                maybeDepositingToEntity = unit;
+                                maybeDepositingToEntity = unit->ref;
                             }
             }
         }

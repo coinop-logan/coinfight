@@ -174,7 +174,7 @@ public:
 class Gateway : public Building
 {
 public:
-    boost::shared_ptr<Entity> maybeDepositingToEntity;
+    EntityRef maybeDepositingToEntity;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);

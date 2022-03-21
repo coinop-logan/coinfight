@@ -200,8 +200,11 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
             window->draw(innerRect);
             
         }
-        else
+        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
         {
+            
+        }
+        else {
             throw runtime_error("No drawing code implemented for " + entity->getTypeName() + ".");
         }
     }
@@ -730,7 +733,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (gateway->maybeDepositingToEntity)
                     {
-                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeDepositingToEntity->ref), sf::Color::Yellow)));
+                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeDepositingToEntity), sf::Color::Yellow)));
                     }
                 }
             }

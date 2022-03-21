@@ -136,13 +136,8 @@ void Game::startMatch()
         vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
 
         // if you're going to change this, you should change neededCostPerPlayer above too!
-        boost::shared_ptr<Unit> gatewayUnit(new Gateway(this, getNextEntityRef(), i, spawnPos));
-        entities.push_back(gatewayUnit);
-        gatewayUnit->completeBuildingInstantly(&players[i].credit);
-
-        boost::shared_ptr<Unit> primeUnit(new Prime(this, getNextEntityRef(), i, spawnPos + vector2f(50, 50)));
-        entities.push_back(primeUnit);
-        primeUnit->completeBuildingInstantly(&players[i].credit);
+        boost::shared_ptr<Unit> beaconUnit(new Beacon(this, getNextEntityRef(), i, spawnPos));
+        entities.push_back(beaconUnit);
     }
 
     state = Active;
@@ -150,7 +145,7 @@ void Game::startMatch()
 
 void Game::startMatchOrPrintError()
 {
-    coinsInt neededCreditPerPlayer = PRIME_COST + GATEWAY_COST;
+    coinsInt neededCreditPerPlayer = BEACON_COST;
     for (uint i=0; i<players.size(); i++)
     {
         if (players[i].credit.getInt() < neededCreditPerPlayer)
@@ -181,7 +176,8 @@ void Game::iterate()
         case Pregame:
             break;
         case Active:
-            for (uint i = 0; i < entities.size(); i++)
+            // iterate all units
+            for (uint i=0; i<entities.size(); i++)
             {
                 if (entities[i])
                 {
@@ -195,7 +191,8 @@ void Game::iterate()
                 }
             }
 
-            for (uint i = 0; i < entities.size(); i++)
+            // clean up units that are ded
+            for (uint i=0; i<entities.size(); i++)
             {
                 if (entities[i] && entities[i]->dead)
                 {
@@ -210,6 +207,29 @@ void Game::iterate()
                         }
                     }
                     entities[i].reset();
+                }
+            }
+
+            // Build beacons and turn any completed Beacons into Gateways
+            for (uint i=0; i<entities.size(); i++)
+            {
+                if (entities[i])
+                {
+                    if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(entities[i]))
+                    {
+                        if (beacon->getBuiltRatio() < 1)
+                        {
+                            beacon->build(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
+                        }
+                        if (beacon->isActive())
+                        {
+                            boost::shared_ptr<Gateway> transformed(new Gateway(this, beacon->ref, beacon->ownerId, beacon->pos));
+                            transformed->completeBuildingInstantly(&beacon->goldInvested);
+                            // directly replace the entity pointer in entities
+                            // This way, any EntityRef pointing to the Beacon will now reference the gateway
+                            entities[i] = transformed;
+                        }
+                    }
                 }
             }
 
