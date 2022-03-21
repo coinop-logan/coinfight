@@ -74,6 +74,7 @@ void UI::cancelEscapeToQuit()
 }
 void UI::iterate()
 {
+    // quit countdown
     if (countdownToQuitOrNeg1 < 0)
     {
         escapeTextCountdownOrNeg1 --;
@@ -89,6 +90,21 @@ void UI::iterate()
         else
         {
             countdownToQuitOrNeg1 --;
+        }
+    }
+
+    // auto-select first gateway when done (also workaround related error when beacon transforms into gateway)
+    if (selectedUnits.size() != 0)
+    {
+        if (boost::shared_ptr<Beacon> beacon = boost::dynamic_pointer_cast<Beacon, Unit>(selectedUnits[0]))
+        {
+            // when the beacon finishes and transforms into a Gateway,
+            // this pointer will point to the "dead" beacon while one in game->entities will have changed
+            boost::shared_ptr<Entity> entityWhereBeaconWas = entityRefToPtrOrNull(game, beacon->ref);
+            if (entityWhereBeaconWas->typechar() == GATEWAY_TYPECHAR)
+            {
+                selectedUnits[0] = boost::dynamic_pointer_cast<Unit, Entity>(entityWhereBeaconWas);
+            }
         }
     }
 }
