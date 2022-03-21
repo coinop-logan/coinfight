@@ -765,7 +765,7 @@ void Prime::go()
     switch (state)
     {
     case Idle:
-        return;
+        break;
     case PickupGold:
         if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
         {
@@ -791,7 +791,7 @@ void Prime::go()
                 }
             }
         }
-        return;
+        break;
     case PutdownGold:
         if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
         {
@@ -863,7 +863,7 @@ void Prime::go()
                 }
             }
         }
-        return;
+        break;
     case Build:
         if (optional<vector2f> point = getTarget().castToPoint())
         {
@@ -917,9 +917,8 @@ void Prime::go()
             cout << "Can't cast that Target to a position OR an entity..." << endl;
             state = Idle;
         }
-        return;
+        break;
     }
-    throw logic_error("This case not handled in Prime::go()");
     mobileUnitGo();
 }
 
