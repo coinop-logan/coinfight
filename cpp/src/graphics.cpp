@@ -497,6 +497,9 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
                     drawNormalCursor(window);
                 }
                 break;
+            case UI::SpawnBeacon:
+                drawTargetCursor(window, mousePos, sf::Color::Yellow);
+                break;
             case UI::Deposit:
                 if (ui.mouseoverEntity)
                 {
@@ -603,7 +606,7 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines)
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines)
 {
     sf::Color mainColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
 
@@ -638,7 +641,13 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, UnitInterfaceCmdWith
     }
 }
 
-void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
+void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
+{
+    vector2i drawPos(HOTKEY_BOX_SPACING, WINDOW_HEIGHT - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
+    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Beacon"});
+}
+
+void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
 {
     const tuple<sf::Keyboard::Key, char, vector<string>> hotkeyInfo[] =
     {
@@ -669,12 +678,12 @@ void drawHotkeyHelp(sf::RenderWindow *window, UI *ui)
         char keyChar = get<1>(hotkeyInfo[i]);
         vector<string> cmdNameLines = get<2>(hotkeyInfo[i]);
 
-        UnitInterfaceCmdWithState* interfaceCmdWithState(NULL);
-        for (uint j=0; j<ui->interfaceCmdsWithState.size(); j++)
+        InterfaceCmdWithState* interfaceCmdWithState(NULL);
+        for (uint j=0; j<ui->unitInterfaceCmdsWithState.size(); j++)
         {
-            if (ui->interfaceCmdsWithState[j].interfaceCmd->getKey() == keyCode)
+            if (ui->unitInterfaceCmdsWithState[j].interfaceCmd->getKey() == keyCode)
             {
-                interfaceCmdWithState = &ui->interfaceCmdsWithState[j];
+                interfaceCmdWithState = &ui->unitInterfaceCmdsWithState[j];
                 break;
             }
         }
@@ -817,7 +826,19 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     drawOutputStrings(window, outputStrings);
 
-    drawHotkeyHelp(window, &ui);
+    bool playerOwnsUnits(false);
+    for (uint i=0; i<game->entities.size(); i++)
+    {
+        if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Ally)
+        {
+            playerOwnsUnits = true;
+            break;
+        }
+    }
+    if (playerOwnsUnits)
+        drawUnitHotkeyHelp(window, &ui);
+    else
+        drawSpawnBeaconHotkey(window, &ui);
 
     if (ui.escapeTextCountdownOrNeg1 >= 0)
     {

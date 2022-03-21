@@ -328,17 +328,22 @@ int main(int argc, char *argv[])
         // go through cmds
         for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
         {
-            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            auto cmd = fcp.authdCmds[i]->cmd;
+            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
             {
                 unitCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
             }
-            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
+            {
+                spawnBeaconCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+            }
+            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
             {
                 // ignore. Server processes withdrawals and creates an event.
             }
             else
             {
-                cout << "Woah, I don't know how to handle that event as a client!" << endl;
+                cout << "Woah, I don't know how to handle that cmd as a client!" << endl;
             }
         }
 

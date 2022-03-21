@@ -28,9 +28,10 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new PrimeBuildCmd(iter));
     case CMD_RESUMEBUILDING_CHAR:
         return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(iter));
-    default:
-        throw runtime_error("Trying to unpack an unrecognized cmd");
+    case CMD_SPAWNBEACON_CHAR:
+        return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(iter));
     }
+    throw runtime_error("Trying to unpack an unrecognized cmd");
 }
 
 AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress)
@@ -91,6 +92,45 @@ WithdrawCmd::WithdrawCmd(vchIter *iter)
 }
 
 
+unsigned char SpawnBeaconCmd::getTypechar()
+{
+    return CMD_SPAWNBEACON_CHAR;
+}
+string SpawnBeaconCmd::getTypename()
+{
+    return "SpawnBeaconCmd";
+}
+void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
+{
+    int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
+    if (playerId == -1)
+        return;
+        
+    if (!game->getHasPlayerUsedBeacon(playerId))
+    {
+        game->setHasPlayerUsedBeacon(playerId);
+        boost::shared_ptr<Beacon> beacon(new Beacon(game, game->getNextEntityRef(), playerId, this->pos));
+        game->entities.push_back(beacon);
+    }
+}
+void SpawnBeaconCmd::pack(vch *dest)
+{
+    packCmd(dest);
+    packVector2f(dest, pos);
+}
+void SpawnBeaconCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackVector2f(*iter, &pos);
+}
+SpawnBeaconCmd::SpawnBeaconCmd(vector2f pos)
+    : pos(pos)
+{}
+SpawnBeaconCmd::SpawnBeaconCmd(vchIter *iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+
 UnitCmd::UnitCmd(vector<EntityRef> unitRefs) : unitRefs(unitRefs) {}
 UnitCmd::UnitCmd(vchIter *iter)
 {
@@ -121,9 +161,9 @@ void UnitCmd::unpackUnitCmdAndMoveIter(vchIter *iter)
     }
 }
 
-void UnitCmd::executeAsPlayer(Game *game, string userAddress)
+void UnitCmd::executeAsPlayer(Game *game, string playerAddress)
 {
-    int playerId = game->playerAddressToIdOrNegativeOne(userAddress);
+    int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
     if (playerId == -1)
         return;
         

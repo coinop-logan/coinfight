@@ -16,16 +16,12 @@ boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter)
     {
     case NULL_TYPECHAR:
         return boost::shared_ptr<Event>();
-        break;
     case EVENT_BALANCEUPDATE_CHAR:
         return boost::shared_ptr<Event>(new BalanceUpdateEvent(iter));
-        break;
     case EVENT_HONEYPOT_CHAR:
         return boost::shared_ptr<Event>(new HoneypotAddedEvent(iter));
-        break;
-    default:
-        throw runtime_error("Trying to unpack an unrecognized event");
     }
+    throw runtime_error("Trying to unpack an unrecognized event");
 }
 
 unsigned char Event::typechar()

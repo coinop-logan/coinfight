@@ -612,7 +612,8 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 {}
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
-    : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos)
+    : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
+      maybeDepositingToEntity(NULL_ENTITYREF)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -764,7 +765,7 @@ void Prime::go()
     switch (state)
     {
     case Idle:
-        break;
+        return;
     case PickupGold:
         if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
         {
@@ -790,7 +791,7 @@ void Prime::go()
                 }
             }
         }
-        break;
+        return;
     case PutdownGold:
         if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
         {
@@ -862,7 +863,7 @@ void Prime::go()
                 }
             }
         }
-        break;
+        return;
     case Build:
         if (optional<vector2f> point = getTarget().castToPoint())
         {
@@ -916,10 +917,9 @@ void Prime::go()
             cout << "Can't cast that Target to a position OR an entity..." << endl;
             state = Idle;
         }
-        break;
-    default:
-        throw logic_error("This case not handled in Prime::go()");
+        return;
     }
+    throw logic_error("This case not handled in Prime::go()");
     mobileUnitGo();
 }
 
@@ -1060,7 +1060,6 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
     case FIGHTER_TYPECHAR:
         return boost::shared_ptr<Entity>(new Fighter(game, ref, iter));
         break;
-    default:
-        throw runtime_error("Trying to unpack an unrecognized entity");
     }
+    throw runtime_error("Trying to unpack an unrecognized entity");
 }

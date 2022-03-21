@@ -2,6 +2,25 @@
 
 vector<boost::shared_ptr<Cmd>> noCmds;
 
+sf::Keyboard::Key InterfaceCmd::getKey()
+{
+    throw runtime_error("getKey() has not been defined for this uxCmd.");
+}
+vector<boost::shared_ptr<Cmd>> InterfaceCmd::execute(UI *ui)
+{
+    throw runtime_error("execute() has not been defined for this uxCmd.");
+}
+
+sf::Keyboard::Key SpawnBeaconInterfaceCmd::getKey()
+{
+    return sf::Keyboard::B;
+}
+vector<boost::shared_ptr<Cmd>> SpawnBeaconInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::SpawnBeacon;
+    return noCmds;
+}
+
 sf::Keyboard::Key UnitInterfaceCmd::getKey()
 {
     throw runtime_error("getKey() has not been defined for this uxCmd.");
@@ -10,6 +29,7 @@ vector<boost::shared_ptr<Cmd>> UnitInterfaceCmd::execute(UI *ui)
 {
     throw runtime_error("execute() has not been defined for this uxCmd.");
 }
+
 bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     throw runtime_error("isUnitEligible() has not been defined for this uxCmd.");

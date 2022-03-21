@@ -10,7 +10,19 @@ using namespace std;
 
 struct UI; // defined in input.h
 
-struct UnitInterfaceCmd
+struct InterfaceCmd
+{
+    virtual sf::Keyboard::Key getKey();
+    virtual vector<boost::shared_ptr<Cmd>> execute(UI *ui);
+};
+
+struct SpawnBeaconInterfaceCmd : public InterfaceCmd
+{
+    sf::Keyboard::Key getKey();
+    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
+};
+
+struct UnitInterfaceCmd : public InterfaceCmd
 {
     virtual sf::Keyboard::Key getKey();
     virtual vector<boost::shared_ptr<Cmd>> execute(UI *ui);

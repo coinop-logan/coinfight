@@ -11,47 +11,53 @@ bool isShiftPressed()
 }
 
 UI::UI()
+    : spawnBeaconInterfaceCmdWithState(boost::shared_ptr<InterfaceCmd>(new SpawnBeaconInterfaceCmd))
 {
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
     cmdState = Default;
     maybeSelectionBoxStart = {};
-    interfaceCmdsWithState = vector<UnitInterfaceCmdWithState>
+    unitInterfaceCmdsWithState = vector<InterfaceCmdWithState>
     {
-        boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd())
+        boost::shared_ptr<InterfaceCmd>(new DepositInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd())
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
     escapeTextCountdownOrNeg1 = -1;
 }
 
-void UI::updateAvailableUnitInterfaceCmds()
+void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 {
+    spawnBeaconInterfaceCmdWithState.eligible = spawnBeaconAvailable;
+
     // set all to false, and create a list of pointers to track those we've yet to enable
-    vector<UnitInterfaceCmdWithState*> notYetEnabled;
-    for (uint i=0; i<interfaceCmdsWithState.size(); i++)
+    vector<InterfaceCmdWithState*> notYetEnabledUnitInterfaceCmds;
+    for (uint i=0; i<unitInterfaceCmdsWithState.size(); i++)
     {
-        interfaceCmdsWithState[i].eligible = false;
-        notYetEnabled.push_back(&interfaceCmdsWithState[i]);
+        unitInterfaceCmdsWithState[i].eligible = false;
+        notYetEnabledUnitInterfaceCmds.push_back(&unitInterfaceCmdsWithState[i]);
     }
     
     for (uint i=0; i<selectedUnits.size(); i++)
     {
         // if we've enabled all cmds, no need to keep looking
-        if (notYetEnabled.size() == 0)
+        if (notYetEnabledUnitInterfaceCmds.size() == 0)
             break;
         
-        for (uint j=0; j<notYetEnabled.size(); j++)
+        for (uint j=0; j<notYetEnabledUnitInterfaceCmds.size(); j++)
         {
-            if (notYetEnabled[j]->interfaceCmd->isUnitEligible(selectedUnits[i]))
+            if (auto unitInterfaceCmd = boost::dynamic_pointer_cast<UnitInterfaceCmd, InterfaceCmd>(notYetEnabledUnitInterfaceCmds[j]->interfaceCmd))
             {
-                // enable it and remove this pointer from the list
-                notYetEnabled[j]->eligible = true;
-                notYetEnabled.erase(notYetEnabled.begin() + j);
-                j--;
+                if (unitInterfaceCmd->isUnitEligible(selectedUnits[i]))
+                {
+                    // enable it and remove this pointer from the list
+                    notYetEnabledUnitInterfaceCmds[j]->eligible = true;
+                    notYetEnabledUnitInterfaceCmds.erase(notYetEnabledUnitInterfaceCmds.begin() + j);
+                    j--;
+                }
             }
         }
     }
@@ -89,11 +95,14 @@ void UI::iterate()
 
 vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
 {
-    for (uint i=0; i<interfaceCmdsWithState.size(); i++)
+    if (spawnBeaconInterfaceCmdWithState.eligible && spawnBeaconInterfaceCmdWithState.interfaceCmd->getKey() == key)
+        return {spawnBeaconInterfaceCmdWithState.interfaceCmd->execute(this)};
+
+    for (uint i=0; i<unitInterfaceCmdsWithState.size(); i++)
     {
-        if (interfaceCmdsWithState[i].eligible && interfaceCmdsWithState[i].interfaceCmd->getKey() == key)
+        if (unitInterfaceCmdsWithState[i].eligible && unitInterfaceCmdsWithState[i].interfaceCmd->getKey() == key)
         {
-            return {interfaceCmdsWithState[i].interfaceCmd->execute(this)};
+            return {unitInterfaceCmdsWithState[i].interfaceCmd->execute(this)};
         }
     }
 
@@ -264,7 +273,10 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
 
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, int playerId, sf::RenderWindow *window)
 {
-    ui->updateAvailableUnitInterfaceCmds();
+    bool spawnBeaconAvailable =
+        ((!game->getHasPlayerUsedBeacon(playerId)) && game->players[playerId].credit.getInt() >= BEACON_COST);
+
+    ui->updateAvailableUnitInterfaceCmds(spawnBeaconAvailable);
 
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
@@ -361,6 +373,14 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         ui->maybeSelectionBoxStart = {vector2i(mouseButtonToVec(event.mouseButton))};
                     }
                     break;
+                    case UI::SpawnBeacon:
+                    {
+                        vector2f spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
+
+                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
+                        ui->cmdState = UI::Default;
+                    }
+                    break;
                     case UI::Deposit:
                     {
                         Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
@@ -436,6 +456,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
             {
                 case sf::Keyboard::Escape:
                     ui->cancelEscapeToQuit();
+                    break;
+                default:
                     break;
             }
             break;

@@ -42,7 +42,7 @@ void Player::unpackAndMoveIter(vchIter *iter)
 }
 
 Player::Player(string address)
-    : address(address), credit() {}
+    : address(address), credit(), hasUsedBeacon(false) {}
 
 Player::Player(vchIter *iter)
 {
@@ -63,6 +63,14 @@ int Game::playerAddressToIdOrNegativeOne(string address)
 string Game::playerIdToAddress(uint playerId)
 {
     return players[playerId].address;
+}
+bool Game::getHasPlayerUsedBeacon(uint playerId)
+{
+    return players[playerId].hasUsedBeacon;
+}
+void Game::setHasPlayerUsedBeacon(uint playerId)
+{
+    players[playerId].hasUsedBeacon = true;
 }
 
 void Game::pack(vch *dest)
@@ -127,18 +135,18 @@ Game::Game(vchIter *iter)
 
 void Game::startMatch()
 {
-    float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
-    float spawnCircleRadius = spawnCircleCircumference / 2;
-    for (uint i=0; i<players.size(); i++)
-    {
-        float positionAlongCircumference = ((float)i)/players.size();
-        float spawnAngle = positionAlongCircumference * 2 * M_PI;
-        vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
+    // float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
+    // float spawnCircleRadius = spawnCircleCircumference / 2;
+    // for (uint i=0; i<players.size(); i++)
+    // {
+    //     float positionAlongCircumference = ((float)i)/players.size();
+    //     float spawnAngle = positionAlongCircumference * 2 * M_PI;
+    //     vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
 
-        // if you're going to change this, you should change neededCostPerPlayer above too!
-        boost::shared_ptr<Unit> beaconUnit(new Beacon(this, getNextEntityRef(), i, spawnPos));
-        entities.push_back(beaconUnit);
-    }
+    //     // if you're going to change this, you should change neededCostPerPlayer above too!
+    //     boost::shared_ptr<Unit> beaconUnit(new Beacon(this, getNextEntityRef(), i, spawnPos));
+    //     entities.push_back(beaconUnit);
+    // }
 
     state = Active;
 }

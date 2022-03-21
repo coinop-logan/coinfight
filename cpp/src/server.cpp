@@ -509,13 +509,18 @@ int main(int argc, char *argv[])
         // execute all cmds on server-side game
         for (unsigned int i = 0; i < pendingCmds.size(); i++)
         {
-            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            auto cmd = pendingCmds[i]->cmd;
+            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
             {
-                unitCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+                unitCmd->executeAsPlayer(&game, pendingCmds[i]->playerAddress);
             }
-            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(fcp.authdCmds[i]->cmd))
+            else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
             {
-                int playerId = game.playerAddressToIdOrNegativeOne(fcp.authdCmds[i]->playerAddress);
+                spawnBeaconCmd->executeAsPlayer(&game, pendingCmds[i]->playerAddress);
+            }
+            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(pendingCmds[i]->cmd))
+            {
+                int playerId = game.playerAddressToIdOrNegativeOne(pendingCmds[i]->playerAddress);
                 if (playerId < 0)
                 {
                     cout << "Woah, getting a negative playerId when processing a withdraw cmd..." << endl;
@@ -525,7 +530,11 @@ int main(int argc, char *argv[])
                 coinsInt withdrawSpecified = withdrawCmd->amount > 0 ? withdrawCmd->amount : game.players[playerId].credit.getInt();
                 coinsInt amountToWithdraw = min(withdrawSpecified, game.players[playerId].credit.getInt());
 
-                pendingWithdrawEvents.push_back(WithdrawEvent(fcp.authdCmds[i]->playerAddress, amountToWithdraw));
+                pendingWithdrawEvents.push_back(WithdrawEvent(pendingCmds[i]->playerAddress, amountToWithdraw));
+            }
+            else
+            {
+                cout << "Woah, I don't know how to handle that cmd as a server!" << endl;
             }
         }
         pendingCmds.clear();

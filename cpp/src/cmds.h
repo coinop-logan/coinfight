@@ -22,6 +22,7 @@ const unsigned char CMD_WITHDRAW_CHAR = 4;
 const unsigned char CMD_ATTACK_CHAR = 5;
 const unsigned char CMD_PRIMEBUILD_CHAR = 6;
 const unsigned char CMD_RESUMEBUILDING_CHAR = 7;
+const unsigned char CMD_SPAWNBEACON_CHAR = 8;
 
 struct Cmd
 {
@@ -55,6 +56,21 @@ struct WithdrawCmd : public Cmd
 
     WithdrawCmd(coinsInt amount);
     WithdrawCmd(vchIter *iter);
+};
+
+struct SpawnBeaconCmd : public Cmd
+{
+    vector2f pos;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    void executeAsPlayer(Game* game, string playerAddress);
+
+    SpawnBeaconCmd(vector2f pos);
+    SpawnBeaconCmd(vchIter *iter);
 };
 
 boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter);

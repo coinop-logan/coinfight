@@ -159,13 +159,22 @@ int main(int argc, char *argv[])
             // now execute all authd cmds
             for (uint i=0; i<authdCmds.size(); i++)
             {
-                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(authdCmds[i]->cmd))
+                auto cmd = authdCmds[i]->cmd;
+                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
                 {
                     unitCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
                 }
-                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(authdCmds[i]->cmd))
+                else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
                 {
-                    // ignore for the purposes of this local binary
+                    spawnBeaconCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
+                }
+                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
+                {
+                    // ignore. Server processes withdrawals and creates an event.
+                }
+                else
+                {
+                    cout << "Woah, I don't know how to handle that cmd!" << endl;
                 }
             }
 

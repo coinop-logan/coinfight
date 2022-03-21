@@ -6,18 +6,18 @@
 #include "cmds.h"
 #include "unit_interface_cmds.h"
 
-struct UnitInterfaceCmd; // defined in unit_interface_cmds.h
+struct InterfaceCmd; // defined in unit_interface_cmds.h
 
 struct CameraState
 {
     vector2i gamePos;
 };
 
-struct UnitInterfaceCmdWithState
+struct InterfaceCmdWithState
 {
     bool eligible;
-    boost::shared_ptr<UnitInterfaceCmd> interfaceCmd;
-    UnitInterfaceCmdWithState(boost::shared_ptr<UnitInterfaceCmd> interfaceCmd)
+    boost::shared_ptr<InterfaceCmd> interfaceCmd;
+    InterfaceCmdWithState(boost::shared_ptr<InterfaceCmd> interfaceCmd)
         : eligible(false), interfaceCmd(interfaceCmd) {}
 };
 
@@ -28,6 +28,7 @@ struct UI
     boost::shared_ptr<Building> ghostBuilding;
     enum CmdState {
         Default,
+        SpawnBeacon,
         Deposit,
         Build
     } cmdState;
@@ -35,12 +36,13 @@ struct UI
     optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;
     CameraState camera;
-    vector<UnitInterfaceCmdWithState> interfaceCmdsWithState;
+    vector<InterfaceCmdWithState> unitInterfaceCmdsWithState;
+    InterfaceCmdWithState spawnBeaconInterfaceCmdWithState;
     int countdownToQuitOrNeg1;
     bool quitNow;
     int escapeTextCountdownOrNeg1;
     int debugInt;
-    void updateAvailableUnitInterfaceCmds();
+    void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     void startEscapeToQuit();
     void cancelEscapeToQuit();
