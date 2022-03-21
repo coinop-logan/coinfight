@@ -233,8 +233,6 @@ void Game::iterate()
                         {
                             boost::shared_ptr<Gateway> transformed(new Gateway(this, beacon->ref, beacon->ownerId, beacon->pos));
                             transformed->completeBuildingInstantly(&beacon->goldInvested);
-                            // directly replace the entity pointer in entities
-                            // This way, any EntityRef pointing to the Beacon will now reference the gateway
                             entities[i] = transformed;
                         }
                     }
