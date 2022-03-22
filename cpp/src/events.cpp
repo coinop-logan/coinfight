@@ -130,7 +130,7 @@ void HoneypotAddedEvent::execute(Game *game)
         game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
         game->entities.push_back(game->honeypotGoldPileIfGameStarted);
 
-        game->startMatchOrPrintError();
+        // game->startMatchOrPrintError();
     }
 }
 

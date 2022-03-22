@@ -63,8 +63,8 @@ public:
 
     Game();
     Game(vchIter *);
-    void startMatch();
-    void startMatchOrPrintError();
+    // void startMatch();
+    // void startMatchOrPrintError();
 
     void reassignEntityGamePointers();
 

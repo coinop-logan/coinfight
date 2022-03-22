@@ -133,46 +133,46 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() : state(Pregame), frame(0) {}
+Game::Game() : state(Active), frame(0) {}
 Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);
 }
 
-void Game::startMatch()
-{
-    // float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
-    // float spawnCircleRadius = spawnCircleCircumference / 2;
-    // for (uint i=0; i<players.size(); i++)
-    // {
-    //     float positionAlongCircumference = ((float)i)/players.size();
-    //     float spawnAngle = positionAlongCircumference * 2 * M_PI;
-    //     vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
+// void Game::startMatch()
+// {
+//     // float spawnCircleCircumference = SPACE_BETWEEN_SPAWNS * players.size();
+//     // float spawnCircleRadius = spawnCircleCircumference / 2;
+//     // for (uint i=0; i<players.size(); i++)
+//     // {
+//     //     float positionAlongCircumference = ((float)i)/players.size();
+//     //     float spawnAngle = positionAlongCircumference * 2 * M_PI;
+//     //     vector2f spawnPos = composeVector2f(spawnAngle, spawnCircleRadius);
 
-    //     // if you're going to change this, you should change neededCostPerPlayer above too!
-    //     boost::shared_ptr<Unit> beaconUnit(new Beacon(this, getNextEntityRef(), i, spawnPos));
-    //     entities.push_back(beaconUnit);
-    // }
+//     //     // if you're going to change this, you should change neededCostPerPlayer above too!
+//     //     boost::shared_ptr<Unit> beaconUnit(new Beacon(this, getNextEntityRef(), i, spawnPos));
+//     //     entities.push_back(beaconUnit);
+//     // }
 
-    state = Active;
-}
+//     state = Active;
+// }
 
-void Game::startMatchOrPrintError()
-{
-    coinsInt neededCreditPerPlayer = BEACON_COST;
-    for (uint i=0; i<players.size(); i++)
-    {
-        if (players[i].credit.getInt() < neededCreditPerPlayer)
-        {
-            cout << "Player " << players[i].address << " doesn't have enough credit! They currently have " << players[i].credit.getInt() << " but they need " << neededCreditPerPlayer << "." << endl;
-            return;            
-        }
-    }
+// void Game::startMatchOrPrintError()
+// {
+//     coinsInt neededCreditPerPlayer = BEACON_COST;
+//     for (uint i=0; i<players.size(); i++)
+//     {
+//         if (players[i].credit.getInt() < neededCreditPerPlayer)
+//         {
+//             cout << "Player " << players[i].address << " doesn't have enough credit! They currently have " << players[i].credit.getInt() << " but they need " << neededCreditPerPlayer << "." << endl;
+//             return;            
+//         }
+//     }
 
-    startMatch();
+//     startMatch();
     
-    cout << "game starting!" << endl;
-}
+//     cout << "game starting!" << endl;
+// }
 
 void Game::reassignEntityGamePointers()
 {
