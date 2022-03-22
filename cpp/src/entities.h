@@ -181,6 +181,12 @@ public:
         Scuttle
     } state;
 
+    enum GoldTransferState {
+        None,
+        Pushing,
+        Pulling
+    } goldTransferState;
+
     EntityRef maybeTargetEntity;
 
     void pack(vch *dest);

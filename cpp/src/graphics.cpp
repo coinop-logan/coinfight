@@ -787,25 +787,24 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
                     {
-                        #warning need to redesign how Gateway creates particles. Do like in Prime.
-                        // switch (gateway->state)
-                        // {
-                        //     case Gateway::Idle:
-                        //     {
-                        //         // no particles needed
-                        //     }
-                        //     break;
-                        //     case Gateway::DepositTo:
-                        //     {
-                        //         particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
-                        //     }
-                        //     break;
-                        //     case Gateway::Scuttle:
-                        //     {
-                        //         particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
-                        //     }
-                        //     break;
-                        // }
+                        switch (gateway->goldTransferState)
+                        {
+                            case Gateway::None:
+                            {
+                                // no particles needed
+                            }
+                            break;
+                            case Gateway::Pushing:
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
+                            }
+                            break;
+                            case Gateway::Pulling:
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
+                            }
+                            break;
+                        }
                     }
                 }
             }

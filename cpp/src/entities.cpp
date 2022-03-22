@@ -669,6 +669,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
     : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
+      state(Idle), goldTransferState(None),
       maybeTargetEntity(NULL_ENTITYREF)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
@@ -678,6 +679,7 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 
 void Gateway::go()
 {
+    goldTransferState = None;
     switch (state)
     {
         case Idle:
@@ -747,6 +749,10 @@ void Gateway::go()
                             state = Idle;
                             maybeTargetEntity = NULL_ENTITYREF;
                         }
+                        if (amountDeposited > 0)
+                        {
+                            goldTransferState = Pushing;
+                        }
                     }
                 }
             }
@@ -780,7 +786,16 @@ void Gateway::go()
                 }
                 else
                 {
-                    unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    int amountUnbuilt = unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    if (amountUnbuilt > 0)
+                    {
+                        goldTransferState = Pulling;
+                    }
+                    else
+                    {
+                        state = Idle;
+                        maybeTargetEntity = NULL_ENTITYREF;
+                    }
                 }
             }
         }
