@@ -96,25 +96,3 @@ bool PrimeBuildGatewayInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR);
 }
-
-// case sf::Keyboard::D:
-//     if (filterForType<Prime, Entity>(ui->selectedEntities).size() > 0)
-//     {
-//         ui->cmdState = UI::Deposit;
-//     }
-//     break;
-// case sf::Keyboard::Q:
-//     if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, PRIME_TYPECHAR))
-//         cmdsToSend.push_back(cmd);
-//     break;
-// case sf::Keyboard::W:
-//     if (auto cmd = makeGatewayBuildCmd(ui->selectedEntities, FIGHTER_TYPECHAR))
-//         cmdsToSend.push_back(cmd);
-//     break;
-// case sf::Keyboard::E:
-//     if (filterForType<Prime, Entity>(ui->selectedEntities).size() > 0)
-//     {
-//         ui->cmdState = UI::Build;
-//         ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(game, 0, playerId, vector2f(0,0)));
-//     }
-//     break;
