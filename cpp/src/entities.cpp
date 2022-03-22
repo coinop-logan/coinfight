@@ -547,8 +547,32 @@ Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, it
 
 void Beacon::go()
 {
-    // Beacon logic is handled in Game::iterate, since like me it deals with
-    // self-destruction and self-transformation
+    switch (state)
+    {
+        case Spawning:
+        {
+            build(BEACON_BUILD_RATE, &game->players[ownerId].credit);
+
+            if (isActive())
+            {
+                boost::shared_ptr<Gateway> transformed(new Gateway(game, this->ref, this->ownerId, this->pos));
+                transformed->completeBuildingInstantly(&this->goldInvested);
+                game->killAndReplaceEntity(this->ref, transformed);
+            }
+        }
+        break;
+        case Despawning:
+        {
+            unbuild(BEACON_BUILD_RATE, &game->players[ownerId].credit);
+
+            if (this->getBuilt() == 0)
+            {
+                game->players[this->ownerId].beaconAvailable = true;
+                die();
+            }
+        }
+        break;
+    }
 }
 
 

@@ -863,11 +863,12 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     bool playerOwnsUnits(false);
     for (uint i=0; i<game->entities.size(); i++)
     {
-        if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
-        {
-            playerOwnsUnits = true;
-            break;
-        }
+        if (game->entities[i])
+            if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
+            {
+                playerOwnsUnits = true;
+                break;
+            }
     }
     if (playerOwnsUnits)
         drawUnitHotkeyHelp(window, &ui);

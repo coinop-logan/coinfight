@@ -197,7 +197,7 @@ void Game::iterate()
                 {
                     if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
                     {
-                        if (unit->isActive())
+                        if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
                             unit->go();
                     }
                     else
@@ -221,43 +221,6 @@ void Game::iterate()
                         }
                     }
                     entities[i].reset();
-                }
-            }
-
-            // Build/debuild beacons and transform/kill them
-            for (uint i=0; i<entities.size(); i++)
-            {
-                if (entities[i])
-                {
-                    if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(entities[i]))
-                    {
-                        switch (beacon->state)
-                        {
-                            case Beacon::Spawning:
-                            {
-                                beacon->build(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
-
-                                if (beacon->isActive())
-                                {
-                                    boost::shared_ptr<Gateway> transformed(new Gateway(this, beacon->ref, beacon->ownerId, beacon->pos));
-                                    transformed->completeBuildingInstantly(&beacon->goldInvested);
-                                    entities[i] = transformed;
-                                }
-                            }
-                            break;
-                            case Beacon::Despawning:
-                            {
-                                beacon->unbuild(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
-
-                                if (beacon->getBuilt() == 0)
-                                {
-                                    players[beacon->ownerId].beaconAvailable = true;
-                                    beacon->die();
-                                }
-                            }
-                            break;
-                        }
-                    }
                 }
             }
 
