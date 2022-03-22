@@ -573,7 +573,6 @@ void Beacon::go()
 
             if (this->getBuilt() == 0)
             {
-                game->players[this->ownerId].beaconAvailable = true;
                 die();
             }
         }
@@ -714,7 +713,7 @@ float Gateway::buildQueueWeight()
 void Gateway::pack(vch *dest)
 {
     packBuilding(dest);
-    
+
     packToVch(dest, "C", (unsigned char)(state));
 
     packEntityRef(dest, maybeTargetEntity);
