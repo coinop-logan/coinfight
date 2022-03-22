@@ -73,6 +73,12 @@ void Game::setPlayerBeaconAvailable(uint playerId, bool flag)
     players[playerId].beaconAvailable = flag;
 }
 
+void Game::killAndReplaceEntity(EntityRef ref, boost::shared_ptr<Entity> newEntity)
+{
+    entities[ref-1]->die();
+    entities[ref-1] = newEntity;
+}
+
 void Game::pack(vch *dest)
 {
     packToVch(dest, "C", (unsigned char)(state));
@@ -218,22 +224,38 @@ void Game::iterate()
                 }
             }
 
-            // Build beacons and turn any completed Beacons into Gateways
+            // Build/debuild beacons and transform/kill them
             for (uint i=0; i<entities.size(); i++)
             {
                 if (entities[i])
                 {
                     if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(entities[i]))
                     {
-                        if (beacon->getBuiltRatio() < 1)
+                        switch (beacon->state)
                         {
-                            beacon->build(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
-                        }
-                        if (beacon->isActive())
-                        {
-                            boost::shared_ptr<Gateway> transformed(new Gateway(this, beacon->ref, beacon->ownerId, beacon->pos));
-                            transformed->completeBuildingInstantly(&beacon->goldInvested);
-                            entities[i] = transformed;
+                            case Beacon::Spawning:
+                            {
+                                beacon->build(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
+
+                                if (beacon->isActive())
+                                {
+                                    boost::shared_ptr<Gateway> transformed(new Gateway(this, beacon->ref, beacon->ownerId, beacon->pos));
+                                    transformed->completeBuildingInstantly(&beacon->goldInvested);
+                                    entities[i] = transformed;
+                                }
+                            }
+                            break;
+                            case Beacon::Despawning:
+                            {
+                                beacon->unbuild(BEACON_BUILD_RATE, &players[beacon->ownerId].credit);
+
+                                if (beacon->getBuilt() == 0)
+                                {
+                                    players[beacon->ownerId].beaconAvailable = true;
+                                    beacon->die();
+                                }
+                            }
+                            break;
                         }
                     }
                 }

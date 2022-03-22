@@ -159,10 +159,15 @@ public:
 class Beacon : public Building
 {
 public:
+    enum State {
+        Spawning,
+        Despawning
+    } state;
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos);
+    Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos, State state);
     Beacon(Game *game, EntityRef ref, vchIter *iter);
 
     unsigned char typechar();

@@ -56,6 +56,8 @@ public:
     bool getPlayerBeaconAvailable(uint playerId);
     void setPlayerBeaconAvailable(uint playerId, bool flag);
 
+    void killAndReplaceEntity(EntityRef, boost::shared_ptr<Entity> newEntity);
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 

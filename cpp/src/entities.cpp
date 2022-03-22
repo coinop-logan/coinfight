@@ -536,8 +536,9 @@ void Beacon::pack(vch *dest)
 void Beacon::unpackAndMoveIter(vchIter *iter)
 {}
 
-Beacon::Beacon(Game *game, uint16_t ref, int ownerId, vector2f pos)
-    : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos)
+Beacon::Beacon(Game *game, uint16_t ref, int ownerId, vector2f pos, State state)
+    : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos),
+      state(state)
 {}
 Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -546,8 +547,8 @@ Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, it
 
 void Beacon::go()
 {
-    // Beacon only has one job - turn into a Gateway!
-    // .. but I don't want to mess with self-destruction here. Handled in Game::iterate.
+    // Beacon logic is handled in Game::iterate, since like me it deals with
+    // self-destruction and self-transformation
 }
 
 
@@ -613,7 +614,10 @@ void Gateway::cmdScuttle(EntityRef targetRef)
 {
     if (targetRef == this->ref)
     {
-        #warning Still need to define Gateway self-scuttle
+        // replace self with a despawning Beacon
+        boost::shared_ptr<Unit> beacon(new Beacon(game, this->ref, this->ownerId, this->pos, Beacon::Despawning));
+        beacon->completeBuildingInstantly(&this->goldInvested);
+        game->killAndReplaceEntity(this->ref, beacon);
     }
     else
     {

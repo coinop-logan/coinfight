@@ -94,6 +94,16 @@ void UI::iterate()
         }
     }
 
+    // remove dead or null units from selectedUnits
+    for (uint i=0; i<selectedUnits.size(); i++)
+    {
+        if (!selectedUnits[i] || selectedUnits[i]->dead)
+        {
+            selectedUnits.erase(selectedUnits.begin() + i);
+            i --;
+        }
+    }
+
     // auto-select first gateway when done (also workaround related error when beacon transforms into gateway)
     if (selectedUnits.size() != 0)
     {
@@ -431,7 +441,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
 
                         if (getAllianceType(playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
-                        if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
+                        if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
                             vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
                             vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
