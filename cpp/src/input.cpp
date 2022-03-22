@@ -298,10 +298,10 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
     return boost::shared_ptr<PrimeBuildCmd>();
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, int playerId, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, int playerIdOrNeg1, sf::RenderWindow *window)
 {
-    bool spawnBeaconAvailable =
-        ((game->getPlayerBeaconAvailable(playerId)) && game->players[playerId].credit.getInt() >= BEACON_COST);
+    bool spawnBeaconAvailable = playerIdOrNeg1 < 0 ? false :
+        ((game->getPlayerBeaconAvailable(playerIdOrNeg1)) && game->players[playerIdOrNeg1].credit.getInt() >= BEACON_COST);
 
     ui->updateAvailableUnitInterfaceCmds(spawnBeaconAvailable);
 
@@ -341,7 +341,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         {
                             if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
                             {
-                                if (clickedUnit->ownerId == playerId)
+                                if (clickedUnit->ownerId == playerIdOrNeg1)
                                 {
                                     if (!isShiftPressed())
                                     {
@@ -375,7 +375,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         {
                             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
                             {
-                                if (unit->ownerId == playerId)
+                                if (unit->ownerId == playerIdOrNeg1)
                                 {
                                     if (selectionRectGameCoords.contains(sf::Vector2i(unit->pos.x, unit->pos.y)))
                                     {
@@ -439,7 +439,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     {
                         boost::shared_ptr<Entity> targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game);
 
-                        if (getAllianceType(playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
+                        if (getAllianceType(playerIdOrNeg1, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
                         if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
@@ -523,7 +523,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                 {
                     if (ui->selectedUnits.size() > 0)
                     {
-                        cmdsToSend.push_back(makeRightclickCmd(*game, *ui, playerId, getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                        if (playerIdOrNeg1 >= 0)
+                            cmdsToSend.push_back(makeRightclickCmd(*game, *ui, playerIdOrNeg1, getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton))));
                     }
                 }
                 else
