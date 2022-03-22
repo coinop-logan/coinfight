@@ -106,9 +106,9 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
     if (playerId == -1)
         return;
         
-    if (!game->getHasPlayerUsedBeacon(playerId))
+    if (game->getPlayerBeaconAvailable(playerId))
     {
-        game->setHasPlayerUsedBeacon(playerId);
+        game->setPlayerBeaconAvailable(playerId, false);
         boost::shared_ptr<Beacon> beacon(new Beacon(game, game->getNextEntityRef(), playerId, this->pos));
         game->entities.push_back(beacon);
     }

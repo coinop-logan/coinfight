@@ -42,7 +42,7 @@ void Player::unpackAndMoveIter(vchIter *iter)
 }
 
 Player::Player(string address)
-    : address(address), credit(), hasUsedBeacon(false) {}
+    : address(address), credit(), beaconAvailable(true) {}
 
 Player::Player(vchIter *iter)
 {
@@ -64,13 +64,13 @@ string Game::playerIdToAddress(uint playerId)
 {
     return players[playerId].address;
 }
-bool Game::getHasPlayerUsedBeacon(uint playerId)
+bool Game::getPlayerBeaconAvailable(uint playerId)
 {
-    return players[playerId].hasUsedBeacon;
+    return players[playerId].beaconAvailable;
 }
-void Game::setHasPlayerUsedBeacon(uint playerId)
+void Game::setPlayerBeaconAvailable(uint playerId, bool flag)
 {
-    players[playerId].hasUsedBeacon = true;
+    players[playerId].beaconAvailable = flag;
 }
 
 void Game::pack(vch *dest)

@@ -25,7 +25,7 @@ struct Player
 {
     string address;
     Coins credit;
-    bool hasUsedBeacon;
+    bool beaconAvailable;
     
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
@@ -53,8 +53,8 @@ public:
 
     int playerAddressToIdOrNegativeOne(string address);
     string playerIdToAddress(uint playerId);
-    bool getHasPlayerUsedBeacon(uint playerId);
-    void setHasPlayerUsedBeacon(uint playerId);
+    bool getPlayerBeaconAvailable(uint playerId);
+    void setPlayerBeaconAvailable(uint playerId, bool flag);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
