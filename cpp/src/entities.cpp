@@ -532,9 +532,15 @@ uint16_t Beacon::getMaxHealth() { return BEACON_HEALTH; }
 void Beacon::pack(vch *dest)
 {
     packBuilding(dest);
+
+    packToVch(dest, "C", (unsigned char)(state));
 }
 void Beacon::unpackAndMoveIter(vchIter *iter)
-{}
+{
+    unsigned char enumInt;
+    *iter = unpackFromIter(*iter, "C", &enumInt);
+    state = static_cast<State>(enumInt);
+}
 
 Beacon::Beacon(Game *game, uint16_t ref, int ownerId, vector2f pos, State state)
     : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos),
@@ -685,8 +691,8 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                 }
                 else
                 {
-                    maybeTargetEntity = goldpile->ref;
                     state = Scuttle;
+                    maybeTargetEntity = goldpile->ref;
                 }
             }
             else
@@ -708,9 +714,19 @@ float Gateway::buildQueueWeight()
 void Gateway::pack(vch *dest)
 {
     packBuilding(dest);
+    
+    packToVch(dest, "C", (unsigned char)(state));
+
+    packEntityRef(dest, maybeTargetEntity);
 }
 void Gateway::unpackAndMoveIter(vchIter *iter)
-{}
+{
+    unsigned char enumInt;
+    *iter = unpackFromIter(*iter, "C", &enumInt);
+    state = static_cast<State>(enumInt);
+
+    *iter = unpackEntityRef(*iter, &maybeTargetEntity);
+}
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
     : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
