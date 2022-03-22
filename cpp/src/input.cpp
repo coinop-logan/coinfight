@@ -492,12 +492,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 {
                                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
                                     {
-                                        gateway->cmdScuttle(targetEntity->ref);
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({gateway->ref}, targetEntity->ref)));
                                         ui->cmdState = UI::Default;
                                     }
                                     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
                                     {
-                                        prime->cmdScuttle(targetEntity->ref);
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({prime->ref}, targetEntity->ref)));
                                         ui->cmdState = UI::Default;
                                     }
                                 }

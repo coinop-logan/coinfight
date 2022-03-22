@@ -30,6 +30,8 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
         return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(iter));
     case CMD_SPAWNBEACON_CHAR:
         return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(iter));
+    case CMD_SCUTTLE_CHAR:
+        return boost::shared_ptr<Cmd>(new ScuttleCmd(iter));
     }
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
