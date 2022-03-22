@@ -617,37 +617,54 @@ void Gateway::cmdScuttle(EntityRef targetRef)
     }
     else
     {
-        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, targetRef)))
+        if (auto entity = entityRefToPtrOrNull(*game, targetRef))
         {
-            if (getAllianceType(this->ownerId, unit) == Owned)
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                if (getAllianceType(this->ownerId, unit) == Owned)
                 {
-                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                    if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                     {
-                        mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
-                        maybeTargetEntity = targetRef;
-                        state = Scuttle;
+                        if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                        {
+                            mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
+                            maybeTargetEntity = targetRef;
+                            state = Scuttle;
+                        }
+                        else
+                        {
+                            // Building out of range; ignore
+                        }
                     }
                     else
                     {
-                        // Building out of range; ignore
+                        maybeTargetEntity = targetRef;
+                        state = Scuttle;
                     }
                 }
                 else
                 {
-                    maybeTargetEntity = targetRef;
+                    // Not owned by player; just ignore 
+                }
+            }
+            else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+            {
+                if ((this->pos - goldpile->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                {
+                    // too far away!
+                    state = Idle;
+                    maybeTargetEntity = NULL_ENTITYREF;
+                }
+                else
+                {
+                    maybeTargetEntity = goldpile->ref;
                     state = Scuttle;
                 }
             }
             else
             {
-                // Not owned by player; just ignore 
+                cout << "Somehow I can't cast that Entity into a GoldPile or Unit" << endl;
             }
-        }
-        else
-        {
-            #warning what if its not a unit
         }
     }
 }
@@ -760,11 +777,11 @@ void Gateway::go()
         break;
         case Scuttle:
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, maybeTargetEntity)))
+            if (auto entity = (entityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
-                if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
+                if ((this->pos - entity->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
                 {
-                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
                         if (mobileUnit->getTarget().castToEntityRef() == this->ref)
                         {
@@ -779,15 +796,24 @@ void Gateway::go()
                     }
                     else
                     {
-                        cout << "somehow a non-mobile unit ended up out of range for a scuttle comd..." << endl;
+                        cout << "somehow a non-mobile unit ended up out of range for a scuttle cmd..." << endl;
                         state = Idle;
                         maybeTargetEntity = NULL_ENTITYREF;
                     }
                 }
                 else
                 {
-                    int amountUnbuilt = unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
-                    if (amountUnbuilt > 0)
+                    coinsInt amountScuttled(0);
+                    if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                    {
+                        amountScuttled = goldPile->gold.transferUpTo(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    }
+                    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                    {
+                        amountScuttled = unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    }
+
+                    if (amountScuttled > 0)
                     {
                         goldTransferState = Pulling;
                     }

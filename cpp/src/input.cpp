@@ -429,9 +429,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     {
                         boost::shared_ptr<Entity> targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game);
 
-                        if (getAllianceType(playerId, targetEntity) == Owned)
+                        if (getAllianceType(playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
-                        if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+                        if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
                             vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
                             vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
@@ -448,11 +448,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                     if (!bestChoice)
                                     {
                                         bestChoice = gatewaysInSelection[i];
-                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
                                     }
                                     else
                                     {
-                                        float distanceSquared = (gatewaysInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                        float distanceSquared = (gatewaysInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
                                         if (distanceSquared < bestGatewayDistanceSquared)
                                         {
                                             bestChoice = gatewaysInSelection[i];
@@ -469,11 +469,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                         if (!bestChoice)
                                         {
                                             bestChoice = primesInSelection[i];
-                                            bestPrimeDistanceSquared = (primesInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                            bestPrimeDistanceSquared = (primesInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
                                         }
                                         else
                                         {
-                                            float distanceSquared = (primesInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                            float distanceSquared = (primesInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
                                             if (distanceSquared < bestPrimeDistanceSquared)
                                             {
                                                 bestChoice = primesInSelection[i];
@@ -492,12 +492,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 {
                                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
                                     {
-                                        gateway->cmdScuttle(targetUnit->ref);
+                                        gateway->cmdScuttle(targetEntity->ref);
                                         ui->cmdState = UI::Default;
                                     }
                                     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
                                     {
-                                        prime->cmdScuttle(targetUnit->ref);
+                                        prime->cmdScuttle(targetEntity->ref);
                                         ui->cmdState = UI::Default;
                                     }
                                 }

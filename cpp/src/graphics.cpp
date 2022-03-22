@@ -514,9 +514,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
                 drawGhostBuilding(window, ui, mousePos);
                 break;
             case UI::Scuttle:
-                if (ui.mouseoverEntity && getAllianceType(playerId, ui.mouseoverEntity) == Owned)
+                if (ui.mouseoverEntity)
                 {
-                    drawBracketsCursor(window, mousePos, sf::Color::Yellow);
+                    if (getAllianceType(playerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
+                    {
+                        drawBracketsCursor(window, mousePos, sf::Color::Yellow);
+                    }
+                    else
+                    {
+                        drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                    }
                 }
                 else
                 {
