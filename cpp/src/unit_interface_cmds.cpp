@@ -21,6 +21,9 @@ vector<boost::shared_ptr<Cmd>> SpawnBeaconInterfaceCmd::execute(UI *ui)
     return noCmds;
 }
 
+
+
+
 sf::Keyboard::Key UnitInterfaceCmd::getKey()
 {
     throw runtime_error("getKey() has not been defined for this uxCmd.");
@@ -35,6 +38,9 @@ bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
     throw runtime_error("isUnitEligible() has not been defined for this uxCmd.");
 }
 
+
+
+
 sf::Keyboard::Key DepositInterfaceCmd::getKey()
 {
     return sf::Keyboard::D;
@@ -48,6 +54,9 @@ bool DepositInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }
+
+
+
 
 sf::Keyboard::Key GatewayBuildPrimeInterfaceCmd::getKey()
 {
@@ -65,6 +74,9 @@ bool GatewayBuildPrimeInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
     return (unit->typechar() == GATEWAY_TYPECHAR);
 }
 
+
+
+
 sf::Keyboard::Key GatewayBuildFighterInterfaceCmd::getKey()
 {
     return sf::Keyboard::W;
@@ -81,6 +93,9 @@ bool GatewayBuildFighterInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> uni
     return (unit->typechar() == GATEWAY_TYPECHAR);
 }
 
+
+
+
 sf::Keyboard::Key PrimeBuildGatewayInterfaceCmd::getKey()
 {
     return sf::Keyboard::E;
@@ -95,4 +110,22 @@ vector<boost::shared_ptr<Cmd>> PrimeBuildGatewayInterfaceCmd::execute(UI *ui)
 bool PrimeBuildGatewayInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR);
+}
+
+
+
+
+sf::Keyboard::Key ScuttleInterfaceCmd::getKey()
+{
+    return sf::Keyboard::F;
+}
+vector<boost::shared_ptr<Cmd>> ScuttleInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::Scuttle;
+
+    return noCmds;
+}
+bool ScuttleInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }

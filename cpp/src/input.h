@@ -30,7 +30,8 @@ struct UI
         Default,
         SpawnBeacon,
         Deposit,
-        Build
+        Build,
+        Scuttle
     } cmdState;
     vector2i lastMousePos;
     optional<vector2i> maybeSelectionBoxStart;

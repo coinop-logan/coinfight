@@ -513,6 +513,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
             case UI::Build:
                 drawGhostBuilding(window, ui, mousePos);
                 break;
+            case UI::Scuttle:
+                if (ui.mouseoverEntity && getAllianceType(playerId, ui.mouseoverEntity) == Owned)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Yellow);
+                }
+                else
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                }
+                break;
         }
     }
 }
@@ -534,7 +544,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
         sf::Color topTextColor;
         switch (getAllianceType(playerIdOrNegativeOne, game->entities[i]))
         {
-            case Ally:
+            case Owned:
                 topTextColor = sf::Color::Green;
                 break;
             case Enemy:
@@ -658,7 +668,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::A, 'A', {}},
         {sf::Keyboard::S, 'S', {}},
         {sf::Keyboard::D, 'D', {"Deposit"}},
-        {sf::Keyboard::F, 'F', {}}
+        {sf::Keyboard::F, 'F', {"Scuttle"}}
     };
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
@@ -775,9 +785,27 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
                 if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                 {
-                    if (gateway->maybeDepositingToEntity)
+                    if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
                     {
-                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(gateway->maybeDepositingToEntity), sf::Color::Yellow)));
+                        #warning need to redesign how Gateway creates particles. Do like in Prime.
+                        // switch (gateway->state)
+                        // {
+                        //     case Gateway::Idle:
+                        //     {
+                        //         // no particles needed
+                        //     }
+                        //     break;
+                        //     case Gateway::DepositTo:
+                        //     {
+                        //         particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
+                        //     }
+                        //     break;
+                        //     case Gateway::Scuttle:
+                        //     {
+                        //         particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
+                        //     }
+                        //     break;
+                        // }
                     }
                 }
             }
@@ -829,7 +857,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     bool playerOwnsUnits(false);
     for (uint i=0; i<game->entities.size(); i++)
     {
-        if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Ally)
+        if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
         {
             playerOwnsUnits = true;
             break;

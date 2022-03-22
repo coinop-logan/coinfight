@@ -1,5 +1,5 @@
 #include <iostream>
-#include "coins.h"
+#include <optional>
 
 // void makeSure(bool condition) // hacky test function
 // {
@@ -15,7 +15,10 @@ using namespace std;
 
 int main()
 {
-    cout << coinsIntToWeiDepositString(1000) << endl;
+    optional<int> a = {};
+    optional<int> b = {4};
+
+    cout << (a == 4) << endl;
     
     return 0;
 }

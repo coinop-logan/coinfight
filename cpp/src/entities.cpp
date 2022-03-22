@@ -157,7 +157,7 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
     {
         if (playerIdOrNegativeOne == unit->ownerId)
         {
-            return Ally;
+            return Owned;
         }
         else
         {
@@ -342,6 +342,15 @@ Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
 coinsInt Unit::build(coinsInt attemptedAmount, Coins *fromCoins)
 {
     return fromCoins->transferUpTo(attemptedAmount, &(this->goldInvested));
+}
+coinsInt Unit::unbuild(coinsInt attemptedAmount, Coins* toCoins)
+{
+    coinsInt amount = this->goldInvested.transferUpTo(attemptedAmount, toCoins);
+    if (this->goldInvested.getInt() == 0)
+    {
+        die();
+    }
+    return amount;
 }
 bool Unit::completeBuildingInstantly(Coins* fromCoins)
 {
@@ -570,8 +579,12 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
             cout << "Gateway doesn't know how to build that unit..." << endl;
             break;
     }
-    this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-    this->maybeDepositingToEntity = littleBabyUnitAwwwwSoCute->ref;
+    if (littleBabyUnitAwwwwSoCute)
+    {
+        state = DepositTo;
+        this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
+        this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->ref;
+    }
 }
 void Gateway::cmdDepositTo(Target target)
 {
@@ -588,17 +601,60 @@ void Gateway::cmdDepositTo(Target target)
     }
     else if (auto entityRef = target.castToEntityRef())
     {
-        maybeDepositingToEntity = *entityRef;
+        state = DepositTo;
+        maybeTargetEntity = *entityRef;
     }
     else
     {
         cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
     }
 }
+void Gateway::cmdScuttle(EntityRef targetRef)
+{
+    if (targetRef == this->ref)
+    {
+        #warning Still need to define Gateway self-scuttle
+    }
+    else
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, targetRef)))
+        {
+            if (getAllianceType(this->ownerId, unit) == Owned)
+            {
+                if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                {
+                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                    {
+                        mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
+                        maybeTargetEntity = targetRef;
+                        state = Scuttle;
+                    }
+                    else
+                    {
+                        // Building out of range; ignore
+                    }
+                }
+                else
+                {
+                    maybeTargetEntity = targetRef;
+                    state = Scuttle;
+                }
+            }
+            else
+            {
+                // Not owned by player; just ignore 
+            }
+        }
+        else
+        {
+            #warning what if its not a unit
+        }
+    }
+}
 
 float Gateway::buildQueueWeight()
 {
-    if (!maybeDepositingToEntity)
+    if (state == Idle)
         return 0;
     else
         return 1;
@@ -613,7 +669,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
     : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      maybeDepositingToEntity(NULL_ENTITYREF)
+      maybeTargetEntity(NULL_ENTITYREF)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
 {
@@ -622,68 +678,113 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 
 void Gateway::go()
 {
-    if (boost::shared_ptr<Entity> depositingToEntityPtr = entityRefToPtrOrNull(*game, maybeDepositingToEntity))
+    switch (state)
     {
-        // stop if it's out range
-        if ((depositingToEntityPtr->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        case Idle:
         {
-            maybeDepositingToEntity = NULL_ENTITYREF;
+            // search for units near enough to complete
+            float rangeSquared = pow(GATEWAY_RANGE, 2);
+            for (uint i=0; i<game->entities.size(); i++)
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                {
+                    if (unit->ownerId == this->ownerId)
+                        if (unit->getBuiltRatio() < 1)
+                            if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
+                                {
+                                    state = DepositTo;
+                                    maybeTargetEntity = unit->ref;
+                                }
+                }
+            }
         }
-        else
+        break;
+        case DepositTo:
         {
-            Coins* maybeCoinsToDepositTo;
-            boost::shared_ptr<Unit> maybeBuildingUnit;
-            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(depositingToEntityPtr))
+            if (boost::shared_ptr<Entity> depositingToEntityPtr = entityRefToPtrOrNull(*game, maybeTargetEntity))
             {
-                maybeCoinsToDepositTo = &goldpile->gold;
-            }
-            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(depositingToEntityPtr))
-            {
-                if (unit->getBuiltRatio() < 1)
+                // stop if it's out of range
+                if ((depositingToEntityPtr->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                 {
-                    maybeCoinsToDepositTo = &unit->goldInvested;
-                    maybeBuildingUnit = unit;
+                    state = Idle;
+                    maybeTargetEntity = NULL_ENTITYREF;
                 }
-                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                else
                 {
-                    maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
-                }
-                else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-                {
-                    maybeCoinsToDepositTo = &prime->heldGold;
-                }
-            }
+                    Coins* maybeCoinsToDepositTo;
+                    boost::shared_ptr<Unit> maybeBuildingUnit;
+                    if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(depositingToEntityPtr))
+                    {
+                        maybeCoinsToDepositTo = &goldpile->gold;
+                    }
+                    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(depositingToEntityPtr))
+                    {
+                        if (unit->getBuiltRatio() < 1)
+                        {
+                            maybeCoinsToDepositTo = &unit->goldInvested;
+                            maybeBuildingUnit = unit;
+                        }
+                        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                        {
+                            maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
+                        }
+                        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                        {
+                            maybeCoinsToDepositTo = &prime->heldGold;
+                        }
+                    }
 
-            if (maybeCoinsToDepositTo)
-            {
-                coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
-                if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
-                {
-                    maybeDepositingToEntity = NULL_ENTITYREF;
-                }
-                if (amountDeposited == 0)
-                {
-                    maybeDepositingToEntity = NULL_ENTITYREF;
+                    if (maybeCoinsToDepositTo)
+                    {
+                        coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
+                        if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
+                        {
+                            state = Idle;
+                            maybeTargetEntity = NULL_ENTITYREF;
+                        }
+                        if (amountDeposited == 0)
+                        {
+                            state = Idle;
+                            maybeTargetEntity = NULL_ENTITYREF;
+                        }
+                    }
                 }
             }
         }
-    }
-    else
-    {
-        // search for units near enough to complete
-        float rangeSquared = pow(GATEWAY_RANGE, 2);
-        for (uint i=0; i<game->entities.size(); i++)
+        break;
+        case Scuttle:
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
-                if (unit->ownerId == this->ownerId)
-                    if (unit->getBuiltRatio() < 1)
-                        if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
-                            {
-                                maybeDepositingToEntity = unit->ref;
-                            }
+                if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
+                {
+                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                    {
+                        if (mobileUnit->getTarget().castToEntityRef() == this->ref)
+                        {
+                            // unit is on its way; do nothing and wait
+                        }
+                        else
+                        {
+                            // unit is no longer on its way; revert to Idle state
+                            state = Idle;
+                            maybeTargetEntity = NULL_ENTITYREF;
+                        }
+                    }
+                    else
+                    {
+                        cout << "somehow a non-mobile unit ended up out of range for a scuttle comd..." << endl;
+                        state = Idle;
+                        maybeTargetEntity = NULL_ENTITYREF;
+                    }
+                }
+                else
+                {
+                    unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                }
             }
         }
+        break;
     }
 }
 
@@ -749,6 +850,10 @@ void Prime::cmdResumeBuilding(EntityRef targetUnit)
     state = Build;
 
     setTarget(Target(targetUnit), PRIME_RANGE);
+}
+void Prime::cmdScuttle(EntityRef targetUnit)
+{
+    #warning prime doesnt know how to scuttle yet
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }

@@ -37,7 +37,7 @@ public:
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
 enum AllianceType {
-    Ally,
+    Owned,
     Enemy,
     Neutral
 };
@@ -102,6 +102,7 @@ public:
     sf::Color getTeamColor();
 
     coinsInt build(coinsInt attemptedAmount, Coins* fromCoins);
+    coinsInt unbuild(coinsInt attemptedAmount, Coins* toCoins);
     bool completeBuildingInstantly(Coins* fromCoins);
     coinsInt getBuilt();
     float getBuiltRatio();
@@ -134,9 +135,9 @@ private:
     void moveTowardPoint(vector2f, float);
 
 protected:
-    void setTarget(Target _target, float range);
 
 public:
+    void setTarget(Target _target, float range);
     float angle_view;
     virtual float getSpeed();
     virtual float getRange();
@@ -174,7 +175,13 @@ public:
 class Gateway : public Building
 {
 public:
-    EntityRef maybeDepositingToEntity;
+    enum State {
+        Idle,
+        DepositTo,
+        Scuttle
+    } state;
+
+    EntityRef maybeTargetEntity;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
@@ -184,6 +191,7 @@ public:
 
     void cmdBuildUnit(unsigned char unitTypechar);
     void cmdDepositTo(Target target);
+    void cmdScuttle(EntityRef targetRef);
     float buildQueueWeight();
 
     unsigned char typechar();
@@ -229,6 +237,7 @@ public:
     void cmdPutdown(Target);
     void cmdBuild(unsigned char buildTypechar, vector2f buildPos);
     void cmdResumeBuilding(EntityRef targetUnit);
+    void cmdScuttle(EntityRef targetUnit);
 
     unsigned char typechar();
     string getTypeName();

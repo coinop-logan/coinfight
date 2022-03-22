@@ -22,7 +22,8 @@ UI::UI()
         boost::shared_ptr<InterfaceCmd>(new DepositInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd())
+        boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new ScuttleInterfaceCmd())
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
@@ -422,6 +423,86 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         {
                             ui->cmdState = UI::Default;
                         }
+                    }
+                    break;
+                    case UI::Scuttle:
+                    {
+                        boost::shared_ptr<Entity> targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game);
+
+                        if (getAllianceType(playerId, targetEntity) == Owned)
+                        {
+                        if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+                        {
+                            vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
+                            vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
+                            // auto gatewaysAndPrimes = gatewaysInSelection;
+                            // gatewaysAndPrimes.insert(gatewaysAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+
+                            if (gatewaysInSelection.size() + primesInSelection.size() > 0)
+                            {
+                                boost::shared_ptr<Unit> bestChoice;
+
+                                float bestGatewayDistanceSquared;
+                                for (uint i=0; i<gatewaysInSelection.size(); i++)
+                                {
+                                    if (!bestChoice)
+                                    {
+                                        bestChoice = gatewaysInSelection[i];
+                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                    }
+                                    else
+                                    {
+                                        float distanceSquared = (gatewaysInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                        if (distanceSquared < bestGatewayDistanceSquared)
+                                        {
+                                            bestChoice = gatewaysInSelection[i];
+                                            bestGatewayDistanceSquared = distanceSquared;
+                                        }
+                                    }
+                                }
+                                // if we still don't have a best choice, look through Primes
+                                if (!bestChoice)
+                                {
+                                    float bestPrimeDistanceSquared;
+                                    for (uint i=0; i<primesInSelection.size(); i++)
+                                    {
+                                        if (!bestChoice)
+                                        {
+                                            bestChoice = primesInSelection[i];
+                                            bestPrimeDistanceSquared = (primesInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                        }
+                                        else
+                                        {
+                                            float distanceSquared = (primesInSelection[i]->pos - targetUnit->pos).getMagnitudeSquared();
+                                            if (distanceSquared < bestPrimeDistanceSquared)
+                                            {
+                                                bestChoice = primesInSelection[i];
+                                                bestPrimeDistanceSquared = distanceSquared;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!bestChoice)
+                                {
+                                    // we should have had a best choice by now...
+                                    cout << "Can't find a bestChoice for the ScuttleCmd" << endl;
+                                }
+                                else
+                                {
+                                    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
+                                    {
+                                        gateway->cmdScuttle(targetUnit->ref);
+                                        ui->cmdState = UI::Default;
+                                    }
+                                    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
+                                    {
+                                        prime->cmdScuttle(targetUnit->ref);
+                                        ui->cmdState = UI::Default;
+                                    }
+                                }
+                            }
+                        }}
                     }
                     break;
                 }

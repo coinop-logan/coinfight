@@ -38,12 +38,14 @@ const float ENTITY_COLLIDE_RADIUS = 15;
 const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
+const coinsInt SCUTTLE_RATE = 5;
+
 const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const float GATEWAY_RANGE = 150;
 const coinsInt GATEWAY_BUILD_RATE = 8;
 
-const coinsInt BEACON_BUILD_RATE = 3;
+const coinsInt BEACON_BUILD_RATE = 10;
 const coinsInt BEACON_COST = GATEWAY_COST;
 const uint16_t BEACON_HEALTH = 100;
 

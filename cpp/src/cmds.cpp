@@ -192,7 +192,7 @@ vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
         }
         else
         {
-            cout << "WARNING: cmd contained a non-unit entity reference!" << endl;
+            cout << "NOTE: cmd contained a non-unit entity reference!" << endl;
         }
     }
     return units;
@@ -450,6 +450,49 @@ ResumeBuildingCmd::ResumeBuildingCmd(vector<EntityRef> units, EntityRef targetUn
     : UnitCmd(units), targetUnit(targetUnit)
 {}
 ResumeBuildingCmd::ResumeBuildingCmd(vchIter *iter)
+    : UnitCmd(iter)
+{
+    unpackAndMoveIter(iter);
+}
+
+unsigned char ScuttleCmd::getTypechar()
+{
+    return CMD_SCUTTLE_CHAR;
+}
+string ScuttleCmd::getTypename()
+{
+    return "ScuttleCmd";
+}
+void ScuttleCmd::pack(vch *dest)
+{
+    packUnitCmd(dest);
+    packEntityRef(dest, targetUnit);
+}
+void ScuttleCmd::unpackAndMoveIter(vchIter *iter)
+{
+    *iter = unpackEntityRef(*iter, &targetUnit);
+}
+
+void ScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        prime->cmdScuttle(targetUnit);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdScuttle(targetUnit);
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+ScuttleCmd::ScuttleCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+ScuttleCmd::ScuttleCmd(vchIter *iter)
     : UnitCmd(iter)
 {
     unpackAndMoveIter(iter);

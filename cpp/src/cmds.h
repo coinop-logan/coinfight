@@ -23,6 +23,7 @@ const unsigned char CMD_ATTACK_CHAR = 5;
 const unsigned char CMD_PRIMEBUILD_CHAR = 6;
 const unsigned char CMD_RESUMEBUILDING_CHAR = 7;
 const unsigned char CMD_SPAWNBEACON_CHAR = 8;
+const unsigned char CMD_SCUTTLE_CHAR = 9;
 
 struct Cmd
 {
@@ -194,6 +195,21 @@ struct ResumeBuildingCmd : public UnitCmd
 
     ResumeBuildingCmd(vector<EntityRef>, EntityRef);
     ResumeBuildingCmd(vchIter *iter);
+};
+
+struct ScuttleCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    unsigned char getTypechar();
+    string getTypename();
+    void pack(vch *);
+    void unpackAndMoveIter(vchIter *);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    ScuttleCmd(vector<EntityRef>, EntityRef);
+    ScuttleCmd(vchIter *iter);
 };
 
 #endif // CMDS_H
