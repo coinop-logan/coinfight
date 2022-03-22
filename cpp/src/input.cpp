@@ -437,8 +437,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     break;
                     case UI::Scuttle:
                     {
-                        boost::shared_ptr<Entity> targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game);
-
+                        if (auto targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
+                        {
                         if (getAllianceType(playerIdOrNeg1, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
                         if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -512,7 +512,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                     }
                                 }
                             }
-                        }}
+                        }}}
                     }
                     break;
                 }
