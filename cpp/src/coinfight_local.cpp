@@ -1,5 +1,10 @@
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 #include <stdio.h>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
