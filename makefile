@@ -1,9 +1,14 @@
 CXX = g++
 CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
-
+UNAME := $(shell uname)
 INC=-I/usr/include -I/usr/include/python3.8/ -I./include/ `python3-config --includes`
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
+ifeq ($(UNAME), Darwin)
+LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -framework OpenGL
+else
+# ifeq($(UNAME), Linux)
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
+endif
 
 all: pre-build main-build
 
