@@ -1,10 +1,5 @@
 import sys, math, time, os
-
-peeps = {
-    'imri': '0xf665624F3247eb143c09B0733d2b3D81a6248ab9',
-    'me': '0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92',
-    'me2': '0xc835c3dCfD49Bb7b3E4E90532Db48e270160f946'
-}
+from peeps import peeps
 
 def main():
     # WHO
