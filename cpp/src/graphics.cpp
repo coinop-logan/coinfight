@@ -147,14 +147,6 @@ void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf:
     sf::Vector2f right = sf::Vector2f(-12, 16);
     sf::Vector2f left = sf::Vector2f(-12, -16);
 
-    // draw two triangles
-    oneSide.setPoint(1, front);
-    oneSide.setPoint(0, back);
-    oneSide.setPoint(2, right);
-    window->draw(oneSide);
-    oneSide.setPoint(2, left);
-    window->draw(oneSide);
-
     // draw gun barrels
     sf::Color fadedBarrelColor(FIGHTER_BARREL_COLOR.r, FIGHTER_BARREL_COLOR.g, FIGHTER_BARREL_COLOR.b, alpha);
     sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
@@ -174,6 +166,14 @@ void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf:
     gunBarrelPoints[1].position.y *= -1;
     gunBarrelPoints[2].position.y *= -1;
     window->draw(gunBarrelPoints, transform);
+
+    // draw two triangles
+    oneSide.setPoint(1, front);
+    oneSide.setPoint(0, back);
+    oneSide.setPoint(2, right);
+    window->draw(oneSide);
+    oneSide.setPoint(2, left);
+    window->draw(oneSide);
 
     // draw outline
     sf::VertexArray lines(sf::LinesStrip, 5);
