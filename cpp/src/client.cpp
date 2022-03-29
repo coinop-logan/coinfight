@@ -396,7 +396,8 @@ int main(int argc, char *argv[])
     if (playerIdOrNegativeOne >= 0)
     {
         cout << "Withdrawing your " << game.players[playerIdOrNegativeOne].credit.getDollarString().toAnsiString() << " now..." << endl;
-        connectionHandler.sendCmd(boost::shared_ptr<WithdrawCmd>(new WithdrawCmd(coinsInt(0))));
+        boost::shared_ptr<WithdrawCmd> withdrawCmd(new WithdrawCmd(coinsInt(0)));
+        connectionHandler.sendCmd(withdrawCmd);
     } 
 
     socket.close();
