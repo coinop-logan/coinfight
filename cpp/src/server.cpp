@@ -168,15 +168,15 @@ public:
             // But leave out the trailing \n leftover
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
 
-            if (sig == string("fakesig1"))
+            if (sig == string("fake1"))
             {
                 connectionAuthdUserAddress = string("0x798D9726775BD490e2456127e64440bdbbc54abB");
             }
-            else if (sig == string("fakesig2"))
+            else if (sig == string("fake2"))
             {
                 connectionAuthdUserAddress = string("0xFd00CF60a6a06cd101177062C690f963C2DBfFB2");
             }
-            else if (sig == string("fakesig3"))
+            else if (sig == string("fake3"))
             {
                 connectionAuthdUserAddress = string("0x93d42e141D1B79D61Ec61b21261fd8B872d284d6");
             }
