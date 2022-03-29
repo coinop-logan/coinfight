@@ -28,7 +28,7 @@ class Listener
 
 public:
     Listener(boost::asio::io_service &ioService_)
-        : ioService(ioService_), acceptor(ioService_, tcp::endpoint(tcp::v4(), 8473))
+        : ioService(ioService_), acceptor(ioService_, tcp::endpoint(tcp::v4(), MAIN_PORT))
     {
     }
     void startAccept()

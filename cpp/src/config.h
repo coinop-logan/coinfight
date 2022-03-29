@@ -7,6 +7,9 @@
 using EntityRef = uint16_t;
 using coinsInt = unsigned long;
 
+const std::string SERVER_IP_DEFAULT = "18.206.114.77";
+const uint MAIN_PORT = 8473;
+
 const uint ESCAPE_TO_QUIT_TICKS = 70;
 const uint ESCAPE_TO_QUIT_TEXT_LIFE = 30;
 

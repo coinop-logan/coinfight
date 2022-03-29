@@ -226,17 +226,22 @@ int main(int argc, char *argv[])
     boost::asio::io_service io_service;
     tcp::socket socket(io_service);
 
-    cout << "Enter server IP (or 'l' for localhost) : ";
+    cout << "Enter server IP ('l' for localhost, empty for default)" << endl << "IP: ";
     string ipString;
-    cin >> ipString;
+    getline(cin, ipString);
 
     cout << "Connecting..." << endl;
-    // this is "connecting" to INADDR_ANY, which is very weird, but translates (at least on linux) to
-    // "connect to the loopback network". This is why this works on local tests.
+
     if (ipString == "l")
-        socket.connect(tcp::endpoint(tcp::v4(), 8473));
+        // this is "connecting" to INADDR_ANY, which is very weird, but translates (at least on linux) to
+        // "connect to the loopback network". This is why this works on local tests.
+        socket.connect(tcp::endpoint(tcp::v4(), MAIN_PORT));
+    else if (ipString == "")
+    {
+        socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(SERVER_IP_DEFAULT), MAIN_PORT));
+    }
     else
-        socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(ipString), 8473));
+        socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(ipString), MAIN_PORT));
 
     // socket will now have its own local port.
 
