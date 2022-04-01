@@ -28,6 +28,58 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     return window;
 }
 
+void drawBackground(sf::RenderWindow *window, CameraState camera)
+{
+    sf::Color backgroundColor(0, 0, 50);
+    window->clear(backgroundColor);
+
+    sf::Color backgroundCirclesColor(60, 0, 150);
+    sf::Color backgroundSpokeEndColor(backgroundCirclesColor);
+    backgroundSpokeEndColor.a = 50;
+    vector2f centerOfMapScreenPos = gamePosToScreenPos(camera, vector2f(0,0));
+
+    sf::CircleShape circle(1, 40);
+    circle.setFillColor(sf::Color::Transparent);
+    circle.setOutlineColor(backgroundCirclesColor);
+    circle.setOutlineThickness(1);
+    circle.setPosition(centerOfMapScreenPos.x, centerOfMapScreenPos.y);
+
+    for (uint i=0; i<10; i++)
+    {
+        float radius = 10 * pow(2, i+1);
+        float nextRadius = 10 * pow(2, i+2);
+
+        // draw circle
+        circle.setRadius(radius);
+        circle.setPointCount(i * 20);
+        circle.setOrigin(radius, radius);
+
+        window->draw(circle);
+
+        if (i > 0)
+        {
+            int numSpokes = pow(2, i);
+
+            sf::VertexArray lines(sf::Lines, numSpokes*2);
+            for (uint i=0; i<numSpokes; i++)
+            {
+                float angle = ((float)i / numSpokes) * 2 * M_PI;
+                vector2f from = gamePosToScreenPos(camera, composeVector2f(angle, radius));
+                vector2f to = gamePosToScreenPos(camera, composeVector2f(angle, nextRadius));
+
+                lines[i*2].position = sf::Vector2f(from.x, from.y);
+                lines[i*2+1].position = sf::Vector2f(to.x, to.y);
+                lines[i*2].color = backgroundCirclesColor;
+                lines[i*2+1].color = backgroundSpokeEndColor;
+
+                sf::Transform transform;
+            }
+
+            window->draw(lines);
+        }
+    }
+}
+
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2f drawPos)
 {
     float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
@@ -761,7 +813,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
 
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
-    window->clear();
+    drawBackground(window, ui.camera);
 
     particles->drawParticles(window, ui.camera);
     particles->iterateParticles(*game);
