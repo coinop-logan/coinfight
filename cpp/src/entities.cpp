@@ -773,7 +773,7 @@ void Gateway::go()
                 }
                 else
                 {
-                    Coins* maybeCoinsToDepositTo;
+                    Coins* maybeCoinsToDepositTo = NULL;
                     boost::shared_ptr<Unit> maybeBuildingUnit;
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(depositingToEntityPtr))
                     {
