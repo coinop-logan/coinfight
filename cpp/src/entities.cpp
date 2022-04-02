@@ -393,7 +393,6 @@ void Unit::takeHit(uint16_t damage)
     {
         health -= damage;
     }
-    cout << "took a hit! Health at " << health << endl;
 }
 uint16_t Unit::getHealth() { return health; }
 
@@ -1193,7 +1192,6 @@ void Fighter::go()
         
         if (returnToIdle)
         {
-            cout << "fighter returning to idle" << endl;
             state = Idle;
         }
     }

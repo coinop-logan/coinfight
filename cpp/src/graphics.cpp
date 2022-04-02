@@ -356,7 +356,6 @@ LineParticle::LineParticle(vector2f from, vector2f to, sf::Color color, int life
 {}
 void LineParticle::iterate()
 {
-    cout << timeLeft -- << endl;
     if (timeLeft <= 0)
         dead = true;
 }
