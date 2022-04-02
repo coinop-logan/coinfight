@@ -175,15 +175,22 @@ void Game::iterate()
             {
                 if (entities[i] && entities[i]->dead)
                 {
-                    vector<Coins*> coins = entities[i]->getDroppableCoins();
-                    for (uint j=0; j<coins.size(); j++)
+                    // create new GoldPile to hold all droppable coins
+                    boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
+
+                    vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
+                    for (uint j=0; j<droppableCoins.size(); j++)
                     {
-                        if (coins[j]->getInt() > 0)
+                        if (droppableCoins[j]->getInt() > 0)
                         {
-                            boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
-                            entities.push_back(goldPile);
-                            coins[j]->transferUpTo(coins[j]->getInt(), &goldPile->gold);
+                            droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
                         }
+                    }
+
+                    // but only add it if there was more than 0 gold added
+                    if (goldPile->gold.getInt() > 0)
+                    {
+                        entities.push_back(goldPile);
                     }
                     entities[i].reset();
                 }
