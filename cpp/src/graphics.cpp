@@ -21,8 +21,43 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
-    auto flags = fullscreen ? sf::Style::Close | sf::Style::Fullscreen : sf::Style::Close | sf::Style::Titlebar ;
-    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Coinfight Client", flags);
+    // choose a good videomode
+    sf::VideoMode chosenMode;
+    bool modeFound(false);
+
+    auto modes = sf::VideoMode::getFullscreenModes();
+    for (uint i = 0; i < modes.size(); i++)
+    {
+        if (modes[i].width == 1920 && modes[i].height == 1080)
+        {
+            modeFound = true;
+            chosenMode = modes[i];
+            break;
+        }
+    }
+    if (!modeFound) // gotta lower our standards!
+    {
+        for (uint i = 0; i < modes.size(); i++)
+        {
+            if (modes[i].width <= 1920)
+            {
+                modeFound = true;
+                chosenMode = modes[i];
+                break;
+            }
+        }
+    }
+    if (!modeFound)
+    {
+        // weird, but okay. Just choose the first mode found.
+        modeFound = true;
+        chosenMode = modes[0];
+    }
+    
+    auto flags =
+        fullscreen ? sf::Style::Close | sf::Style::Fullscreen
+                   : sf::Style::Close | sf::Style::Titlebar;
+    sf::RenderWindow *window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
     
     return window;
