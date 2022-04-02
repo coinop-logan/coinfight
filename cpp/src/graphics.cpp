@@ -713,7 +713,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
 void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
 {
     vector2i drawPos(HOTKEY_BOX_SPACING, WINDOW_HEIGHT - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Beacon"});
+    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Gateway"});
 }
 
 void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
