@@ -125,3 +125,12 @@ vector2f randomVectorWithMagnitudeRange(float min, float max)
     float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + min;
     return randomVectorWithMagnitude(magnitude);
 }
+
+sf::Vector2f toSFVec(vector2f v)
+{
+    return sf::Vector2f(v.x, v.y);
+}
+vector2f fromSFVec(sf::Vector2f v)
+{
+    return vector2f(v.x, v.y);
+}

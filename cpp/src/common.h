@@ -71,4 +71,7 @@ template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContain
     return filtered;
 }
 
+sf::Vector2f toSFVec(vector2f v);
+vector2f fromSFVec(sf::Vector2f v);
+
 #endif // COMMON_H
