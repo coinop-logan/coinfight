@@ -58,7 +58,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
 
         if (i > 0)
         {
-            int numSpokes = pow(2, i);
+            uint numSpokes = pow(2, i);
 
             sf::VertexArray lines(sf::Lines, numSpokes*2);
             for (uint i=0; i<numSpokes; i++)
