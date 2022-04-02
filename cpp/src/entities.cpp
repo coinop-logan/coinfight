@@ -728,7 +728,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 
 Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
     : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      state(Idle), goldTransferState(None),
+      state(Idle), inGameTransferState(NoGoldTransfer),
       maybeTargetEntity(NULL_ENTITYREF)
 {}
 Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
@@ -738,7 +738,7 @@ Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, 
 
 void Gateway::go()
 {
-    goldTransferState = None;
+    inGameTransferState = NoGoldTransfer; // will possibly be updated in the following switch
     switch (state)
     {
         case Idle:
@@ -810,7 +810,7 @@ void Gateway::go()
                         }
                         if (amountDeposited > 0)
                         {
-                            goldTransferState = Pushing;
+                            inGameTransferState = Pushing;
                         }
                     }
                 }
@@ -857,7 +857,7 @@ void Gateway::go()
 
                     if (amountScuttled > 0)
                     {
-                        goldTransferState = Pulling;
+                        inGameTransferState = Pulling;
                     }
                     else
                     {
@@ -949,7 +949,7 @@ string Prime::getTypeName() { return "Prime"; }
 
 void Prime::go()
 {
-    goldTransferState = None;
+    goldTransferState = NoGoldTransfer;
     switch (state)
     {
     case Idle:

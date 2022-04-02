@@ -321,6 +321,9 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
 Particle::Particle(vector2f pos, Target target, sf::Color color)
     : pos(pos), velocity(randomVectorWithMagnitude(3)), target(target), color(color), dead(false)
 {}
+FadingParticle::FadingParticle(vector2f pos, Target target, sf::Color color, bool fadeOut)
+    : Particle(pos, target, color), startPos(pos), fadeOut(fadeOut)
+{}
 
 void Particle::iterate(const Game &game)
 {
@@ -341,14 +344,35 @@ void Particle::iterate(const Game &game)
         dead = true;
 
 }
-void Particle::draw(sf::RenderWindow *window, CameraState camera)
+void Particle::drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color whichColor)
 {
     sf::RectangleShape pixel(sf::Vector2f(1,1));
     vector2i drawPos = gamePosToScreenPos(camera, pos);
     pixel.setPosition(drawPos.x, drawPos.y);
-    pixel.setFillColor(color);
+    pixel.setFillColor(whichColor);
 
     window->draw(pixel);
+}
+void Particle::draw(sf::RenderWindow *window, CameraState camera)
+{
+    drawWithColor(window, camera, this->color);
+}
+void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
+{
+    if (auto targetPoint = target.castToPoint())
+    {
+        float progressRatio = (pos - *targetPoint).getMagnitudeSquared() / (startPos - *targetPoint).getMagnitudeSquared();
+        float alphaFloat = this->fadeOut ? (1-progressRatio) : progressRatio;
+        int alphaInt = alphaFloat * 255;
+
+        sf::Color fadedColor(this->color);
+        fadedColor.a = alphaInt;
+        drawWithColor(window, camera, fadedColor);
+    }
+    else
+    {
+        dead = true;
+    }
 }
 
 LineParticle::LineParticle(vector2f from, vector2f to, sf::Color color, int lifetime)
@@ -828,7 +852,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
             {
                 if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                 {
-                    if (prime->goldTransferState == Prime::Pulling)
+                    if (prime->goldTransferState == Pulling)
                     {
                         if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
                         {
@@ -836,7 +860,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                             particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
                         }
                     }
-                    else if (prime->goldTransferState == Prime::Pushing)
+                    else if (prime->goldTransferState == Pushing)
                     {
                         particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
                     }
@@ -845,19 +869,19 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
                     {
-                        switch (gateway->goldTransferState)
+                        switch (gateway->inGameTransferState)
                         {
-                            case Gateway::None:
+                            case NoGoldTransfer:
                             {
                                 // no particles needed
                             }
                             break;
-                            case Gateway::Pushing:
+                            case Pushing:
                             {
                                 particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
                             }
                             break;
-                            case Gateway::Pulling:
+                            case Pulling:
                             {
                                 particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
                             }

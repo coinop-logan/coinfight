@@ -156,6 +156,12 @@ public:
     MobileUnit(Game *game, EntityRef ref, vchIter *iter);
 };
 
+enum GoldTransferState {
+    NoGoldTransfer,
+    Pushing,
+    Pulling
+};
+
 class Beacon : public Building
 {
 public:
@@ -186,11 +192,7 @@ public:
         Scuttle
     } state;
 
-    enum GoldTransferState {
-        None,
-        Pushing,
-        Pulling
-    } goldTransferState;
+    GoldTransferState inGameTransferState;
 
     EntityRef maybeTargetEntity;
 
@@ -225,12 +227,7 @@ public:
         Build
     } state;
 
-    enum GoldTransferState
-    {
-        None,
-        Pushing,
-        Pulling
-    } goldTransferState;
+    GoldTransferState goldTransferState;
 
     unsigned char gonnabuildTypechar;
 

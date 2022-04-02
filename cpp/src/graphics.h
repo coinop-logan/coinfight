@@ -17,6 +17,14 @@ struct Particle
     bool dead;
     Particle(vector2f pos, Target target, sf::Color color);
     void iterate(const Game &game);
+    void drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color color);
+    void draw(sf::RenderWindow *window, CameraState camera);
+};
+struct FadingParticle : public Particle
+{
+    vector2f startPos;
+    bool fadeOut;
+    FadingParticle(vector2f pos, Target target, sf::Color color, bool fadeOut);
     void draw(sf::RenderWindow *window, CameraState camera);
 };
 struct LineParticle
