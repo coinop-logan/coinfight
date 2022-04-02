@@ -301,6 +301,42 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
     }
 }
 
+void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft)
+{
+    vector<sf::Text> hints
+        {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
+         sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
+        };
+
+    sf::Transform hintsTransform;
+    hintsTransform.translate(upperLeft);
+    hintsTransform.translate(sf::Vector2f(120, 20));
+    for (uint i=0; i<hints.size(); i++)
+    {
+        hints[i].setFillColor(sf::Color(150, 150, 150));
+        window->draw(hints[i], hintsTransform);
+        hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
+    }
+
+    int textSpacing = 10;
+
+    sf::Text title(sf::String("Wallet"), mainFont, 24);
+
+    sf::Text balance(sf::String(playerBalance->getDollarString()), mainFont, 30);
+    balance.setFillColor(balanceTextColor);
+
+    sf::Transform transform;
+    transform.translate(upperLeft);
+    
+    window->draw(title, transform);
+
+    transform.translate(sf::Vector2f(0, title.getLocalBounds().height + textSpacing));
+    window->draw(balance, transform);
+
+
+    // set color of money text - add more info, i.e. arrows?
+}
+
 void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
 {
     for (uint i=0; i<strings.size(); i++)
@@ -805,8 +841,8 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
     escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
     extraText.setFillColor(sf::Color(255, 255, 255, alpha));
 
-    escapeQuitText.setPosition(30, 30);
-    extraText.setPosition(30, 90);
+    escapeQuitText.setPosition(30, 100);
+    extraText.setPosition(30, 160);
 
     window->draw(escapeQuitText);
     window->draw(extraText);
@@ -819,8 +855,8 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
         sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
         sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
         
-        progressBar.setPosition(30, 80);
-        maxProgressBar.setPosition(30, 80);
+        progressBar.setPosition(30, 150);
+        maxProgressBar.setPosition(30, 150);
 
         int white = ((1-fractionLeft) * 255);
         sf::Color fillColor(255, white, white);
@@ -834,6 +870,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
     }
 }
 
+coinsInt lastPlayerCredit = 0;
 void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
 {
     drawBackground(window, ui.camera);
@@ -925,13 +962,22 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
 
-    vector<sf::String> outputStrings;
-
     if (playerIdOrNegativeOne >= 0)
     {
         uint playerId = playerIdOrNegativeOne;
-        outputStrings.push_back("Account balance: " + game->players[playerId].credit.getDollarString());
+        coinsInt playerCredit = game->players[playerId].credit.getInt();
+
+        sf::Color balanceTextColor =
+            (playerCredit - lastPlayerCredit == 0 ? sf::Color::White :
+             playerCredit > lastPlayerCredit ?      sf::Color::Green :
+                                                    sf::Color::Red
+            );
+        drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20));
+
+        lastPlayerCredit = playerCredit;
     }
+
+    vector<sf::String> outputStrings;
 
     drawOutputStrings(window, outputStrings);
 
