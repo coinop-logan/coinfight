@@ -332,9 +332,6 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
 
     transform.translate(sf::Vector2f(0, title.getLocalBounds().height + textSpacing));
     window->draw(balance, transform);
-
-
-    // set color of money text - add more info, i.e. arrows?
 }
 
 void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
