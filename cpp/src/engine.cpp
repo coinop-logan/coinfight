@@ -202,7 +202,7 @@ void Game::iterate()
             {
                 for (uint i=0; i<players.size(); i++)
                 {
-                    cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
+                    // cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
                 }
             }
             break;
