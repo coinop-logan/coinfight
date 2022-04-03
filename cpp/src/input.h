@@ -43,6 +43,7 @@ struct UI
     bool quitNow;
     int escapeTextCountdownOrNeg1;
     int debugInt;
+    bool cleanDrawEnabled;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     void startEscapeToQuit();

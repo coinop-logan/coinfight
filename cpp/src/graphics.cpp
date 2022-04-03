@@ -993,6 +993,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
     }
 
+    if (!ui.cleanDrawEnabled)
     drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
 
     if (playerIdOrNegativeOne >= 0)

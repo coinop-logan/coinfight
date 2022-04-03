@@ -28,6 +28,7 @@ UI::UI()
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
     escapeTextCountdownOrNeg1 = -1;
+    cleanDrawEnabled = false;
 }
 
 void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
@@ -552,6 +553,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     {
                         ui->startEscapeToQuit();
                     }
+                    break;
+                case sf::Keyboard::Tilde:
+                    ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
                     break;
                 default:
                     vector<boost::shared_ptr<Cmd>> cmds = ui->handlePossibleUnitInterfaceCmd(event.key.code);
