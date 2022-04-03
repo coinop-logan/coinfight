@@ -554,7 +554,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         ui->startEscapeToQuit();
                     }
                     break;
-                case sf::Keyboard::Tilde:
+                case sf::Keyboard::H:
                     ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
                     break;
                 default:
