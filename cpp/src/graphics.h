@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include "engine.h"
 #include "input.h"
+#include "interface.h"
 
 #ifndef GRAPHICS_H
 #define GRAPHICS_H

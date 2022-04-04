@@ -53,6 +53,8 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
         modeFound = true;
         chosenMode = modes[0];
     }
+
+    updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
     
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
@@ -804,7 +806,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
 
 void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
 {
-    vector2i drawPos(HOTKEY_BOX_SPACING, WINDOW_HEIGHT - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
+    vector2i drawPos(HOTKEY_BOX_SPACING, screenDimensions.y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
     drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Gateway"});
 }
 
@@ -824,7 +826,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2f(10, WINDOW_HEIGHT - (hotkeyHelpBoxHeight + 10));
+    vector2i hotkeyHelpBoxUpperLeft = vector2f(10, screenDimensions.y - (hotkeyHelpBoxHeight + 10));
 
     sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
     hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));

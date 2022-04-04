@@ -1,10 +1,11 @@
-#ifndef INPUT_H
-#define INPUT_H
-
 #include "myvectors.h"
 #include "common.h"
 #include "cmds.h"
 #include "unit_interface_cmds.h"
+#include "interface.h"
+
+#ifndef INPUT_H
+#define INPUT_H
 
 struct InterfaceCmd; // defined in unit_interface_cmds.h
 

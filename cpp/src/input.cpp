@@ -1,5 +1,6 @@
 #include "input.h"
 #include "config.h"
+#include "interface.h"
 
 extern Game game;
 extern UI ui;
@@ -139,7 +140,7 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
 
 vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
 {
-    vector2i screenPosFromCenter = screenPos - HALF_SCREENDIM;
+    vector2i screenPosFromCenter = screenPos - screenCenter;
     vector2f result = cameraState.gamePos + vector2f(screenPosFromCenter.x, -screenPosFromCenter.y);
 
     return result;
@@ -149,7 +150,7 @@ vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos)
 {
     vector2f subtractedFromCamera = gamePos - cameraState.gamePos;
     subtractedFromCamera.y *= -1;
-    vector2i result = subtractedFromCamera + HALF_SCREENDIM;
+    vector2i result = subtractedFromCamera + screenCenter;
     return result;
 }
 
