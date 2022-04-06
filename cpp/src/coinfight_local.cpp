@@ -57,18 +57,31 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
 
 int main(int argc, char *argv[])
 {
-    if (argc-1 < 1)
+    uint playerStartDollars;
+    if (argc-1 > 0)
     {
-        cout << "Need an argument for how much money to put in for the honeypot!" << endl;
-        return 1;
+        playerStartDollars = stoi(argv[1]);
     }
-    int honeypotStartingDollars = stoi(argv[1]);
+    else
+    {
+        playerStartDollars = 15000;
+    }
+    uint honeypotStartingDollars;
+    if (argc-1 > 1)
+    {
+        honeypotStartingDollars = stoi(argv[2]);
+    }
+    else
+    {
+        honeypotStartingDollars = 0;
+    }
     coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
+    coinsInt playerStartCredit = dollarsToCoinsInt(playerStartDollars);
 
     bool fullscreen = true;
-    if (argc-1 == 2)
+    if (argc-1 > 2)
     {
-        if (string(argv[2]) == "no-fullscreen")
+        if (string(argv[3]) == "no-fullscreen")
         {
             fullscreen = false;
         }
@@ -78,8 +91,8 @@ int main(int argc, char *argv[])
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", 15000, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", 15000, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", playerStartCredit, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", playerStartCredit, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
     
     for (uint i=0; i<firstEvents.size(); i++)
