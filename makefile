@@ -28,12 +28,6 @@ prep-server:
 	cp web3-api-key bin/web3-api-key
 	cp package-assets/server/* bin/
 
-install: all
-	sudo apt install libsfml-dev
-
-install-client: client
-	sudo apt install libsfml-dev
-
 client: pre-build client-build bin/coinfight_local
 
 server: pre-build server-build prep-server
