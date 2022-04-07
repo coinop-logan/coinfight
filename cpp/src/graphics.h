@@ -1,6 +1,11 @@
 #include <SFML/Graphics.hpp>
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 #include <boost/shared_ptr.hpp>
 #include "engine.h"
 #include "input.h"

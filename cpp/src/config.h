@@ -15,8 +15,8 @@ const uint ESCAPE_TO_QUIT_TEXT_LIFE = 30;
 
 const unsigned long MAX_COINS = UINT32_MAX;
 
-const int WINDOW_WIDTH = 1920;
-const int WINDOW_HEIGHT = 1080;
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 800;
 const vector2i HALF_SCREENDIM = vector2i(WINDOW_WIDTH, WINDOW_HEIGHT) / 2;
 
 const float DISTANCE_TOL = 0.0001;
