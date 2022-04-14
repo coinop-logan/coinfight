@@ -338,6 +338,34 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, Came
     }
 }
 
+vector2i scaledDownGamePosWithZCorrection(vector2f gamePos, float scaleDownFactor)
+{
+    return vector2i(
+        (gamePos.x > 0 ?
+            (int)(gamePos.x / scaleDownFactor)
+            : (int)((gamePos.x / scaleDownFactor) - 1)
+        ), // otherwise everything between -1 and 1 shows up at col (and below, row) 0
+        (gamePos.y > 0 ?
+            (int)(gamePos.y / scaleDownFactor)
+            : (int)((gamePos.y / scaleDownFactor) - 1)
+        )
+    );
+}
+
+void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, int viewingPlayerIdOrNegativeOne, float zoomOutFactor)
+{ 
+    vector2i minimapPos = scaledDownGamePosWithZCorrection(entity->pos, zoomOutFactor);
+    minimapPos.y *= -1;
+    
+    sf::RectangleShape pixel(sf::Vector2f(1,1));
+
+    pixel.setOrigin(sf::Vector2f(0.5, 0.5));
+    pixel.setPosition(toSFVec(minimapPos + screenCenter));
+    pixel.setFillColor(sf::Color::White);
+
+    window->draw(pixel);
+}
+
 void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft)
 {
     vector<sf::Text> hints
@@ -906,139 +934,161 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
     }
 }
 
-coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
+void displayMinimap(sf::RenderWindow *window, Game *game, int playerIdOrNegativeOne, vector2i minimapDimensions)
 {
-    drawBackground(window, ui.camera);
+    sf::Color backgroundColor(50, 50, 100);
+    window->clear(backgroundColor);
 
-    particles->drawParticles(window, ui.camera);
-    particles->iterateParticles(*game);
+    float zoomOutFactor = 10;
 
     for (unsigned int i = 0; i < game->entities.size(); i++)
     {
         if (game->entities[i])
         {
-            drawEntity(window, game->entities[i], ui.camera);
+            drawEntitySymbolOnMinimap(window, game->entities[i], playerIdOrNegativeOne, zoomOutFactor);
+        }
+    }
+}
 
-            // add some gold particles every now and then
-            if (game->frame % 3 == 0)
+coinsInt lastPlayerCredit = 0;
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
+{
+    if (ui.minimapEnabled)
+    {
+        displayMinimap(window, game, playerIdOrNegativeOne, screenDimensions);
+    }
+    else {
+        drawBackground(window, ui.camera);
+
+        particles->drawParticles(window, ui.camera);
+        particles->iterateParticles(*game);
+
+        for (unsigned int i = 0; i < game->entities.size(); i++)
+        {
+            if (game->entities[i])
             {
-                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
+                drawEntity(window, game->entities[i], ui.camera);
+
+                // add some gold particles every now and then
+                if (game->frame % 3 == 0)
                 {
-                    if (prime->goldTransferState == Pulling)
+                    if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                     {
-                        if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
+                        if (prime->goldTransferState == Pulling)
                         {
-                            vector2f targetPos = *maybeTargetPos;
-                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
+                            if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
+                            {
+                                vector2f targetPos = *maybeTargetPos;
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
+                            }
+                        }
+                        else if (prime->goldTransferState == Pushing)
+                        {
+                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
                         }
                     }
-                    else if (prime->goldTransferState == Pushing)
+                    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                     {
-                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
+                        if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
+                        {
+                            switch (gateway->inGameTransferState)
+                            {
+                                case NoGoldTransfer:
+                                {
+                                    // no particles needed
+                                }
+                                break;
+                                case Pushing:
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
+                                }
+                                break;
+                                case Pulling:
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
+                                }
+                                break;
+                            }
+                        }
                     }
                 }
-                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
-                {
-                    if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
-                    {
-                        switch (gateway->inGameTransferState)
-                        {
-                            case NoGoldTransfer:
-                            {
-                                // no particles needed
-                            }
-                            break;
-                            case Pushing:
-                            {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
-                            }
-                            break;
-                            case Pulling:
-                            {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
 
-            // fighter shots
-            if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[i]))
-            {
-                if (fighter->animateShot != Fighter::None)
+                // fighter shots
+                if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[i]))
                 {
-                    if (optional<vector2f> targetPos = fighter->getTarget().getPointUnlessTargetDeleted(*game))
+                    if (fighter->animateShot != Fighter::None)
                     {
-                        vector2f relativeShotStartPos;
-                        if (fighter->animateShot == Fighter::Left)
+                        if (optional<vector2f> targetPos = fighter->getTarget().getPointUnlessTargetDeleted(*game))
                         {
-                            relativeShotStartPos = FIGHTER_SHOT_OFFSET;
+                            vector2f relativeShotStartPos;
+                            if (fighter->animateShot == Fighter::Left)
+                            {
+                                relativeShotStartPos = FIGHTER_SHOT_OFFSET;
+                            }
+                            else
+                            {
+                                vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
+                                reversedShotOffset.y *= -1;
+                                relativeShotStartPos = reversedShotOffset;
+                            }
+                            vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
+                            vector2f final = fighter->pos + rotated;
+                            boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
+                            particles->addLineParticle(line);
                         }
-                        else
-                        {
-                            vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
-                            reversedShotOffset.y *= -1;
-                            relativeShotStartPos = reversedShotOffset;
-                        }
-                        vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
-                        vector2f final = fighter->pos + rotated;
-                        boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
-                        particles->addLineParticle(line);
                     }
                 }
             }
         }
+        for (uint i=0; i<ui.selectedUnits.size(); i++)
+        {
+            drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
+        }
+
+        if (!ui.cleanDrawEnabled)
+        drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
+
+        if (playerIdOrNegativeOne >= 0)
+        {
+            uint playerId = playerIdOrNegativeOne;
+            coinsInt playerCredit = game->players[playerId].credit.getInt();
+
+            sf::Color balanceTextColor =
+                (playerCredit - lastPlayerCredit == 0 ? sf::Color::White :
+                playerCredit > lastPlayerCredit ?      sf::Color::Green :
+                                                        sf::Color::Red
+                );
+            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20));
+
+            lastPlayerCredit = playerCredit;
+        }
+
+        vector<sf::String> outputStrings;
+
+        drawOutputStrings(window, outputStrings);
+
+        bool playerOwnsUnits(false);
+        for (uint i=0; i<game->entities.size(); i++)
+        {
+            if (game->entities[i])
+                if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
+                {
+                    playerOwnsUnits = true;
+                    break;
+                }
+        }
+        if (playerOwnsUnits)
+            drawUnitHotkeyHelp(window, &ui);
+        else
+            drawSpawnBeaconHotkey(window, &ui);
+
+        if (ui.escapeTextCountdownOrNeg1 >= 0)
+        {
+            drawEscapeQuitText(window, (uint)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
+        }
+
+        drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
     }
-    for (uint i=0; i<ui.selectedUnits.size(); i++)
-    {
-        drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
-    }
-
-    if (!ui.cleanDrawEnabled)
-    drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
-
-    if (playerIdOrNegativeOne >= 0)
-    {
-        uint playerId = playerIdOrNegativeOne;
-        coinsInt playerCredit = game->players[playerId].credit.getInt();
-
-        sf::Color balanceTextColor =
-            (playerCredit - lastPlayerCredit == 0 ? sf::Color::White :
-             playerCredit > lastPlayerCredit ?      sf::Color::Green :
-                                                    sf::Color::Red
-            );
-        drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20));
-
-        lastPlayerCredit = playerCredit;
-    }
-
-    vector<sf::String> outputStrings;
-
-    drawOutputStrings(window, outputStrings);
-
-    bool playerOwnsUnits(false);
-    for (uint i=0; i<game->entities.size(); i++)
-    {
-        if (game->entities[i])
-            if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
-            {
-                playerOwnsUnits = true;
-                break;
-            }
-    }
-    if (playerOwnsUnits)
-        drawUnitHotkeyHelp(window, &ui);
-    else
-        drawSpawnBeaconHotkey(window, &ui);
-
-    if (ui.escapeTextCountdownOrNeg1 >= 0)
-    {
-        drawEscapeQuitText(window, (uint)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
-    }
-
-    drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
     
     window->display();
 }

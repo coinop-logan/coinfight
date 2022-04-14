@@ -34,6 +34,7 @@ struct UI
         Build,
         Scuttle
     } cmdState;
+    bool minimapEnabled;
     vector2i lastMousePos;
     optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;

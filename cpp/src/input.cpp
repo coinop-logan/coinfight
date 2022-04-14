@@ -17,6 +17,7 @@ UI::UI()
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
     cmdState = Default;
+    minimapEnabled = true;
     maybeSelectionBoxStart = {};
     unitInterfaceCmdsWithState = vector<InterfaceCmdWithState>
     {
