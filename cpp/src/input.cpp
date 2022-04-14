@@ -303,8 +303,9 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
 
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, int playerIdOrNeg1, sf::RenderWindow *window)
 {
-    bool spawnBeaconAvailable = playerIdOrNeg1 < 0 ? false :
-        ((game->getPlayerBeaconAvailable(playerIdOrNeg1)) && game->players[playerIdOrNeg1].credit.getInt() >= BEACON_COST);
+    bool spawnBeaconAvailable = playerIdOrNeg1 < 0 ?
+        false
+        : ((game->getPlayerBeaconAvailable(playerIdOrNeg1)) && game->players[playerIdOrNeg1].credit.getInt() >= BEACON_COST);
 
     ui->updateAvailableUnitInterfaceCmds(spawnBeaconAvailable);
 
