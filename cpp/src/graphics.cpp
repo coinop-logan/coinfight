@@ -361,7 +361,7 @@ void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entit
 
     pixel.setOrigin(sf::Vector2f(0.5, 0.5));
     pixel.setPosition(toSFVec(minimapPos + screenCenter));
-    pixel.setFillColor(sf::Color::White);
+    pixel.setFillColor(entity->getTeamOrPrimaryColor());
 
     window->draw(pixel);
 }

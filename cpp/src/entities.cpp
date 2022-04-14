@@ -249,9 +249,9 @@ void Entity::go()
 {
     throw runtime_error("go() has not been defined for " + getTypeName() + ".");
 }
-sf::Color Entity::getTeamColor()
+sf::Color Entity::getTeamOrPrimaryColor()
 {
-    throw runtime_error("getTeamColor() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypeName() + ".");
 }
 void Entity::pack(vch *dest)
 {
@@ -335,9 +335,9 @@ void GoldPile::unpackAndMoveIter(vchIter *iter)
 {
     gold = Coins(iter);
 }
-sf::Color GoldPile::getTeamColor()
+sf::Color GoldPile::getTeamOrPrimaryColor()
 {
-    return sf::Color(sf::Color::Transparent);
+    return sf::Color(sf::Color::Yellow);
 }
 
 GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
@@ -457,6 +457,10 @@ bool Unit::isActive()
         getBuilt() >= getCost() &&
         (!dead)
     );
+}
+sf::Color Unit::getTeamOrPrimaryColor()
+{
+    return getTeamColor();
 }
 sf::Color Unit::getTeamColor()
 {
