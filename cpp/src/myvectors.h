@@ -27,6 +27,7 @@ struct vector2f
     float getAngle();
     vector2f normalized();
     vector2f rotated(float angle);
+    vector2i floored();
 };
 vector2f composeVector2f(float angle, float magnitude);
 vector2f interpolate(const vector2f &, const vector2f &, float);

@@ -91,6 +91,10 @@ vector2f composeVector2f(float angle, float magnitude) {
 vector2f interpolate(vector2f a, vector2f b, float i) {
     return ((b - a) * i) + a;
 }
+vector2i vector2f::floored()
+{
+    return vector2i((int)x, (int)y);
+}
 
 
 vector2i::vector2i()

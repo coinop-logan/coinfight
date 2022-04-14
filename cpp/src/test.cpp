@@ -15,10 +15,7 @@ using namespace std;
 
 int main()
 {
-    optional<int> a = {};
-    optional<int> b = {4};
-
-    cout << (a == 4) << endl;
+    cout << (int)(-0.9) << endl;
     
     return 0;
 }
