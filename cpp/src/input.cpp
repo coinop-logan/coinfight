@@ -17,7 +17,7 @@ UI::UI()
     camera.gamePos = vector2f(0, 0);
     debugInt = 0;
     cmdState = Default;
-    minimapEnabled = true;
+    minimapEnabled = false;
     maybeSelectionBoxStart = {};
     unitInterfaceCmdsWithState = vector<InterfaceCmdWithState>
     {
@@ -540,8 +540,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
         case sf::Event::KeyPressed:
             switch (event.key.code)
             {
-                case sf::Keyboard::Tab:
+                case sf::Keyboard::Tilde:
                     ui->debugInt ++;
+                    break;
+                case sf::Keyboard::Tab:
+                    ui->minimapEnabled = !(ui->minimapEnabled);
                     break;
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
