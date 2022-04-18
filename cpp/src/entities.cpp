@@ -746,108 +746,117 @@ uint16_t Gateway::getMaxHealth() { return GATEWAY_HEALTH; }
 
 void Gateway::cmdBuildUnit(unsigned char unitTypechar)
 {
-    vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
-    boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
-    switch (unitTypechar)
+    if (this->isActive())
     {
-        case PRIME_TYPECHAR:
-            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
-            break;
-        case FIGHTER_TYPECHAR:
-            littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
-            break;
-        default:
-            cout << "Gateway doesn't know how to build that unit..." << endl;
-            break;
-    }
-    if (littleBabyUnitAwwwwSoCute)
-    {
-        state = DepositTo;
-        this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-        this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->ref;
+        vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+        boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
+        switch (unitTypechar)
+        {
+            case PRIME_TYPECHAR:
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+                break;
+            case FIGHTER_TYPECHAR:
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+                break;
+            default:
+                cout << "Gateway doesn't know how to build that unit..." << endl;
+                break;
+        }
+        if (littleBabyUnitAwwwwSoCute)
+        {
+            state = DepositTo;
+            this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
+            this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->ref;
+        }
     }
 }
 void Gateway::cmdDepositTo(Target target)
 {
-    // if target is a point, check range and create goldPile
-    if (auto point = target.castToPoint())
+    if (this->isActive())
     {
-        if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+        // if target is a point, check range and create goldPile
+        if (auto point = target.castToPoint())
         {
-            return;
+            if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+            {
+                return;
+            }
+            boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
+            game->entities.push_back(goldpile);
+            target = Target(goldpile);
         }
-        boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
-        game->entities.push_back(goldpile);
-        target = Target(goldpile);
-    }
-    else if (auto entityRef = target.castToEntityRef())
-    {
-        state = DepositTo;
-        maybeTargetEntity = *entityRef;
-    }
-    else
-    {
-        cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
+        else if (auto entityRef = target.castToEntityRef())
+        {
+            state = DepositTo;
+            maybeTargetEntity = *entityRef;
+        }
+        else
+        {
+            cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
+        }
     }
 }
 void Gateway::cmdScuttle(EntityRef targetRef)
 {
-    if (targetRef == this->ref)
+    if (this->isActive())
     {
-        // replace self with a despawning Beacon
-        boost::shared_ptr<Unit> beacon(new Beacon(game, this->ref, this->ownerId, this->pos, Beacon::Despawning));
-        beacon->completeBuildingInstantly(&this->goldInvested);
-        game->killAndReplaceEntity(this->ref, beacon);
-    }
-    else
-    {
-        if (auto entity = entityRefToPtrOrNull(*game, targetRef))
+        if (targetRef == this->ref)
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            // replace self with a despawning Beacon
+            boost::shared_ptr<Unit> beacon(new Beacon(game, this->ref, this->ownerId, this->pos, Beacon::Despawning));
+            beacon->completeBuildingInstantly(&this->goldInvested);
+            game->killAndReplaceEntity(this->ref, beacon);
+        }
+        else
+        {
+            if (auto entity = entityRefToPtrOrNull(*game, targetRef))
             {
-                if (getAllianceType(this->ownerId, unit) == Owned)
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                    if (getAllianceType(this->ownerId, unit) == Owned)
                     {
-                        if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                        if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                         {
-                            mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
-                            maybeTargetEntity = targetRef;
-                            state = Scuttle;
+                            if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
+                            {
+                                mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
+                                maybeTargetEntity = targetRef;
+                                state = Scuttle;
+                            }
+                            else
+                            {
+                                // Building out of range; ignore
+                            }
                         }
                         else
                         {
-                            // Building out of range; ignore
+                            maybeTargetEntity = targetRef;
+                            state = Scuttle;
                         }
                     }
                     else
                     {
-                        maybeTargetEntity = targetRef;
+                        // Not owned by player; just ignore 
+                    }
+                }
+                else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                {
+                    if ((this->pos - goldpile->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                    {
+                        // too far away!
+                        state = Idle;
+                        maybeTargetEntity = NULL_ENTITYREF;
+                    }
+                    else
+                    {
                         state = Scuttle;
+                        maybeTargetEntity = goldpile->ref;
                     }
                 }
                 else
                 {
-                    // Not owned by player; just ignore 
+                    cout << "Somehow I can't cast that Entity into a GoldPile or Unit" << endl;
                 }
-            }
-            else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
-            {
-                if ((this->pos - goldpile->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
-                {
-                    // too far away!
-                    state = Idle;
-                    maybeTargetEntity = NULL_ENTITYREF;
-                }
-                else
-                {
-                    state = Scuttle;
-                    maybeTargetEntity = goldpile->ref;
-                }
-            }
-            else
-            {
-                cout << "Somehow I can't cast that Entity into a GoldPile or Unit" << endl;
             }
         }
     }
@@ -855,7 +864,9 @@ void Gateway::cmdScuttle(EntityRef targetRef)
 
 float Gateway::buildQueueWeight()
 {
-    if (state == Idle)
+    if (!isActive())
+        return 10;
+    else if (state == Idle)
         return 0;
     else
         return 1;
