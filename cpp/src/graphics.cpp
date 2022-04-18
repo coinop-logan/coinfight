@@ -26,7 +26,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     bool modeFound(false);
 
     auto modes = sf::VideoMode::getFullscreenModes();
-    for (uint i = 0; i < modes.size(); i++)
+    for (unsigned int i = 0; i < modes.size(); i++)
     {
         if (modes[i].width == 1920 && modes[i].height == 1080)
         {
@@ -37,7 +37,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     }
     if (!modeFound) // gotta lower our standards!
     {
-        for (uint i = 0; i < modes.size(); i++)
+        for (unsigned int i = 0; i < modes.size(); i++)
         {
             if (modes[i].width <= 1920)
             {
@@ -55,13 +55,13 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
     }
 
     updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
-    
+
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
                    : sf::Style::Close | sf::Style::Titlebar;
     sf::RenderWindow *window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
-    
+
     return window;
 }
 
@@ -81,7 +81,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
     circle.setOutlineThickness(1);
     circle.setPosition(centerOfMapScreenPos.x, centerOfMapScreenPos.y);
 
-    for (uint i=0; i<10; i++)
+    for (unsigned int i=0; i<10; i++)
     {
         float radius = 10 * pow(2, i+1);
         float nextRadius = 10 * pow(2, i+2);
@@ -95,10 +95,10 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
 
         if (i > 0)
         {
-            uint numSpokes = pow(2, i);
+            unsigned int numSpokes = pow(2, i);
 
             sf::VertexArray lines(sf::Lines, numSpokes*2);
-            for (uint i=0; i<numSpokes; i++)
+            for (unsigned int i=0; i<numSpokes; i++)
             {
                 float angle = ((float)i / numSpokes) * 2 * M_PI;
                 vector2f from = gamePosToScreenPos(camera, composeVector2f(angle, radius));
@@ -145,7 +145,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
 
 const sf::Color unitOutlineColor(100, 100, 100);
 
-void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, uint alpha)
+void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -161,7 +161,7 @@ void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor,
     window->draw(innerRect);
 }
 
-void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, uint alpha)
+void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
 
@@ -178,7 +178,7 @@ void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor
     drawBeacon(window, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, uint alpha)
+void drawPrime(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -220,7 +220,7 @@ void drawPrime(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::C
     window->draw(lines, transform);
 }
 
-void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, uint alpha)
+void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -288,7 +288,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f d
     sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
     float drawRotation = -unit->getRotation();
 
-    uint fadedAlpha;
+    unsigned int fadedAlpha;
     if (!unit->isActive())
     {
         fadedAlpha = unit->getBuiltRatio() * 0.8 * 255;
@@ -353,10 +353,10 @@ vector2i scaledDownGamePosWithZCorrection(vector2f gamePos, float scaleDownFacto
 }
 
 void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, int viewingPlayerIdOrNegativeOne, float zoomOutFactor)
-{ 
+{
     vector2i minimapPos = scaledDownGamePosWithZCorrection(entity->pos, zoomOutFactor);
     minimapPos.y *= -1;
-    
+
     sf::RectangleShape pixel(sf::Vector2f(1,1));
 
     pixel.setOrigin(sf::Vector2f(0.5, 0.5));
@@ -376,7 +376,7 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
     sf::Transform hintsTransform;
     hintsTransform.translate(upperLeft);
     hintsTransform.translate(sf::Vector2f(120, 20));
-    for (uint i=0; i<hints.size(); i++)
+    for (unsigned int i=0; i<hints.size(); i++)
     {
         hints[i].setFillColor(sf::Color(150, 150, 150));
         window->draw(hints[i], hintsTransform);
@@ -392,7 +392,7 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
 
     sf::Transform transform;
     transform.translate(upperLeft);
-    
+
     window->draw(title, transform);
 
     transform.translate(sf::Vector2f(0, title.getLocalBounds().height + textSpacing));
@@ -401,7 +401,7 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
 
 void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
 {
-    for (uint i=0; i<strings.size(); i++)
+    for (unsigned int i=0; i<strings.size(); i++)
     {
         sf::Text text(strings[i], mainFont, 16);
         text.setFillColor(sf::Color(150, 150, 150));
@@ -433,7 +433,7 @@ void Particle::iterate(const Game &game)
             dead = true;
             return;
         }
-        
+
         velocity += toTarget.normalized() * PARTICLE_MAGNET_STRENGTH;
         velocity *= PARTICLE_FRICTION_CONSTANT;
         pos += velocity;
@@ -500,7 +500,7 @@ void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
 
 void ParticlesContainer::iterateParticles(const Game &game)
 {
-    for (uint i=0; i<particles.size(); i++)
+    for (unsigned int i=0; i<particles.size(); i++)
     {
         if (!particles[i]->dead)
             particles[i]->iterate(game);
@@ -510,7 +510,7 @@ void ParticlesContainer::iterateParticles(const Game &game)
             i--;
         }
     }
-    for (uint i=0; i<lineParticles.size(); i++)
+    for (unsigned int i=0; i<lineParticles.size(); i++)
     {
         if (!lineParticles[i]->dead)
             lineParticles[i]->iterate();
@@ -523,11 +523,11 @@ void ParticlesContainer::iterateParticles(const Game &game)
 }
 void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState camera)
 {
-    for (uint i=0; i<particles.size(); i++)
+    for (unsigned int i=0; i<particles.size(); i++)
     {
         particles[i]->draw(window, camera);
     }
-    for (uint i=0; i<lineParticles.size(); i++)
+    for (unsigned int i=0; i<lineParticles.size(); i++)
     {
         lineParticles[i]->draw(window, camera);
     }
@@ -541,7 +541,7 @@ void ParticlesContainer::addLineParticle(boost::shared_ptr<LineParticle> linePar
     lineParticles.push_back(lineParticle);
 }
 
-void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, uint radius, uint thickness, sf::Color color)
+void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, unsigned int radius, unsigned int thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
     mouseTransform.translate(screenPos.x, screenPos.y);
@@ -563,7 +563,7 @@ void drawNormalCursor(sf::RenderWindow *window)
 void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
 {
     window->setMouseCursorVisible(false);
-    
+
     sf::VertexArray lines(sf::Lines, 2);
     lines[0].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
     lines[1].position = sf::Vector2f(4, 4);
@@ -583,7 +583,7 @@ void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color col
     sf::RectangleShape rect(sf::Vector2f(2,2));
     rect.setPosition(-1, -1);
     rect.setFillColor(color);
-    
+
     transform = sf::Transform();
     transform.translate(mousePos.x, mousePos.y);
     window->draw(rect, transform);
@@ -591,7 +591,7 @@ void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color col
 void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
 {
     window->setMouseCursorVisible(false);
-    
+
     sf::VertexArray lines(sf::LinesStrip, 3);
     lines[0].position = sf::Vector2f(CURSOR_SIZE/2 - 6, CURSOR_SIZE/2);
     lines[1].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
@@ -619,7 +619,7 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
 void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2f mousePos)
 {
     window->setMouseCursorVisible(false);
-    
+
     ui.ghostBuilding->pos = screenPosToGamePos(ui.camera, mousePos);
     drawEntity(window, ui.ghostBuilding, ui.camera);
 }
@@ -638,7 +638,7 @@ void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
     rect.setOutlineColor(sf::Color::Green);
     rect.setOutlineThickness(1);
     rect.setFillColor(sf::Color::Transparent);
-    
+
     window->draw(rect);
 }
 
@@ -716,7 +716,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
 
 void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
 {
-    for (uint i=0; i<game->entities.size(); i++)
+    for (unsigned int i=0; i<game->entities.size(); i++)
     {
         if (!game->entities[i])
             continue;
@@ -818,7 +818,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
     float allLinesHeight = lineHeight * cmdNameLines.size();
     float topLineYFromCenter = - allLinesHeight / 2;
     vector2f boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
-    for (uint i=0; i<cmdNameLines.size(); i++)
+    for (unsigned int i=0; i<cmdNameLines.size(); i++)
     {
         sf::Text lineText(cmdNameLines[i], mainFont, 12);
 
@@ -863,15 +863,15 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
     hotkeyHelpBoudingRect.setOutlineColor(sf::Color(150, 150, 200));
     hotkeyHelpBoudingRect.setOutlineThickness(1);
     window->draw(hotkeyHelpBoudingRect);
-    
-    for (uint i=0; i<8; i++)
+
+    for (unsigned int i=0; i<8; i++)
     {
         sf::Keyboard::Key keyCode = get<0>(hotkeyInfo[i]);
         char keyChar = get<1>(hotkeyInfo[i]);
         vector<string> cmdNameLines = get<2>(hotkeyInfo[i]);
 
         InterfaceCmdWithState* interfaceCmdWithState(NULL);
-        for (uint j=0; j<ui->unitInterfaceCmdsWithState.size(); j++)
+        for (unsigned int j=0; j<ui->unitInterfaceCmdsWithState.size(); j++)
         {
             if (ui->unitInterfaceCmdsWithState[j].interfaceCmd->getKey() == keyCode)
             {
@@ -896,7 +896,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
     }
 }
 
-void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int countdownToQuitOrNeg1)
+void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdown, int countdownToQuitOrNeg1)
 {
     sf::Text escapeQuitText("Hold Escape to quit.", mainFont, 40);
     sf::Text extraText("This will automatically withdraw your balance", mainFont, 20);
@@ -918,7 +918,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, uint escapeTextCountdown, int 
         float progressBarWidth = fractionLeft * progressBarMaxWidth;
         sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
         sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
-        
+
         progressBar.setPosition(30, 150);
         maxProgressBar.setPosition(30, 150);
 
@@ -1040,7 +1040,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
             }
         }
-        for (uint i=0; i<ui.selectedUnits.size(); i++)
+        for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
         {
             drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
         }
@@ -1050,7 +1050,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
         if (playerIdOrNegativeOne >= 0)
         {
-            uint playerId = playerIdOrNegativeOne;
+            unsigned int playerId = playerIdOrNegativeOne;
             coinsInt playerCredit = game->players[playerId].credit.getInt();
 
             sf::Color balanceTextColor =
@@ -1068,7 +1068,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         drawOutputStrings(window, outputStrings);
 
         bool playerOwnsUnits(false);
-        for (uint i=0; i<game->entities.size(); i++)
+        for (unsigned int i=0; i<game->entities.size(); i++)
         {
             if (game->entities[i])
                 if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
@@ -1084,11 +1084,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
         if (ui.escapeTextCountdownOrNeg1 >= 0)
         {
-            drawEscapeQuitText(window, (uint)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
+            drawEscapeQuitText(window, (unsigned int)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
         }
 
         drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
     }
-    
+
     window->display();
 }

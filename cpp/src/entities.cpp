@@ -145,7 +145,7 @@ boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
 vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
 {
     vector<EntityRef> refs;
-    for (uint i = 0; i < ptrs.size(); i++)
+    for (unsigned int i = 0; i < ptrs.size(); i++)
     {
         refs.push_back(ptrs[i]->ref);
     }
@@ -155,7 +155,7 @@ vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
 vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>> unitPtrs)
 {
     vector<EntityRef> refs;
-    for (uint i=0; i<unitPtrs.size(); i++)
+    for (unsigned int i=0; i<unitPtrs.size(); i++)
     {
         refs.push_back(unitPtrs[i]->ref);
     }
@@ -408,7 +408,7 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
     unsigned char ownerIdChar;
     *iter = unpackFromIter(*iter, "C", &ownerIdChar);
     ownerId = ownerIdChar;
-    
+
     *iter = unpackFromIter(*iter, "H", &health);
 
     goldInvested = Coins(iter);
@@ -449,7 +449,7 @@ float Unit::getBuiltRatio()
 {
     return (float)getBuilt() / getCost();
 }
-    
+
 bool Unit::isActive()
 {
     return
@@ -516,9 +516,9 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+Building::Building(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
     : Unit(game, ref, ownerId, totalCost, health, pos) {}
-Building::Building(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter)
+Building::Building(Game *game, EntityRef ref, vchIter *iter) : Unit(game, ref, iter)
 {
     unpackBuildingAndMoveIter(iter);
 }
@@ -564,13 +564,13 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "f", &targetRange);
 }
 
-MobileUnit::MobileUnit(Game *game, uint16_t ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+MobileUnit::MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
     : Unit(game, ref, ownerId, totalCost, health, pos), target(NULL_ENTITYREF), angle_view(0)
 {
     targetRange = 0;
     setTarget(Target(pos), 0);
 }
-MobileUnit::MobileUnit(Game *game, uint16_t ref, vchIter *iter) : Unit(game, ref, iter),
+MobileUnit::MobileUnit(Game *game, EntityRef ref, vchIter *iter) : Unit(game, ref, iter),
                                                                   target(NULL_ENTITYREF),
                                                                   angle_view(0)
 {
@@ -677,11 +677,11 @@ void Beacon::unpackAndMoveIter(vchIter *iter)
     state = static_cast<State>(enumInt);
 }
 
-Beacon::Beacon(Game *game, uint16_t ref, int ownerId, vector2f pos, State state)
+Beacon::Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos, State state)
     : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos),
       state(state)
 {}
-Beacon::Beacon(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
+Beacon::Beacon(Game *game, EntityRef ref, vchIter *iter) : Building(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -836,7 +836,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                     }
                     else
                     {
-                        // Not owned by player; just ignore 
+                        // Not owned by player; just ignore
                     }
                 }
                 else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -889,12 +889,12 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
     *iter = unpackEntityRef(*iter, &maybeTargetEntity);
 }
 
-Gateway::Gateway(Game *game, uint16_t ref, int ownerId, vector2f pos)
+Gateway::Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos)
     : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
       state(Idle), inGameTransferState(NoGoldTransfer),
       maybeTargetEntity(NULL_ENTITYREF)
 {}
-Gateway::Gateway(Game *game, uint16_t ref, vchIter *iter) : Building(game, ref, iter)
+Gateway::Gateway(Game *game, EntityRef ref, vchIter *iter) : Building(game, ref, iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -908,7 +908,7 @@ void Gateway::go()
         {
             // search for units near enough to complete
             float rangeSquared = pow(GATEWAY_RANGE, 2);
-            for (uint i=0; i<game->entities.size(); i++)
+            for (unsigned int i=0; i<game->entities.size(); i++)
             {
                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
                 {
@@ -1077,12 +1077,12 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
 }
 
-Prime::Prime(Game *game, uint16_t ref, int ownerId, vector2f pos)
+Prime::Prime(Game *game, EntityRef ref, int ownerId, vector2f pos)
     : MobileUnit(game, ref, ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       state(Idle)
 {}
-Prime::Prime(Game *game, uint16_t ref, vchIter *iter) : MobileUnit(game, ref, iter),
+Prime::Prime(Game *game, EntityRef ref, vchIter *iter) : MobileUnit(game, ref, iter),
                                                         heldGold(PRIME_MAX_GOLD_HELD)
 {
     unpackAndMoveIter(iter);
@@ -1359,7 +1359,7 @@ void Fighter::go()
     animateShot = None;
     if (shootCooldown > 0)
         shootCooldown --;
-    
+
     if (state == AttackingUnit)
     {
         bool returnToIdle = false;
@@ -1384,7 +1384,7 @@ void Fighter::go()
         }
         else
             returnToIdle = true;
-        
+
         if (returnToIdle)
         {
             state = Idle;

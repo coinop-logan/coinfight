@@ -107,7 +107,7 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
     int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
     if (playerId == -1)
         return;
-        
+
     if (game->getPlayerBeaconAvailable(playerId))
     {
         game->setPlayerBeaconAvailable(playerId, false);
@@ -168,9 +168,9 @@ void UnitCmd::executeAsPlayer(Game *game, string playerAddress)
     int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
     if (playerId == -1)
         return;
-        
+
     vector<boost::shared_ptr<Unit>> units = getUnits(game);
-    for (uint i = 0; i < units.size(); i++)
+    for (unsigned int i = 0; i < units.size(); i++)
     {
         if (units[i]->ownerId == playerId)
         {
@@ -186,7 +186,7 @@ void UnitCmd::executeOnUnit(boost::shared_ptr<Unit> u)
 vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
 {
     vector<boost::shared_ptr<Unit>> units;
-    for (uint i = 0; i < unitRefs.size(); i++)
+    for (unsigned int i = 0; i < unitRefs.size(); i++)
     {
         if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, unitRefs[i])))
         {

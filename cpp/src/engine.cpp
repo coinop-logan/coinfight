@@ -16,7 +16,7 @@ using namespace std;
 sf::Color playerAddressToColor(string address)
 {
     int vals[3];
-    for (uint i=0; i<3; i++)
+    for (unsigned int i=0; i<3; i++)
     {
         string charStr = address.substr(2 + i, 1);
         unsigned int intVal = std::stoul(charStr, nullptr, 16);
@@ -51,7 +51,7 @@ Player::Player(vchIter *iter)
 
 int Game::playerAddressToIdOrNegativeOne(string address)
 {
-    for (uint i=0; i<players.size(); i++)
+    for (unsigned int i=0; i<players.size(); i++)
     {
         if (players[i].address == address)
         {
@@ -60,15 +60,15 @@ int Game::playerAddressToIdOrNegativeOne(string address)
     }
     return -1;
 }
-string Game::playerIdToAddress(uint playerId)
+string Game::playerIdToAddress(unsigned int playerId)
 {
     return players[playerId].address;
 }
-bool Game::getPlayerBeaconAvailable(uint playerId)
+bool Game::getPlayerBeaconAvailable(unsigned int playerId)
 {
     return players[playerId].beaconAvailable;
 }
-void Game::setPlayerBeaconAvailable(uint playerId, bool flag)
+void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
 }
@@ -85,7 +85,7 @@ void Game::pack(vch *dest)
     packToVch(dest, "Q", frame);
 
     packToVch(dest, "C", (unsigned char)(players.size()));
-    for (uint i=0; i < players.size(); i++)
+    for (unsigned int i=0; i < players.size(); i++)
     {
         players[i].pack(dest);
     }
@@ -110,7 +110,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     state = static_cast<State>(enumInt);
 
     *iter = unpackFromIter(*iter, "Q", &frame);
-    
+
     uint8_t playersSize;
     *iter = unpackFromIter(*iter, "C", &playersSize);
     players.clear();
@@ -156,7 +156,7 @@ void Game::iterate()
             break;
         case Active:
             // iterate all units
-            for (uint i=0; i<entities.size(); i++)
+            for (unsigned int i=0; i<entities.size(); i++)
             {
                 if (entities[i])
                 {
@@ -171,7 +171,7 @@ void Game::iterate()
             }
 
             // clean up units that are ded
-            for (uint i=0; i<entities.size(); i++)
+            for (unsigned int i=0; i<entities.size(); i++)
             {
                 if (entities[i] && entities[i]->dead)
                 {
@@ -179,7 +179,7 @@ void Game::iterate()
                     boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
 
                     vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
-                    for (uint j=0; j<droppableCoins.size(); j++)
+                    for (unsigned int j=0; j<droppableCoins.size(); j++)
                     {
                         if (droppableCoins[j]->getInt() > 0)
                         {
@@ -200,7 +200,7 @@ void Game::iterate()
 
             if (frame % 200 == 0)
             {
-                for (uint i=0; i<players.size(); i++)
+                for (unsigned int i=0; i<players.size(); i++)
                 {
                     // cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
                 }

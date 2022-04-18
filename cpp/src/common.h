@@ -12,7 +12,6 @@ using namespace std;
 
 using vch = vector<unsigned char>;
 using vchIter = vector<unsigned char>::iterator;
-using EntityRef = uint16_t;
 
 void packTypechar(vch *dest, unsigned char typechar);
 
@@ -48,7 +47,7 @@ vector2f randomVectorWithMagnitudeRange(float min, float max);
 template<class T, class U> vector<boost::shared_ptr<T>> filterForType(vector<boost::shared_ptr<U>> v)
 {
     vector<boost::shared_ptr<T>> filtered;
-    for (uint i=0; i<v.size(); i++)
+    for (unsigned int i=0; i<v.size(); i++)
     {
         if (boost::shared_ptr<T> found = boost::dynamic_pointer_cast<T, U>(v[i]))
         {
@@ -61,7 +60,7 @@ template<class T, class U> vector<boost::shared_ptr<T>> filterForType(vector<boo
 template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContainer(vector<boost::shared_ptr<U>> v)
 {
     vector<boost::shared_ptr<U>> filtered;
-    for (uint i=0; i<v.size(); i++)
+    for (unsigned int i=0; i<v.size(); i++)
     {
         if (boost::shared_ptr<T> found = boost::dynamic_pointer_cast<T, U>(v[i]))
         {

@@ -39,19 +39,19 @@ void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 
     // set all to false, and create a list of pointers to track those we've yet to enable
     vector<InterfaceCmdWithState*> notYetEnabledUnitInterfaceCmds;
-    for (uint i=0; i<unitInterfaceCmdsWithState.size(); i++)
+    for (unsigned int i=0; i<unitInterfaceCmdsWithState.size(); i++)
     {
         unitInterfaceCmdsWithState[i].eligible = false;
         notYetEnabledUnitInterfaceCmds.push_back(&unitInterfaceCmdsWithState[i]);
     }
-    
-    for (uint i=0; i<selectedUnits.size(); i++)
+
+    for (unsigned int i=0; i<selectedUnits.size(); i++)
     {
         // if we've enabled all cmds, no need to keep looking
         if (notYetEnabledUnitInterfaceCmds.size() == 0)
             break;
-        
-        for (uint j=0; j<notYetEnabledUnitInterfaceCmds.size(); j++)
+
+        for (unsigned int j=0; j<notYetEnabledUnitInterfaceCmds.size(); j++)
         {
             if (auto unitInterfaceCmd = boost::dynamic_pointer_cast<UnitInterfaceCmd, InterfaceCmd>(notYetEnabledUnitInterfaceCmds[j]->interfaceCmd))
             {
@@ -98,7 +98,7 @@ void UI::iterate()
     }
 
     // remove dead or null units from selectedUnits
-    for (uint i=0; i<selectedUnits.size(); i++)
+    for (unsigned int i=0; i<selectedUnits.size(); i++)
     {
         if (!selectedUnits[i] || selectedUnits[i]->dead)
         {
@@ -128,7 +128,7 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
     if (spawnBeaconInterfaceCmdWithState.eligible && spawnBeaconInterfaceCmdWithState.interfaceCmd->getKey() == key)
         return {spawnBeaconInterfaceCmdWithState.interfaceCmd->execute(this)};
 
-    for (uint i=0; i<unitInterfaceCmdsWithState.size(); i++)
+    for (unsigned int i=0; i<unitInterfaceCmdsWithState.size(); i++)
     {
         if (unitInterfaceCmdsWithState[i].eligible && unitInterfaceCmdsWithState[i].interfaceCmd->getKey() == key)
         {
@@ -220,7 +220,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
                     vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
                     return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefs(primesInSelection), unit->ref));
                 }
-            } 
+            }
             if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
             {
                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
@@ -233,7 +233,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
             }
         }
     }
-    
+
     // couldn't cast target to a point or an entity...
     cout << "issue casting target to a point or entity in makeRightclickCmd" << endl;
     return boost::shared_ptr<Cmd>(); // return null cmd
@@ -245,7 +245,7 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
     if (selectedGateways.size() > 0)
     {
         boost::shared_ptr<Gateway> bestChoice;
-        for (uint i=0; i<selectedGateways.size(); i++)
+        for (unsigned int i=0; i<selectedGateways.size(); i++)
         {
             if (!bestChoice)
             {
@@ -273,7 +273,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
     {
         boost::shared_ptr<Prime> bestChoice;
         float bestDistanceSquared;
-        for (uint i=0; i<selectedPrimes.size(); i++)
+        for (unsigned int i=0; i<selectedPrimes.size(); i++)
         {
             if (!bestChoice)
             {
@@ -375,7 +375,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         {
                             ui->selectedUnits.clear();
                         }
-                        for (uint i=0; i<game->entities.size(); i++) 
+                        for (unsigned int i=0; i<game->entities.size(); i++)
                         {
                             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
                             {
@@ -415,7 +415,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     case UI::Deposit:
                     {
                         Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
-                        
+
                         vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                         vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
                         auto primesAndGateways = primesInSelection;
@@ -457,7 +457,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 boost::shared_ptr<Unit> bestChoice;
 
                                 float bestGatewayDistanceSquared;
-                                for (uint i=0; i<gatewaysInSelection.size(); i++)
+                                for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
                                 {
                                     if (!bestChoice)
                                     {
@@ -478,7 +478,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 if (!bestChoice)
                                 {
                                     float bestPrimeDistanceSquared;
-                                    for (uint i=0; i<primesInSelection.size(); i++)
+                                    for (unsigned int i=0; i<primesInSelection.size(); i++)
                                     {
                                         if (!bestChoice)
                                         {

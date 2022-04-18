@@ -12,7 +12,6 @@ using namespace std;
 
 using vch = vector<unsigned char>;
 using vchIter = vector<unsigned char>::iterator;
-using EntityRef = uint16_t;
 
 const unsigned char CMD_MOVE_CHAR = 0;
 const unsigned char CMD_PICKUP_CHAR = 1;

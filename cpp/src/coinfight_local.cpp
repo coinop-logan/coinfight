@@ -62,7 +62,7 @@ void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
 
 int main(int argc, char *argv[])
 {
-    uint playerStartDollars;
+    unsigned int playerStartDollars;
     if (argc-1 > 0)
     {
         playerStartDollars = stoi(argv[1]);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     {
         playerStartDollars = 15000;
     }
-    uint honeypotStartingDollars;
+    unsigned int honeypotStartingDollars;
     if (argc-1 > 1)
     {
         honeypotStartingDollars = stoi(argv[2]);
@@ -99,8 +99,8 @@ int main(int argc, char *argv[])
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0xf00", playerStartCredit, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent("0x0f0", playerStartCredit, true)));
     firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
-    
-    for (uint i=0; i<firstEvents.size(); i++)
+
+    for (unsigned int i=0; i<firstEvents.size(); i++)
     {
         firstEvents[i]->execute(&game);
     }
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     sf::RenderWindow* window = setupGraphics(fullscreen);
 
     ui = UI();
-    uint currentPlayerId = 0;
+    unsigned int currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
-                uint newPlayerId = ui.debugInt % game.players.size();
+                unsigned int newPlayerId = ui.debugInt % game.players.size();
                 if (newPlayerId != currentPlayerId)
                 {
                     currentPlayerId = newPlayerId;
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
             // gonna pack queued cmds up and clear list
             vector<vch*> packages;
-            for (uint i=0; i < pendingCmdsToSend.size(); i++)
+            for (unsigned int i=0; i < pendingCmdsToSend.size(); i++)
             {
                 if (!pendingCmdsToSend[i])
                     cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 
             // now unpack them like the server does
             vector<boost::shared_ptr<AuthdCmd>> authdCmds;
-            for (uint i=0; i<packages.size(); i++)
+            for (unsigned int i=0; i<packages.size(); i++)
             {
                 vchIter place = packages[i]->begin() + 2; // we're looking past the size specifier, because in this case we already know...
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
             }
 
             // now execute all authd cmds
-            for (uint i=0; i<authdCmds.size(); i++)
+            for (unsigned int i=0; i<authdCmds.size(); i++)
             {
                 auto cmd = authdCmds[i]->cmd;
                 if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))

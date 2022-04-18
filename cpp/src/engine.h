@@ -26,7 +26,7 @@ struct Player
     string address;
     Coins credit;
     bool beaconAvailable;
-    
+
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -52,9 +52,9 @@ public:
     EntityRef getNextEntityRef();
 
     int playerAddressToIdOrNegativeOne(string address);
-    string playerIdToAddress(uint playerId);
-    bool getPlayerBeaconAvailable(uint playerId);
-    void setPlayerBeaconAvailable(uint playerId, bool flag);
+    string playerIdToAddress(unsigned int playerId);
+    bool getPlayerBeaconAvailable(unsigned int playerId);
+    void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
 
     void killAndReplaceEntity(EntityRef, boost::shared_ptr<Entity> newEntity);
 

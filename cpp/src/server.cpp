@@ -107,7 +107,7 @@ class ClientChannel
             int randChoice = (int)((double)rand() / ((double)RAND_MAX + 1) * (sizeof(alphanum) - 1));
             s += alphanum[randChoice];
         }
-        
+
         return s;
     }
 
@@ -336,7 +336,7 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
         cout << "client connected!" << endl;
         ClientChannel *clientChannel = new ClientChannel(ioService, socket);
         clientChannel->startHandshakeAsync();
-        
+
         clientChannels.push_back(clientChannel);
 
     }
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
 
     vector<WithdrawEvent> pendingWithdrawEvents;
-    
+
     while (true)
     {
         // poll io_service, which will populate pendingCmds with anything the ClientChannels have received
@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
 
         // did we see any withdrawals last loop?
         // If so, actuate and queue for in-game processing
-        for (uint i=0; i<pendingWithdrawEvents.size(); i++)
+        for (unsigned int i=0; i<pendingWithdrawEvents.size(); i++)
         {
             // just make sure again the math works out
             if (pendingWithdrawEvents[i].amountInCoins > game.players[game.playerAddressToIdOrNegativeOne(pendingWithdrawEvents[i].userAddress)].credit.getInt())
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
                 case ClientChannel::UpToDate:
                     clientChannels[i]->sendFrameCmdsPacket(fcp);
                     break;
-                
+
                 case ClientChannel::Closed:
                     clientChannels.erase(clientChannels.begin()+i);
                     i--;

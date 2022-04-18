@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
     // Wait for the sig challenge and respond with the user's help
     string sigChallenge = connectionHandler.receiveSigChallenge();
     cout << "Sign this with the address you deposited to:" << endl << sigChallenge << endl;
-    
+
     string userResponse;
     cout << "sig: ";
     cin >> userResponse;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     }
 
     sf::RenderWindow* window = setupGraphics(fullscreen);
-    
+
     ui = UI();
 
     ParticlesContainer particles;
@@ -301,12 +301,12 @@ int main(int argc, char *argv[])
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
         if (now < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
             continue;
-        
+
         nextFrameStart += ONE_FRAME;
 
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, playerIdOrNegativeOne, window);
 
-        for (uint i=0; i < cmdsToSend.size(); i++)
+        for (unsigned int i=0; i < cmdsToSend.size(); i++)
         {
             cout << 1 << endl;
             if (!cmdsToSend[i])
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
         {
             fcp.events[i]->execute(&game);
         }
-        
+
         // go through cmds
         for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
         {
@@ -371,14 +371,14 @@ int main(int argc, char *argv[])
         }
 
         // check for game start cmd, and do some ux prep if we got one
-        for (uint i=0; i<fcp.events.size(); i++)
+        for (unsigned int i=0; i<fcp.events.size(); i++)
         {
             if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
             {
                 if (playerIdOrNegativeOne >= 0)
                 {
                     // find owned unit and center on it
-                    for (uint i=0; i<game.entities.size(); i++)
+                    for (unsigned int i=0; i<game.entities.size(); i++)
                     {
                         if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
                         {
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
         cout << "Withdrawing your " << game.players[playerIdOrNegativeOne].credit.getDollarString().toAnsiString() << " now..." << endl;
         boost::shared_ptr<WithdrawCmd> withdrawCmd(new WithdrawCmd(coinsInt(0)));
         connectionHandler.sendCmd(withdrawCmd);
-    } 
+    }
 
     socket.close();
 
