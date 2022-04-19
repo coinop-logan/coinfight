@@ -783,12 +783,13 @@ void Gateway::cmdDepositTo(Target target)
             }
             boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
             game->entities.push_back(goldpile);
-            target = Target(goldpile);
+            maybeTargetEntity = goldpile->ref;
+            state = DepositTo;
         }
         else if (auto entityRef = target.castToEntityRef())
         {
-            state = DepositTo;
             maybeTargetEntity = *entityRef;
+            state = DepositTo;
         }
         else
         {
