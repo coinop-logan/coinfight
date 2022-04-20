@@ -293,14 +293,6 @@ Game::Game(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-// void Game::reassignEntityGamePointers()
-// {
-//     for (EntityRef i = 0; i < entities.size(); i++)
-//     {
-//         if (entities[i])
-//             entities[i]->game = this;
-//     }
-// }
 
 void Game::iterate()
 {
