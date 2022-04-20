@@ -79,7 +79,7 @@ optional<vector2f> Target::getPointUnlessTargetDeleted(const Game &game)
         return {pointTarget};
     else
         if (boost::shared_ptr<Entity> e = maybeEntityRefToPtrOrNull(game, entityTarget))
-            return {e->pos};
+            return {e->getPos()};
     return {};
 }
 
@@ -231,6 +231,15 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
 // ----------------------
 
 
+vector2f Entity::getPos()
+{
+    return pos;
+}
+void Entity::setPosAndUpdateCell(vector2f newPos)
+{
+    pos = newPos;
+    getGameOrThrow()->searchGrid.updateEntityCellRelation(this);
+}
 Game* Entity::getGameOrThrow()
 {
     if (auto regInfo = maybeRegInfo)
@@ -308,16 +317,13 @@ void Entity::unpackEntityAndMoveIter(vchIter *iter)
 
     *iter = unpackVector2f(*iter, &pos);
 }
-Entity::Entity(vector2f pos) : dead(false),
-                               pos(pos)
+Entity::Entity(vector2f pos) : pos(pos),
+                               dead(false)
+                               
 {}
 Entity::Entity(vchIter *iter)
 {
     unpackEntityAndMoveIter(iter);
-}
-vector2f Entity::getPos()
-{
-    return pos;
 }
 void Entity::die()
 {
@@ -647,9 +653,13 @@ optional<Target> MobileUnit::getTarget()
         return {};
 }
 
+void MobileUnit::addToPosAndUpdateCell(vector2f toAdd)
+{
+    setPosAndUpdateCell(getPos() + toAdd);
+}
 void MobileUnit::moveTowardPoint(vector2f dest, float range)
 {
-    vector2f toPoint = dest - pos;
+    vector2f toPoint = dest - getPos();
     float distanceLeft = toPoint.getMagnitude() - range;
     if (distanceLeft <= 0)
     {
@@ -661,11 +671,11 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
 
     if (distanceLeft <= getSpeed())
     {
-        pos += unitDir * distanceLeft;
+        addToPosAndUpdateCell(unitDir * distanceLeft);
     }
     else
     {
-        pos += unitDir * getSpeed();
+        addToPosAndUpdateCell(unitDir * getSpeed());
     }
 }
 void MobileUnit::mobileUnitGo()
@@ -675,7 +685,7 @@ void MobileUnit::mobileUnitGo()
         if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
             moveTowardPoint(*p, targetAndRange->second);
         else
-            setTarget(Target(pos), 0);
+            setTarget(Target(getPos()), 0);
     }
     unitGo();
 }
@@ -749,7 +759,7 @@ void Beacon::go()
             if (isActive())
             {
                 // replace self with a Gateway
-                boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->pos));
+                boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->getPos()));
                 gateway->completeBuildingInstantly(&this->goldInvested);
                 this->die();
                 game->registerNewEntity(gateway);
@@ -802,7 +812,7 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
 {
     if (this->isActive())
     {
-        vector2f newUnitPos = this->pos + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+        vector2f newUnitPos = this->getPos() + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
         boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
         switch (unitTypechar)
         {
@@ -831,7 +841,7 @@ void Gateway::cmdDepositTo(Target target)
         // if target is a point, check range and create goldPile
         if (auto point = target.castToPoint())
         {
-            if ((*point - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+            if ((*point - this->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
             {
                 return;
             }
@@ -860,7 +870,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
         if (targetRef == this->getRefOrThrow())
         {
             // replace self with a despawning Beacon
-            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->pos, Beacon::Despawning));
+            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
             game->registerNewEntity(beacon);
@@ -873,7 +883,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                 {
                     if (getAllianceType(this->ownerId, unit) == Owned)
                     {
-                        if ((this->pos - unit->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                        if ((this->getPos() - unit->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                         {
                             if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
                             {
@@ -899,7 +909,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                 }
                 else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
-                    if ((this->pos - goldpile->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                    if ((this->getPos() - goldpile->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                     {
                         // too far away!
                         state = Idle;
@@ -986,7 +996,7 @@ void Gateway::go()
                 {
                     if (unit->ownerId == this->ownerId)
                         if (unit->getBuiltRatio() < 1)
-                            if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
+                            if ((unit->getPos() - this->getPos()).getMagnitudeSquared() <= rangeSquared)
                                 {
                                     state = DepositTo;
                                     maybeTargetEntity = {unit->getRefOrThrow()};
@@ -1000,7 +1010,7 @@ void Gateway::go()
             if (boost::shared_ptr<Entity> depositingToEntityPtr = maybeEntityRefToPtrOrNull(*game, maybeTargetEntity))
             {
                 // stop if it's out of range
-                if ((depositingToEntityPtr->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                if ((depositingToEntityPtr->getPos() - this->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                 {
                     state = Idle;
                     maybeTargetEntity = {};
@@ -1056,7 +1066,7 @@ void Gateway::go()
         {
             if (auto entity = (maybeEntityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
-                if ((this->pos - entity->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
+                if ((this->getPos() - entity->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
@@ -1208,7 +1218,7 @@ void Prime::go()
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
-                if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
                     optional<Coins*> coinsToPullFrom;
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
@@ -1236,7 +1246,7 @@ void Prime::go()
         if (auto target = getTarget())
         if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
-            if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            if ((*point - getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
                 optional<Coins*> coinsToPushTo;
                 bool stopOnTransferZero = false;
@@ -1310,7 +1320,7 @@ void Prime::go()
         {
             if (optional<vector2f> point = target->castToPoint())
             {
-                if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                if ((*point - getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
                     // create unit if typechar checks out and change target to new unit
                     boost::shared_ptr<Building> buildingToBuild;
@@ -1448,7 +1458,7 @@ void Fighter::go()
             {
                 if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
                 {
-                    vector2f toTarget = (targetUnit->pos - pos);
+                    vector2f toTarget = (targetUnit->getPos() - this->getPos());
                     angle_view = toTarget.getAngle();
                     if (toTarget.getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
                     {

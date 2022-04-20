@@ -177,7 +177,7 @@ Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, ve
         {
             if (e->collidesWithPoint(gamePos))
             {
-                float distance = (gamePos - e->pos).getMagnitude();
+                float distance = (gamePos - e->getPos()).getMagnitude();
                 if (!closestValidEntity || distance < closestValidEntityDistance)
                 {
                     closestValidEntity = e;
@@ -278,7 +278,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
             if (!bestChoice)
             {
                 bestChoice = selectedPrimes[i];
-                bestDistanceSquared = (selectedPrimes[i]->pos - buildPos).getMagnitudeSquared();
+                bestDistanceSquared = (selectedPrimes[i]->getPos() - buildPos).getMagnitudeSquared();
                 continue;
             }
 
@@ -286,7 +286,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
             if (selectedPrimes[i]->state == Prime::Build)
                 continue;
 
-            float distanceSquared = (selectedPrimes[i]->pos - buildPos).getMagnitudeSquared();
+            float distanceSquared = (selectedPrimes[i]->getPos() - buildPos).getMagnitudeSquared();
             if (distanceSquared < bestDistanceSquared)
             {
                 bestChoice = selectedPrimes[i];
@@ -381,7 +381,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                             {
                                 if (unit->ownerId == playerIdOrNeg1)
                                 {
-                                    if (selectionRectGameCoords.contains(sf::Vector2i(unit->pos.x, unit->pos.y)))
+                                    if (selectionRectGameCoords.contains(sf::Vector2i(unit->getPos().x, unit->getPos().y)))
                                     {
                                         ui->selectedUnits.push_back(unit);
                                     }
@@ -462,11 +462,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                     if (!bestChoice)
                                     {
                                         bestChoice = gatewaysInSelection[i];
-                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
+                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
                                     }
                                     else
                                     {
-                                        float distanceSquared = (gatewaysInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
+                                        float distanceSquared = (gatewaysInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
                                         if (distanceSquared < bestGatewayDistanceSquared)
                                         {
                                             bestChoice = gatewaysInSelection[i];
@@ -483,11 +483,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                         if (!bestChoice)
                                         {
                                             bestChoice = primesInSelection[i];
-                                            bestPrimeDistanceSquared = (primesInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
+                                            bestPrimeDistanceSquared = (primesInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
                                         }
                                         else
                                         {
-                                            float distanceSquared = (primesInSelection[i]->pos - targetEntity->pos).getMagnitudeSquared();
+                                            float distanceSquared = (primesInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
                                             if (distanceSquared < bestPrimeDistanceSquared)
                                             {
                                                 bestChoice = primesInSelection[i];

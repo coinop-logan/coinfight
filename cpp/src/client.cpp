@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
                         {
                             if (unit->ownerId == playerIdOrNegativeOne)
                             {
-                                ui.camera.gamePos = unit->pos;
+                                ui.camera.gamePos = unit->getPos();
                             }
                         }
                     }

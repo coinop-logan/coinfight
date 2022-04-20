@@ -57,9 +57,10 @@ class SearchGrid
     vector2i gamePosToCellConstrained(vector2f gamePos);
 public:
     SearchGrid();
+    set<EntityRef> getCell(vector2i cell);
     optional<vector2i> gamePosToCell(vector2f gamePos);
     optional<vector2i> registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref);
-    optional<vector2i> updateEntityCellRelation(boost::shared_ptr<Entity> entity);
+    optional<vector2i> updateEntityCellRelation(Entity* entity);
     SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
     vector<EntityRef> entitiesInGridRect(SearchGridRect rect);
     vector<EntityRef> entitiesNearGamePosSloppy(vector2f gamePos, float radius);
@@ -68,10 +69,6 @@ public:
 class Game
 {
 public:
-    enum State {
-        Pregame,
-        Active
-    } state;
     uint64_t frame;
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;

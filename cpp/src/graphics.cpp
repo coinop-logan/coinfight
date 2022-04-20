@@ -322,7 +322,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f d
 
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
 {
-    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->pos));
+    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->getPos()));
 
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
@@ -354,7 +354,7 @@ vector2i scaledDownGamePosWithZCorrection(vector2f gamePos, float scaleDownFacto
 
 void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, int viewingPlayerIdOrNegativeOne, float zoomOutFactor)
 {
-    vector2i minimapPos = scaledDownGamePosWithZCorrection(entity->pos, zoomOutFactor);
+    vector2i minimapPos = scaledDownGamePosWithZCorrection(entity->getPos(), zoomOutFactor);
     minimapPos.y *= -1;
 
     sf::RectangleShape pixel(sf::Vector2f(1,1));
@@ -620,7 +620,7 @@ void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2f mousePos
 {
     window->setMouseCursorVisible(false);
 
-    ui.ghostBuilding->pos = screenPosToGamePos(ui.camera, mousePos);
+    ui.ghostBuilding->getPos() = screenPosToGamePos(ui.camera, mousePos);
     drawEntity(window, ui.ghostBuilding, ui.camera);
 }
 
@@ -711,7 +711,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
 
 void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camera, boost::shared_ptr<Entity> entity)
 {
-    drawCircleAround(window, gamePosToScreenPos(camera, entity->pos), 15, 1, sf::Color::Green);
+    drawCircleAround(window, gamePosToScreenPos(camera, entity->getPos()), 15, 1, sf::Color::Green);
 }
 
 void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
@@ -750,7 +750,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             }
         }
 
-        vector2f entityPos = game->entities[i]->pos;
+        vector2f entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
             sf::Text aboveText(displayAboveCoins->getDollarString(), mainFont, 16);
@@ -989,7 +989,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         {
                             if (auto primeTarget = prime->getTarget())
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, *primeTarget, sf::Color::Yellow)));
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->getPos(), *primeTarget, sf::Color::Yellow)));
                             }
                         }
                     }
@@ -1006,12 +1006,12 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                 break;
                                 case Pushing:
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->pos, Target(targetEntity), sf::Color::Yellow)));
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->getPos(), Target(targetEntity), sf::Color::Yellow)));
                                 }
                                 break;
                                 case Pulling:
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->pos, Target(gateway), sf::Color::Yellow)));
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->getPos(), Target(gateway), sf::Color::Yellow)));
                                 }
                                 break;
                             }
@@ -1040,7 +1040,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                     relativeShotStartPos = reversedShotOffset;
                                 }
                                 vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
-                                vector2f final = fighter->pos + rotated;
+                                vector2f final = fighter->getPos() + rotated;
                                 boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
                                 particles->addLineParticle(line);
                             }

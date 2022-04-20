@@ -124,6 +124,10 @@ vector2i SearchGrid::gamePosToCellConstrained(vector2f gamePos)
 }
 
 SearchGrid::SearchGrid() {}
+set<EntityRef> SearchGrid::getCell(vector2i cell)
+{
+    return cells[cell.x][cell.y];
+}
 optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
 {
     vector2f gamePosInSearchGridSpace = gamePosToCellSpace(gamePos);
@@ -143,7 +147,7 @@ optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
 optional<vector2i> SearchGrid::registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref)
 {
     // check if it is in the search grid at all, and verify it has not yet been registered
-    if (auto cell = gamePosToCell(entity->pos))
+    if (auto cell = gamePosToCell(entity->getPos()))
     {
         if (!entity->maybeRegInfo)
         {
@@ -155,10 +159,10 @@ optional<vector2i> SearchGrid::registerEntityRefToCell(boost::shared_ptr<Entity>
 
     return {};
 }
-optional<vector2i> SearchGrid::updateEntityCellRelation(boost::shared_ptr<Entity> entity)
+optional<vector2i> SearchGrid::updateEntityCellRelation(Entity* entity)
 {
     // check if it's in the search grid
-    if (auto newCell = gamePosToCell(entity->pos))
+    if (auto newCell = gamePosToCell(entity->getPos()))
     {
         // will throw if it hasn't already been registered
         auto oldCell = entity->getSearchGridCellOrThrow();
@@ -236,7 +240,6 @@ void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 
 void Game::pack(vch *dest)
 {
-    packToVch(dest, "C", (unsigned char)(state));
     packToVch(dest, "Q", frame);
 
     packToVch(dest, "C", (unsigned char)(players.size()));
@@ -260,10 +263,6 @@ void Game::pack(vch *dest)
 }
 void Game::unpackAndMoveIter(vchIter *iter)
 {
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
-
     *iter = unpackFromIter(*iter, "Q", &frame);
 
     uint8_t playersSize;
@@ -288,7 +287,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
     }
 }
 
-Game::Game() : state(Active), frame(0) {}
+Game::Game() : frame(0) {}
 Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);
@@ -305,61 +304,66 @@ Game::Game(vchIter *iter)
 
 void Game::iterate()
 {
-    switch (state)
+    // for (int i=0; i<SEARCH_GRID_NUM_ROWS; i++)
+    //     for (int j=0; j<SEARCH_GRID_NUM_ROWS; j++)
+    //         {
+    //             vector2i cell(i,j);
+    //             int size = searchGrid.getCell(cell).size();
+    //             if (size > 0)
+    //             {
+    //                 debugOutputVector("at cell", cell);
+    //                 cout << size << endl;
+    //             }
+    //         }
+    
+    // iterate all units
+    for (unsigned int i=0; i<entities.size(); i++)
     {
-        case Pregame:
-            break;
-        case Active:
-            // iterate all units
-            for (unsigned int i=0; i<entities.size(); i++)
+        if (entities[i])
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
             {
-                if (entities[i])
+                if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
+                    unit->go();
+            }
+            else
+                entities[i]->go();
+        }
+    }
+
+    // clean up units that are ded
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        if (entities[i] && entities[i]->dead)
+        {
+            // create new GoldPile to hold all droppable coins
+            boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
+
+            vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
+            for (unsigned int j=0; j<droppableCoins.size(); j++)
+            {
+                if (droppableCoins[j]->getInt() > 0)
                 {
-                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
-                    {
-                        if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
-                            unit->go();
-                    }
-                    else
-                        entities[i]->go();
+                    droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
                 }
             }
 
-            // clean up units that are ded
-            for (unsigned int i=0; i<entities.size(); i++)
+            // but only add it if there was more than 0 gold added
+            if (goldPile->gold.getInt() > 0)
             {
-                if (entities[i] && entities[i]->dead)
-                {
-                    // create new GoldPile to hold all droppable coins
-                    boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->pos));
-
-                    vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
-                    for (unsigned int j=0; j<droppableCoins.size(); j++)
-                    {
-                        if (droppableCoins[j]->getInt() > 0)
-                        {
-                            droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
-                        }
-                    }
-
-                    // but only add it if there was more than 0 gold added
-                    if (goldPile->gold.getInt() > 0)
-                    {
-                        registerNewEntity(goldPile);
-                    }
-                    entities[i].reset();
-                }
+                registerNewEntity(goldPile);
             }
+            entities[i].reset();
+        }
+    }
 
-            frame++;
+    frame++;
 
-            if (frame % 200 == 0)
-            {
-                for (unsigned int i=0; i<players.size(); i++)
-                {
-                    // cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
-                }
-            }
-            break;
+    if (frame % 200 == 0)
+    {
+        for (unsigned int i=0; i<players.size(); i++)
+        {
+            // cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
+        }
     }
 }

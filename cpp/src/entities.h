@@ -15,10 +15,13 @@ struct RegInfo {
 
 class Entity
 {
+    vector2f pos;
+protected:
+    void setPosAndUpdateCell(vector2f newPos);
 public:
     bool dead;
-    vector2f pos;
     optional<RegInfo> maybeRegInfo;
+    vector2f getPos();
 
     EntityRef getRefOrThrow();
     Game *getGameOrThrow();
@@ -40,8 +43,6 @@ public:
     void unpackEntityAndMoveIter(vchIter *iter);
     Entity(vector2f pos);
     Entity(vchIter *iter);
-
-    vector2f getPos();
 };
 
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
@@ -142,8 +143,8 @@ private:
     float getRotation() { return angle_view; };
 
     void moveTowardPoint(vector2f, float);
-
 public:
+    void addToPosAndUpdateCell(vector2f toAdd);
     void setTarget(Target _target, float range);
     float angle_view;
     virtual float getSpeed();
