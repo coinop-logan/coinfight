@@ -166,13 +166,21 @@ SearchGridRect SearchGrid::gridRectAroundGamePos(vector2f gamePos, float radius)
     
     return SearchGridRect(startCell, endCell);
 }
-vector<boost::shared_ptr<Entity>> SearchGrid::entitiesInGridRect(SearchGridRect rect)
+vector<EntityRef> SearchGrid::entitiesInGridRect(SearchGridRect rect)
 {
-
+    vector<EntityRef> entities;
+    for (unsigned int i=rect.start.x; i<=rect.end.x; i++)
+    {
+        for (unsigned int j=rect.start.y; j<=rect.end.y; j++)
+        {
+            copy(cells[i][j].begin(), cells[i][j].end(), back_inserter(entities));
+        }
+    }
+    return entities;
 }
-vector<boost::shared_ptr<Entity>> SearchGrid::entitiesNearGamePos(vector2f gamePos, float radius)
+vector<EntityRef> SearchGrid::entitiesNearGamePosSloppy(vector2f gamePos, float radius)
 {
-
+    return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
 
 int Game::playerAddressToIdOrNegativeOne(string address)

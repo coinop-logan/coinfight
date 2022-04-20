@@ -61,8 +61,8 @@ public:
     bool registerEntityCell(boost::shared_ptr<Entity> entity);
     bool updateEntityCell(boost::shared_ptr<Entity> entity);
     SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
-    vector<boost::shared_ptr<Entity>> entitiesInGridRect(SearchGridRect rect);
-    vector<boost::shared_ptr<Entity>> entitiesNearGamePos(vector2f gamePos, float radius);
+    vector<EntityRef> entitiesInGridRect(SearchGridRect rect);
+    vector<EntityRef> entitiesNearGamePosSloppy(vector2f gamePos, float radius);
 };
 
 class Game
