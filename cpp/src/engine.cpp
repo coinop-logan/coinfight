@@ -49,6 +49,50 @@ Player::Player(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
+SearchGridRect::SearchGridRect(vector2i start, vector2i end)
+    : start(start), end(end) {}
+
+SearchGrid::SearchGrid() {}
+
+optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
+{
+    // since map center is (0,0), search grid should be centered on (0,0)
+    float halfSearchGridWidth = SEARCH_GRID_TOTAL_WIDTH / 2.0;
+    vector2f searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
+    vector2f gamePosInSearchGridSpace = (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
+    if (gamePosInSearchGridSpace.x < 0 ||
+        gamePosInSearchGridSpace.x >= SEARCH_GRID_NUM_ROWS ||
+        gamePosInSearchGridSpace.y < 0 ||
+        gamePosInSearchGridSpace.y >= SEARCH_GRID_NUM_ROWS)
+    {
+        return {};
+    }
+    else
+    {
+        return {gamePosInSearchGridSpace.floored()};
+    }
+}
+void SearchGrid::registerEntity(boost::shared_ptr<Entity> entity)
+{
+    
+}
+void SearchGrid::updateEntityCell(boost::shared_ptr<Entity> entity)
+{
+    
+}
+SearchGridRect SearchGrid::gridRectNearGamePos(vector2f gamePos, float radius)
+{
+    
+}
+vector<boost::shared_ptr<Entity>> SearchGrid::entitiesInGridRect(SearchGridRect rect)
+{
+    
+}
+vector<boost::shared_ptr<Entity>> SearchGrid::entitiesNearGamePos(vector2f gamePos, float radius)
+{
+    
+}
+
 int Game::playerAddressToIdOrNegativeOne(string address)
 {
     for (unsigned int i=0; i<players.size(); i++)

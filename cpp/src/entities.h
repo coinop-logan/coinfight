@@ -13,6 +13,7 @@ public:
     bool dead;
     EntityRef ref;
     vector2f pos;
+    vector2i searchGridCell;
 
     virtual unsigned char typechar();
     virtual string getTypeName();

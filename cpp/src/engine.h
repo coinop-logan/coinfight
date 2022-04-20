@@ -17,6 +17,10 @@
 
 using namespace std;
 
+const int SEARCH_GRID_NUM_ROWS = 200;
+const int SEARCH_GRID_CELL_WIDTH = 200;
+const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
+
 sf::Color playerAddressToColor(string address);
 
 class Game;
@@ -35,6 +39,25 @@ struct Player
 };
 
 void packFrameCmdsPacket(vch *dest, uint64_t frame);
+
+struct SearchGridRect
+{
+    vector2i start, end;
+    SearchGridRect(vector2i start, vector2i end);
+};
+
+class SearchGrid
+{
+    vector<EntityRef> cells[SEARCH_GRID_NUM_ROWS][SEARCH_GRID_NUM_ROWS];
+public:
+    SearchGrid();
+    optional<vector2i> gamePosToCell(vector2f gamePos);
+    void registerEntity(boost::shared_ptr<Entity> entity);
+    void updateEntityCell(boost::shared_ptr<Entity> entity);
+    SearchGridRect gridRectNearGamePos(vector2f gamePos, float radius);
+    vector<boost::shared_ptr<Entity>> entitiesInGridRect(SearchGridRect rect);
+    vector<boost::shared_ptr<Entity>> entitiesNearGamePos(vector2f gamePos, float radius);
+};
 
 class Game
 {

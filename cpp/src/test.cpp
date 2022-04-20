@@ -1,5 +1,7 @@
 #include <iostream>
 #include <optional>
+#include "engine.h"
+#include "myvectors.h"
 
 // void makeSure(bool condition) // hacky test function
 // {
@@ -15,7 +17,13 @@ using namespace std;
 
 int main()
 {
-    cout << (int)(-0.9) << endl;
+    SearchGrid sGrid;
+    optional<vector2i> cell = sGrid.gamePosToCell(vector2f(-0.1, -0.1));
+
+    if (cell)
+        cout << cell->x << "," << cell->y << endl;
+    else
+        cout << "no cell!" << endl;
     
     return 0;
 }
