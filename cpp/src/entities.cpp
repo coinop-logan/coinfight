@@ -989,10 +989,14 @@ void Gateway::go()
         case Idle:
         {
             // search for units near enough to complete
+            vector<EntityRef> nearbyEntityRefs = game->searchGrid.entitiesNearGamePosSloppy(this->getPos(), GATEWAY_RANGE);
+
             float rangeSquared = pow(GATEWAY_RANGE, 2);
-            for (unsigned int i=0; i<game->entities.size(); i++)
+            for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
             {
-                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                boost::shared_ptr<Entity> entity = maybeEntityRefToPtrOrNull(*game, {nearbyEntityRefs[i]});
+
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
                     if (unit->ownerId == this->ownerId)
                         if (unit->getBuiltRatio() < 1)
