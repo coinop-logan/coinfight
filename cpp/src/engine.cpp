@@ -52,8 +52,45 @@ Player::Player(vchIter *iter)
 SearchGridRect::SearchGridRect(vector2i start, vector2i end)
     : start(start), end(end) {}
 
-SearchGrid::SearchGrid() {}
+bool SearchGrid::cellIsValid(vector2i cell)
+{
+    return (!
+        (
+            cell.x < 0 ||
+            cell.x >= SEARCH_GRID_NUM_ROWS ||
+            cell.y < 0 ||
+            cell.y >= SEARCH_GRID_NUM_ROWS
+        )
+    );
+}
+void SearchGrid::registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef)
+{
+    if (!cellIsValid(cell))
+    {
+        throw logic_error("Trying to SearchGrid::registerEntityForCellOrThrow, but cell is out of bounds\n");
+    }
 
+    auto insertResult = cells[cell.x][cell.y].insert(entityRef);
+    if (!insertResult.second)
+    {
+        throw logic_error("Trying to SearchGrid::registerEntityForCellOrThrow, but it has already been registered here\n");
+    }
+}
+void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entityRef)
+{
+    if (!cellIsValid(cell))
+    {
+        throw logic_error("Trying to SearchGrid::deregisterEntityForCellOrThrow, but cell is out of bounds\n");
+    }
+    
+    int numErased = cells[cell.x][cell.y].erase(entityRef);
+    if (numErased == 0)
+    {
+        throw logic_error("Trying to SearchGrid::registerEntityForCellOrThrow, but it wasn't registered here\n");
+    }
+}
+
+SearchGrid::SearchGrid() {}
 optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
 {
     // since map center is (0,0), search grid should be centered on (0,0)
@@ -72,25 +109,50 @@ optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
         return {gamePosInSearchGridSpace.floored()};
     }
 }
-void SearchGrid::registerEntity(boost::shared_ptr<Entity> entity)
+bool SearchGrid::registerEntityCell(boost::shared_ptr<Entity> entity)
 {
-    
+    // check if it is in the search grid at all, and verify it has not yet been registered
+    if (auto cell = gamePosToCell(entity->pos))
+    {
+        if (!entity->searchGridCell)
+        {
+            registerEntityForCellOrThrow(*cell, entity->ref);
+            entity->searchGridCell = cell;
+
+            return true;
+        }
+    }
+
+    return false;
 }
-void SearchGrid::updateEntityCell(boost::shared_ptr<Entity> entity)
+bool SearchGrid::updateEntityCell(boost::shared_ptr<Entity> entity)
 {
-    
+    // check if it's in the search grid, and verify that it's already been registered
+    if (auto cell = gamePosToCell(entity->pos))
+    {
+        if (auto oldCell = entity->searchGridCell)
+        {
+            deregisterEntityFromCellOrThrow(*oldCell, entity->ref);
+            registerEntityForCellOrThrow(*cell, entity->ref);
+            entity->searchGridCell = cell;
+
+            return true;
+        }
+    }
+
+    return false;
 }
 SearchGridRect SearchGrid::gridRectNearGamePos(vector2f gamePos, float radius)
 {
-    
+
 }
 vector<boost::shared_ptr<Entity>> SearchGrid::entitiesInGridRect(SearchGridRect rect)
 {
-    
+
 }
 vector<boost::shared_ptr<Entity>> SearchGrid::entitiesNearGamePos(vector2f gamePos, float radius)
 {
-    
+
 }
 
 int Game::playerAddressToIdOrNegativeOne(string address)

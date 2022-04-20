@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <pthread.h>
+#include <set>
 #include "coins.h"
 #include "myvectors.h"
 #include "vchpack.h"
@@ -17,8 +18,8 @@
 
 using namespace std;
 
-const int SEARCH_GRID_NUM_ROWS = 200;
-const int SEARCH_GRID_CELL_WIDTH = 200;
+const int SEARCH_GRID_NUM_ROWS = 10;
+const int SEARCH_GRID_CELL_WIDTH = 10;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
 
 sf::Color playerAddressToColor(string address);
@@ -48,12 +49,15 @@ struct SearchGridRect
 
 class SearchGrid
 {
-    vector<EntityRef> cells[SEARCH_GRID_NUM_ROWS][SEARCH_GRID_NUM_ROWS];
+    set<EntityRef> cells[SEARCH_GRID_NUM_ROWS][SEARCH_GRID_NUM_ROWS];
+    bool cellIsValid(vector2i cell);
+    void registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef);
+    void deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entityRef);
 public:
     SearchGrid();
     optional<vector2i> gamePosToCell(vector2f gamePos);
-    void registerEntity(boost::shared_ptr<Entity> entity);
-    void updateEntityCell(boost::shared_ptr<Entity> entity);
+    bool registerEntityCell(boost::shared_ptr<Entity> entity);
+    bool updateEntityCell(boost::shared_ptr<Entity> entity);
     SearchGridRect gridRectNearGamePos(vector2f gamePos, float radius);
     vector<boost::shared_ptr<Entity>> entitiesInGridRect(SearchGridRect rect);
     vector<boost::shared_ptr<Entity>> entitiesNearGamePos(vector2f gamePos, float radius);

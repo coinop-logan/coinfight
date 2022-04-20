@@ -18,12 +18,13 @@ using namespace std;
 int main()
 {
     SearchGrid sGrid;
-    optional<vector2i> cell = sGrid.gamePosToCell(vector2f(-0.1, -0.1));
 
-    if (cell)
-        cout << cell->x << "," << cell->y << endl;
-    else
-        cout << "no cell!" << endl;
+    Game game;
+    
+    boost::shared_ptr<Entity> fighter(new Fighter(&game, 1, 0, vector2f(0,0)));
+    sGrid.registerEntityCell(fighter);
+    fighter->pos = vector2f(25, 25);
+    sGrid.updateEntityCell(fighter);
     
     return 0;
 }
