@@ -53,12 +53,14 @@ class SearchGrid
     bool cellIsValid(vector2i cell);
     void registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef);
     void deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entityRef);
+    vector2f gamePosToCellSpace(vector2f gamePos);
+    vector2i gamePosToCellConstrained(vector2f gamePos);
 public:
     SearchGrid();
     optional<vector2i> gamePosToCell(vector2f gamePos);
     bool registerEntityCell(boost::shared_ptr<Entity> entity);
     bool updateEntityCell(boost::shared_ptr<Entity> entity);
-    SearchGridRect gridRectNearGamePos(vector2f gamePos, float radius);
+    SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
     vector<boost::shared_ptr<Entity>> entitiesInGridRect(SearchGridRect rect);
     vector<boost::shared_ptr<Entity>> entitiesNearGamePos(vector2f gamePos, float radius);
 };

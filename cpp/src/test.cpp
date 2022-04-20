@@ -19,12 +19,14 @@ int main()
 {
     SearchGrid sGrid;
 
-    Game game;
+    auto gridRect = sGrid.gridRectAroundGamePos(vector2f(90, 90), 0);
+
+    // Game game;
     
-    boost::shared_ptr<Entity> fighter(new Fighter(&game, 1, 0, vector2f(0,0)));
-    sGrid.registerEntityCell(fighter);
-    fighter->pos = vector2f(25, 25);
-    sGrid.updateEntityCell(fighter);
+    // boost::shared_ptr<Entity> fighter(new Fighter(&game, 1, 0, vector2f(0,0)));
+    // sGrid.registerEntityCell(fighter);
+    // fighter->pos = vector2f(25, 25);
+    // sGrid.updateEntityCell(fighter);
     
     return 0;
 }

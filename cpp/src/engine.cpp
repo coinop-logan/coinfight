@@ -90,13 +90,27 @@ void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entity
     }
 }
 
-SearchGrid::SearchGrid() {}
-optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
+vector2f SearchGrid::gamePosToCellSpace(vector2f gamePos)
 {
     // since map center is (0,0), search grid should be centered on (0,0)
     float halfSearchGridWidth = SEARCH_GRID_TOTAL_WIDTH / 2.0;
     vector2f searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
-    vector2f gamePosInSearchGridSpace = (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
+    return (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
+}
+
+vector2i SearchGrid::gamePosToCellConstrained(vector2f gamePos)
+{
+    vector2f cellSpacePos = gamePosToCellSpace(gamePos);
+    cellSpacePos.x = min((float)SEARCH_GRID_NUM_ROWS-1, max(0.0f, cellSpacePos.x));
+    cellSpacePos.y = min((float)SEARCH_GRID_NUM_ROWS-1, max(0.0f, cellSpacePos.y));
+    return cellSpacePos;
+}
+
+SearchGrid::SearchGrid() {}
+optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
+{
+    vector2f gamePosInSearchGridSpace = gamePosToCellSpace(gamePos);
+
     if (gamePosInSearchGridSpace.x < 0 ||
         gamePosInSearchGridSpace.x >= SEARCH_GRID_NUM_ROWS ||
         gamePosInSearchGridSpace.y < 0 ||
@@ -142,9 +156,15 @@ bool SearchGrid::updateEntityCell(boost::shared_ptr<Entity> entity)
 
     return false;
 }
-SearchGridRect SearchGrid::gridRectNearGamePos(vector2f gamePos, float radius)
+SearchGridRect SearchGrid::gridRectAroundGamePos(vector2f gamePos, float radius)
 {
+    vector2f startGamePos = gamePos - vector2f(radius, radius);
+    vector2f endGamePos = gamePos + vector2f(radius, radius);
 
+    vector2i startCell = gamePosToCellConstrained(startGamePos);
+    vector2i endCell = gamePosToCellConstrained(endGamePos);
+    
+    return SearchGridRect(startCell, endCell);
 }
 vector<boost::shared_ptr<Entity>> SearchGrid::entitiesInGridRect(SearchGridRect rect)
 {
