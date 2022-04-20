@@ -163,7 +163,7 @@ optional<vector2i> SearchGrid::updateEntityCellRelation(boost::shared_ptr<Entity
         // will throw if it hasn't already been registered
         auto oldCell = entity->getSearchGridCellOrThrow();
 
-        if (newCell = oldCell)
+        if (*newCell == oldCell)
             return {oldCell};
 
         deregisterEntityFromCellOrThrow(oldCell, entity->getRefOrThrow());
