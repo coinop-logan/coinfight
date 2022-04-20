@@ -157,10 +157,14 @@ optional<vector2i> SearchGrid::registerEntityRefToCell(boost::shared_ptr<Entity>
 }
 optional<vector2i> SearchGrid::updateEntityCellRelation(boost::shared_ptr<Entity> entity)
 {
-    // check if it's in the search grid, and verify that it's already been registered
+    // check if it's in the search grid
     if (auto newCell = gamePosToCell(entity->pos))
     {
+        // will throw if it hasn't already been registered
         auto oldCell = entity->getSearchGridCellOrThrow();
+
+        if (newCell = oldCell)
+            return {oldCell};
 
         deregisterEntityFromCellOrThrow(oldCell, entity->getRefOrThrow());
         registerEntityForCellOrThrow(*newCell, entity->getRefOrThrow());
