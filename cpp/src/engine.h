@@ -18,8 +18,8 @@
 
 using namespace std;
 
-const int SEARCH_GRID_NUM_ROWS = 10;
-const int SEARCH_GRID_CELL_WIDTH = 10;
+const int SEARCH_GRID_NUM_ROWS = 200;
+const int SEARCH_GRID_CELL_WIDTH = 200;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
 
 sf::Color playerAddressToColor(string address);
@@ -58,8 +58,8 @@ class SearchGrid
 public:
     SearchGrid();
     optional<vector2i> gamePosToCell(vector2f gamePos);
-    bool registerEntityCell(boost::shared_ptr<Entity> entity);
-    bool updateEntityCell(boost::shared_ptr<Entity> entity);
+    optional<vector2i> registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref);
+    optional<vector2i> updateEntityCellRelation(boost::shared_ptr<Entity> entity);
     SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
     vector<EntityRef> entitiesInGridRect(SearchGridRect rect);
     vector<EntityRef> entitiesNearGamePosSloppy(vector2f gamePos, float radius);
@@ -76,32 +76,31 @@ public:
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
     boost::shared_ptr<GoldPile> honeypotGoldPileIfGameStarted;
+    SearchGrid searchGrid;
 
-    boost::shared_ptr<Entity> entityRefToPtrOrNull(EntityRef);
-    EntityRef getNextEntityRef();
+    void registerNewEntity(boost::shared_ptr<Entity> newEntity);
+    boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
     int playerAddressToIdOrNegativeOne(string address);
     string playerIdToAddress(unsigned int playerId);
     bool getPlayerBeaconAvailable(unsigned int playerId);
     void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
 
-    void killAndReplaceEntity(EntityRef, boost::shared_ptr<Entity> newEntity);
+    // void killAndReplaceEntity(EntityRef, boost::shared_ptr<Entity> newEntity);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
     Game();
     Game(vchIter *);
-    // void startMatch();
-    // void startMatchOrPrintError();
 
-    void reassignEntityGamePointers();
+    // void reassignEntityGamePointers();
 
     void iterate();
 };
 
-vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>>);
-vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>>);
-boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game&, EntityRef);
+vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Entity>>);
+vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Unit>>);
+boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);
 
 #endif // ENGINE_H

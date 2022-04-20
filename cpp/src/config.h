@@ -17,8 +17,6 @@ const unsigned long MAX_COINS = UINT32_MAX;
 
 const float DISTANCE_TOL = 0.0001;
 
-const EntityRef NULL_ENTITYREF = 0;
-
 const unsigned char NULL_TYPECHAR = 0;
 
 const unsigned char PACKET_RESYNC_CHAR = 1;

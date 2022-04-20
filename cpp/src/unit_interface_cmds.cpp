@@ -103,7 +103,7 @@ sf::Keyboard::Key PrimeBuildGatewayInterfaceCmd::getKey()
 vector<boost::shared_ptr<Cmd>> PrimeBuildGatewayInterfaceCmd::execute(UI *ui)
 {
     ui->cmdState = UI::Build;
-    ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(NULL, 0, -1, vector2f(0,0)));
+    ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2f(0,0)));
 
     return noCmds;
 }

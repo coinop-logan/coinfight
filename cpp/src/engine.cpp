@@ -25,9 +25,26 @@ sf::Color playerAddressToColor(string address)
     return sf::Color(vals[0], vals[1], vals[2]);
 }
 
-EntityRef Game::getNextEntityRef()
+void Game::registerNewEntity(boost::shared_ptr<Entity> newEntity)
 {
-    return entities.size() + 1;
+    // * register the entity on the search grid
+    // * provide pointer to Game
+    // * provide EntityRef ref
+    // * add to Game::entities
+
+    EntityRef ref = this->entities.size();
+    optional<vector2i> maybeCell = searchGrid.registerEntityRefToCell(newEntity, ref);
+
+    if (auto cell = maybeCell)
+    {
+        RegInfo regInfo(this, ref, *cell);
+        newEntity->maybeRegInfo = {regInfo};
+        entities.push_back(newEntity);
+    }
+    else
+    {
+        throw runtime_error("Entity can't be registered on the search grid - probably out of bounds.\n");
+    }
 }
 
 void Player::pack(vch *dest)
@@ -123,38 +140,37 @@ optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
         return {gamePosInSearchGridSpace.floored()};
     }
 }
-bool SearchGrid::registerEntityCell(boost::shared_ptr<Entity> entity)
+optional<vector2i> SearchGrid::registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref)
 {
     // check if it is in the search grid at all, and verify it has not yet been registered
     if (auto cell = gamePosToCell(entity->pos))
     {
-        if (!entity->searchGridCell)
+        if (!entity->maybeRegInfo)
         {
-            registerEntityForCellOrThrow(*cell, entity->ref);
-            entity->searchGridCell = cell;
+            registerEntityForCellOrThrow(*cell, ref);
 
-            return true;
+            return cell;
         }
     }
 
-    return false;
+    return {};
 }
-bool SearchGrid::updateEntityCell(boost::shared_ptr<Entity> entity)
+optional<vector2i> SearchGrid::updateEntityCellRelation(boost::shared_ptr<Entity> entity)
 {
     // check if it's in the search grid, and verify that it's already been registered
-    if (auto cell = gamePosToCell(entity->pos))
+    if (auto newCell = gamePosToCell(entity->pos))
     {
-        if (auto oldCell = entity->searchGridCell)
-        {
-            deregisterEntityFromCellOrThrow(*oldCell, entity->ref);
-            registerEntityForCellOrThrow(*cell, entity->ref);
-            entity->searchGridCell = cell;
+        auto oldCell = entity->getSearchGridCellOrThrow();
 
-            return true;
-        }
+        deregisterEntityFromCellOrThrow(oldCell, entity->getRefOrThrow());
+        registerEntityForCellOrThrow(*newCell, entity->getRefOrThrow());
+
+        entity->maybeRegInfo->cell = *newCell;
+
+        return newCell;
     }
 
-    return false;
+    return {};
 }
 SearchGridRect SearchGrid::gridRectAroundGamePos(vector2f gamePos, float radius)
 {
@@ -169,9 +185,9 @@ SearchGridRect SearchGrid::gridRectAroundGamePos(vector2f gamePos, float radius)
 vector<EntityRef> SearchGrid::entitiesInGridRect(SearchGridRect rect)
 {
     vector<EntityRef> entities;
-    for (unsigned int i=rect.start.x; i<=rect.end.x; i++)
+    for (int i=rect.start.x; i<=rect.end.x; i++)
     {
-        for (unsigned int j=rect.start.y; j<=rect.end.y; j++)
+        for (int j=rect.start.y; j<=rect.end.y; j++)
         {
             copy(cells[i][j].begin(), cells[i][j].end(), back_inserter(entities));
         }
@@ -207,11 +223,12 @@ void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
     players[playerId].beaconAvailable = flag;
 }
 
-void Game::killAndReplaceEntity(EntityRef ref, boost::shared_ptr<Entity> newEntity)
-{
-    entities[ref-1]->die();
-    entities[ref-1] = newEntity;
-}
+// void Game::killAndReplaceEntity(EntityRef ref, boost::shared_ptr<Entity> newEntity)
+// {
+//     entities[ref]->die();
+//     entities[ref] = newEntity;
+    
+// }
 
 void Game::pack(vch *dest)
 {
@@ -263,7 +280,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
         unsigned char typechar;
         *iter = unpackTypecharFromIter(*iter, &typechar);
 
-        entities.push_back(unpackFullEntityAndMoveIter(iter, typechar, this, getNextEntityRef()));
+        registerNewEntity(unpackFullEntityAndMoveIter(iter, typechar));
     }
 }
 
@@ -273,14 +290,14 @@ Game::Game(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-void Game::reassignEntityGamePointers()
-{
-    for (EntityRef i = 0; i < entities.size(); i++)
-    {
-        if (entities[i])
-            entities[i]->game = this;
-    }
-}
+// void Game::reassignEntityGamePointers()
+// {
+//     for (EntityRef i = 0; i < entities.size(); i++)
+//     {
+//         if (entities[i])
+//             entities[i]->game = this;
+//     }
+// }
 
 void Game::iterate()
 {
@@ -310,7 +327,7 @@ void Game::iterate()
                 if (entities[i] && entities[i]->dead)
                 {
                     // create new GoldPile to hold all droppable coins
-                    boost::shared_ptr<GoldPile> goldPile(new GoldPile(this, getNextEntityRef(), entities[i]->pos));
+                    boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->pos));
 
                     vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
                     for (unsigned int j=0; j<droppableCoins.size(); j++)
@@ -324,7 +341,7 @@ void Game::iterate()
                     // but only add it if there was more than 0 gold added
                     if (goldPile->gold.getInt() > 0)
                     {
-                        entities.push_back(goldPile);
+                        registerNewEntity(goldPile);
                     }
                     entities[i].reset();
                 }

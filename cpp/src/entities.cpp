@@ -62,7 +62,6 @@ Target::Target(vchIter *iter)
 Target::Target(vector2f _pointTarget)
 {
     type = PointTarget;
-    entityTarget = NULL_ENTITYREF;
     pointTarget = _pointTarget;
 }
 Target::Target(EntityRef _entityTarget)
@@ -72,14 +71,14 @@ Target::Target(EntityRef _entityTarget)
     entityTarget = _entityTarget;
 }
 Target::Target(boost::shared_ptr<Entity> entity)
-    : Target(entity->ref) {}
+    : Target(entity->getRefOrThrow()) {}
 
 optional<vector2f> Target::getPointUnlessTargetDeleted(const Game &game)
 {
     if (type == PointTarget)
         return {pointTarget};
     else
-        if (boost::shared_ptr<Entity> e = entityRefToPtrOrNull(game, entityTarget))
+        if (boost::shared_ptr<Entity> e = maybeEntityRefToPtrOrNull(game, entityTarget))
             return {e->pos};
     return {};
 }
@@ -111,7 +110,7 @@ optional<vector2f> Target::castToPoint()
 boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
 {
     if (auto eRef = castToEntityRef())
-        return entityRefToPtrOrNull(game, *eRef);
+        return maybeEntityRefToPtrOrNull(game, *eRef);
     else
         return boost::shared_ptr<Entity>();
 }
@@ -141,36 +140,38 @@ boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
 
 
 
+RegInfo::RegInfo(Game *game, EntityRef ref, vector2i cell)
+    : game(game), ref(ref), cell(cell) {}
 
-vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Entity>> ptrs)
+vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Entity>> ptrs)
 {
     vector<EntityRef> refs;
     for (unsigned int i = 0; i < ptrs.size(); i++)
     {
-        refs.push_back(ptrs[i]->ref);
+        refs.push_back(ptrs[i]->getRefOrThrow());
     }
     return refs;
 }
 
-vector<EntityRef> entityPtrsToRefs(vector<boost::shared_ptr<Unit>> unitPtrs)
+vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Unit>> unitPtrs)
 {
     vector<EntityRef> refs;
     for (unsigned int i=0; i<unitPtrs.size(); i++)
     {
-        refs.push_back(unitPtrs[i]->ref);
+        refs.push_back(unitPtrs[i]->getRefOrThrow());
     }
     return refs;
 }
 
-boost::shared_ptr<Entity> entityRefToPtrOrNull(const Game& game, EntityRef ref)
+boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game& game, optional<EntityRef> maybeRef)
 {
-    if (ref == NULL_ENTITYREF)
+    if (auto ref = maybeRef)
     {
-        return boost::shared_ptr<Entity>();
+        return game.entities[*ref];
     }
     else
     {
-        return game.entities[ref - 1];
+        return boost::shared_ptr<Entity>();
     }
 }
 
@@ -230,7 +231,39 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
 // ----------------------
 
 
-
+Game* Entity::getGameOrThrow()
+{
+    if (auto regInfo = maybeRegInfo)
+    {
+        return regInfo->game;
+    }
+    else
+    {
+        throw runtime_error("Trying to get a ref for an entity that has not been registered with a Game.\n");
+    }
+}
+EntityRef Entity::getRefOrThrow()
+{
+    if (auto regInfo = maybeRegInfo)
+    {
+        return regInfo->ref;
+    }
+    else
+    {
+        throw runtime_error("Trying to get a ref for an entity that has not been registered with a Game.\n");
+    }
+}
+vector2i Entity::getSearchGridCellOrThrow()
+{
+    if (auto regInfo = maybeRegInfo)
+    {
+        return regInfo->cell;
+    }
+    else
+    {
+        throw runtime_error("Trying to get a searchGridCell for an entity that has not been registered with a Game.\n");
+    }
+}
 unsigned char Entity::typechar()
 {
     throw runtime_error("typechar() has not been defined for " + getTypeName() + ".");
@@ -275,13 +308,10 @@ void Entity::unpackEntityAndMoveIter(vchIter *iter)
 
     *iter = unpackVector2f(*iter, &pos);
 }
-Entity::Entity(Game *game, EntityRef ref, vector2f pos) : game(game),
-                                                          dead(false),
-                                                          ref(ref),
-                                                          pos(pos)
+Entity::Entity(vector2f pos) : dead(false),
+                               pos(pos)
 {}
-Entity::Entity(Game *game, EntityRef ref, vchIter *iter) : game(game),
-                                                           ref(ref)
+Entity::Entity(vchIter *iter)
 {
     unpackEntityAndMoveIter(iter);
 }
@@ -340,11 +370,11 @@ sf::Color GoldPile::getTeamOrPrimaryColor()
     return sf::Color(sf::Color::Yellow);
 }
 
-GoldPile::GoldPile(Game *game, EntityRef ref, vector2f pos) : Entity(game, ref, pos),
-                                                              gold(MAX_COINS)
+GoldPile::GoldPile(vector2f pos) : Entity(pos),
+                                   gold(MAX_COINS)
 {}
-GoldPile::GoldPile(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
-                                                               gold(MAX_COINS)
+GoldPile::GoldPile(vchIter *iter) : Entity(iter),
+                                    gold(MAX_COINS)
 {
     unpackAndMoveIter(iter);
 }
@@ -414,11 +444,12 @@ void Unit::unpackUnitAndMoveIter(vchIter *iter)
     goldInvested = Coins(iter);
 }
 
-Unit::Unit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Entity(game, ref, pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
+Unit::Unit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Entity(pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
 
-Unit::Unit(Game *game, EntityRef ref, vchIter *iter) : Entity(game, ref, iter),
-                                                       goldInvested((coinsInt)0) // will get overwritten in unpack below
+Unit::Unit(vchIter *iter)
+    : Entity(iter),
+      goldInvested((coinsInt)0) // will get overwritten in unpack below
 {
     unpackUnitAndMoveIter(iter);
 }
@@ -466,8 +497,10 @@ sf::Color Unit::getTeamColor()
 {
     if (ownerId == -1)
         return sf::Color(150, 150, 150);
+    else if (auto regInfo = maybeRegInfo)
+        return playerAddressToColor(regInfo->game->playerIdToAddress(ownerId));
     else
-        return playerAddressToColor(game->playerIdToAddress(ownerId));
+        return sf::Color(150, 150, 150);
 }
 void Unit::unitGo() {}
 void Unit::takeHit(uint16_t damage)
@@ -516,9 +549,9 @@ void Building::unpackBuildingAndMoveIter(vchIter *iter)
 {
 }
 
-Building::Building(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, health, pos) {}
-Building::Building(Game *game, EntityRef ref, vchIter *iter) : Unit(game, ref, iter)
+Building::Building(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Unit(ownerId, totalCost, health, pos) {}
+Building::Building(vchIter *iter) : Unit(iter)
 {
     unpackBuildingAndMoveIter(iter);
 }
@@ -555,24 +588,36 @@ void Building::buildingGo()
 void MobileUnit::packMobileUnit(vch *dest)
 {
     packUnit(dest);
-    target.pack(dest);
-    packToVch(dest, "f", targetRange);
+    if (auto targetAndRange = maybeTargetAndRange)
+    {
+        packTrue(dest);
+
+        targetAndRange->first.pack(dest);
+        packToVch(dest, "f", targetAndRange->second);
+    }
+    else
+    {
+        packFalse(dest);
+    }
 }
 void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 {
-    target = Target(iter);
-    *iter = unpackFromIter(*iter, "f", &targetRange);
+    if (unpackBoolAndMoveIter(iter))
+    {
+        Target target(iter);
+
+        float range;
+        *iter = unpackFromIter(*iter, "f", &range);
+
+        maybeTargetAndRange = {pair(target, range)};
+    }
 }
 
-MobileUnit::MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(game, ref, ownerId, totalCost, health, pos), target(NULL_ENTITYREF), angle_view(0)
-{
-    targetRange = 0;
-    setTarget(Target(pos), 0);
-}
-MobileUnit::MobileUnit(Game *game, EntityRef ref, vchIter *iter) : Unit(game, ref, iter),
-                                                                  target(NULL_ENTITYREF),
-                                                                  angle_view(0)
+MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+    : Unit(ownerId, totalCost, health, pos), maybeTargetAndRange({}), angle_view(0)
+{}
+MobileUnit::MobileUnit(vchIter *iter) : Unit(iter),
+                                        angle_view(0)
 {
     unpackMobileUnitAndMoveIter(iter);
 }
@@ -592,12 +637,14 @@ void MobileUnit::onMoveCmd(vector2f moveTo)
 
 void MobileUnit::setTarget(Target _target, float newRange)
 {
-    target = _target;
-    targetRange = newRange;
+    maybeTargetAndRange = {pair(_target, newRange)};
 }
-Target MobileUnit::getTarget()
+optional<Target> MobileUnit::getTarget()
 {
-    return target;
+    if (maybeTargetAndRange)
+        return maybeTargetAndRange->first;
+    else
+        return {};
 }
 
 void MobileUnit::moveTowardPoint(vector2f dest, float range)
@@ -623,10 +670,13 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
 }
 void MobileUnit::mobileUnitGo()
 {
-    if (optional<vector2f> p = target.getPointUnlessTargetDeleted(*game))
-        moveTowardPoint(*p, targetRange);
-    else
-        setTarget(Target(pos), 0);
+    if (auto targetAndRange = maybeTargetAndRange)
+    {
+        if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
+            moveTowardPoint(*p, targetAndRange->second);
+        else
+            setTarget(Target(pos), 0);
+    }
     unitGo();
 }
 void MobileUnit::cmdMove(vector2f pointTarget)
@@ -677,34 +727,38 @@ void Beacon::unpackAndMoveIter(vchIter *iter)
     state = static_cast<State>(enumInt);
 }
 
-Beacon::Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos, State state)
-    : Building(game, ref, ownerId, BEACON_COST, BEACON_HEALTH, pos),
+Beacon::Beacon(int ownerId, vector2f pos, State state)
+    : Building(ownerId, BEACON_COST, BEACON_HEALTH, pos),
       state(state)
 {}
-Beacon::Beacon(Game *game, EntityRef ref, vchIter *iter) : Building(game, ref, iter)
+Beacon::Beacon(vchIter *iter) : Building(iter)
 {
     unpackAndMoveIter(iter);
 }
 
 void Beacon::go()
 {
+    Game *game = this->getGameOrThrow();
+
     switch (state)
     {
         case Spawning:
         {
-            build(BEACON_BUILD_RATE, &game->players[ownerId].credit);
+            build(BEACON_BUILD_RATE, &getGameOrThrow()->players[ownerId].credit);
 
             if (isActive())
             {
-                boost::shared_ptr<Gateway> transformed(new Gateway(game, this->ref, this->ownerId, this->pos));
-                transformed->completeBuildingInstantly(&this->goldInvested);
-                game->killAndReplaceEntity(this->ref, transformed);
+                // replace self with a Gateway
+                boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->pos));
+                gateway->completeBuildingInstantly(&this->goldInvested);
+                this->die();
+                game->registerNewEntity(gateway);
             }
         }
         break;
         case Despawning:
         {
-            unbuild(BEACON_BUILD_RATE, &game->players[ownerId].credit);
+            unbuild(BEACON_BUILD_RATE, &getGameOrThrow()->players[ownerId].credit);
 
             if (this->getBuilt() == 0)
             {
@@ -726,7 +780,7 @@ void Beacon::go()
 // ----------------------
 // ----------------------
 // ----------------------
-// ------- GATEWAY -------
+// ------- GATEWAY ------
 // ----------------------
 // ----------------------
 // ----------------------
@@ -753,10 +807,10 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
         switch (unitTypechar)
         {
             case PRIME_TYPECHAR:
-                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->ownerId, newUnitPos));
                 break;
             case FIGHTER_TYPECHAR:
-                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->game, this->game->getNextEntityRef(), this->ownerId, newUnitPos));
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->ownerId, newUnitPos));
                 break;
             default:
                 cout << "Gateway doesn't know how to build that unit..." << endl;
@@ -765,8 +819,8 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
         if (littleBabyUnitAwwwwSoCute)
         {
             state = DepositTo;
-            this->game->entities.push_back(littleBabyUnitAwwwwSoCute);
-            this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->ref;
+            getGameOrThrow()->registerNewEntity(littleBabyUnitAwwwwSoCute);
+            this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->getRefOrThrow();
         }
     }
 }
@@ -781,9 +835,9 @@ void Gateway::cmdDepositTo(Target target)
             {
                 return;
             }
-            boost::shared_ptr<GoldPile> goldpile(new GoldPile(game, game->getNextEntityRef(), *point));
-            game->entities.push_back(goldpile);
-            maybeTargetEntity = goldpile->ref;
+            boost::shared_ptr<GoldPile> goldpile(new GoldPile(*point));
+            getGameOrThrow()->registerNewEntity(goldpile);
+            maybeTargetEntity = goldpile->getRefOrThrow();
             state = DepositTo;
         }
         else if (auto entityRef = target.castToEntityRef())
@@ -799,18 +853,21 @@ void Gateway::cmdDepositTo(Target target)
 }
 void Gateway::cmdScuttle(EntityRef targetRef)
 {
+    Game *game = this->getGameOrThrow();
+
     if (this->isActive())
     {
-        if (targetRef == this->ref)
+        if (targetRef == this->getRefOrThrow())
         {
             // replace self with a despawning Beacon
-            boost::shared_ptr<Unit> beacon(new Beacon(game, this->ref, this->ownerId, this->pos, Beacon::Despawning));
+            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->pos, Beacon::Despawning));
             beacon->completeBuildingInstantly(&this->goldInvested);
-            game->killAndReplaceEntity(this->ref, beacon);
+            this->die();
+            game->registerNewEntity(beacon);
         }
         else
         {
-            if (auto entity = entityRefToPtrOrNull(*game, targetRef))
+            if (auto entity = maybeEntityRefToPtrOrNull(*getGameOrThrow(), targetRef))
             {
                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
@@ -820,7 +877,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                         {
                             if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
                             {
-                                mobileUnit->setTarget(this->ref, GATEWAY_RANGE);
+                                mobileUnit->setTarget(this->getRefOrThrow(), GATEWAY_RANGE);
                                 maybeTargetEntity = targetRef;
                                 state = Scuttle;
                             }
@@ -846,12 +903,12 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                     {
                         // too far away!
                         state = Idle;
-                        maybeTargetEntity = NULL_ENTITYREF;
+                        maybeTargetEntity = {};
                     }
                     else
                     {
                         state = Scuttle;
-                        maybeTargetEntity = goldpile->ref;
+                        maybeTargetEntity = {goldpile->getRefOrThrow()};
                     }
                 }
                 else
@@ -879,7 +936,15 @@ void Gateway::pack(vch *dest)
 
     packToVch(dest, "C", (unsigned char)(state));
 
-    packEntityRef(dest, maybeTargetEntity);
+    if (auto targetEntity = maybeTargetEntity)
+    {
+        packTrue(dest);
+        packEntityRef(dest, *targetEntity);
+    }
+    else
+    {
+        packFalse(dest);
+    }
 }
 void Gateway::unpackAndMoveIter(vchIter *iter)
 {
@@ -887,21 +952,27 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
-    *iter = unpackEntityRef(*iter, &maybeTargetEntity);
+    if (unpackBoolAndMoveIter(iter))
+    {
+        EntityRef targetEntity;
+        *iter = unpackEntityRef(*iter, &targetEntity);
+        maybeTargetEntity = {targetEntity};
+    }
 }
 
-Gateway::Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos)
-    : Building(game, ref, ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      state(Idle), inGameTransferState(NoGoldTransfer),
-      maybeTargetEntity(NULL_ENTITYREF)
+Gateway::Gateway(int ownerId, vector2f pos)
+    : Building(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
+      state(Idle), inGameTransferState(NoGoldTransfer)
 {}
-Gateway::Gateway(Game *game, EntityRef ref, vchIter *iter) : Building(game, ref, iter)
+Gateway::Gateway(vchIter *iter) : Building(iter)
 {
     unpackAndMoveIter(iter);
 }
 
 void Gateway::go()
 {
+    Game *game = getGameOrThrow();
+
     inGameTransferState = NoGoldTransfer; // will possibly be updated in the following switch
     switch (state)
     {
@@ -918,7 +989,7 @@ void Gateway::go()
                             if ((unit->pos - this->pos).getMagnitudeSquared() <= rangeSquared)
                                 {
                                     state = DepositTo;
-                                    maybeTargetEntity = unit->ref;
+                                    maybeTargetEntity = {unit->getRefOrThrow()};
                                 }
                 }
             }
@@ -926,13 +997,13 @@ void Gateway::go()
         break;
         case DepositTo:
         {
-            if (boost::shared_ptr<Entity> depositingToEntityPtr = entityRefToPtrOrNull(*game, maybeTargetEntity))
+            if (boost::shared_ptr<Entity> depositingToEntityPtr = maybeEntityRefToPtrOrNull(*game, maybeTargetEntity))
             {
                 // stop if it's out of range
                 if ((depositingToEntityPtr->pos - this->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
                 {
                     state = Idle;
-                    maybeTargetEntity = NULL_ENTITYREF;
+                    maybeTargetEntity = {};
                 }
                 else
                 {
@@ -965,12 +1036,12 @@ void Gateway::go()
                         if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
                         {
                             state = Idle;
-                            maybeTargetEntity = NULL_ENTITYREF;
+                            maybeTargetEntity = {};
                         }
                         if (amountDeposited == 0)
                         {
                             state = Idle;
-                            maybeTargetEntity = NULL_ENTITYREF;
+                            maybeTargetEntity = {};
                         }
                         if (amountDeposited > 0)
                         {
@@ -983,28 +1054,24 @@ void Gateway::go()
         break;
         case Scuttle:
         {
-            if (auto entity = (entityRefToPtrOrNull(*game, maybeTargetEntity)))
+            if (auto entity = (maybeEntityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
                 if ((this->pos - entity->pos).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
-                        if (mobileUnit->getTarget().castToEntityRef() == this->ref)
-                        {
-                            // unit is on its way; do nothing and wait
-                        }
-                        else
+                        if ((!(mobileUnit->getTarget())) || *(mobileUnit->getTarget()->castToEntityRef()) != this->getRefOrThrow())
                         {
                             // unit is no longer on its way; revert to Idle state
                             state = Idle;
-                            maybeTargetEntity = NULL_ENTITYREF;
+                            maybeTargetEntity = {};
                         }
                     }
                     else
                     {
                         cout << "somehow a non-mobile unit ended up out of range for a scuttle cmd..." << endl;
                         state = Idle;
-                        maybeTargetEntity = NULL_ENTITYREF;
+                        maybeTargetEntity = {};
                     }
                 }
                 else
@@ -1026,7 +1093,7 @@ void Gateway::go()
                     else
                     {
                         state = Idle;
-                        maybeTargetEntity = NULL_ENTITYREF;
+                        maybeTargetEntity = {};
                     }
                 }
             }
@@ -1078,13 +1145,13 @@ void Prime::unpackAndMoveIter(vchIter *iter)
     *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
 }
 
-Prime::Prime(Game *game, EntityRef ref, int ownerId, vector2f pos)
-    : MobileUnit(game, ref, ownerId, PRIME_COST, PRIME_HEALTH, pos),
+Prime::Prime(int ownerId, vector2f pos)
+    : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       state(Idle)
 {}
-Prime::Prime(Game *game, EntityRef ref, vchIter *iter) : MobileUnit(game, ref, iter),
-                                                        heldGold(PRIME_MAX_GOLD_HELD)
+Prime::Prime(vchIter *iter) : MobileUnit(iter),
+                              heldGold(PRIME_MAX_GOLD_HELD)
 {
     unpackAndMoveIter(iter);
 }
@@ -1129,45 +1196,51 @@ string Prime::getTypeName() { return "Prime"; }
 
 void Prime::go()
 {
+    Game *game = getGameOrThrow();
+
     goldTransferState = NoGoldTransfer;
     switch (state)
     {
     case Idle:
         break;
     case PickupGold:
-        if (boost::shared_ptr<Entity> e = getTarget().castToEntityPtr(*game))
+        if (auto target = getTarget())
         {
-            if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
-                optional<Coins*> coinsToPullFrom;
-                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                if ((e->pos - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
-                    coinsToPullFrom = &goldpile->gold;
-                }
-                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                {
-                    if (gateway->ownerId == this->ownerId)
-                        coinsToPullFrom = &game->players[gateway->ownerId].credit;
-                }
-                if (coinsToPullFrom)
-                {
-                    coinsInt pickedUp = (*coinsToPullFrom)->transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
-                    if (pickedUp == 0)
-                        state = Idle;
-                    else
-                        goldTransferState = Pulling;
+                    optional<Coins*> coinsToPullFrom;
+                    if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
+                    {
+                        coinsToPullFrom = &goldpile->gold;
+                    }
+                    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                    {
+                        if (gateway->ownerId == this->ownerId)
+                            coinsToPullFrom = &game->players[gateway->ownerId].credit;
+                    }
+                    if (coinsToPullFrom)
+                    {
+                        coinsInt pickedUp = (*coinsToPullFrom)->transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
+                        if (pickedUp == 0)
+                            state = Idle;
+                        else
+                            goldTransferState = Pulling;
+                    }
                 }
             }
         }
         break;
     case PutdownGold:
-        if (optional<vector2f> point = getTarget().getPointUnlessTargetDeleted(*game))
+        if (auto target = getTarget())
+        if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
             if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
             {
                 optional<Coins*> coinsToPushTo;
                 bool stopOnTransferZero = false;
-                if (auto entity = getTarget().castToEntityPtr(*game))
+                if (auto entity = target->castToEntityPtr(*game))
                 {
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                     {
@@ -1206,10 +1279,10 @@ void Prime::go()
                 else
                 {
                     // must create goldPile
-                    boost::shared_ptr<GoldPile> gp(new GoldPile(game, game->getNextEntityRef(), *point));
-                    game->entities.push_back(gp);
+                    boost::shared_ptr<GoldPile> gp(new GoldPile(*point));
+                    game->registerNewEntity(gp);
                     coinsToPushTo = &gp->gold;
-                    setTarget(Target(gp->ref), PRIME_RANGE);
+                    setTarget(Target(gp->getRefOrThrow()), PRIME_RANGE);
                 }
 
                 if (coinsToPushTo)
@@ -1233,57 +1306,60 @@ void Prime::go()
         }
         break;
     case Build:
-        if (optional<vector2f> point = getTarget().castToPoint())
+        if (auto target = getTarget())
         {
-            if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            if (optional<vector2f> point = target->castToPoint())
             {
-                // create unit if typechar checks out and change target to new unit
-                boost::shared_ptr<Building> buildingToBuild;
-                switch (gonnabuildTypechar)
+                if ((*point - pos).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
                 {
-                    case GATEWAY_TYPECHAR:
-                        buildingToBuild = boost::shared_ptr<Building>(new Gateway(game, game->getNextEntityRef(), this->ownerId, *point));
-                        break;
-                }
+                    // create unit if typechar checks out and change target to new unit
+                    boost::shared_ptr<Building> buildingToBuild;
+                    switch (gonnabuildTypechar)
+                    {
+                        case GATEWAY_TYPECHAR:
+                            buildingToBuild = boost::shared_ptr<Building>(new Gateway(this->ownerId, *point));
+                            break;
+                    }
 
-                if (buildingToBuild)
-                {
-                    game->entities.push_back(buildingToBuild);
-                    setTarget(Target(buildingToBuild), PRIME_RANGE);
-                }
-                else
-                {
-                    cout << "Prime refuses to build for that typechar!" << endl;
-                    state = Idle;
+                    if (buildingToBuild)
+                    {
+                        game->registerNewEntity(buildingToBuild);
+                        setTarget(Target(buildingToBuild), PRIME_RANGE);
+                    }
+                    else
+                    {
+                        cout << "Prime refuses to build for that typechar!" << endl;
+                        state = Idle;
+                    }
                 }
             }
-        }
-        else if (boost::shared_ptr<Entity> entity = getTarget().castToEntityPtr(*game))
-        {
-            if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
+            else if (boost::shared_ptr<Entity> entity = target->castToEntityPtr(*game))
             {
-                if (building->getBuiltRatio() < 1)
+                if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
                 {
-                    coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
-                    if (builtAmount > 0)
+                    if (building->getBuiltRatio() < 1)
                     {
-                        goldTransferState = Pushing;
+                        coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
+                        if (builtAmount > 0)
+                        {
+                            goldTransferState = Pushing;
+                        }
+                    }
+                    else
+                    {
+                        state = Idle;
                     }
                 }
                 else
                 {
-                    state = Idle;
+                    cout << "Prime trying to build a non-Building entity... What's going on???" << endl;
                 }
             }
             else
             {
-                cout << "Prime trying to build a non-Building entity... What's going on???" << endl;
+                cout << "Can't cast that Target to a position OR an entity..." << endl;
+                state = Idle;
             }
-        }
-        else
-        {
-            cout << "Can't cast that Target to a position OR an entity..." << endl;
-            state = Idle;
         }
         break;
     }
@@ -1340,12 +1416,12 @@ void Fighter::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "H", &shootCooldown);
 }
 
-Fighter::Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos)
-    : MobileUnit(game, ref, ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
+Fighter::Fighter(int ownerId, vector2f pos)
+    : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
       state(Idle), shootCooldown(0), animateShot(None), lastShot(None)
 {}
-Fighter::Fighter(Game *game, EntityRef ref, vchIter *iter)
-    : MobileUnit(game, ref, iter)
+Fighter::Fighter(vchIter *iter)
+    : MobileUnit(iter)
 {
     unpackAndMoveIter(iter);
 }
@@ -1357,38 +1433,43 @@ void Fighter::cmdAttack(EntityRef ref)
 }
 void Fighter::go()
 {
+    Game *game = getGameOrThrow();
+
     animateShot = None;
     if (shootCooldown > 0)
         shootCooldown --;
 
     if (state == AttackingUnit)
     {
-        bool returnToIdle = false;
-        if (auto targetEntity = getTarget().castToEntityPtr(*this->game)) // will return false if unit died (pointer will be empty)
+        if (auto target = getTarget())
         {
-            if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+            bool returnToIdle = false;
+            if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
             {
-                vector2f toTarget = (targetUnit->pos - pos);
-                angle_view = toTarget.getAngle();
-                if (toTarget.getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
+                if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
                 {
-                    if (shootCooldown == 0)
+                    vector2f toTarget = (targetUnit->pos - pos);
+                    angle_view = toTarget.getAngle();
+                    if (toTarget.getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
                     {
-                        shootAt(targetUnit);
-                        animateShot = (lastShot != Left) ? Left : Right;
-                        lastShot = animateShot;
+                        if (shootCooldown == 0)
+                        {
+                            shootAt(targetUnit);
+                            animateShot = (lastShot != Left) ? Left : Right;
+                            lastShot = animateShot;
+                        }
                     }
                 }
+                else
+                    returnToIdle = true;
             }
             else
                 returnToIdle = true;
-        }
-        else
-            returnToIdle = true;
 
-        if (returnToIdle)
-        {
-            state = Idle;
+            if (returnToIdle)
+            {
+                state = Idle;
+            }
         }
     }
     mobileUnitGo();
@@ -1436,7 +1517,7 @@ string Fighter::getTypename() { return "Fighter"; }
 
 
 
-boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref)
+boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar)
 {
     switch (typechar)
     {
@@ -1444,19 +1525,19 @@ boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned ch
         return boost::shared_ptr<Entity>();
         break;
     case GOLDPILE_TYPECHAR:
-        return boost::shared_ptr<Entity>(new GoldPile(game, ref, iter));
+        return boost::shared_ptr<Entity>(new GoldPile(iter));
         break;
     case BEACON_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Beacon(game, ref, iter));
+        return boost::shared_ptr<Entity>(new Beacon(iter));
         break;
     case GATEWAY_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Gateway(game, ref, iter));
+        return boost::shared_ptr<Entity>(new Gateway(iter));
         break;
     case PRIME_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Prime(game, ref, iter));
+        return boost::shared_ptr<Entity>(new Prime(iter));
         break;
     case FIGHTER_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Fighter(game, ref, iter));
+        return boost::shared_ptr<Entity>(new Fighter(iter));
         break;
     }
     throw runtime_error("Trying to unpack an unrecognized entity");

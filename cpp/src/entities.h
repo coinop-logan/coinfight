@@ -6,14 +6,23 @@
 
 class Game;
 
+struct RegInfo {
+    Game *game;
+    EntityRef ref;
+    vector2i cell;
+    RegInfo(Game *game, EntityRef ref, vector2i cell);
+};
+
 class Entity
 {
 public:
-    Game *game;
     bool dead;
-    EntityRef ref;
     vector2f pos;
-    optional<vector2i> searchGridCell;
+    optional<RegInfo> maybeRegInfo;
+
+    EntityRef getRefOrThrow();
+    Game *getGameOrThrow();
+    vector2i getSearchGridCellOrThrow();
 
     virtual unsigned char typechar();
     virtual string getTypeName();
@@ -29,14 +38,13 @@ public:
 
     void packEntity(vch *destVch);
     void unpackEntityAndMoveIter(vchIter *iter);
-    Entity(Game *game, EntityRef ref, vector2f pos);
-    Entity(Game *game, EntityRef ref, vchIter *iter);
+    Entity(vector2f pos);
+    Entity(vchIter *iter);
 
     vector2f getPos();
 };
 
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
-boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar, Game *game, EntityRef ref);
 enum AllianceType {
     Owned,
     Enemy,
@@ -77,8 +85,8 @@ public:
     vector<Coins*> getDroppableCoins();
     void pack(vch *destVch);
     void unpackAndMoveIter(vchIter *iter);
-    GoldPile(Game *, EntityRef, vector2f);
-    GoldPile(Game *, EntityRef, vchIter *);
+    GoldPile(vector2f);
+    GoldPile(vchIter *);
     sf::Color getTeamOrPrimaryColor();
 
     unsigned char typechar();
@@ -98,8 +106,8 @@ public:
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
-    Unit(Game *, EntityRef, int, coinsInt, uint16_t, vector2f);
-    Unit(Game *, EntityRef, vchIter *);
+    Unit(int, coinsInt, uint16_t, vector2f);
+    Unit(vchIter *);
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
 
@@ -120,8 +128,8 @@ public:
     void packBuilding(vch *destVch);
     void unpackBuildingAndMoveIter(vchIter *iter);
 
-    Building(Game *, EntityRef, int, coinsInt, uint16_t, vector2f);
-    Building(Game *, EntityRef, vchIter *);
+    Building(int, coinsInt, uint16_t, vector2f);
+    Building(vchIter *);
 
     void buildingGo();
 };
@@ -129,14 +137,11 @@ public:
 class MobileUnit : public Unit
 {
 private:
-    Target target;
-    float targetRange;
+    optional<pair<Target, float>> maybeTargetAndRange;
 
     float getRotation() { return angle_view; };
 
     void moveTowardPoint(vector2f, float);
-
-protected:
 
 public:
     void setTarget(Target _target, float range);
@@ -145,7 +150,7 @@ public:
     virtual float getRange();
     virtual void onMoveCmd(vector2f moveTo);
 
-    Target getTarget();
+    optional<Target> getTarget();
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -154,8 +159,8 @@ public:
 
     void cmdMove(vector2f target);
 
-    MobileUnit(Game *game, EntityRef ref, int ownerId, coinsInt totalCost, uint16_t, vector2f pos);
-    MobileUnit(Game *game, EntityRef ref, vchIter *iter);
+    MobileUnit(int ownerId, coinsInt totalCost, uint16_t, vector2f pos);
+    MobileUnit(vchIter *iter);
 };
 
 enum GoldTransferState {
@@ -175,8 +180,8 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Beacon(Game *game, EntityRef ref, int ownerId, vector2f pos, State state);
-    Beacon(Game *game, EntityRef ref, vchIter *iter);
+    Beacon(int ownerId, vector2f pos, State state);
+    Beacon(vchIter *iter);
 
     unsigned char typechar();
     string getTypeName();
@@ -196,13 +201,13 @@ public:
 
     GoldTransferState inGameTransferState;
 
-    EntityRef maybeTargetEntity;
+    optional<EntityRef> maybeTargetEntity;
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Gateway(Game *game, EntityRef ref, int ownerId, vector2f pos);
-    Gateway(Game *game, EntityRef ref, vchIter *iter);
+    Gateway(int ownerId, vector2f pos);
+    Gateway(vchIter *iter);
 
     void cmdBuildUnit(unsigned char unitTypechar);
     void cmdDepositTo(Target target);
@@ -240,8 +245,8 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Prime(Game *game, EntityRef ref, int ownerId, vector2f pos);
-    Prime(Game *game, EntityRef ref, vchIter *iter);
+    Prime(int ownerId, vector2f pos);
+    Prime(vchIter *iter);
 
     void cmdPickup(Target);
     void cmdPutdown(Target);
@@ -282,8 +287,8 @@ public:
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
-    Fighter(Game *game, EntityRef ref, int ownerId, vector2f pos);
-    Fighter(Game *game, EntityRef ref, vchIter *iter);
+    Fighter(int ownerId, vector2f pos);
+    Fighter(vchIter *iter);
 
     void cmdAttack(EntityRef ref);
 
@@ -295,5 +300,7 @@ public:
 
     void shootAt(boost::shared_ptr<Unit> targetUnit);
 };
+
+boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar);
 
 #endif // ENTITIES_H

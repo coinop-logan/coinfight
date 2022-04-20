@@ -114,7 +114,7 @@ void UI::iterate()
     //     {
     //         // when the beacon finishes and transforms into a Gateway,
     //         // this pointer will point to the "dead" beacon while one in game->entities will have changed
-    //         boost::shared_ptr<Entity> entityWhereBeaconWas = entityRefToPtrOrNull(beacon->game, beacon->ref);
+    //         boost::shared_ptr<Entity> entityWhereBeaconWas = maybeEntityRefToPtrOrNull(beacon->game, beacon->ref);
     //         if (entityWhereBeaconWas->typechar() == GATEWAY_TYPECHAR)
     //         {
     //             selectedUnits[0] = boost::dynamic_pointer_cast<Unit, Entity>(entityWhereBeaconWas);
@@ -187,7 +187,7 @@ Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, ve
         }
     }
     if (closestValidEntity)
-        return Target(closestValidEntity->ref);
+        return Target(closestValidEntity->getRefOrThrow());
     else
         return Target(gamePos);
 }
@@ -200,7 +200,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     }
     if (optional<vector2f> point = target.castToPoint())
     {
-        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefs(ui.selectedUnits), *point));
+        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), *point));
     }
     else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
     {
@@ -209,7 +209,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
         if (getAllianceType(playerID, entity) == Enemy)
         {
             vector<boost::shared_ptr<Unit>> fighters = filterForTypeKeepContainer<Fighter, Unit>(ui.selectedUnits);
-            return boost::shared_ptr<Cmd>(new AttackCmd(entityPtrsToRefs(fighters), entity->ref));
+            return boost::shared_ptr<Cmd>(new AttackCmd(entityPtrsToRefsOrThrow(fighters), entity->getRefOrThrow()));
         }
         else
         {
@@ -218,13 +218,13 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
                 if (unit->getBuiltRatio() < 1)
                 {
                     vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefs(primesInSelection), unit->ref));
+                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), unit->getRefOrThrow()));
                 }
             }
             if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
             {
                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefs(primesInSelection), entity->ref));
+                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
             }
             else
             {
@@ -260,7 +260,7 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
         }
 
         vector<EntityRef> onlyOneGateway;
-        onlyOneGateway.push_back(bestChoice->ref);
+        onlyOneGateway.push_back(bestChoice->getRefOrThrow());
         return boost::shared_ptr<GatewayBuildCmd>(new GatewayBuildCmd(onlyOneGateway, buildUnitTypechar));
     }
     return boost::shared_ptr<GatewayBuildCmd>();
@@ -295,7 +295,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
         }
 
         vector<EntityRef> onlyOnePrime;
-        onlyOnePrime.push_back(bestChoice->ref);
+        onlyOnePrime.push_back(bestChoice->getRefOrThrow());
         return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, buildPos));
     }
     return boost::shared_ptr<PrimeBuildCmd>();
@@ -423,7 +423,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
 
                         if (primesAndGateways.size() > 0)
                         {
-                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefs(primesAndGateways), target)));
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(primesAndGateways), target)));
                             ui->cmdState = UI::Default;
                         }
                     }
@@ -506,12 +506,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 {
                                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
                                     {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({gateway->ref}, targetEntity->ref)));
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({gateway->getRefOrThrow()}, targetEntity->getRefOrThrow())));
                                         ui->cmdState = UI::Default;
                                     }
                                     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
                                     {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({prime->ref}, targetEntity->ref)));
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({prime->getRefOrThrow()}, targetEntity->getRefOrThrow())));
                                         ui->cmdState = UI::Default;
                                     }
                                 }

@@ -111,8 +111,8 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
     if (game->getPlayerBeaconAvailable(playerId))
     {
         game->setPlayerBeaconAvailable(playerId, false);
-        boost::shared_ptr<Beacon> beacon(new Beacon(game, game->getNextEntityRef(), playerId, this->pos, Beacon::Spawning));
-        game->entities.push_back(beacon);
+        boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning));
+        game->registerNewEntity(beacon);
     }
 }
 void SpawnBeaconCmd::pack(vch *dest)
@@ -188,7 +188,7 @@ vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
     vector<boost::shared_ptr<Unit>> units;
     for (unsigned int i = 0; i < unitRefs.size(); i++)
     {
-        if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(entityRefToPtrOrNull(*game, unitRefs[i])))
+        if (boost::shared_ptr<Unit> u = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*game, unitRefs[i])))
         {
             units.push_back(u);
         }
@@ -302,7 +302,7 @@ void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 }
 
 PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : UnitCmd(units), target(target) {}
-PutdownCmd::PutdownCmd(vchIter *iter) : UnitCmd(iter), target(NULL_ENTITYREF)
+PutdownCmd::PutdownCmd(vchIter *iter) : UnitCmd(iter), target((EntityRef)0) // will be overwritten
 {
     unpackAndMoveIter(iter);
 }

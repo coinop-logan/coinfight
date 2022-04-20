@@ -976,20 +976,26 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     {
                         if (prime->goldTransferState == Pulling)
                         {
-                            if (optional<vector2f> maybeTargetPos = prime->getTarget().getPointUnlessTargetDeleted(*game))
+                            if (auto primeTarget = prime->getTarget())
                             {
-                                vector2f targetPos = *maybeTargetPos;
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->ref), sf::Color::Yellow)));
+                                if (optional<vector2f> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
+                                {
+                                    vector2f targetPos = *maybeTargetPos;
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                                }
                             }
                         }
                         else if (prime->goldTransferState == Pushing)
                         {
-                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, prime->getTarget(), sf::Color::Yellow)));
+                            if (auto primeTarget = prime->getTarget())
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->pos, *primeTarget, sf::Color::Yellow)));
+                            }
                         }
                     }
                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                     {
-                        if (auto targetEntity = entityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
+                        if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
                         {
                             switch (gateway->inGameTransferState)
                             {
@@ -1018,23 +1024,26 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (fighter->animateShot != Fighter::None)
                     {
-                        if (optional<vector2f> targetPos = fighter->getTarget().getPointUnlessTargetDeleted(*game))
+                        if (auto fighterTarget = fighter->getTarget())
                         {
-                            vector2f relativeShotStartPos;
-                            if (fighter->animateShot == Fighter::Left)
+                            if (optional<vector2f> targetPos = fighterTarget->getPointUnlessTargetDeleted(*game))
                             {
-                                relativeShotStartPos = FIGHTER_SHOT_OFFSET;
+                                vector2f relativeShotStartPos;
+                                if (fighter->animateShot == Fighter::Left)
+                                {
+                                    relativeShotStartPos = FIGHTER_SHOT_OFFSET;
+                                }
+                                else
+                                {
+                                    vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
+                                    reversedShotOffset.y *= -1;
+                                    relativeShotStartPos = reversedShotOffset;
+                                }
+                                vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
+                                vector2f final = fighter->pos + rotated;
+                                boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
+                                particles->addLineParticle(line);
                             }
-                            else
-                            {
-                                vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
-                                reversedShotOffset.y *= -1;
-                                relativeShotStartPos = reversedShotOffset;
-                            }
-                            vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
-                            vector2f final = fighter->pos + rotated;
-                            boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
-                            particles->addLineParticle(line);
                         }
                     }
                 }

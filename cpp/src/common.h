@@ -13,6 +13,11 @@ using namespace std;
 using vch = vector<unsigned char>;
 using vchIter = vector<unsigned char>::iterator;
 
+void packTrue(vch *dest);
+void packFalse(vch *dest);
+void packBool(vch *dest, bool flag);
+bool unpackBoolAndMoveIter(vchIter *iter);
+
 void packTypechar(vch *dest, unsigned char typechar);
 
 void debugOutputVch(vch);

@@ -5,6 +5,25 @@
 
 using namespace std;
 
+void packTrue(vch *dest)
+{
+    packToVch(dest, "C", (unsigned char)1);
+}
+void packFalse(vch *dest)
+{
+    packToVch(dest, "C", (unsigned char)0);
+}
+void packBool(vch *dest, bool flag)
+{
+    packToVch(dest, "C", (unsigned char)(flag ? 1 : 0));
+}
+bool unpackBoolAndMoveIter(vchIter *iter)
+{
+    unsigned char boolChar;
+    *iter = unpackFromIter(*iter, "C", &boolChar);
+    return (boolChar != 0);
+}
+
 void packTypechar(vch *dest, unsigned char typechar)
 {
     packToVch(dest, "C", typechar);

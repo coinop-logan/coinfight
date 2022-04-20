@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
         if (receivedResyncs.size() > 0)
         {
             game = receivedResyncs[0];
-            game.reassignEntityGamePointers();
+            // game.reassignEntityGamePointers();
 
             receivedResyncs.erase(receivedResyncs.begin());
             break;
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
             game = receivedResyncs[0];
-            game.reassignEntityGamePointers();
+            // game.reassignEntityGamePointers();
 
             receivedResyncs.erase(receivedResyncs.begin());
         }
