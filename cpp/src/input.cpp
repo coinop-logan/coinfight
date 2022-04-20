@@ -164,15 +164,17 @@ vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
     return vector2i(mEvent.x, mEvent.y);
 }
 
-Target getTargetAtScreenPos(const Game &game, const CameraState &cameraState, vector2i screenPos)
+Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i screenPos)
 {
     vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
+    vector<EntityRef> nearbyEntities = game->searchGrid.entitiesNearGamePosSloppy(gamePos, 0);
+
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
-    for (unsigned int i = 0; i < game.entities.size(); i++)
+    for (unsigned int i = 0; i < nearbyEntities.size(); i++)
     {
-        boost::shared_ptr<Entity> e = game.entities[i];
+        boost::shared_ptr<Entity> e = maybeEntityRefToPtrOrNull(*game, {nearbyEntities[i]});
         if (e)
         {
             if (e->collidesWithPoint(gamePos))
