@@ -705,6 +705,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
                     drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
                 }
                 break;
+            case UI::AttackGather:
+                if (ui.mouseoverEntity)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                }
+                else
+                {
+                    drawTargetCursor(window, mousePos, sf::Color::Red);
+                }
+                break;
         }
     }
 }
