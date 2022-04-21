@@ -169,7 +169,7 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
 {
     vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
-    vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, 0);
+    vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, 100);
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
