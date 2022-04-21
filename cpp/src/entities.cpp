@@ -73,6 +73,12 @@ Target::Target(EntityRef _entityTarget)
 Target::Target(boost::shared_ptr<Entity> entity)
     : Target(entity->getRefOrThrow()) {}
 
+bool Target::isStillValid(const Game &game)
+{
+    return
+        (type == PointTarget) ||
+        (maybeEntityRefToPtrOrNull(game, {entityTarget}) != NULL);
+}
 optional<vector2f> Target::getPointUnlessTargetDeleted(const Game &game)
 {
     if (type == PointTarget)
@@ -645,7 +651,7 @@ void MobileUnit::setMoveTarget(Target _target, float newRange)
 {
     maybeTargetAndRange = {pair(_target, newRange)};
 }
-void MobileUnit::clearTarget()
+void MobileUnit::clearMoveTarget()
 {
     maybeTargetAndRange = {};
 }
@@ -1473,10 +1479,18 @@ Fighter::Fighter(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-void Fighter::cmdAttack(EntityRef ref)
+void Fighter::cmdAttack(Target target)
 {
-    state = AttackingSpecific;
-    setMoveTarget(Target(ref), FIGHTER_SHOT_RANGE);
+    if (auto ref = target.castToEntityRef())
+    {
+        state = AttackingSpecific;
+    }
+    else if (auto point = target.castToPoint())
+    {
+        state = AttackingGeneral;
+        maybeAttackingGeneralTarget = point;
+    }
+    setMoveTarget(target, FIGHTER_SHOT_RANGE);
 }
 void Fighter::go()
 {
@@ -1522,7 +1536,37 @@ void Fighter::go()
         {
             if (auto attackingGeneralTarget = maybeAttackingGeneralTarget)
             {
-                // first check if this target is still valid
+                // first make sure we're not going after some dead unit
+                if (!attackingGeneralTarget->isStillValid(*game))
+                {
+                    state = NotAttacking;
+                    attackingGeneralTarget = {};
+                    break;
+                }
+
+                // same for moveTarget, but don't return to idle; just clear the var so the next if catches
+                if (auto moveTarget = getMoveTarget())
+                {
+                    if (!moveTarget->isStillValid(*game))
+                    {
+                        MobileUnit::clearMoveTarget();
+                    }
+                }
+
+                // if we're not moving toward the target, do so
+                if (!getMoveTarget())
+                {
+                    if (attackingGeneralTarget->type == Target::PointTarget)
+                    {
+                        setMoveTarget(*attackingGeneralTarget, 0);
+                    }
+                    else
+                    {
+                        setMoveTarget(*attackingGeneralTarget, FIGHTER_SHOT_RANGE);
+                    }
+                }
+
+                // if the target is a point and we've arrived, go back to Idle
                 if (auto point = attackingGeneralTarget->castToPoint())
                 {
                     if ((*point - this->getPos()).getMagnitudeSquared() < DISTANCE_TOL)
@@ -1532,26 +1576,20 @@ void Fighter::go()
                         break;
                     }
                 }
-                else if (!attackingGeneralTarget->castToEntityPtr(*game)) // indicates the target is ded
-                {
-                    state = NotAttacking;
-                    attackingGeneralTarget = {};
-                    break;
-                }
 
-                if (!getMoveTarget())
-                {
-                    if (attackingGeneralTarget->type == Target::PointTarget)
-                        setMoveTarget(*attackingGeneralTarget, 0);
-                    else
-                        setMoveTarget(*attackingGeneralTarget, FIGHTER_SHOT_RANGE);
-                }
-
-                // scan for good targets
+                // at this point we know:
+                    // the target is either a live unit or a position we haven't arrived at
+                    // we are moving toward the target or staying within range
+                
+                // we must also keep in mind that moveTarget may be different than attackingGeneralTarget
+                    // (the former changes more often, the latter is the Fighter's "higher order" command)
+                    // the moveTarget is what the Figher is attacking "right now"
+                
+                // we will search for good options for attack
                 boost::shared_ptr<Unit> bestTarget;
                 float bestTargetPriority;
                 bool alreadyHadTarget = false;
-                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(attackingGeneralTarget->castToEntityPtr(*game)))
+                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(getMoveTarget()->castToEntityPtr(*game)))
                 {
                     bestTarget = unit;
                     bestTargetPriority = this->calcAttackPriority(unit);
@@ -1568,11 +1606,13 @@ void Fighter::go()
                             bool thisIsBetterTarget = false; // until proven otherwise
 
                             float priority = this->calcAttackPriority(unit);
+
                             // if there is not yet a bestTarget, or if the priority is higher
                             if ((!bestTarget) || priority > bestTargetPriority)
                             {
                                 thisIsBetterTarget = true;
                             }
+
                             // if the priority matches and we didn't already have a target before this frame...
                             else if (priority == bestTargetPriority && !alreadyHadTarget)
                             {

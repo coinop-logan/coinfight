@@ -129,3 +129,21 @@ bool ScuttleInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }
+
+
+
+
+sf::Keyboard::Key AttackGatherInterfaceCmd::getKey()
+{
+    return sf::Keyboard::A;
+}
+vector<boost::shared_ptr<Cmd>> AttackGatherInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::AttackGather;
+
+    return noCmds;
+}
+bool AttackGatherInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR);
+}

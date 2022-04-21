@@ -847,7 +847,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
         {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
         {sf::Keyboard::R, 'R', {}},
-        {sf::Keyboard::A, 'A', {}},
+        {sf::Keyboard::A, 'A', {"Attack/", "Gather"}},
         {sf::Keyboard::S, 'S', {}},
         {sf::Keyboard::D, 'D', {"Deposit"}},
         {sf::Keyboard::F, 'F', {"Scuttle"}}

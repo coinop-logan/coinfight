@@ -73,6 +73,7 @@ public:
     Target(boost::shared_ptr<Entity>);
     Target(vchIter *iter);
 
+    bool isStillValid(const Game&);
     optional<vector2f> getPointUnlessTargetDeleted(const Game&);
     optional<EntityRef> castToEntityRef();
     optional<vector2f> castToPoint();
@@ -146,7 +147,7 @@ private:
 public:
     void addToPosAndUpdateCell(vector2f toAdd);
     void setMoveTarget(Target _target, float range);
-    void clearTarget();
+    void clearMoveTarget();
     bool isIdle();
     float angle_view;
     virtual float getSpeed();
@@ -296,7 +297,7 @@ public:
     Fighter(int ownerId, vector2f pos);
     Fighter(vchIter *iter);
 
-    void cmdAttack(EntityRef ref);
+    void cmdAttack(Target target);
 
     unsigned char typechar();
     string getTypename();
