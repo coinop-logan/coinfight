@@ -168,7 +168,7 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
 {
     vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
 
-    vector<EntityRef> nearbyEntities = game->searchGrid.entitiesNearGamePosSloppy(gamePos, 0);
+    vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, 0);
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
@@ -208,7 +208,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     {
         boost::shared_ptr<Entity> entity = *entityPtrPtr;
 
-        if (getAllianceType(playerID, entity) == Enemy)
+        if (getAllianceType(playerID, entity) == Foreign)
         {
             vector<boost::shared_ptr<Unit>> fighters = filterForTypeKeepContainer<Fighter, Unit>(ui.selectedUnits);
             return boost::shared_ptr<Cmd>(new AttackCmd(entityPtrsToRefsOrThrow(fighters), entity->getRefOrThrow()));
@@ -328,7 +328,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     moveVector.y *= -1;
                     ui->camera.gamePos -= moveVector;
                 }
-                Target target = getTargetAtScreenPos(*game, ui->camera, mouseMoveToVec(event.mouseMove));
+                Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
                 ui->mouseoverEntity = target.castToEntityPtr(*game);
 
                 ui->lastMousePos = mouseMoveToVec(event.mouseMove);
@@ -343,7 +343,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
                     {
                         vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
-                        if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(*game, ui->camera, averagedClick).castToEntityPtr(*game))
+                        if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, averagedClick).castToEntityPtr(*game))
                         {
                             if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
                             {
@@ -416,7 +416,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     break;
                     case UI::Deposit:
                     {
-                        Target target = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton));
+                        Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
 
                         vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                         vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
@@ -443,7 +443,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     break;
                     case UI::Scuttle:
                     {
-                        if (auto targetEntity = getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
+                        if (auto targetEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
                         {
                         if (getAllianceType(playerIdOrNeg1, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
@@ -530,7 +530,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     if (ui->selectedUnits.size() > 0)
                     {
                         if (playerIdOrNeg1 >= 0)
-                            cmdsToSend.push_back(makeRightclickCmd(*game, *ui, playerIdOrNeg1, getTargetAtScreenPos(*game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                            cmdsToSend.push_back(makeRightclickCmd(*game, *ui, playerIdOrNeg1, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
                     }
                 }
                 else

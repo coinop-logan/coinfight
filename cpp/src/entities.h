@@ -48,7 +48,7 @@ public:
 unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity>);
 enum AllianceType {
     Owned,
-    Enemy,
+    Foreign,
     Neutral
 };
 AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity> entity);
@@ -146,6 +146,8 @@ private:
 public:
     void addToPosAndUpdateCell(vector2f toAdd);
     void setTarget(Target _target, float range);
+    void clearTarget();
+    bool isIdle();
     float angle_view;
     virtual float getSpeed();
     virtual float getRange();
@@ -268,7 +270,7 @@ class Fighter : public MobileUnit
 public:
     enum State
     {
-        Idle,
+        NotAttacking,
         AttackingUnit
     } state;
 

@@ -197,7 +197,7 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
         }
         else
         {
-            return Enemy;
+            return Foreign;
         }
     }
     else
@@ -645,6 +645,23 @@ void MobileUnit::setTarget(Target _target, float newRange)
 {
     maybeTargetAndRange = {pair(_target, newRange)};
 }
+void MobileUnit::clearTarget()
+{
+    maybeTargetAndRange = {};
+}
+bool MobileUnit::isIdle()
+{
+    if (auto targetAndRange = maybeTargetAndRange)
+    {
+        if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        {
+            vector2f toPoint = *p - getPos();
+            float distanceLeft = toPoint.getMagnitude() - targetAndRange->second;
+            return (distanceLeft <= DISTANCE_TOL);
+        }
+    }
+    return true;
+}
 optional<Target> MobileUnit::getTarget()
 {
     if (maybeTargetAndRange)
@@ -661,7 +678,7 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
 {
     vector2f toPoint = dest - getPos();
     float distanceLeft = toPoint.getMagnitude() - range;
-    if (distanceLeft <= 0)
+    if (distanceLeft <= DISTANCE_TOL)
     {
         return;
     }
@@ -989,7 +1006,7 @@ void Gateway::go()
         case Idle:
         {
             // search for units near enough to complete
-            vector<EntityRef> nearbyEntityRefs = game->searchGrid.entitiesNearGamePosSloppy(this->getPos(), GATEWAY_RANGE);
+            vector<EntityRef> nearbyEntityRefs = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(this->getPos(), GATEWAY_RANGE);
 
             float rangeSquared = pow(GATEWAY_RANGE, 2);
             for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
@@ -1432,7 +1449,7 @@ void Fighter::unpackAndMoveIter(vchIter *iter)
 
 Fighter::Fighter(int ownerId, vector2f pos)
     : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
-      state(Idle), shootCooldown(0), animateShot(None), lastShot(None)
+      state(NotAttacking), shootCooldown(0), animateShot(None), lastShot(None)
 {}
 Fighter::Fighter(vchIter *iter)
     : MobileUnit(iter)
@@ -1443,7 +1460,7 @@ Fighter::Fighter(vchIter *iter)
 void Fighter::cmdAttack(EntityRef ref)
 {
     state = AttackingUnit;
-    setTarget(Target(ref), FIGHTER_RANGE);
+    setTarget(Target(ref), FIGHTER_SHOT_RANGE);
 }
 void Fighter::go()
 {
@@ -1453,54 +1470,86 @@ void Fighter::go()
     if (shootCooldown > 0)
         shootCooldown --;
 
-    if (state == AttackingUnit)
+    switch (state)
     {
-        if (auto target = getTarget())
+        case NotAttacking:
         {
-            bool returnToIdle = false;
-            if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
+            if (!isIdle())
             {
-                if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+                auto entitiesWithinRadius = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
+
+                boost::shared_ptr<Entity> closestValidTarget;
+                float closestDistanceSquared;
+                for (unsigned int i=0; i<entitiesWithinRadius.size(); i++)
                 {
-                    vector2f toTarget = (targetUnit->getPos() - this->getPos());
-                    angle_view = toTarget.getAngle();
-                    if (toTarget.getMagnitude() <= FIGHTER_RANGE + DISTANCE_TOL)
+                    auto entity = entitiesWithinRadius[i];
+                    if (getAllianceType(this->ownerId, entity) == Foreign)
                     {
-                        if (shootCooldown == 0)
+                        float distanceSquared = (this->getPos() - entity->getPos()).getMagnitudeSquared();
+                        if (!closestValidTarget || distanceSquared < closestDistanceSquared)
                         {
-                            shootAt(targetUnit);
-                            animateShot = (lastShot != Left) ? Left : Right;
-                            lastShot = animateShot;
+                            closestValidTarget = entity;
+                            closestDistanceSquared = distanceSquared;
                         }
                     }
                 }
-                else
-                    returnToIdle = true;
-            }
-            else
-                returnToIdle = true;
 
-            if (returnToIdle)
-            {
-                state = Idle;
+                if (closestValidTarget)
+                {
+                    state = AttackingUnit;
+                    setTarget(Target(closestValidTarget->getRefOrThrow()), FIGHTER_SHOT_RANGE);
+                }
             }
         }
+        break;
+        case AttackingUnit:
+            if (auto target = getTarget())
+            {
+                bool returnToIdle = false;
+                if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
+                {
+                    if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
+                    {
+                        vector2f toTarget = (targetUnit->getPos() - this->getPos());
+                        angle_view = toTarget.getAngle();
+                        if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + DISTANCE_TOL)
+                        {
+                            if (shootCooldown == 0)
+                            {
+                                shootAt(targetUnit);
+                                animateShot = (lastShot != Left) ? Left : Right;
+                                lastShot = animateShot;
+                            }
+                        }
+                    }
+                    else
+                        returnToIdle = true;
+                }
+                else
+                    returnToIdle = true;
+
+                if (returnToIdle)
+                {
+                    state = NotAttacking;
+                }
+            }
+            break;
     }
     mobileUnitGo();
 }
 void Fighter::onMoveCmd(vector2f moveTo)
 {
-    state = Idle;
+    state = NotAttacking;
 }
 
 void Fighter::shootAt(boost::shared_ptr<Unit> unit)
 {
-    shootCooldown = FIGHTER_SHOOT_COOLDOWN;
+    shootCooldown = FIGHTER_SHOT_COOLDOWN;
     unit->takeHit(FIGHTER_DAMAGE);
 }
 
 float Fighter::getSpeed() { return FIGHTER_SPEED; }
-float Fighter::getRange() { return FIGHTER_RANGE; }
+float Fighter::getRange() { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() { return FIGHTER_HEALTH; }
 

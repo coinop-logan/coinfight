@@ -19,7 +19,7 @@ int main()
 {
     SearchGrid sGrid;
 
-    auto nearby = sGrid.entitiesNearGamePosSloppy(vector2f(10,10), 500);
+    auto nearby = sGrid.nearbyEntitiesSloppyIncludingEmpty(vector2f(10,10), 500);
     
     return 0;
 }

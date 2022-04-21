@@ -57,8 +57,9 @@ const coinsInt PRIME_MAX_GOLD_HELD = MAX_COINS;
 const coinsInt FIGHTER_COST = 1500;
 const uint16_t FIGHTER_HEALTH = 300;
 const float FIGHTER_SPEED = 3;
-const float FIGHTER_RANGE = 200;
-const int FIGHTER_SHOOT_COOLDOWN = 20;
+const float FIGHTER_SHOT_RANGE = 200;
+const float FIGHTER_SIGHT_RANGE = 250;
+const int FIGHTER_SHOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 
 const vector2f FIGHTER_SHOT_OFFSET(20, 10);

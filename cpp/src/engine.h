@@ -63,7 +63,7 @@ public:
     optional<vector2i> updateEntityCellRelation(Entity* entity);
     SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
     vector<EntityRef> entitiesInGridRect(SearchGridRect rect);
-    vector<EntityRef> entitiesNearGamePosSloppy(vector2f gamePos, float radius);
+    vector<EntityRef> nearbyEntitiesSloppyIncludingEmpty(vector2f gamePos, float radius);
 };
 
 class Game
@@ -82,6 +82,8 @@ public:
     string playerIdToAddress(unsigned int playerId);
     bool getPlayerBeaconAvailable(unsigned int playerId);
     void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
+
+    vector<boost::shared_ptr<Entity>> entitiesWithinRadius(vector2f gamePos, float radius);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);

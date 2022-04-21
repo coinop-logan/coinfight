@@ -658,7 +658,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
             case UI::Default:
                 if (ui.mouseoverEntity)
                 {
-                    if (getAllianceType(playerId, ui.mouseoverEntity) == Enemy)
+                    if (getAllianceType(playerId, ui.mouseoverEntity) == Foreign)
                     {
                         drawBracketsCursor(window, mousePos, sf::Color::Red);
                     }
@@ -729,7 +729,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             case Owned:
                 topTextColor = sf::Color::Green;
                 break;
-            case Enemy:
+            case Foreign:
                 topTextColor = sf::Color::Red;
                 break;
             case Neutral:

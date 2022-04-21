@@ -202,7 +202,7 @@ vector<EntityRef> SearchGrid::entitiesInGridRect(SearchGridRect rect)
     }
     return entities;
 }
-vector<EntityRef> SearchGrid::entitiesNearGamePosSloppy(vector2f gamePos, float radius)
+vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2f gamePos, float radius)
 {
     return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
@@ -229,6 +229,26 @@ bool Game::getPlayerBeaconAvailable(unsigned int playerId)
 void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
+}
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinRadius(vector2f fromPos, float radius)
+{
+    float radiusSquared = pow(radius, 2);
+
+    auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(fromPos, radius);
+
+    vector<boost::shared_ptr<Entity>> entitiesToReturn;
+    for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
+    {
+        if (auto entity = this->entities[nearbyEntityRefs[i]])
+        {
+            if ((fromPos - entity->getPos()).getMagnitudeSquared() <= radiusSquared)
+            {
+                entitiesToReturn.push_back(entity);
+            }
+        }
+    }
+
+    return entitiesToReturn;
 }
 
 // void Game::killAndReplaceEntity(EntityRef ref, boost::shared_ptr<Entity> newEntity)
