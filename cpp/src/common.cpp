@@ -99,11 +99,6 @@ vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s)
     return newIter;
 }
 
-bool entityRefIsNull(EntityRef ref)
-{
-    return ref == 0;
-}
-
 std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
 {
     unsigned int sum = a + b;

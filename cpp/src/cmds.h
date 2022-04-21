@@ -166,9 +166,9 @@ struct PrimeBuildCmd : public UnitCmd
     PrimeBuildCmd(vchIter *iter);
 };
 
-struct AttackCmd : public UnitCmd
+struct AttackGatherCmd : public UnitCmd
 {
-    EntityRef targetUnit;
+    Target target;
 
     unsigned char getTypechar();
     string getTypename();
@@ -177,8 +177,8 @@ struct AttackCmd : public UnitCmd
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    AttackCmd(vector<EntityRef>, EntityRef);
-    AttackCmd(vchIter *iter);
+    AttackGatherCmd(vector<EntityRef>, Target);
+    AttackGatherCmd(vchIter *iter);
 };
 
 struct ResumeBuildingCmd : public UnitCmd

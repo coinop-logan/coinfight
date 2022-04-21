@@ -37,7 +37,6 @@ vchIter unpackEntityRef(vchIter iter, EntityRef *ref);
 void packStringToVch(std::vector<unsigned char> *vch, string s);
 vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s);
 
-bool entityRefIsNull(EntityRef);
 std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
 coinsInt dollarsToCoinsInt(float dollars);

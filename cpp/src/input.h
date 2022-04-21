@@ -32,7 +32,8 @@ struct UI
         SpawnBeacon,
         Deposit,
         Build,
-        Scuttle
+        Scuttle,
+        AttackGather
     } cmdState;
     bool minimapEnabled;
     vector2i lastMousePos;

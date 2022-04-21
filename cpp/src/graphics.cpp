@@ -705,6 +705,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
                     drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
                 }
                 break;
+            case UI::AttackGather:
+                if (ui.mouseoverEntity)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                }
+                else
+                {
+                    drawTargetCursor(window, mousePos, sf::Color::Red);
+                }
+                break;
         }
     }
 }
@@ -847,7 +857,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
         {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
         {sf::Keyboard::R, 'R', {}},
-        {sf::Keyboard::A, 'A', {}},
+        {sf::Keyboard::A, 'A', {"Attack/", "Gather"}},
         {sf::Keyboard::S, 'S', {}},
         {sf::Keyboard::D, 'D', {"Deposit"}},
         {sf::Keyboard::F, 'F', {"Scuttle"}}
@@ -976,7 +986,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     {
                         if (prime->goldTransferState == Pulling)
                         {
-                            if (auto primeTarget = prime->getTarget())
+                            if (auto primeTarget = prime->getMoveTarget())
                             {
                                 if (optional<vector2f> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
@@ -987,7 +997,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         }
                         else if (prime->goldTransferState == Pushing)
                         {
-                            if (auto primeTarget = prime->getTarget())
+                            if (auto primeTarget = prime->getMoveTarget())
                             {
                                 particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->getPos(), *primeTarget, sf::Color::Yellow)));
                             }
@@ -1024,7 +1034,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (fighter->animateShot != Fighter::None)
                     {
-                        if (auto fighterTarget = fighter->getTarget())
+                        if (auto fighterTarget = fighter->getMoveTarget())
                         {
                             if (optional<vector2f> targetPos = fighterTarget->getPointUnlessTargetDeleted(*game))
                             {

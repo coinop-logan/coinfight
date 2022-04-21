@@ -73,6 +73,7 @@ public:
     Target(boost::shared_ptr<Entity>);
     Target(vchIter *iter);
 
+    bool isStillValid(const Game&);
     optional<vector2f> getPointUnlessTargetDeleted(const Game&);
     optional<EntityRef> castToEntityRef();
     optional<vector2f> castToPoint();
@@ -145,15 +146,15 @@ private:
     void moveTowardPoint(vector2f, float);
 public:
     void addToPosAndUpdateCell(vector2f toAdd);
-    void setTarget(Target _target, float range);
-    void clearTarget();
+    void setMoveTarget(Target _target, float range);
+    void clearMoveTarget();
     bool isIdle();
     float angle_view;
     virtual float getSpeed();
     virtual float getRange();
     virtual void onMoveCmd(vector2f moveTo);
 
-    optional<Target> getTarget();
+    optional<Target> getMoveTarget();
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -271,8 +272,11 @@ public:
     enum State
     {
         NotAttacking,
-        AttackingUnit
+        AttackingGeneral,
+        AttackingSpecific
     } state;
+
+    optional<Target> maybeAttackingGeneralTarget;
 
     uint16_t shootCooldown;
 
@@ -293,7 +297,7 @@ public:
     Fighter(int ownerId, vector2f pos);
     Fighter(vchIter *iter);
 
-    void cmdAttack(EntityRef ref);
+    void cmdAttack(Target target);
 
     unsigned char typechar();
     string getTypename();
@@ -301,6 +305,8 @@ public:
     uint16_t getMaxHealth();
     void go();
 
+    float calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
+    void tryShootAt(boost::shared_ptr<Unit> targetUnit);
     void shootAt(boost::shared_ptr<Unit> targetUnit);
 };
 

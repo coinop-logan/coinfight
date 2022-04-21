@@ -23,7 +23,7 @@ boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
     case CMD_WITHDRAW_CHAR:
         return boost::shared_ptr<Cmd>(new WithdrawCmd(iter));
     case CMD_ATTACK_CHAR:
-        return boost::shared_ptr<Cmd>(new AttackCmd(iter));
+        return boost::shared_ptr<Cmd>(new AttackGatherCmd(iter));
     case CMD_PRIMEBUILD_CHAR:
         return boost::shared_ptr<Cmd>(new PrimeBuildCmd(iter));
     case CMD_RESUMEBUILDING_CHAR:
@@ -387,37 +387,41 @@ PrimeBuildCmd::PrimeBuildCmd(vchIter *iter)
     unpackAndMoveIter(iter);
 }
 
-unsigned char AttackCmd::getTypechar()
+unsigned char AttackGatherCmd::getTypechar()
 {
     return CMD_ATTACK_CHAR;
 }
-string AttackCmd::getTypename()
+string AttackGatherCmd::getTypename()
 {
-    return "AttackCmd";
+    return "AttackGatherCmd";
 }
-void AttackCmd::pack(vch *dest)
+void AttackGatherCmd::pack(vch *dest)
 {
     packUnitCmd(dest);
-    packEntityRef(dest, targetUnit);
+    target.pack(dest);
 }
-void AttackCmd::unpackAndMoveIter(vchIter *iter)
+void AttackGatherCmd::unpackAndMoveIter(vchIter *iter)
 {
-    *iter = unpackEntityRef(*iter, &targetUnit);
+    target = Target(iter);
 }
 
-void AttackCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(unit))
     {
-        fighter->cmdAttack(targetUnit);
+        fighter->cmdAttack(target);
+    }
+    else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
+    {
+        #warning prime doesnt know how to attackGather yet
     }
 }
 
-AttackCmd::AttackCmd(vector<EntityRef> units, EntityRef targetUnit)
-    : UnitCmd(units), targetUnit(targetUnit)
+AttackGatherCmd::AttackGatherCmd(vector<EntityRef> units, Target target)
+    : UnitCmd(units), target(target)
 {}
-AttackCmd::AttackCmd(vchIter *iter)
-    : UnitCmd(iter)
+AttackGatherCmd::AttackGatherCmd(vchIter *iter)
+    : UnitCmd(iter), target((EntityRef)0)
 {
     unpackAndMoveIter(iter);
 }

@@ -25,7 +25,8 @@ UI::UI()
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new ScuttleInterfaceCmd())
+        boost::shared_ptr<InterfaceCmd>(new ScuttleInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new AttackGatherInterfaceCmd())
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
@@ -211,7 +212,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
         if (getAllianceType(playerID, entity) == Foreign)
         {
             vector<boost::shared_ptr<Unit>> fighters = filterForTypeKeepContainer<Fighter, Unit>(ui.selectedUnits);
-            return boost::shared_ptr<Cmd>(new AttackCmd(entityPtrsToRefsOrThrow(fighters), entity->getRefOrThrow()));
+            return boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(fighters), entity->getRefOrThrow()));
         }
         else
         {
@@ -519,6 +520,22 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 }
                             }
                         }}}
+                    }
+                    break;
+                    case UI::AttackGather:
+                    {
+                        Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+
+                        vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
+                        vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                        auto fightersAndPrimes = fightersInSelection;
+                        fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+
+                        if (fightersAndPrimes.size() > 0)
+                        {
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target)));
+                            ui->cmdState = UI::Default;
+                        }
                     }
                     break;
                 }
