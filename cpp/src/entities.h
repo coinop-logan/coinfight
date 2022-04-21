@@ -145,7 +145,7 @@ private:
     void moveTowardPoint(vector2f, float);
 public:
     void addToPosAndUpdateCell(vector2f toAdd);
-    void setTarget(Target _target, float range);
+    void setMoveTarget(Target _target, float range);
     void clearTarget();
     bool isIdle();
     float angle_view;
@@ -153,7 +153,7 @@ public:
     virtual float getRange();
     virtual void onMoveCmd(vector2f moveTo);
 
-    optional<Target> getTarget();
+    optional<Target> getMoveTarget();
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -271,8 +271,11 @@ public:
     enum State
     {
         NotAttacking,
-        AttackingUnit
+        AttackingGeneral,
+        AttackingSpecific
     } state;
+
+    optional<Target> maybeAttackingGeneralTarget;
 
     uint16_t shootCooldown;
 
@@ -301,6 +304,8 @@ public:
     uint16_t getMaxHealth();
     void go();
 
+    float calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
+    void tryShootAt(boost::shared_ptr<Unit> targetUnit);
     void shootAt(boost::shared_ptr<Unit> targetUnit);
 };
 

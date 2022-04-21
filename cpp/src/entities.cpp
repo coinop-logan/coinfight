@@ -641,7 +641,7 @@ void MobileUnit::onMoveCmd(vector2f moveTo)
     throw runtime_error("onMoveCmd() has not been defined for '" + getTypeName() + "'");
 }
 
-void MobileUnit::setTarget(Target _target, float newRange)
+void MobileUnit::setMoveTarget(Target _target, float newRange)
 {
     maybeTargetAndRange = {pair(_target, newRange)};
 }
@@ -662,7 +662,7 @@ bool MobileUnit::isIdle()
     }
     return true;
 }
-optional<Target> MobileUnit::getTarget()
+optional<Target> MobileUnit::getMoveTarget()
 {
     if (maybeTargetAndRange)
         return maybeTargetAndRange->first;
@@ -702,13 +702,13 @@ void MobileUnit::mobileUnitGo()
         if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
             moveTowardPoint(*p, targetAndRange->second);
         else
-            setTarget(Target(getPos()), 0);
+            setMoveTarget(Target(getPos()), 0);
     }
     unitGo();
 }
 void MobileUnit::cmdMove(vector2f pointTarget)
 {
-    setTarget(Target(pointTarget), 0);
+    setMoveTarget(Target(pointTarget), 0);
     onMoveCmd(pointTarget);
 }
 
@@ -904,7 +904,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                         {
                             if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
                             {
-                                mobileUnit->setTarget(this->getRefOrThrow(), GATEWAY_RANGE);
+                                mobileUnit->setMoveTarget(this->getRefOrThrow(), GATEWAY_RANGE);
                                 maybeTargetEntity = targetRef;
                                 state = Scuttle;
                             }
@@ -1091,7 +1091,7 @@ void Gateway::go()
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
-                        if ((!(mobileUnit->getTarget())) || *(mobileUnit->getTarget()->castToEntityRef()) != this->getRefOrThrow())
+                        if ((!(mobileUnit->getMoveTarget())) || *(mobileUnit->getMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
                         {
                             // unit is no longer on its way; revert to Idle state
                             state = Idle;
@@ -1191,26 +1191,26 @@ void Prime::cmdPickup(Target _target)
 {
     state = PickupGold;
 
-    setTarget(_target, PRIME_RANGE);
+    setMoveTarget(_target, PRIME_RANGE);
 }
 void Prime::cmdPutdown(Target _target)
 {
     state = PutdownGold;
 
-    setTarget(_target, PRIME_RANGE);
+    setMoveTarget(_target, PRIME_RANGE);
 }
 void Prime::cmdBuild(unsigned char buildTypechar, vector2f buildPos)
 {
     state = Build;
     gonnabuildTypechar = buildTypechar;
 
-    setTarget(buildPos, PRIME_RANGE);
+    setMoveTarget(buildPos, PRIME_RANGE);
 }
 void Prime::cmdResumeBuilding(EntityRef targetUnit)
 {
     state = Build;
 
-    setTarget(Target(targetUnit), PRIME_RANGE);
+    setMoveTarget(Target(targetUnit), PRIME_RANGE);
 }
 void Prime::cmdScuttle(EntityRef targetUnit)
 {
@@ -1235,7 +1235,7 @@ void Prime::go()
     case Idle:
         break;
     case PickupGold:
-        if (auto target = getTarget())
+        if (auto target = getMoveTarget())
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
@@ -1264,7 +1264,7 @@ void Prime::go()
         }
         break;
     case PutdownGold:
-        if (auto target = getTarget())
+        if (auto target = getMoveTarget())
         if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
             if ((*point - getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
@@ -1313,7 +1313,7 @@ void Prime::go()
                     boost::shared_ptr<GoldPile> gp(new GoldPile(*point));
                     game->registerNewEntity(gp);
                     coinsToPushTo = &gp->gold;
-                    setTarget(Target(gp->getRefOrThrow()), PRIME_RANGE);
+                    setMoveTarget(Target(gp->getRefOrThrow()), PRIME_RANGE);
                 }
 
                 if (coinsToPushTo)
@@ -1337,7 +1337,7 @@ void Prime::go()
         }
         break;
     case Build:
-        if (auto target = getTarget())
+        if (auto target = getMoveTarget())
         {
             if (optional<vector2f> point = target->castToPoint())
             {
@@ -1355,7 +1355,7 @@ void Prime::go()
                     if (buildingToBuild)
                     {
                         game->registerNewEntity(buildingToBuild);
-                        setTarget(Target(buildingToBuild), PRIME_RANGE);
+                        setMoveTarget(Target(buildingToBuild), PRIME_RANGE);
                     }
                     else
                     {
@@ -1436,6 +1436,17 @@ void Fighter::pack(vch *dest)
     packMobileUnit(dest);
 
     packToVch(dest, "C", (unsigned char)(state));
+    
+    if (maybeAttackingGeneralTarget)
+    {
+        packTrue(dest);
+        maybeAttackingGeneralTarget->pack(dest);
+    }
+    else
+    {
+        packFalse(dest);
+    }
+
     packToVch(dest, "H", shootCooldown);
 }
 void Fighter::unpackAndMoveIter(vchIter *iter)
@@ -1444,12 +1455,17 @@ void Fighter::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
+    if (unpackBoolAndMoveIter(iter))
+    {
+        maybeAttackingGeneralTarget = Target(iter);
+    }
+
     *iter = unpackFromIter(*iter, "H", &shootCooldown);
 }
 
 Fighter::Fighter(int ownerId, vector2f pos)
     : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
-      state(NotAttacking), shootCooldown(0), animateShot(None), lastShot(None)
+      state(NotAttacking), maybeAttackingGeneralTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
 {}
 Fighter::Fighter(vchIter *iter)
     : MobileUnit(iter)
@@ -1459,8 +1475,8 @@ Fighter::Fighter(vchIter *iter)
 
 void Fighter::cmdAttack(EntityRef ref)
 {
-    state = AttackingUnit;
-    setTarget(Target(ref), FIGHTER_SHOT_RANGE);
+    state = AttackingSpecific;
+    setMoveTarget(Target(ref), FIGHTER_SHOT_RANGE);
 }
 void Fighter::go()
 {
@@ -1474,15 +1490,15 @@ void Fighter::go()
     {
         case NotAttacking:
         {
-            if (isIdle())
+            if (MobileUnit::isIdle())
             {
-                auto entitiesWithinRadius = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
+                auto entitiesInSight = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
 
                 boost::shared_ptr<Entity> closestValidTarget;
                 float closestDistanceSquared;
-                for (unsigned int i=0; i<entitiesWithinRadius.size(); i++)
+                for (unsigned int i=0; i<entitiesInSight.size(); i++)
                 {
-                    auto entity = entitiesWithinRadius[i];
+                    auto entity = entitiesInSight[i];
                     if (getAllianceType(this->ownerId, entity) == Foreign)
                     {
                         float distanceSquared = (this->getPos() - entity->getPos()).getMagnitudeSquared();
@@ -1496,31 +1512,108 @@ void Fighter::go()
 
                 if (closestValidTarget)
                 {
-                    state = AttackingUnit;
-                    setTarget(Target(closestValidTarget->getRefOrThrow()), FIGHTER_SHOT_RANGE);
+                    state = AttackingGeneral;
+                    maybeAttackingGeneralTarget = Target(closestValidTarget->getRefOrThrow());
                 }
             }
         }
         break;
-        case AttackingUnit:
-            if (auto target = getTarget())
+        case AttackingGeneral:
+        {
+            if (auto attackingGeneralTarget = maybeAttackingGeneralTarget)
+            {
+                // first check if this target is still valid
+                if (auto point = attackingGeneralTarget->castToPoint())
+                {
+                    if ((*point - this->getPos()).getMagnitudeSquared() < DISTANCE_TOL)
+                    {
+                        state = NotAttacking;
+                        attackingGeneralTarget = {};
+                        break;
+                    }
+                }
+                else if (!attackingGeneralTarget->castToEntityPtr(*game)) // indicates the target is ded
+                {
+                    state = NotAttacking;
+                    attackingGeneralTarget = {};
+                    break;
+                }
+
+                if (!getMoveTarget())
+                {
+                    if (attackingGeneralTarget->type == Target::PointTarget)
+                        setMoveTarget(*attackingGeneralTarget, 0);
+                    else
+                        setMoveTarget(*attackingGeneralTarget, FIGHTER_SHOT_RANGE);
+                }
+
+                // scan for good targets
+                boost::shared_ptr<Unit> bestTarget;
+                float bestTargetPriority;
+                bool alreadyHadTarget = false;
+                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(attackingGeneralTarget->castToEntityPtr(*game)))
+                {
+                    bestTarget = unit;
+                    bestTargetPriority = this->calcAttackPriority(unit);
+                    alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
+                }
+
+                auto entitiesInSight = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
+                for (unsigned int i=0; i<entitiesInSight.size(); i++)
+                {
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSight[i]))
+                    {
+                        if (getAllianceType(this->ownerId, entitiesInSight[i]) == Foreign)
+                        {
+                            bool thisIsBetterTarget = false; // until proven otherwise
+
+                            float priority = this->calcAttackPriority(unit);
+                            // if there is not yet a bestTarget, or if the priority is higher
+                            if ((!bestTarget) || priority > bestTargetPriority)
+                            {
+                                thisIsBetterTarget = true;
+                            }
+                            // if the priority matches and we didn't already have a target before this frame...
+                            else if (priority == bestTargetPriority && !alreadyHadTarget)
+                            {
+                                // compare distances
+                                float currentDistanceSquared = (this->getPos() - bestTarget->getPos()).getMagnitudeSquared();
+                                float distanceSquared = (this->getPos() - unit->getPos()).getMagnitudeSquared();
+                                if (distanceSquared < currentDistanceSquared)
+                                    thisIsBetterTarget = true;
+                            }
+
+                            if (thisIsBetterTarget)
+                            {
+                                bestTarget = unit;
+                                bestTargetPriority = priority;
+                            }
+                        }
+                    }
+                }
+
+                if (bestTarget)
+                {
+                    setMoveTarget(Target(bestTarget), FIGHTER_SHOT_RANGE);
+                    tryShootAt(bestTarget);
+                }
+            }
+            else
+            {
+                cout << "state is attackingGeneral, but there is no attackingGeneralTarget..." << endl;
+                state = NotAttacking;
+            }
+        }
+        break;
+        case AttackingSpecific:
+            if (auto target = getMoveTarget())
             {
                 bool returnToIdle = false;
                 if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
                 {
                     if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
                     {
-                        vector2f toTarget = (targetUnit->getPos() - this->getPos());
-                        angle_view = toTarget.getAngle();
-                        if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + DISTANCE_TOL)
-                        {
-                            if (shootCooldown == 0)
-                            {
-                                shootAt(targetUnit);
-                                animateShot = (lastShot != Left) ? Left : Right;
-                                lastShot = animateShot;
-                            }
-                        }
+                        tryShootAt(targetUnit);
                     }
                     else
                         returnToIdle = true;
@@ -1542,6 +1635,51 @@ void Fighter::onMoveCmd(vector2f moveTo)
     state = NotAttacking;
 }
 
+void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
+{
+    vector2f toTarget = (targetUnit->getPos() - this->getPos());
+    angle_view = toTarget.getAngle();
+    if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + DISTANCE_TOL)
+    {
+        if (shootCooldown == 0)
+        {
+            shootAt(targetUnit);
+            animateShot = (lastShot != Left) ? Left : Right;
+            lastShot = animateShot;
+        }
+    }
+}
+float Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
+{
+    if (auto building = boost::dynamic_pointer_cast<Building, Unit>(foreignUnit))
+    {
+        return 1;
+    }
+    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(foreignUnit))
+    {
+        return 2;
+    }
+    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
+    {
+        float baseFighterPriority = 3;
+        if (auto otherFighterTarget = fighter->getMoveTarget())
+        {
+            if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
+            {
+                if (*otherFighterTargetRef == this->getRefOrThrow())
+                {
+                    return baseFighterPriority + 1;
+                }
+            }
+        }
+        return baseFighterPriority;
+    }
+    else
+    {
+        cout << "I can't find the priority of that unit!" << endl;
+        return 0;
+    }
+}
 void Fighter::shootAt(boost::shared_ptr<Unit> unit)
 {
     shootCooldown = FIGHTER_SHOT_COOLDOWN;

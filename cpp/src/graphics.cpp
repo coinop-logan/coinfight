@@ -976,7 +976,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     {
                         if (prime->goldTransferState == Pulling)
                         {
-                            if (auto primeTarget = prime->getTarget())
+                            if (auto primeTarget = prime->getMoveTarget())
                             {
                                 if (optional<vector2f> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
@@ -987,7 +987,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         }
                         else if (prime->goldTransferState == Pushing)
                         {
-                            if (auto primeTarget = prime->getTarget())
+                            if (auto primeTarget = prime->getMoveTarget())
                             {
                                 particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->getPos(), *primeTarget, sf::Color::Yellow)));
                             }
@@ -1024,7 +1024,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (fighter->animateShot != Fighter::None)
                     {
-                        if (auto fighterTarget = fighter->getTarget())
+                        if (auto fighterTarget = fighter->getMoveTarget())
                         {
                             if (optional<vector2f> targetPos = fighterTarget->getPointUnlessTargetDeleted(*game))
                             {
