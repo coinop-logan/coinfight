@@ -1474,7 +1474,7 @@ void Fighter::go()
     {
         case NotAttacking:
         {
-            if (!isIdle())
+            if (isIdle())
             {
                 auto entitiesWithinRadius = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
 
