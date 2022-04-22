@@ -15,9 +15,9 @@ all: pre-build main-build
 release: pre-build main-build package-client
 
 clean:
-	rm cpp/obj/* -f
-	rm bin/* -rf
-	rm dist/* -rf
+	rm -f cpp/obj/*
+	rm -rf bin/*
+	rm -rf dist/*
 
 prep-server:
 	mkdir -p bin/accounting
