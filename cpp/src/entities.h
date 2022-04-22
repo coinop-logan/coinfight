@@ -258,6 +258,8 @@ public:
     void cmdResumeBuilding(EntityRef targetUnit);
     void cmdScuttle(EntityRef targetUnit);
 
+    float getHeldGoldRatio();
+
     unsigned char typechar();
     string getTypeName();
     coinsInt getCost();

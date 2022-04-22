@@ -178,46 +178,80 @@ void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor
     drawBeacon(window, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2f drawPos, unsigned int alpha)
 {
-    sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
+    sf::Color teamColor = prime->getTeamColor();
+    sf::Color thickBorderColor(teamColor.r, teamColor.g, teamColor.b, alpha);
 
-    sf::ConvexShape oneSide;
-    oneSide.setPointCount(3);
+    float primeCavityRadius = 10;
+    float borderThickness = 2;
 
-    oneSide.setFillColor(fillColorFaded);
-    oneSide.setPosition(drawPos.x, drawPos.y);
-    oneSide.setRotation(radToDeg(rotation));
+    sf::CircleShape structureOutline(primeCavityRadius);
+    structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));
+    structureOutline.setPosition(toSFVec(drawPos));
+    structureOutline.setFillColor(sf::Color::Transparent);
+    structureOutline.setOutlineColor(unitOutlineColor);
+    structureOutline.setOutlineThickness(1);
+    window->draw(structureOutline);
 
-    sf::Vector2f front = sf::Vector2f(12, 0);
-    sf::Vector2f back = sf::Vector2f(-4, 0);
-    sf::Vector2f right = sf::Vector2f(-12, 8);
-    sf::Vector2f left = sf::Vector2f(-12, -8);
+    sf::CircleShape thickBorder(structureOutline);
+    thickBorder.setOutlineColor(thickBorderColor);
+    thickBorder.setOutlineThickness(borderThickness);
 
-    // draw two triangles
-    oneSide.setPoint(1, front);
-    oneSide.setPoint(0, back);
-    oneSide.setPoint(2, right);
-    window->draw(oneSide);
-    oneSide.setPoint(2, left);
-    window->draw(oneSide);
+    window->draw(thickBorder);
 
-    // draw outline
-    sf::VertexArray lines(sf::LinesStrip, 5);
-    lines[0].position = front;
-    lines[1].position = right;
-    lines[2].position = back;
-    lines[3].position = left;
-    lines[4].position = front;
-    lines[0].color = unitOutlineColor;
-    lines[1].color = unitOutlineColor;
-    lines[2].color = unitOutlineColor;
-    lines[3].color = unitOutlineColor;
-    lines[4].color = unitOutlineColor;
-    sf::Transform transform;
-    transform.translate(drawPos.x, drawPos.y);
-    transform.rotate(radToDeg(rotation));
-    window->draw(lines, transform);
+    float heldGoldRatio = prime->getHeldGoldRatio();
+    if (heldGoldRatio > 0)
+    {
+        float innerGoldRadius = 0.5 + (sqrt(heldGoldRatio) * (primeCavityRadius - 0.5));
+        // radius is at least 0.5 (so any gold draws a circle of width 1) and scales up to primeCavityRadius
+
+        sf::CircleShape heldGoldCircle(innerGoldRadius);
+        heldGoldCircle.setOrigin(sf::Vector2f(innerGoldRadius, innerGoldRadius));
+        heldGoldCircle.setPosition(toSFVec(drawPos));
+        heldGoldCircle.setFillColor(sf::Color::Yellow);
+
+        window->draw(heldGoldCircle);
+    }
+
+    // sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
+
+    // sf::ConvexShape oneSide;
+    // oneSide.setPointCount(3);
+
+    // oneSide.setFillColor(fillColorFaded);
+    // oneSide.setPosition(drawPos.x, drawPos.y);
+    // oneSide.setRotation(radToDeg(rotation));
+
+    // sf::Vector2f front = sf::Vector2f(12, 0);
+    // sf::Vector2f back = sf::Vector2f(-4, 0);
+    // sf::Vector2f right = sf::Vector2f(-12, 8);
+    // sf::Vector2f left = sf::Vector2f(-12, -8);
+
+    // // draw two triangles
+    // oneSide.setPoint(1, front);
+    // oneSide.setPoint(0, back);
+    // oneSide.setPoint(2, right);
+    // window->draw(oneSide);
+    // oneSide.setPoint(2, left);
+    // window->draw(oneSide);
+
+    // // draw outline
+    // sf::VertexArray lines(sf::LinesStrip, 5);
+    // lines[0].position = front;
+    // lines[1].position = right;
+    // lines[2].position = back;
+    // lines[3].position = left;
+    // lines[4].position = front;
+    // lines[0].color = unitOutlineColor;
+    // lines[1].color = unitOutlineColor;
+    // lines[2].color = unitOutlineColor;
+    // lines[3].color = unitOutlineColor;
+    // lines[4].color = unitOutlineColor;
+    // sf::Transform transform;
+    // transform.translate(drawPos.x, drawPos.y);
+    // transform.rotate(radToDeg(rotation));
+    // window->draw(lines, transform);
 }
 
 void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
@@ -309,7 +343,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f d
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        drawPrime(window, drawPos, drawRotation, teamColor, fadedAlpha);
+        drawPrime(window, prime, drawPos, fadedAlpha);
     }
     else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
     {

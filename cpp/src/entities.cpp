@@ -1223,6 +1223,11 @@ void Prime::cmdScuttle(EntityRef targetUnit)
     #warning prime doesnt know how to scuttle yet
 }
 
+float Prime::getHeldGoldRatio()
+{
+    return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
+}
+
 float Prime::getSpeed() { return PRIME_SPEED; }
 float Prime::getRange() { return PRIME_RANGE; }
 coinsInt Prime::getCost() { return PRIME_COST; }
