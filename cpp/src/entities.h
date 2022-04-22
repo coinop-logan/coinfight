@@ -230,9 +230,17 @@ class Prime : public MobileUnit
 public:
     Coins heldGold;
 
+    enum Behavior
+    {
+        Basic,
+        Gather
+    } behavior;
+
+    optional<vector2f> maybeGatherTargetPos;
+
     enum State
     {
-        Idle,
+        NotTransferring,
         PickupGold,
         PutdownGold,
         Build
@@ -256,7 +264,10 @@ public:
     void cmdPutdown(Target);
     void cmdBuild(unsigned char buildTypechar, vector2f buildPos);
     void cmdResumeBuilding(EntityRef targetUnit);
+    void cmdGather(vector2f targetPos);
     void cmdScuttle(EntityRef targetUnit);
+
+    void setStateToReturnGoldOrResetBehavior();
 
     float getHeldGoldRatio();
 

@@ -413,7 +413,10 @@ void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
     {
-        #warning prime doesnt know how to attackGather yet
+        if (auto targetPoint = target.getPointUnlessTargetDeleted(*prime->getGameOrThrow()))
+        {
+            prime->cmdGather(*targetPoint);
+        }
     }
 }
 

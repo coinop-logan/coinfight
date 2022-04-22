@@ -1167,7 +1167,18 @@ void Prime::pack(vch *dest)
 {
     packMobileUnit(dest);
 
+    packToVch(dest, "C", (unsigned char)(behavior));
     packToVch(dest, "C", (unsigned char)(state));
+
+    if (auto gatherTarget = maybeGatherTargetPos)
+    {
+        packTrue(dest);
+        packVector2f(dest, *gatherTarget);
+    }
+    else
+    {
+        packFalse(dest);
+    }
 
     heldGold.pack(dest);
     packTypechar(dest, gonnabuildTypechar);
@@ -1176,7 +1187,16 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 {
     unsigned char enumInt;
     *iter = unpackFromIter(*iter, "C", &enumInt);
+    behavior = static_cast<Behavior>(enumInt);
+    *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
+
+    if (unpackBoolAndMoveIter(iter))
+    {
+        vector2f targetPos;
+        *iter = unpackVector2f(*iter, &targetPos);
+        maybeGatherTargetPos = {targetPos};
+    }
 
     heldGold = Coins(iter);
     *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
@@ -1185,7 +1205,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 Prime::Prime(int ownerId, vector2f pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      state(Idle)
+      behavior(Basic), state(NotTransferring)
 {}
 Prime::Prime(vchIter *iter) : MobileUnit(iter),
                               heldGold(PRIME_MAX_GOLD_HELD)
@@ -1195,28 +1215,39 @@ Prime::Prime(vchIter *iter) : MobileUnit(iter),
 
 void Prime::cmdPickup(Target _target)
 {
+    behavior = Basic;
     state = PickupGold;
 
-    setMoveTarget(_target, PRIME_RANGE);
+    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
 }
 void Prime::cmdPutdown(Target _target)
 {
+    behavior = Basic;
     state = PutdownGold;
 
-    setMoveTarget(_target, PRIME_RANGE);
+    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
 }
 void Prime::cmdBuild(unsigned char buildTypechar, vector2f buildPos)
 {
+    behavior = Basic;
     state = Build;
     gonnabuildTypechar = buildTypechar;
 
-    setMoveTarget(buildPos, PRIME_RANGE);
+    setMoveTarget(buildPos, PRIME_TRANSFER_RANGE);
 }
 void Prime::cmdResumeBuilding(EntityRef targetUnit)
 {
+    behavior = Basic;
     state = Build;
 
-    setMoveTarget(Target(targetUnit), PRIME_RANGE);
+    setMoveTarget(Target(targetUnit), PRIME_TRANSFER_RANGE);
+}
+void Prime::cmdGather(vector2f targetPos)
+{
+    behavior = Gather;
+    state = NotTransferring;
+    maybeGatherTargetPos = {targetPos};
+    setMoveTarget(targetPos, 0);
 }
 void Prime::cmdScuttle(EntityRef targetUnit)
 {
@@ -1229,7 +1260,7 @@ float Prime::getHeldGoldRatio()
 }
 
 float Prime::getSpeed() { return PRIME_SPEED; }
-float Prime::getRange() { return PRIME_RANGE; }
+float Prime::getRange() { return PRIME_TRANSFER_RANGE; }
 coinsInt Prime::getCost() { return PRIME_COST; }
 uint16_t Prime::getMaxHealth() { return PRIME_HEALTH; }
 
@@ -1240,17 +1271,162 @@ void Prime::go()
 {
     Game *game = getGameOrThrow();
 
+    // first we process behavior. This is upstream from state.
+    switch (behavior)
+    {
+        case Basic:
+            break;
+        case Gather:
+        {
+            if (auto gatherTargetPos = maybeGatherTargetPos)
+            {
+                // the state indicates what part of the cycle the Prime is in:
+                    // NotTransferring: moving toward the gatherTargetPos
+                    // PickupGold: moving toward or picking up some gold it found
+                    // PutodownGold: bringing Gold to gateway or depositing
+                
+                // our job here is to switch these states when necessary...
+
+                // firstly, if heldGold is maxed, return gold to nearest gateway
+                if (getHeldGoldRatio() == 1)
+                {
+                    setStateToReturnGoldOrResetBehavior();
+                }
+
+                switch (state)
+                {
+                    case NotTransferring:
+                    {
+                        // in theory this should already be set, but in some cases doesn't seem to be
+                        setMoveTarget(*gatherTargetPos, 0);
+                        
+                        // scan for any GoldPile and choose the closest
+                        boost::shared_ptr<GoldPile> bestTarget;
+                        float bestTargetDistanceSquared;
+
+                        auto entitiesInSight = game->entitiesWithinRadius(getPos(), PRIME_SIGHT_RANGE);
+                        for (unsigned int i=0; i<entitiesInSight.size(); i++)
+                        {
+                            if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
+                            {
+                                float distanceSquared = (this->getPos() - goldPile->getPos()).getMagnitudeSquared();
+                                if (!bestTarget || distanceSquared < bestTargetDistanceSquared)
+                                {
+                                    bestTarget = goldPile;
+                                    bestTargetDistanceSquared = distanceSquared;
+                                }
+                            }
+                        }
+
+                        // if we found something, set moveTarget to it and switch state to PickupGold
+                        if (bestTarget)
+                        {
+                            state = PickupGold;
+                            setMoveTarget(bestTarget->getRefOrThrow(), PRIME_TRANSFER_RANGE);
+                            break;
+                        }
+                        // otoh, if we've arrived at the target without finding Gold to pickup...
+                        else if ((*gatherTargetPos - this->getPos()).getMagnitudeSquared() < DISTANCE_TOL)
+                        {
+                            // if we have no Gold, return to basic/idle behavior
+                            if (heldGold.getInt() == 0)
+                            {
+                                behavior = Basic;
+                                state = NotTransferring;
+                                maybeGatherTargetPos = {};
+                                break;
+                            }
+                            // otherwise, make a return trip
+                            else
+                            {
+                                setStateToReturnGoldOrResetBehavior();
+                            }
+                        }
+                        else
+                        {
+                            // just to be explicit, in this case we haven't found any gold
+                            // but we are still traveling to the destination
+                            // do nothing.
+                        }
+                    }
+                    break;
+                    case PickupGold:
+                    {
+                        // note that if heldGoldRatio == 1, we will have caught this just before this switch block,
+                        // so we can assume that heldGoldRatio < 1 for now, and focus on gathering more.
+
+                        bool shouldMoveOn = true; // until proven otherwise
+
+                        // here, we need to do something either when the Prime is full or when its current Target gets depleted
+                        if (auto moveTarget = getMoveTarget())
+                        {
+                            if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(moveTarget->castToEntityPtr(*game)))
+                            {
+                                if (goldPile->gold.getInt() > 0)
+                                {
+                                    shouldMoveOn = false;
+                                }
+                            }
+                        }
+
+                        if (shouldMoveOn)
+                        {
+                            state = NotTransferring;
+                            setMoveTarget(*gatherTargetPos, 0);
+                            break;
+                        }
+                        
+                    }
+                    break;
+                    case PutdownGold:
+                    {
+                        if (heldGold.getInt() == 0)
+                        {
+                            state = NotTransferring;
+                            setMoveTarget(*gatherTargetPos, 0);
+                            break;
+                        }
+                        // as long as Gateawy (in moveTarget) is still valid, just continue til heldGold == 0
+                        bool stillMovingTowardGateway = false; // until proven otherwise
+                        if (auto moveTarget = getMoveTarget())
+                        {
+                            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(moveTarget->castToEntityPtr(*game)))
+                            {
+                                stillMovingTowardGateway = true;
+                            }
+                        }
+
+                        if (!stillMovingTowardGateway)
+                        {
+                            // find another gateway
+                            setStateToReturnGoldOrResetBehavior();
+                        }
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                cout << "Behavior is Gather, but there is no gatherPos..." << endl;
+                behavior = Basic;
+                state = NotTransferring;
+                break;
+            }
+        }
+            break;
+    }
+
     goldTransferState = NoGoldTransfer;
     switch (state)
     {
-    case Idle:
+    case NotTransferring:
         break;
     case PickupGold:
         if (auto target = getMoveTarget())
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
-                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
                 {
                     optional<Coins*> coinsToPullFrom;
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
@@ -1266,7 +1442,7 @@ void Prime::go()
                     {
                         coinsInt pickedUp = (*coinsToPullFrom)->transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
                         if (pickedUp == 0)
-                            state = Idle;
+                            state = NotTransferring;
                         else
                             goldTransferState = Pulling;
                     }
@@ -1278,7 +1454,7 @@ void Prime::go()
         if (auto target = getMoveTarget())
         if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
-            if ((*point - getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+            if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
             {
                 optional<Coins*> coinsToPushTo;
                 bool stopOnTransferZero = false;
@@ -1310,12 +1486,12 @@ void Prime::go()
                         else
                         {
                             // nothing else to do then.
-                            state = Idle;
+                            state = NotTransferring;
                         }
                     }
                     else {
                         cout << "not sure how to execute a PutdownGold cmd for a unit other than a gateway or goldpile" << endl;
-                        state = Idle;
+                        state = NotTransferring;
                     }
                 }
                 else
@@ -1324,7 +1500,7 @@ void Prime::go()
                     boost::shared_ptr<GoldPile> gp(new GoldPile(*point));
                     game->registerNewEntity(gp);
                     coinsToPushTo = &gp->gold;
-                    setMoveTarget(Target(gp->getRefOrThrow()), PRIME_RANGE);
+                    setMoveTarget(Target(gp->getRefOrThrow()), PRIME_TRANSFER_RANGE);
                 }
 
                 if (coinsToPushTo)
@@ -1332,7 +1508,7 @@ void Prime::go()
                     coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, (*coinsToPushTo));
                     if (amountPutDown == 0 && stopOnTransferZero)
                     {
-                        state = Idle;
+                        state = NotTransferring;
                     }
                     if (amountPutDown != 0)
                     {
@@ -1342,7 +1518,7 @@ void Prime::go()
                 else
                 {
                     cout << "I'm confused about how to execute this putdownGold cmd." << endl;
-                    state = Idle;
+                    state = NotTransferring;
                 }
             }
         }
@@ -1352,7 +1528,7 @@ void Prime::go()
         {
             if (optional<vector2f> point = target->castToPoint())
             {
-                if ((*point - getPos()).getMagnitude() <= PRIME_RANGE + DISTANCE_TOL)
+                if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
                 {
                     // create unit if typechar checks out and change target to new unit
                     boost::shared_ptr<Building> buildingToBuild;
@@ -1366,12 +1542,12 @@ void Prime::go()
                     if (buildingToBuild)
                     {
                         game->registerNewEntity(buildingToBuild);
-                        setMoveTarget(Target(buildingToBuild), PRIME_RANGE);
+                        setMoveTarget(Target(buildingToBuild), PRIME_TRANSFER_RANGE);
                     }
                     else
                     {
                         cout << "Prime refuses to build for that typechar!" << endl;
-                        state = Idle;
+                        state = NotTransferring;
                     }
                 }
             }
@@ -1389,7 +1565,7 @@ void Prime::go()
                     }
                     else
                     {
-                        state = Idle;
+                        state = NotTransferring;
                     }
                 }
                 else
@@ -1400,7 +1576,7 @@ void Prime::go()
             else
             {
                 cout << "Can't cast that Target to a position OR an entity..." << endl;
-                state = Idle;
+                state = NotTransferring;
             }
         }
         break;
@@ -1408,9 +1584,46 @@ void Prime::go()
     mobileUnitGo();
 }
 
+void Prime::setStateToReturnGoldOrResetBehavior()
+{
+    Game *game = this->getGameOrThrow();
+
+    // find nearest gateway and bring gold to it
+    boost::shared_ptr<Gateway> bestChoice;
+    float bestChoiceDistanceSquared;
+    for (unsigned int i=0; i<game->entities.size(); i++)
+    {
+        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
+        {
+            if (getAllianceType(this->ownerId, gateway) == Owned)
+            {
+                float distanceSquared = (this->getPos() - gateway->getPos()).getMagnitudeSquared();
+                if (!bestChoice || distanceSquared < bestChoiceDistanceSquared)
+                {
+                    bestChoice = gateway;
+                    bestChoiceDistanceSquared = distanceSquared;
+                }
+            }
+        }
+    }
+
+    if (bestChoice)
+    {
+        state = PutdownGold;
+        setMoveTarget(bestChoice->getRefOrThrow(), PRIME_TRANSFER_RANGE);
+    }
+    else
+    {
+        behavior = Basic;
+        state = NotTransferring;
+        clearMoveTarget();
+        maybeGatherTargetPos = {};
+    }
+}
+
 void Prime::onMoveCmd(vector2f moveTo)
 {
-    state = Idle;
+    state = NotTransferring;
 }
 
 vector<Coins*> Prime::getDroppableCoins()
