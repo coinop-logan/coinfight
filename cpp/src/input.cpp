@@ -308,7 +308,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
 {
     bool spawnBeaconAvailable = playerIdOrNeg1 < 0 ?
         false
-        : ((game->getPlayerBeaconAvailable(playerIdOrNeg1)) && game->players[playerIdOrNeg1].credit.getInt() >= BEACON_COST);
+        : ((game->getPlayerBeaconAvailable(playerIdOrNeg1)) && game->players[playerIdOrNeg1].credit.getInt() >= GATEWAY_COST);
 
     ui->updateAvailableUnitInterfaceCmds(spawnBeaconAvailable);
 

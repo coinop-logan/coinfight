@@ -21,19 +21,20 @@ protected:
 public:
     bool dead;
     optional<RegInfo> maybeRegInfo;
-    vector2f getPos();
+    vector2f getPos() const;
+    virtual float getRadius() const;
 
     EntityRef getRefOrThrow();
     Game *getGameOrThrow();
     vector2i getSearchGridCellOrThrow();
 
-    virtual unsigned char typechar();
-    virtual string getTypeName();
+    virtual unsigned char typechar() const;
+    virtual string getTypeName() const;
     virtual void pack(vch *dest);
     virtual void unpackAndMoveIter(vchIter *iter, Game &game);
-    virtual void go();
+    virtual void iterate();
     virtual sf::Color getTeamOrPrimaryColor();
-    virtual float getRotation() { return 0; }
+    virtual float getRotation() const { return 0; }
     virtual vector<Coins*> getDroppableCoins();
     void die();
 
@@ -91,9 +92,10 @@ public:
     GoldPile(vchIter *);
     sf::Color getTeamOrPrimaryColor();
 
-    unsigned char typechar();
-    string getTypeName();
-    void go();
+    float getRadius() const;
+    unsigned char typechar() const;
+    string getTypeName() const;
+    void iterate();
 };
 
 class Unit : public Entity
@@ -103,8 +105,8 @@ public:
     int ownerId;
     Coins goldInvested;
     vector<Coins*> getDroppableCoins();
-    virtual coinsInt getCost();
-    virtual uint16_t getMaxHealth();
+    virtual coinsInt getCost() const;
+    virtual uint16_t getMaxHealth() const;
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
@@ -119,7 +121,7 @@ public:
     coinsInt getBuilt();
     float getBuiltRatio();
     bool isActive();
-    void unitGo();
+    void unitIterate();
     void takeHit(uint16_t damage);
     uint16_t getHealth();
 };
@@ -133,25 +135,29 @@ public:
     Building(int, coinsInt, uint16_t, vector2f);
     Building(vchIter *);
 
-    void buildingGo();
+    void buildingIterate();
 };
 
 class MobileUnit : public Unit
 {
 private:
     optional<pair<Target, float>> maybeTargetAndRange;
+    vector2f desiredVelocity;
+    vector2f lastVelocity;
 
     float getRotation() { return angle_view; };
 
-    void moveTowardPoint(vector2f, float);
+    void tryMoveTowardPoint(vector2f, float);
 public:
-    void addToPosAndUpdateCell(vector2f toAdd);
+    void moveWithVelocityAndUpdateCell(vector2f toAdd);
     void setMoveTarget(Target _target, float range);
     void clearMoveTarget();
     bool isIdle();
     float angle_view;
-    virtual float getSpeed();
-    virtual float getRange();
+    virtual float getMaxSpeed() const;
+    vector2f getDesiredVelocity() const;
+    vector2f getLastVelocity() const;
+    virtual float getRange() const;
     virtual void onMoveCmd(vector2f moveTo);
 
     optional<Target> getMoveTarget();
@@ -159,7 +165,7 @@ public:
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
 
-    void mobileUnitGo();
+    void mobileUnitIterate();
 
     void cmdMove(vector2f target);
 
@@ -172,6 +178,10 @@ enum GoldTransferState {
     Pushing,
     Pulling
 };
+
+const coinsInt BEACON_BUILD_RATE = 10;
+const uint16_t BEACON_HEALTH = 100;
+const int BEACON_RADIUS = 10;
 
 class Beacon : public Building
 {
@@ -187,12 +197,20 @@ public:
     Beacon(int ownerId, vector2f pos, State state);
     Beacon(vchIter *iter);
 
-    unsigned char typechar();
-    string getTypeName();
-    coinsInt getCost();
-    uint16_t getMaxHealth();
-    void go();
+    float getRadius() const;
+    unsigned char typechar() const;
+    string getTypeName() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
+    void iterate();
 };
+
+const coinsInt GATEWAY_SCUTTLE_RATE = 5;
+const coinsInt GATEWAY_COST = 4000;
+const uint16_t GATEWAY_HEALTH = 1500;
+const float GATEWAY_RANGE = 150;
+const coinsInt GATEWAY_BUILD_RATE = 8;
+const int GATEWAY_RADIUS = 15;
 
 class Gateway : public Building
 {
@@ -218,12 +236,23 @@ public:
     void cmdScuttle(EntityRef targetRef);
     float buildQueueWeight();
 
-    unsigned char typechar();
-    string getTypeName();
-    coinsInt getCost();
-    uint16_t getMaxHealth();
-    void go();
+    float getRadius() const;
+    unsigned char typechar() const;
+    string getTypeName() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
+    void iterate();
 };
+
+const coinsInt PRIME_COST = 500;
+const uint16_t PRIME_HEALTH = 100;
+const float PRIME_SPEED = 2;
+const float PRIME_TRANSFER_RANGE = 150;
+const float PRIME_SIGHT_RANGE = 200;
+const coinsInt PRIME_PICKUP_RATE = 2;
+const coinsInt PRIME_PUTDOWN_RATE = 5;
+const coinsInt PRIME_MAX_GOLD_HELD = 1000;
+const int PRIME_RADIUS = 10;
 
 class Prime : public MobileUnit
 {
@@ -250,8 +279,8 @@ public:
 
     unsigned char gonnabuildTypechar;
 
-    float getSpeed();
-    float getRange();
+    float getMaxSpeed() const;
+    float getRange() const;
     void onMoveCmd(vector2f moveTo);
 
     void pack(vch *dest);
@@ -271,13 +300,24 @@ public:
 
     float getHeldGoldRatio();
 
-    unsigned char typechar();
-    string getTypeName();
-    coinsInt getCost();
-    uint16_t getMaxHealth();
-    void go();
+    float getRadius() const;
+    unsigned char typechar() const;
+    string getTypeName() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
+    void iterate();
     vector<Coins*> getDroppableCoins();
 };
+
+const vector2f FIGHTER_SHOT_OFFSET(20, 10);
+const coinsInt FIGHTER_COST = 1500;
+const uint16_t FIGHTER_HEALTH = 300;
+const float FIGHTER_SPEED = 3;
+const float FIGHTER_SHOT_RANGE = 200;
+const float FIGHTER_SIGHT_RANGE = 250;
+const int FIGHTER_SHOT_COOLDOWN = 20;
+const int FIGHTER_DAMAGE = 10;
+const int FIGHTER_RADIUS = 15;
 
 class Fighter : public MobileUnit
 {
@@ -300,8 +340,8 @@ public:
         Left
     } animateShot, lastShot;
 
-    float getSpeed();
-    float getRange();
+    float getMaxSpeed() const;
+    float getRange() const;
     void onMoveCmd(vector2f moveTo);
 
     void pack(vch *dest);
@@ -312,11 +352,12 @@ public:
 
     void cmdAttack(Target target);
 
-    unsigned char typechar();
-    string getTypename();
-    coinsInt getCost();
-    uint16_t getMaxHealth();
-    void go();
+    float getRadius() const;
+    unsigned char typechar() const;
+    string getTypename() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
+    void iterate();
 
     float calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
     void tryShootAt(boost::shared_ptr<Unit> targetUnit);

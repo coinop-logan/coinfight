@@ -185,8 +185,8 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     sf::Color teamColor = prime->getTeamColor();
     sf::Color thickBorderColor(teamColor.r, teamColor.g, teamColor.b, alpha);
 
-    float primeCavityRadius = 10;
     float borderThickness = 2;
+    float primeCavityRadius = PRIME_RADIUS - borderThickness;
 
     sf::CircleShape structureOutline(primeCavityRadius);
     structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));

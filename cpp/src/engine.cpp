@@ -10,6 +10,7 @@
 #include "engine.h"
 #include "coins.h"
 #include "events.h"
+#include "collision.h"
 
 using namespace std;
 
@@ -230,7 +231,7 @@ void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
 }
-vector<boost::shared_ptr<Entity>> Game::entitiesWithinRadius(vector2f fromPos, float radius)
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2f fromPos, float radius)
 {
     float radiusSquared = pow(radius, 2);
 
@@ -242,6 +243,25 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinRadius(vector2f fromPos, f
         if (auto entity = this->entities[nearbyEntityRefs[i]])
         {
             if ((fromPos - entity->getPos()).getMagnitudeSquared() <= radiusSquared)
+            {
+                entitiesToReturn.push_back(entity);
+            }
+        }
+    }
+
+    return entitiesToReturn;
+}
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2f centerPos, float halfWidth)
+{
+    auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(centerPos, halfWidth);
+
+    vector<boost::shared_ptr<Entity>> entitiesToReturn;
+    for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
+    {
+        if (auto entity = this->entities[nearbyEntityRefs[i]])
+        {
+            vector2f entityPos = entity->getPos();
+            if (abs(centerPos.x - entityPos.x) <= halfWidth && abs(centerPos.y - entityPos.y) <= halfWidth)
             {
                 entitiesToReturn.push_back(entity);
             }
@@ -316,18 +336,6 @@ Game::Game(vchIter *iter)
 
 void Game::iterate()
 {
-    // for (int i=0; i<SEARCH_GRID_NUM_ROWS; i++)
-    //     for (int j=0; j<SEARCH_GRID_NUM_ROWS; j++)
-    //         {
-    //             vector2i cell(i,j);
-    //             int size = searchGrid.getCell(cell).size();
-    //             if (size > 0)
-    //             {
-    //                 debugOutputVector("at cell", cell);
-    //                 cout << size << endl;
-    //             }
-    //         }
-    
     // iterate all units
     for (unsigned int i=0; i<entities.size(); i++)
     {
@@ -336,10 +344,38 @@ void Game::iterate()
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
             {
                 if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
-                    unit->go();
+                    unit->iterate();
             }
             else
-                entities[i]->go();
+                entities[i]->iterate();
+        }
+    }
+
+    // for MobileUnits, correct velocities and move 
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        // only for MobileUnits
+        if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entities[i]))
+        {
+            auto nearbyEntities = this->entitiesWithinSquare(mobileUnit->getPos(), COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH);
+
+            // filter for Units (this ignores GoldPiles)
+            auto nearbyUnits = filterForType<Unit, Entity>(nearbyEntities);
+
+            // quickly remove the inevitable self-reference
+            for (unsigned int j=0; j<nearbyUnits.size(); j++)
+            {
+                // don't compare to self
+                if (mobileUnit->getRefOrThrow() == nearbyUnits[j]->getRefOrThrow())
+                {
+                    nearbyUnits.erase(nearbyUnits.begin() + j);
+                    break;
+                }
+            }
+
+            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, COLLISION_CORRECTION_TIME_HORIZON, 1);
+
+            mobileUnit->moveWithVelocityAndUpdateCell(velocity);
         }
     }
 

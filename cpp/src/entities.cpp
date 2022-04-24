@@ -237,9 +237,13 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
 // ------------------------------------------------------------------------------
 
 
-vector2f Entity::getPos()
+vector2f Entity::getPos() const
 {
     return pos;
+}
+float Entity::getRadius() const
+{
+    throw runtime_error("getRadius() has not been defined for " + getTypeName() + ".\n");
 }
 void Entity::setPosAndUpdateCell(vector2f newPos)
 {
@@ -279,13 +283,13 @@ vector2i Entity::getSearchGridCellOrThrow()
         throw runtime_error("Trying to get a searchGridCell for an entity that has not been registered with a Game.\n");
     }
 }
-unsigned char Entity::typechar()
+unsigned char Entity::typechar() const
 {
-    throw runtime_error("typechar() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("typechar() has not been defined for " + getTypeName() + "\n");
 }
-string Entity::getTypeName()
+string Entity::getTypeName() const
 {
-    throw runtime_error("getTypeName() has not been defined for this unit.");
+    throw runtime_error("getTypeName() has not been defined for this unit.\n");
 }
 
 bool Entity::collidesWithPoint(vector2f point)
@@ -293,21 +297,21 @@ bool Entity::collidesWithPoint(vector2f point)
     return (pos - point).getMagnitude() <= ENTITY_COLLIDE_RADIUS;
 }
 
-void Entity::go()
+void Entity::iterate()
 {
-    throw runtime_error("go() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("go() has not been defined for " + getTypeName() + ".\n");
 }
 sf::Color Entity::getTeamOrPrimaryColor()
 {
-    throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypeName() + ".\n");
 }
 void Entity::pack(vch *dest)
 {
-    throw runtime_error("pack() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("pack() has not been defined for " + getTypeName() + ".\n");
 }
 void Entity::unpackAndMoveIter(vchIter *iter, Game &game)
 {
-    throw runtime_error("unpackMoveIter() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("unpackMoveIter() has not been defined for " + getTypeName() + ".\n");
 }
 void Entity::packEntity(vch *destVch)
 {
@@ -391,9 +395,10 @@ GoldPile::GoldPile(vchIter *iter) : Entity(iter),
     unpackAndMoveIter(iter);
 }
 
-unsigned char GoldPile::typechar() { return GOLDPILE_TYPECHAR; }
-string GoldPile::getTypeName() { return "GoldPile"; }
-void GoldPile::go()
+float GoldPile::getRadius() const { return 10; }
+unsigned char GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
+string GoldPile::getTypeName() const { return "GoldPile"; }
+void GoldPile::iterate()
 {
     if (gold.getInt() == 0)
         die();
@@ -427,11 +432,11 @@ vector<Coins*> Unit::getDroppableCoins()
 {
     return vector<Coins*>{&goldInvested};
 }
-coinsInt Unit::getCost()
+coinsInt Unit::getCost() const
 {
     throw runtime_error("getCost() has not been defined for " + getTypeName() + ".");
 }
-uint16_t Unit::getMaxHealth()
+uint16_t Unit::getMaxHealth() const
 {
     throw runtime_error("getMaxHeatlh() has not been defined for " + getTypeName() + ".");
 }
@@ -514,7 +519,7 @@ sf::Color Unit::getTeamColor()
     else
         return sf::Color(150, 150, 150);
 }
-void Unit::unitGo() {}
+void Unit::unitIterate() {}
 void Unit::takeHit(uint16_t damage)
 {
     if (damage >= health)
@@ -568,9 +573,9 @@ Building::Building(vchIter *iter) : Unit(iter)
     unpackBuildingAndMoveIter(iter);
 }
 
-void Building::buildingGo()
+void Building::buildingIterate()
 {
-    unitGo();
+    unitIterate();
 }
 
 
@@ -611,6 +616,9 @@ void MobileUnit::packMobileUnit(vch *dest)
     {
         packFalse(dest);
     }
+
+    packVector2f(dest, desiredVelocity);
+    packVector2f(dest, lastVelocity);
 }
 void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 {
@@ -623,10 +631,13 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 
         maybeTargetAndRange = {pair(target, range)};
     }
+
+    *iter = unpackVector2f(*iter, &desiredVelocity);
+    *iter = unpackVector2f(*iter, &lastVelocity);
 }
 
 MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(ownerId, totalCost, health, pos), maybeTargetAndRange({}), angle_view(0)
+    : Unit(ownerId, totalCost, health, pos), maybeTargetAndRange({}), desiredVelocity(vector2f(0,0)), lastVelocity(vector2f(0,0)), angle_view(0)
 {}
 MobileUnit::MobileUnit(vchIter *iter) : Unit(iter),
                                         angle_view(0)
@@ -634,13 +645,21 @@ MobileUnit::MobileUnit(vchIter *iter) : Unit(iter),
     unpackMobileUnitAndMoveIter(iter);
 }
 
-float MobileUnit::getSpeed()
+float MobileUnit::getMaxSpeed() const
 {
-    throw runtime_error("getSpeed has not been defined for '" + getTypeName() + "'");
+    throw runtime_error("getMaxSpeed has not been defined for '" + getTypeName() + "'");
 }
-float MobileUnit::getRange()
+float MobileUnit::getRange() const
 {
     throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
+}
+vector2f MobileUnit::getDesiredVelocity() const
+{
+    return desiredVelocity;
+}
+vector2f MobileUnit::getLastVelocity() const
+{
+    return lastVelocity;
 }
 void MobileUnit::onMoveCmd(vector2f moveTo)
 {
@@ -676,11 +695,12 @@ optional<Target> MobileUnit::getMoveTarget()
         return {};
 }
 
-void MobileUnit::addToPosAndUpdateCell(vector2f toAdd)
+void MobileUnit::moveWithVelocityAndUpdateCell(vector2f velocity)
 {
-    setPosAndUpdateCell(getPos() + toAdd);
+    lastVelocity = velocity;
+    setPosAndUpdateCell(getPos() + velocity);
 }
-void MobileUnit::moveTowardPoint(vector2f dest, float range)
+void MobileUnit::tryMoveTowardPoint(vector2f dest, float range)
 {
     vector2f toPoint = dest - getPos();
     float distanceLeft = toPoint.getMagnitude() - range;
@@ -692,25 +712,36 @@ void MobileUnit::moveTowardPoint(vector2f dest, float range)
     vector2f unitDir = toPoint.normalized();
     angle_view = unitDir.getAngle();
 
-    if (distanceLeft <= getSpeed())
+    if (distanceLeft <= getMaxSpeed())
     {
-        addToPosAndUpdateCell(unitDir * distanceLeft);
+        desiredVelocity = unitDir * distanceLeft;
     }
     else
     {
-        addToPosAndUpdateCell(unitDir * getSpeed());
+        desiredVelocity = unitDir * getMaxSpeed();
     }
 }
-void MobileUnit::mobileUnitGo()
+void MobileUnit::mobileUnitIterate()
 {
+    desiredVelocity = vector2f(0,0);
+
     if (auto targetAndRange = maybeTargetAndRange)
     {
         if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
-            moveTowardPoint(*p, targetAndRange->second);
+        {
+            if ((getPos() - *p).getMagnitudeSquared() < DISTANCE_TOL)
+            {
+                targetAndRange = {};
+            }
+            else
+            {
+                tryMoveTowardPoint(*p, targetAndRange->second);
+            }
+        }
         else
             setMoveTarget(Target(getPos()), 0);
     }
-    unitGo();
+    unitIterate();
 }
 void MobileUnit::cmdMove(vector2f pointTarget)
 {
@@ -742,10 +773,11 @@ void MobileUnit::cmdMove(vector2f pointTarget)
 
 
 
-unsigned char Beacon::typechar() { return BEACON_TYPECHAR; }
-string Beacon::getTypeName() { return "Beacon"; }
-coinsInt Beacon::getCost() { return BEACON_COST; }
-uint16_t Beacon::getMaxHealth() { return BEACON_HEALTH; }
+float Beacon::getRadius() const { return BEACON_RADIUS; }
+unsigned char Beacon::typechar() const { return BEACON_TYPECHAR; }
+string Beacon::getTypeName() const { return "Beacon"; }
+coinsInt Beacon::getCost() const { return GATEWAY_COST; }
+uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
 void Beacon::pack(vch *dest)
 {
@@ -761,7 +793,7 @@ void Beacon::unpackAndMoveIter(vchIter *iter)
 }
 
 Beacon::Beacon(int ownerId, vector2f pos, State state)
-    : Building(ownerId, BEACON_COST, BEACON_HEALTH, pos),
+    : Building(ownerId, GATEWAY_COST, BEACON_HEALTH, pos),
       state(state)
 {}
 Beacon::Beacon(vchIter *iter) : Building(iter)
@@ -769,7 +801,7 @@ Beacon::Beacon(vchIter *iter) : Building(iter)
     unpackAndMoveIter(iter);
 }
 
-void Beacon::go()
+void Beacon::iterate()
 {
     Game *game = this->getGameOrThrow();
 
@@ -826,10 +858,11 @@ void Beacon::go()
 
 
 
-unsigned char Gateway::typechar() { return GATEWAY_TYPECHAR; }
-string Gateway::getTypeName() { return "Gateway"; }
-coinsInt Gateway::getCost() { return GATEWAY_COST; }
-uint16_t Gateway::getMaxHealth() { return GATEWAY_HEALTH; }
+float Gateway::getRadius() const {return GATEWAY_RADIUS;}
+unsigned char Gateway::typechar() const { return GATEWAY_TYPECHAR; }
+string Gateway::getTypeName() const { return "Gateway"; }
+coinsInt Gateway::getCost() const { return GATEWAY_COST; }
+uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
 
 void Gateway::cmdBuildUnit(unsigned char unitTypechar)
 {
@@ -1002,7 +1035,7 @@ Gateway::Gateway(vchIter *iter) : Building(iter)
     unpackAndMoveIter(iter);
 }
 
-void Gateway::go()
+void Gateway::iterate()
 {
     Game *game = getGameOrThrow();
 
@@ -1116,11 +1149,11 @@ void Gateway::go()
                     coinsInt amountScuttled(0);
                     if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                     {
-                        amountScuttled = goldPile->gold.transferUpTo(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                        amountScuttled = goldPile->gold.transferUpTo(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
                     }
                     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                     {
-                        amountScuttled = unit->unbuild(SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                        amountScuttled = unit->unbuild(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
                     }
 
                     if (amountScuttled > 0)
@@ -1259,15 +1292,16 @@ float Prime::getHeldGoldRatio()
     return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
 }
 
-float Prime::getSpeed() { return PRIME_SPEED; }
-float Prime::getRange() { return PRIME_TRANSFER_RANGE; }
-coinsInt Prime::getCost() { return PRIME_COST; }
-uint16_t Prime::getMaxHealth() { return PRIME_HEALTH; }
+float Prime::getRadius() const { return PRIME_RADIUS; }
+float Prime::getMaxSpeed() const { return PRIME_SPEED; }
+float Prime::getRange() const { return PRIME_TRANSFER_RANGE; }
+coinsInt Prime::getCost() const { return PRIME_COST; }
+uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
-unsigned char Prime::typechar() { return PRIME_TYPECHAR; }
-string Prime::getTypeName() { return "Prime"; }
+unsigned char Prime::typechar() const { return PRIME_TYPECHAR; }
+string Prime::getTypeName() const { return "Prime"; }
 
-void Prime::go()
+void Prime::iterate()
 {
     Game *game = getGameOrThrow();
 
@@ -1304,7 +1338,7 @@ void Prime::go()
                         boost::shared_ptr<GoldPile> bestTarget;
                         float bestTargetDistanceSquared;
 
-                        auto entitiesInSight = game->entitiesWithinRadius(getPos(), PRIME_SIGHT_RANGE);
+                        auto entitiesInSight = game->entitiesWithinCircle(getPos(), PRIME_SIGHT_RANGE);
                         for (unsigned int i=0; i<entitiesInSight.size(); i++)
                         {
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
@@ -1581,7 +1615,7 @@ void Prime::go()
         }
         break;
     }
-    mobileUnitGo();
+    mobileUnitIterate();
 }
 
 void Prime::setStateToReturnGoldOrResetBehavior()
@@ -1710,7 +1744,7 @@ void Fighter::cmdAttack(Target target)
     }
     setMoveTarget(target, FIGHTER_SHOT_RANGE);
 }
-void Fighter::go()
+void Fighter::iterate()
 {
     Game *game = getGameOrThrow();
 
@@ -1724,7 +1758,7 @@ void Fighter::go()
         {
             if (MobileUnit::isIdle())
             {
-                auto entitiesInSight = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
+                auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
 
                 boost::shared_ptr<Entity> closestValidTarget;
                 float closestDistanceSquared;
@@ -1814,7 +1848,7 @@ void Fighter::go()
                     alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
                 }
 
-                auto entitiesInSight = game->entitiesWithinRadius(getPos(), FIGHTER_SIGHT_RANGE);
+                auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
                 for (unsigned int i=0; i<entitiesInSight.size(); i++)
                 {
                     if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSight[i]))
@@ -1886,7 +1920,7 @@ void Fighter::go()
             }
             break;
     }
-    mobileUnitGo();
+    mobileUnitIterate();
 }
 void Fighter::onMoveCmd(vector2f moveTo)
 {
@@ -1944,13 +1978,14 @@ void Fighter::shootAt(boost::shared_ptr<Unit> unit)
     unit->takeHit(FIGHTER_DAMAGE);
 }
 
-float Fighter::getSpeed() { return FIGHTER_SPEED; }
-float Fighter::getRange() { return FIGHTER_SHOT_RANGE; }
-coinsInt Fighter::getCost() { return FIGHTER_COST; }
-uint16_t Fighter::getMaxHealth() { return FIGHTER_HEALTH; }
+float Fighter::getRadius() const { return FIGHTER_RADIUS; }
+float Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
+float Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
+coinsInt Fighter::getCost() const { return FIGHTER_COST; }
+uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 
-unsigned char Fighter::typechar() { return FIGHTER_TYPECHAR; }
-string Fighter::getTypename() { return "Fighter"; }
+unsigned char Fighter::typechar() const { return FIGHTER_TYPECHAR; }
+string Fighter::getTypename() const { return "Fighter"; }
 
 
 

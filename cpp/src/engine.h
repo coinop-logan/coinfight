@@ -83,7 +83,8 @@ public:
     bool getPlayerBeaconAvailable(unsigned int playerId);
     void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
 
-    vector<boost::shared_ptr<Entity>> entitiesWithinRadius(vector2f gamePos, float radius);
+    vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2f centerPos, float radius);
+    vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2f centerPos, float halfWidth);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);

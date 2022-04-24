@@ -50,14 +50,14 @@ package-client:
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o
+bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
-bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o
+bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
-bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o
+bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
 
-bin/test: cpp/obj/test.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o
+bin/test: cpp/obj/test.o cpp/obj/engine.o cpp/obj/vchpack.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT) $(LIBSERVER)
