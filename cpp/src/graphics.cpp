@@ -56,6 +56,8 @@ sf::RenderWindow* setupGraphics(bool fullscreen)
 
     updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
 
+    chosenMode.bitsPerPixel = 24;
+
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
                    : sf::Style::Close | sf::Style::Titlebar;
