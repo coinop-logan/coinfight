@@ -682,7 +682,7 @@ bool MobileUnit::isIdle()
         {
             vector2f toPoint = *p - getPos();
             float distanceLeft = toPoint.getMagnitude() - targetAndRange->second;
-            return (distanceLeft <= DISTANCE_TOL);
+            return (distanceLeft <= EPSILON);
         }
     }
     return true;
@@ -698,13 +698,17 @@ optional<Target> MobileUnit::getMoveTarget()
 void MobileUnit::moveWithVelocityAndUpdateCell(vector2f velocity)
 {
     lastVelocity = velocity;
+    if (velocity.getMagnitudeSquared() >= EPSILON)
+    {
+        angle_view = velocity.getAngle();
+    }
     setPosAndUpdateCell(getPos() + velocity);
 }
 void MobileUnit::tryMoveTowardPoint(vector2f dest, float range)
 {
     vector2f toPoint = dest - getPos();
     float distanceLeft = toPoint.getMagnitude() - range;
-    if (distanceLeft <= DISTANCE_TOL)
+    if (distanceLeft <= EPSILON)
     {
         return;
     }
@@ -729,7 +733,7 @@ void MobileUnit::mobileUnitIterate()
     {
         if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
-            if ((getPos() - *p).getMagnitudeSquared() < DISTANCE_TOL)
+            if ((getPos() - *p).getMagnitudeSquared() < EPSILON)
             {
                 targetAndRange = {};
             }
@@ -1126,7 +1130,7 @@ void Gateway::iterate()
         {
             if (auto entity = (maybeEntityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
-                if ((this->getPos() - entity->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE + DISTANCE_TOL, 2))
+                if ((this->getPos() - entity->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE + EPSILON, 2))
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
@@ -1360,7 +1364,7 @@ void Prime::iterate()
                             break;
                         }
                         // otoh, if we've arrived at the target without finding Gold to pickup...
-                        else if ((*gatherTargetPos - this->getPos()).getMagnitudeSquared() < DISTANCE_TOL)
+                        else if ((*gatherTargetPos - this->getPos()).getMagnitudeSquared() < EPSILON)
                         {
                             // if we have no Gold, return to basic/idle behavior
                             if (heldGold.getInt() == 0)
@@ -1460,7 +1464,7 @@ void Prime::iterate()
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
-                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
+                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
                 {
                     optional<Coins*> coinsToPullFrom;
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
@@ -1488,7 +1492,7 @@ void Prime::iterate()
         if (auto target = getMoveTarget())
         if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
-            if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
+            if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
             {
                 optional<Coins*> coinsToPushTo;
                 bool stopOnTransferZero = false;
@@ -1562,7 +1566,7 @@ void Prime::iterate()
         {
             if (optional<vector2f> point = target->castToPoint())
             {
-                if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + DISTANCE_TOL)
+                if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
                 {
                     // create unit if typechar checks out and change target to new unit
                     boost::shared_ptr<Building> buildingToBuild;
@@ -1821,7 +1825,7 @@ void Fighter::iterate()
                 // if the target is a point and we've arrived, go back to Idle
                 if (auto point = attackingGeneralTarget->castToPoint())
                 {
-                    if ((*point - this->getPos()).getMagnitudeSquared() < DISTANCE_TOL)
+                    if ((*point - this->getPos()).getMagnitudeSquared() < EPSILON)
                     {
                         state = NotAttacking;
                         attackingGeneralTarget = {};
@@ -1931,7 +1935,7 @@ void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 {
     vector2f toTarget = (targetUnit->getPos() - this->getPos());
     angle_view = toTarget.getAngle();
-    if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + DISTANCE_TOL)
+    if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + EPSILON)
     {
         if (shootCooldown == 0)
         {

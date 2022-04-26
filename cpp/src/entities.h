@@ -107,6 +107,7 @@ public:
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
+    virtual float getRotation() const { return 0;}
 
     void packUnit(vch *destVch);
     void unpackUnitAndMoveIter(vchIter *iter);
@@ -145,10 +146,9 @@ private:
     vector2f desiredVelocity;
     vector2f lastVelocity;
 
-    float getRotation() { return angle_view; };
-
     void tryMoveTowardPoint(vector2f, float);
 public:
+    float getRotation() const { return angle_view; };
     void moveWithVelocityAndUpdateCell(vector2f toAdd);
     void setMoveTarget(Target _target, float range);
     void clearMoveTarget();
@@ -206,7 +206,7 @@ public:
 };
 
 const coinsInt GATEWAY_SCUTTLE_RATE = 5;
-const coinsInt GATEWAY_COST = 4000;
+const coinsInt GATEWAY_COST = 1000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const float GATEWAY_RANGE = 150;
 const coinsInt GATEWAY_BUILD_RATE = 8;

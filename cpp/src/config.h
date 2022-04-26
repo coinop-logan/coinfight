@@ -15,7 +15,7 @@ const unsigned int ESCAPE_TO_QUIT_TEXT_LIFE = 30;
 
 const unsigned long MAX_COINS = UINT32_MAX;
 
-const float DISTANCE_TOL = 0.0001;
+const float EPSILON = 0.00001;
 
 const unsigned char NULL_TYPECHAR = 0;
 

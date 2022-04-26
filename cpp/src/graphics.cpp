@@ -119,6 +119,11 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
     }
 }
 
+float unitDrawRotation(boost::shared_ptr<Unit> unit)
+{
+    return -unit->getRotation();
+}
+
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2f drawPos)
 {
     float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
@@ -180,27 +185,42 @@ void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor
     drawBeacon(window, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2f drawPos, unsigned int alpha)
+void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2f drawPos, float drawRotation, unsigned int alpha)
 {
+    sf::Transform transform = sf::Transform();
+    transform.translate(drawPos.x, drawPos.y);
+    transform.rotate(radToDeg(drawRotation));
+
     sf::Color teamColor = prime->getTeamColor();
-    sf::Color thickBorderColor(teamColor.r, teamColor.g, teamColor.b, alpha);
+    sf::Color mainPrimeColor(teamColor.r, teamColor.g, teamColor.b, alpha);
 
     float borderThickness = 2;
     float primeCavityRadius = PRIME_RADIUS - borderThickness;
 
+    sf::VertexArray wingPoints(sf::Triangles, 3);
+    wingPoints[0].position = sf::Vector2f(0, PRIME_RADIUS);
+    wingPoints[1].position = sf::Vector2f(-PRIME_RADIUS*1.4, PRIME_RADIUS);
+    wingPoints[2].position = toSFVec(composeVector2f(0.8 * M_PI, PRIME_RADIUS));
+    wingPoints[0].color = wingPoints[1].color = wingPoints[2].color = mainPrimeColor;
+    window->draw(wingPoints, transform);
+
+    wingPoints[0].position.y *= -1;
+    wingPoints[1].position.y *= -1;
+    wingPoints[2].position.y *= -1;
+    window->draw(wingPoints, transform);
+
     sf::CircleShape structureOutline(primeCavityRadius);
     structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));
-    structureOutline.setPosition(toSFVec(drawPos));
     structureOutline.setFillColor(sf::Color::Transparent);
     structureOutline.setOutlineColor(unitOutlineColor);
     structureOutline.setOutlineThickness(1);
-    window->draw(structureOutline);
+    window->draw(structureOutline, transform);
 
     sf::CircleShape thickBorder(structureOutline);
-    thickBorder.setOutlineColor(thickBorderColor);
+    thickBorder.setOutlineColor(mainPrimeColor);
     thickBorder.setOutlineThickness(borderThickness);
 
-    window->draw(thickBorder);
+    window->draw(thickBorder, transform);
 
     float heldGoldRatio = prime->getHeldGoldRatio();
     if (heldGoldRatio > 0)
@@ -345,7 +365,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f d
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        drawPrime(window, prime, drawPos, fadedAlpha);
+        drawPrime(window, prime, drawPos, drawRotation, fadedAlpha);
     }
     else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
     {
