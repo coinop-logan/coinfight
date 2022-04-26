@@ -735,7 +735,7 @@ void MobileUnit::mobileUnitIterate()
         {
             if ((getPos() - *p).getMagnitudeSquared() < EPSILON)
             {
-                targetAndRange = {};
+                maybeTargetAndRange = {};
             }
             else
             {

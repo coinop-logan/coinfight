@@ -373,7 +373,7 @@ void Game::iterate()
                 }
             }
 
-            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, COLLISION_CORRECTION_TIME_HORIZON, 1);
+            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, COLLISION_CORRECTION_TIME_HORIZON, 0.1);
 
             mobileUnit->moveWithVelocityAndUpdateCell(velocity);
         }
