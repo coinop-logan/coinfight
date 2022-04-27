@@ -128,7 +128,7 @@ void HoneypotAddedEvent::execute(Game *game)
     {
         game->honeypotGoldPileIfGameStarted = boost::shared_ptr<GoldPile>(new GoldPile(vector2f(0,0)));
         game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
-        game->registerNewEntity(game->honeypotGoldPileIfGameStarted);
+        game->registerNewEntityIgnoringCollision(game->honeypotGoldPileIfGameStarted);
     }
 }
 

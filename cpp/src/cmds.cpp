@@ -110,9 +110,11 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
 
     if (game->getPlayerBeaconAvailable(playerId))
     {
-        game->setPlayerBeaconAvailable(playerId, false);
         boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning));
-        game->registerNewEntity(beacon);
+        if (game->registerNewEntityIfNoCollision(beacon)) // will fail in case of collision with other unit
+        {
+            game->setPlayerBeaconAvailable(playerId, false);
+        }
     }
 }
 void SpawnBeaconCmd::pack(vch *dest)

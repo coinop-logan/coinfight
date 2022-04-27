@@ -4,6 +4,8 @@
 #ifndef ENTITIES_H
 #define ENTITIES_H
 
+const float MAX_UNIT_RADIUS = 20;
+
 class Game;
 
 struct RegInfo {
@@ -226,7 +228,7 @@ const coinsInt GATEWAY_COST = 1000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const float GATEWAY_RANGE = 150;
 const coinsInt GATEWAY_BUILD_RATE = 8;
-const int GATEWAY_RADIUS = 15;
+const int GATEWAY_RADIUS = 15; // don't forget about MAX_UNIT_RADIUS!!
 
 class Gateway : public Building
 {
@@ -268,7 +270,7 @@ const float PRIME_SIGHT_RANGE = 200;
 const coinsInt PRIME_PICKUP_RATE = 2;
 const coinsInt PRIME_PUTDOWN_RATE = 5;
 const coinsInt PRIME_MAX_GOLD_HELD = 1000;
-const int PRIME_RADIUS = 10;
+const int PRIME_RADIUS = 10; // don't forget about MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
 {
@@ -333,7 +335,7 @@ const float FIGHTER_SHOT_RANGE = 200;
 const float FIGHTER_SIGHT_RANGE = 250;
 const int FIGHTER_SHOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
-const int FIGHTER_RADIUS = 15;
+const int FIGHTER_RADIUS = 15; // don't forget about MAX_UNIT_RADIUS!!
 
 class Fighter : public MobileUnit
 {

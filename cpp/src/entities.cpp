@@ -858,7 +858,7 @@ void Beacon::iterate()
                 boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->getPos()));
                 gateway->completeBuildingInstantly(&this->goldInvested);
                 this->die();
-                game->registerNewEntity(gateway);
+                game->registerNewEntityIgnoringCollision(gateway);
             }
         }
         break;
@@ -926,7 +926,7 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
         if (littleBabyUnitAwwwwSoCute)
         {
             state = DepositTo;
-            getGameOrThrow()->registerNewEntity(littleBabyUnitAwwwwSoCute);
+            getGameOrThrow()->registerNewEntityIgnoringCollision(littleBabyUnitAwwwwSoCute);
             this->maybeTargetEntity = littleBabyUnitAwwwwSoCute->getRefOrThrow();
         }
     }
@@ -943,7 +943,7 @@ void Gateway::cmdDepositTo(Target target)
                 return;
             }
             boost::shared_ptr<GoldPile> goldpile(new GoldPile(*point));
-            getGameOrThrow()->registerNewEntity(goldpile);
+            getGameOrThrow()->registerNewEntityIgnoringCollision(goldpile);
             maybeTargetEntity = goldpile->getRefOrThrow();
             state = DepositTo;
         }
@@ -970,7 +970,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
             boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
-            game->registerNewEntity(beacon);
+            game->registerNewEntityIgnoringCollision(beacon);
         }
         else
         {
@@ -1579,7 +1579,7 @@ void Prime::iterate()
                 {
                     // must create goldPile
                     boost::shared_ptr<GoldPile> gp(new GoldPile(*point));
-                    game->registerNewEntity(gp);
+                    game->registerNewEntityIgnoringCollision(gp);
                     coinsToPushTo = &gp->gold;
                     setMoveTarget(Target(gp->getRefOrThrow()), PRIME_TRANSFER_RANGE);
                 }
@@ -1622,8 +1622,10 @@ void Prime::iterate()
 
                     if (buildingToBuild)
                     {
-                        game->registerNewEntity(buildingToBuild);
-                        setMoveTarget(Target(buildingToBuild), PRIME_TRANSFER_RANGE);
+                        if (game->registerNewEntityIfNoCollision(buildingToBuild))
+                        {
+                            setMoveTarget(Target(buildingToBuild), PRIME_TRANSFER_RANGE);
+                        }
                     }
                     else
                     {

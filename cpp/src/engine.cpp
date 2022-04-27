@@ -26,7 +26,19 @@ sf::Color playerAddressToColor(string address)
     return sf::Color(vals[0], vals[1], vals[2]);
 }
 
-void Game::registerNewEntity(boost::shared_ptr<Entity> newEntity)
+bool Game::registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity)
+{
+    if (this->unitsCollidingWithCircle(newEntity->getPos(), newEntity->getRadius()).size() > 0)
+    {
+        return false;
+    }
+    else
+    {
+        registerNewEntityIgnoringCollision(newEntity);
+        return true;
+    }
+}
+void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity)
 {
     // * register the entity on the search grid
     // * provide pointer to Game
@@ -270,13 +282,25 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2f centerPos,
 
     return entitiesToReturn;
 }
+vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2f centerPos, float radius)
+{
+    auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(centerPos, radius + MAX_UNIT_RADIUS);
 
-// void Game::killAndReplaceEntity(EntityRef ref, boost::shared_ptr<Entity> newEntity)
-// {
-//     entities[ref]->die();
-//     entities[ref] = newEntity;
-    
-// }
+    vector<boost::shared_ptr<Unit>> unitsToReturn;
+    for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(this->entities[nearbyEntityRefs[i]]))
+        {
+            float combinedRadius = radius + unit->getRadius();
+            if ((centerPos - unit->getPos()).getMagnitudeSquared() < pow(combinedRadius, 2))
+            {
+                unitsToReturn.push_back(unit);
+            }
+        }
+    }
+
+    return unitsToReturn;
+}
 
 void Game::pack(vch *dest)
 {
@@ -323,7 +347,7 @@ void Game::unpackAndMoveIter(vchIter *iter)
         unsigned char typechar;
         *iter = unpackTypecharFromIter(*iter, &typechar);
 
-        registerNewEntity(unpackFullEntityAndMoveIter(iter, typechar));
+        registerNewEntityIgnoringCollision(unpackFullEntityAndMoveIter(iter, typechar));
     }
 }
 
@@ -400,7 +424,7 @@ void Game::iterate()
             // but only add it if there was more than 0 gold added
             if (goldPile->gold.getInt() > 0)
             {
-                registerNewEntity(goldPile);
+                registerNewEntityIgnoringCollision(goldPile);
             }
             entities[i].reset();
         }

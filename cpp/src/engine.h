@@ -75,7 +75,8 @@ public:
     boost::shared_ptr<GoldPile> honeypotGoldPileIfGameStarted;
     SearchGrid searchGrid;
 
-    void registerNewEntity(boost::shared_ptr<Entity> newEntity);
+    bool registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity);
+    void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
     boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
     int playerAddressToIdOrNegativeOne(string address);
@@ -85,6 +86,7 @@ public:
 
     vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2f centerPos, float radius);
     vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2f centerPos, float halfWidth);
+    vector<boost::shared_ptr<Unit>> unitsCollidingWithCircle(vector2f centerPos, float radius);
 
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
