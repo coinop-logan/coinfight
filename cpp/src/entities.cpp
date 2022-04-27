@@ -1441,6 +1441,12 @@ void Prime::iterate()
                         }
                     }
                     break;
+                    default:
+                    {
+                        cout << "Prime is in an unexpected combo of behavior and state. Returning to basic behavior." << endl;
+                        behavior = Basic;
+                    }
+                    break;
                 }
             }
             else
@@ -1661,6 +1667,7 @@ void Prime::setStateToReturnGoldOrResetBehavior()
 
 void Prime::onMoveCmd(vector2f moveTo)
 {
+    behavior = Basic;
     state = NotTransferring;
 }
 
