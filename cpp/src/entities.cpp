@@ -283,6 +283,17 @@ vector2i Entity::getSearchGridCellOrThrow()
         throw runtime_error("Trying to get a searchGridCell for an entity that has not been registered with a Game.\n");
     }
 }
+void Entity::updateGamePointerOrThrow(Game *game)
+{
+    if (maybeRegInfo)
+    {
+        maybeRegInfo->game = game;
+    }
+    else
+    {
+        throw runtime_error("Trying to update the Game pointer for an entity that has not been registered within a Game.\n");
+    }
+}
 unsigned char Entity::typechar() const
 {
     throw runtime_error("typechar() has not been defined for " + getTypeName() + "\n");
@@ -515,7 +526,7 @@ sf::Color Unit::getTeamColor()
     if (ownerId == -1)
         return sf::Color(150, 150, 150);
     else if (auto regInfo = maybeRegInfo)
-        return playerAddressToColor(regInfo->game->playerIdToAddress(ownerId));
+        return playerAddressToColor(this->getGameOrThrow()->playerIdToAddress(ownerId));
     else
         return sf::Color(150, 150, 150);
 }

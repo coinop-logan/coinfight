@@ -29,6 +29,7 @@ public:
     EntityRef getRefOrThrow();
     Game *getGameOrThrow();
     vector2i getSearchGridCellOrThrow();
+    void updateGamePointerOrThrow(Game *game);
 
     virtual unsigned char typechar() const;
     virtual string getTypeName() const;

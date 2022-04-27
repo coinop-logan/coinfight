@@ -40,6 +40,13 @@ bool Game::registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity)
 }
 void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity)
 {
+    // if registering a null entity, just add the empty pointer to the list but don't do anything else
+    if (!newEntity)
+    {
+        entities.push_back(newEntity);
+        return;
+    }
+
     // * register the entity on the search grid
     // * provide pointer to Game
     // * provide EntityRef ref
@@ -356,7 +363,14 @@ Game::Game(vchIter *iter)
 {
     unpackAndMoveIter(iter);
 }
-
+void Game::reassignEntityGamePointers()
+{
+    for (EntityRef i = 0; i < entities.size(); i++)
+    {
+        if (entities[i])
+            entities[i]->updateGamePointerOrThrow(this);
+    }
+}
 
 void Game::iterate()
 {

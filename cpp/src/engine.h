@@ -93,6 +93,7 @@ public:
 
     Game();
     Game(vchIter *);
+    void reassignEntityGamePointers();
 
     void iterate();
 };
