@@ -376,10 +376,8 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f d
     }
 }
 
-void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, CameraState camera)
+void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vector2i drawPos)
 {
-    vector2i drawPos = gamePosToScreenPos(camera, vector2i(entity->getPos()));
-
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
         drawGoldPile(window, goldPile, drawPos);
@@ -672,12 +670,11 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
-void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2f mousePos)
+void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2i mousePos)
 {
     window->setMouseCursorVisible(false);
 
-    ui.ghostBuilding->getPos() = screenPosToGamePos(ui.camera, mousePos);
-    drawEntity(window, ui.ghostBuilding, ui.camera);
+    drawEntity(window, ui.ghostBuilding, mousePos);
 }
 
 void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
@@ -1033,7 +1030,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         {
             if (game->entities[i])
             {
-                drawEntity(window, game->entities[i], ui.camera);
+                vector2i drawPos = gamePosToScreenPos(ui.camera, vector2i(game->entities[i]->getPos()));
+                drawEntity(window, game->entities[i], drawPos);
 
                 // add some gold particles every now and then
                 if (game->frame % 3 == 0)
