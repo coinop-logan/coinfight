@@ -30,7 +30,7 @@ vector2f calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, ve
         {
             otherVelocity = vector2f(0,0);
         }
-        vector2f relativeVelocity = otherVelocity - unit->getLastVelocity();
+        vector2f relativeVelocity = unit->getLastVelocity() - otherVelocity;
         float distSq = relativePosition.getMagnitudeSquared();
         float combinedRadius = unit->getRadius() + other->getRadius();
         const float combinedRadiusSq = sqr(combinedRadius);

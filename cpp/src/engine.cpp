@@ -373,7 +373,8 @@ void Game::iterate()
                 }
             }
 
-            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, COLLISION_CORRECTION_TIME_HORIZON, 0.1);
+            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, 40, 1);
+            // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
 
             mobileUnit->moveWithVelocityAndUpdateCell(velocity);
         }
