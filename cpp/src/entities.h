@@ -139,10 +139,26 @@ public:
     void buildingIterate();
 };
 
+struct MoveTargetInfo
+{
+    Target target;
+    float desiredRange;
+    float closestDistanceSquared;
+    float frustration;
+
+    void pack(vch *dest);
+    void unpackAndMoveIter(vchIter *iter);
+
+    MoveTargetInfo(Target target, float desiredRange, float closestDistanceSquared);
+    MoveTargetInfo(vchIter *iter);
+};
+
+const float MOBILEUNIT_FRUSTRATION_GROWTH_FACTOR = 2;
+
 class MobileUnit : public Unit
 {
 private:
-    optional<pair<Target, float>> maybeTargetAndRange;
+    optional<MoveTargetInfo> maybeTargetInfo;
     vector2f desiredVelocity;
     vector2f lastVelocity;
 

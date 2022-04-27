@@ -601,16 +601,34 @@ void Building::buildingIterate()
 // ------------------------------------------------------------------------------
 
 
+void MoveTargetInfo::pack(vch *dest)
+{
+    target.pack(dest);
+    packToVch(dest, "fff", desiredRange, closestDistanceSquared, frustration);
+}
+void MoveTargetInfo::unpackAndMoveIter(vchIter *iter)
+{
+    target = Target(iter);
+    *iter = unpackFromIter(*iter, "fff", &desiredRange, &closestDistanceSquared, &frustration);
+}
+MoveTargetInfo::MoveTargetInfo(Target target, float desiredRange, float closestDistanceSquared)
+    : target(target), desiredRange(desiredRange), closestDistanceSquared(closestDistanceSquared), frustration(0)
+    {}
+MoveTargetInfo::MoveTargetInfo(vchIter *iter) : target((EntityRef)0)
+{
+    unpackAndMoveIter(iter);
+}
+
+
 
 void MobileUnit::packMobileUnit(vch *dest)
 {
     packUnit(dest);
-    if (auto targetAndRange = maybeTargetAndRange)
+    if (auto targetInfo = maybeTargetInfo)
     {
         packTrue(dest);
 
-        targetAndRange->first.pack(dest);
-        packToVch(dest, "f", targetAndRange->second);
+        targetInfo->pack(dest);
     }
     else
     {
@@ -624,12 +642,7 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 {
     if (unpackBoolAndMoveIter(iter))
     {
-        Target target(iter);
-
-        float range;
-        *iter = unpackFromIter(*iter, "f", &range);
-
-        maybeTargetAndRange = {pair(target, range)};
+        MoveTargetInfo targetInfo(iter);
     }
 
     *iter = unpackVector2f(*iter, &desiredVelocity);
@@ -637,7 +650,7 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
 }
 
 MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(ownerId, totalCost, health, pos), maybeTargetAndRange({}), desiredVelocity(vector2f(0,0)), lastVelocity(vector2f(0,0)), angle_view(0)
+    : Unit(ownerId, totalCost, health, pos), maybeTargetInfo({}), desiredVelocity(vector2f(0,0)), lastVelocity(vector2f(0,0)), angle_view(0)
 {}
 MobileUnit::MobileUnit(vchIter *iter) : Unit(iter),
                                         angle_view(0)
@@ -668,20 +681,28 @@ void MobileUnit::onMoveCmd(vector2f moveTo)
 
 void MobileUnit::setMoveTarget(Target _target, float newRange)
 {
-    maybeTargetAndRange = {pair(_target, newRange)};
+    if (auto point = _target.getPointUnlessTargetDeleted(*this->getGameOrThrow()))
+    {
+        float currentRangeSquared = (this->getPos() - *point).getMagnitudeSquared();
+        maybeTargetInfo = {MoveTargetInfo(_target, newRange, currentRangeSquared)};
+    }
+    else
+    {
+        cout << "Trying to set a move target for a deleted unit! Just not gonna do that." << endl;
+    }
 }
 void MobileUnit::clearMoveTarget()
 {
-    maybeTargetAndRange = {};
+    maybeTargetInfo = {};
 }
 bool MobileUnit::isIdle()
 {
-    if (auto targetAndRange = maybeTargetAndRange)
+    if (auto targetInfo = maybeTargetInfo)
     {
-        if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        if (optional<vector2f> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
             vector2f toPoint = *p - getPos();
-            float distanceLeft = toPoint.getMagnitude() - targetAndRange->second;
+            float distanceLeft = toPoint.getMagnitude() - targetInfo->desiredRange;
             return (distanceLeft <= EPSILON);
         }
     }
@@ -689,8 +710,8 @@ bool MobileUnit::isIdle()
 }
 optional<Target> MobileUnit::getMoveTarget()
 {
-    if (maybeTargetAndRange)
-        return maybeTargetAndRange->first;
+    if (maybeTargetInfo)
+        return maybeTargetInfo->target;
     else
         return {};
 }
@@ -729,21 +750,37 @@ void MobileUnit::mobileUnitIterate()
 {
     desiredVelocity = vector2f(0,0);
 
-    if (auto targetAndRange = maybeTargetAndRange)
+    if (maybeTargetInfo)
     {
-        if (optional<vector2f> p = targetAndRange->first.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        if (optional<vector2f> p = maybeTargetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
-            if ((getPos() - *p).getMagnitudeSquared() < EPSILON)
+            float distanceSquared = (getPos() - *p).getMagnitudeSquared();
+            // if we're "breaking a record" for closest to the point, set frustration to 0
+            if (distanceSquared < maybeTargetInfo->closestDistanceSquared)
             {
-                maybeTargetAndRange = {};
+                maybeTargetInfo->closestDistanceSquared = distanceSquared;
+                maybeTargetInfo->frustration = 0;
+            }
+            // otherwise, frustration mounts!
+            else
+            {
+                maybeTargetInfo->frustration += MOBILEUNIT_FRUSTRATION_GROWTH_FACTOR;
+            }
+            cout << maybeTargetInfo->frustration << endl;
+
+            // this factors in frustration, so the unit eventually gives up.
+            // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
+            if (distanceSquared < pow(EPSILON + maybeTargetInfo->frustration, 2))
+            {
+                clearMoveTarget();
             }
             else
             {
-                tryMoveTowardPoint(*p, targetAndRange->second);
+                tryMoveTowardPoint(*p, maybeTargetInfo->desiredRange);
             }
         }
         else
-            setMoveTarget(Target(getPos()), 0);
+            clearMoveTarget();
     }
     unitIterate();
 }
