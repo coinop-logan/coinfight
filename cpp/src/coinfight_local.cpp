@@ -84,11 +84,17 @@ int main(int argc, char *argv[])
     coinsInt playerStartCredit = dollarsToCoinsInt(playerStartDollars);
 
     bool fullscreen = true;
+    bool smallScreen = false;
     if (argc-1 > 2)
     {
-        if (string(argv[3]) == "no-fullscreen")
+        if (string(argv[3]) == "nofullscreen")
         {
             fullscreen = false;
+        }
+        else if (string(argv[3]) == "smallscreen")
+        {
+            fullscreen = false;
+            smallScreen = true;
         }
     }
 
@@ -105,7 +111,7 @@ int main(int argc, char *argv[])
         firstEvents[i]->execute(&game);
     }
 
-    sf::RenderWindow* window = setupGraphics(fullscreen);
+    sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
     ui = UI();
     unsigned int currentPlayerId = 0;

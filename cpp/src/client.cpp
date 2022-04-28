@@ -229,11 +229,17 @@ public:
 int main(int argc, char *argv[])
 {
     bool fullscreen = true;
+    bool smallScreen = false;
     if (argc-1 == 1)
     {
-        if (string(argv[1]) == "no-fullscreen")
+        if (string(argv[1]) == "nofullscreen")
         {
             fullscreen = false;
+        }
+        else if (string(argv[1]) == "smallscreen")
+        {
+            fullscreen = false;
+            smallScreen = true;
         }
     }
     boost::asio::io_service io_service;
@@ -295,7 +301,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    sf::RenderWindow* window = setupGraphics(fullscreen);
+    sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
     ui = UI();
 

@@ -16,47 +16,52 @@ const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
 sf::Font mainFont;
 
-sf::RenderWindow* setupGraphics(bool fullscreen)
+sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
         throw runtime_error("Can't load font");
 
     // choose a good videomode
     sf::VideoMode chosenMode;
-    bool modeFound(false);
-
-    auto modes = sf::VideoMode::getFullscreenModes();
-    for (unsigned int i = 0; i < modes.size(); i++)
+    if (smallScreen)
     {
-        if (modes[i].width == 1920 && modes[i].height == 1080)
-        {
-            modeFound = true;
-            chosenMode = modes[i];
-            break;
-        }
+        chosenMode = sf::VideoMode(800, 600, 24);
     }
-    if (!modeFound) // gotta lower our standards!
+    else
     {
+        bool modeFound(false);
+
+        auto modes = sf::VideoMode::getFullscreenModes();
         for (unsigned int i = 0; i < modes.size(); i++)
         {
-            if (modes[i].width <= 1920)
+            if (modes[i].width == 1920 && modes[i].height == 1080)
             {
                 modeFound = true;
                 chosenMode = modes[i];
                 break;
             }
         }
+        if (!modeFound) // gotta lower our standards!
+        {
+            for (unsigned int i = 0; i < modes.size(); i++)
+            {
+                if (modes[i].width <= 1920)
+                {
+                    modeFound = true;
+                    chosenMode = modes[i];
+                    break;
+                }
+            }
+        }
+        if (!modeFound)
+        {
+            // weird, but okay. Just choose the first mode found.
+            modeFound = true;
+            chosenMode = modes[0];
+        }
+        chosenMode.bitsPerPixel = 24;
     }
-    if (!modeFound)
-    {
-        // weird, but okay. Just choose the first mode found.
-        modeFound = true;
-        chosenMode = modes[0];
-    }
-
     updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
-
-    chosenMode.bitsPerPixel = 24;
 
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
