@@ -1798,13 +1798,14 @@ void Fighter::cmdAttack(Target target)
     if (auto ref = target.castToEntityRef())
     {
         state = AttackingSpecific;
+        setMoveTarget(target, FIGHTER_SHOT_RANGE);
     }
     else if (auto point = target.castToPoint())
     {
         state = AttackingGeneral;
         maybeAttackingGeneralTarget = point;
+        setMoveTarget(target, 0);
     }
-    setMoveTarget(target, FIGHTER_SHOT_RANGE);
 }
 void Fighter::iterate()
 {
