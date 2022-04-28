@@ -146,11 +146,19 @@ public:
         {
             vchIter place = receivedBytes.begin();
 
-            // cout << "BYTES:" << endl;
-            // debugOutputVch(receivedBytes);
-            // cout << endl << ":FIN" << endl;
 
             receivedResyncs.push_back(Game(&place));
+            vch verifyData;
+
+            // verify that if we pack we get the same data we received
+            receivedResyncs.back().pack(&verifyData);
+            cout << "BYTES RECEIVED:" << endl;
+            debugOutputVch(receivedBytes);
+            cout << endl;
+            cout << "BYTES REPACKED:" << endl;
+            debugOutputVch(verifyData);
+            cout << endl;
+            
 
             clearVchAndReceiveNextPacket();
         }
@@ -371,26 +379,26 @@ int main(int argc, char *argv[])
         }
 
         // check for game start cmd, and do some ux prep if we got one
-        for (unsigned int i=0; i<fcp.events.size(); i++)
-        {
-            if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
-            {
-                if (playerIdOrNegativeOne >= 0)
-                {
-                    // find owned unit and center on it
-                    for (unsigned int i=0; i<game.entities.size(); i++)
-                    {
-                        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
-                        {
-                            if (unit->ownerId == playerIdOrNegativeOne)
-                            {
-                                ui.camera.gamePos = unit->getPos();
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // for (unsigned int i=0; i<fcp.events.size(); i++)
+        // {
+        //     if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
+        //     {
+        //         if (playerIdOrNegativeOne >= 0)
+        //         {
+        //             // find owned unit and center on it
+        //             for (unsigned int i=0; i<game.entities.size(); i++)
+        //             {
+        //                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
+        //                 {
+        //                     if (unit->ownerId == playerIdOrNegativeOne)
+        //                     {
+        //                         ui.camera.gamePos = unit->getPos();
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         // only display if we're not behind schedule
         now = chrono::system_clock::now();

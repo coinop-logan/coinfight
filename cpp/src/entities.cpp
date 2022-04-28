@@ -30,14 +30,9 @@
 void Target::pack(vch *dest)
 {
     packToVch(dest, "C", (unsigned char)(type));
-    if (type == PointTarget)
-    {
-        packVector2f(dest, pointTarget);
-    }
-    else
-    {
-        packEntityRef(dest, entityTarget);
-    }
+
+    packVector2f(dest, pointTarget);
+    packEntityRef(dest, entityTarget);
 }
 void Target::unpackAndMoveIter(vchIter *iter)
 {
@@ -45,14 +40,8 @@ void Target::unpackAndMoveIter(vchIter *iter)
     *iter = unpackFromIter(*iter, "C", &enumInt);
     type = static_cast<Type>(enumInt);
 
-    if (type == PointTarget)
-    {
-        *iter = unpackVector2f(*iter, &pointTarget);
-    }
-    else
-    {
-        *iter = unpackEntityRef(*iter, &entityTarget);
-    }
+    *iter = unpackVector2f(*iter, &pointTarget);
+    *iter = unpackEntityRef(*iter, &entityTarget);
 }
 
 Target::Target(vchIter *iter)
@@ -654,6 +643,11 @@ void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
     if (unpackBoolAndMoveIter(iter))
     {
         MoveTargetInfo targetInfo(iter);
+        maybeTargetInfo = {targetInfo};
+    }
+    else
+    {
+        maybeTargetInfo = {};
     }
 
     *iter = unpackVector2f(*iter, &desiredVelocity);
@@ -777,7 +771,6 @@ void MobileUnit::mobileUnitIterate()
             {
                 maybeTargetInfo->frustration += MOBILEUNIT_FRUSTRATION_GROWTH_FACTOR;
             }
-            cout << maybeTargetInfo->frustration << endl;
 
             // this factors in frustration, so the unit eventually gives up.
             // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
@@ -1271,8 +1264,10 @@ void Prime::pack(vch *dest)
 void Prime::unpackAndMoveIter(vchIter *iter)
 {
     unsigned char enumInt;
+    
     *iter = unpackFromIter(*iter, "C", &enumInt);
     behavior = static_cast<Behavior>(enumInt);
+
     *iter = unpackFromIter(*iter, "C", &enumInt);
     state = static_cast<State>(enumInt);
 
@@ -1282,6 +1277,10 @@ void Prime::unpackAndMoveIter(vchIter *iter)
         *iter = unpackVector2f(*iter, &targetPos);
         maybeGatherTargetPos = {targetPos};
     }
+    else
+    {
+        maybeGatherTargetPos = {};
+    }
 
     heldGold = Coins(iter);
     *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
@@ -1290,7 +1289,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 Prime::Prime(int ownerId, vector2f pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      behavior(Basic), state(NotTransferring)
+      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring)
 {}
 Prime::Prime(vchIter *iter) : MobileUnit(iter),
                               heldGold(PRIME_MAX_GOLD_HELD)
