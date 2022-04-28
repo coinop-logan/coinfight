@@ -761,7 +761,7 @@ void MobileUnit::mobileUnitIterate()
         {
             float distanceSquared = (getPos() - *p).getMagnitudeSquared();
             // if we're "breaking a record" for closest to the point, set frustration to 0
-            if (distanceSquared < maybeTargetInfo->closestDistanceSquared)
+            if (distanceSquared <= maybeTargetInfo->closestDistanceSquared)
             {
                 maybeTargetInfo->closestDistanceSquared = distanceSquared;
                 maybeTargetInfo->frustration = 0;
