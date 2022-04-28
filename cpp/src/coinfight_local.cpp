@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        playerStartDollars = 15000;
+        playerStartDollars = 10;
     }
     unsigned int honeypotStartingDollars;
     if (argc-1 > 1)
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        honeypotStartingDollars = 0;
+        honeypotStartingDollars = 50;
     }
     coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
     coinsInt playerStartCredit = dollarsToCoinsInt(playerStartDollars);
