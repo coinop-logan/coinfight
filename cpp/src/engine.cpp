@@ -395,26 +395,29 @@ void Game::iterate()
         // only for MobileUnits
         if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entities[i]))
         {
-            auto nearbyEntities = this->entitiesWithinSquare(mobileUnit->getPos(), COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH);
-
-            // filter for Units (this ignores GoldPiles)
-            auto nearbyUnits = filterForType<Unit, Entity>(nearbyEntities);
-
-            // quickly remove the inevitable self-reference
-            for (unsigned int j=0; j<nearbyUnits.size(); j++)
+            if (mobileUnit->isActive())
             {
-                // don't compare to self
-                if (mobileUnit->getRefOrThrow() == nearbyUnits[j]->getRefOrThrow())
+                auto nearbyEntities = this->entitiesWithinSquare(mobileUnit->getPos(), COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH);
+
+                // filter for Units (this ignores GoldPiles)
+                auto nearbyUnits = filterForType<Unit, Entity>(nearbyEntities);
+
+                // quickly remove the inevitable self-reference
+                for (unsigned int j=0; j<nearbyUnits.size(); j++)
                 {
-                    nearbyUnits.erase(nearbyUnits.begin() + j);
-                    break;
+                    // don't compare to self
+                    if (mobileUnit->getRefOrThrow() == nearbyUnits[j]->getRefOrThrow())
+                    {
+                        nearbyUnits.erase(nearbyUnits.begin() + j);
+                        break;
+                    }
                 }
+
+                vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, 40, 1);
+                // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
+
+                mobileUnit->moveWithVelocityAndUpdateCell(velocity);
             }
-
-            vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, 40, 1);
-            // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
-
-            mobileUnit->moveWithVelocityAndUpdateCell(velocity);
         }
     }
 

@@ -24,7 +24,14 @@ vector2f calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, ve
         vector2f otherVelocity;
         if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(other))
         {
-            otherVelocity = mobileUnit->getLastVelocity();
+            if (mobileUnit->isActive())
+            {
+                otherVelocity = mobileUnit->getLastVelocity();
+            }
+            else
+            {
+                otherVelocity = vector2f(0,0);
+            }
         }
         else
         {
