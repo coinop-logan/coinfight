@@ -224,10 +224,10 @@ public:
     void iterate();
 };
 
-const coinsInt GATEWAY_SCUTTLE_RATE = 5;
-const coinsInt GATEWAY_COST = 1000;
+const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const float GATEWAY_RANGE = 150;
+const coinsInt GATEWAY_SCUTTLE_RATE = 5;
 const coinsInt GATEWAY_BUILD_RATE = 8;
 const int GATEWAY_RADIUS = 15; // don't forget about MAX_UNIT_RADIUS!!
 
@@ -270,7 +270,7 @@ const float PRIME_TRANSFER_RANGE = 150;
 const float PRIME_SIGHT_RANGE = 200;
 const coinsInt PRIME_PICKUP_RATE = 2;
 const coinsInt PRIME_PUTDOWN_RATE = 5;
-const coinsInt PRIME_MAX_GOLD_HELD = 1000;
+const coinsInt PRIME_MAX_GOLD_HELD = 10000;
 const int PRIME_RADIUS = 10; // don't forget about MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
@@ -328,7 +328,6 @@ public:
     vector<Coins*> getDroppableCoins();
 };
 
-const vector2f FIGHTER_SHOT_OFFSET(20, 10);
 const coinsInt FIGHTER_COST = 1500;
 const uint16_t FIGHTER_HEALTH = 300;
 const float FIGHTER_SPEED = 3;
@@ -337,6 +336,7 @@ const float FIGHTER_SIGHT_RANGE = 250;
 const int FIGHTER_SHOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 const int FIGHTER_RADIUS = 15; // don't forget about MAX_UNIT_RADIUS!!
+const vector2f FIGHTER_SHOT_OFFSET(20, 10);
 
 class Fighter : public MobileUnit
 {
