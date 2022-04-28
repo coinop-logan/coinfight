@@ -146,7 +146,6 @@ public:
         {
             vchIter place = receivedBytes.begin();
 
-
             receivedResyncs.push_back(Game(&place));
             vch verifyData;
 
@@ -159,7 +158,6 @@ public:
             // debugOutputVch(verifyData);
             // cout << endl;
             
-
             clearVchAndReceiveNextPacket();
         }
         else
