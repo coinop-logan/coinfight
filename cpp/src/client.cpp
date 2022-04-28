@@ -150,14 +150,14 @@ public:
             receivedResyncs.push_back(Game(&place));
             vch verifyData;
 
-            // verify that if we pack we get the same data we received
-            receivedResyncs.back().pack(&verifyData);
-            cout << "BYTES RECEIVED:" << endl;
-            debugOutputVch(receivedBytes);
-            cout << endl;
-            cout << "BYTES REPACKED:" << endl;
-            debugOutputVch(verifyData);
-            cout << endl;
+            // // verify that if we pack we get the same data we received
+            // receivedResyncs.back().pack(&verifyData);
+            // cout << "BYTES RECEIVED:" << endl;
+            // debugOutputVch(receivedBytes);
+            // cout << endl;
+            // cout << "BYTES REPACKED:" << endl;
+            // debugOutputVch(verifyData);
+            // cout << endl;
             
 
             clearVchAndReceiveNextPacket();
