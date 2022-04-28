@@ -913,7 +913,9 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
 {
     if (this->isActive())
     {
-        vector2f newUnitPos = this->getPos() + randomVectorWithMagnitudeRange(20, GATEWAY_RANGE);
+        // determine position of new unit. Hacky - should replace very soon!
+        float angle = (getGameOrThrow()->frame / 10.0);
+        vector2f newUnitPos = this->getPos() + composeVector2f(angle, GATEWAY_RANGE / 2);
         boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
         switch (unitTypechar)
         {
