@@ -1043,9 +1043,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                     {
-                        if (prime->goldTransferState == Pulling)
+                        if (prime->goldTransferState_view == Pulling)
                         {
-                            if (auto primeTarget = prime->getMoveTarget())
+                            if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
                                 if (optional<vector2f> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
@@ -1054,9 +1054,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                 }
                             }
                         }
-                        else if (prime->goldTransferState == Pushing)
+                        else if (prime->goldTransferState_view == Pushing)
                         {
-                            if (auto primeTarget = prime->getMoveTarget())
+                            if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
                                 particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->getPos(), *primeTarget, sf::Color::Yellow)));
                             }
@@ -1066,7 +1066,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     {
                         if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
                         {
-                            switch (gateway->inGameTransferState)
+                            switch (gateway->inGameTransferState_view)
                             {
                                 case NoGoldTransfer:
                                 {
@@ -1093,7 +1093,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (fighter->animateShot != Fighter::None)
                     {
-                        if (auto fighterTarget = fighter->getMoveTarget())
+                        if (auto fighterTarget = fighter->getMaybeMoveTarget())
                         {
                             if (optional<vector2f> targetPos = fighterTarget->getPointUnlessTargetDeleted(*game))
                             {

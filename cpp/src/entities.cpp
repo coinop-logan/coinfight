@@ -133,6 +133,170 @@ boost::shared_ptr<Entity> Target::castToEntityPtr(const Game &game)
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 
+bool debugAssert(bool test)
+{
+    if (!test)
+    {
+        triggerDebug();
+    }
+    return test;
+}
+
+bool targetsAreEqual(Target t1, Target t2)
+{
+    return (
+        t1.type == t2.type
+     && t1.castToEntityRef() == t2.castToEntityRef()
+     && t1.castToPoint() == t2.castToPoint()
+    );
+}
+
+bool maybeTargetsAreEqual(optional<Target> mt1, optional<Target> mt2)
+{
+    if ((!mt1) && (!mt2))
+    {
+        return true;
+    }
+    if ((!mt1) && mt2)
+    {
+        return false;
+    }
+    if ((!mt2) && mt1)
+    {
+        return false;
+    }
+
+    return targetsAreEqual(*mt1, *mt2);
+}
+
+bool maybeMoveTargetInfosAreEqual(optional<MoveTargetInfo> mt1, optional<MoveTargetInfo> mt2)
+{
+    if ((!mt1) && (!mt2))
+    {
+        return true;
+    }
+    if ((!mt1) && mt2)
+    {
+        return false;
+    }
+    if ((!mt2) && mt1)
+    {
+        return false;
+    }
+
+    // we now know both are non-nothing
+    return (
+        targetsAreEqual(mt1->target, mt2->target)
+     && mt1->desiredRange == mt2->desiredRange
+     && mt1->closestDistanceSquared == mt2->closestDistanceSquared
+     && mt1->frustration == mt2->frustration
+    );
+}
+
+bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, boost::shared_ptr<Entity> entity2)
+{
+    if (!entity1 && !entity2)
+    {
+        // both null, good!
+        return true;
+    }
+    if (!entity1 && entity2)
+    {
+        triggerDebug();
+        return false;
+    }
+    if (entity1 && !entity2)
+    {
+        triggerDebug();
+        return false;
+    }
+
+    // we now know they're both non-null
+
+    debugAssert(entity1->getPos() == entity2->getPos());
+    debugAssert(entity1->dead == entity2->dead);
+    // don't need to test regInfo directly
+    debugAssert(entity1->getSearchGridCellOrThrow() == entity2->getSearchGridCellOrThrow());
+    debugAssert(entity1->typechar() == entity2->typechar());
+
+    bool successfulCast = false; // until proven otherwise
+    if (auto goldpile1 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity1))
+        if (auto goldpile2 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity2))
+    {
+        successfulCast = true;
+        debugAssert(goldpile1->gold.getInt() == goldpile2->gold.getInt());
+    }
+
+    if (auto unit1 = boost::dynamic_pointer_cast<Unit, Entity>(entity1))
+        if (auto unit2 = boost::dynamic_pointer_cast<Unit, Entity>(entity2))
+    {
+        debugAssert(unit1->getHealth() == unit2->getHealth());
+        debugAssert(unit1->ownerId == unit2->ownerId);
+        debugAssert(unit1->goldInvested.getInt() == unit2->goldInvested.getInt());
+
+        if (auto building1 = boost::dynamic_pointer_cast<Building, Unit>(unit1))
+            if (auto building2 = boost::dynamic_pointer_cast<Building, Unit>(unit2))
+        {
+            // no building-specific state to check
+
+            if (auto beacon1 = boost::dynamic_pointer_cast<Beacon, Building>(building1))
+                if (auto beacon2 = boost::dynamic_pointer_cast<Beacon, Building>(building2))
+            {
+                successfulCast = true;
+
+                debugAssert(beacon1->state == beacon2->state);
+            }
+
+            if (auto gateway1 = boost::dynamic_pointer_cast<Gateway, Building>(building1))
+                if (auto gateway2 = boost::dynamic_pointer_cast<Gateway, Building>(building2))
+            {
+                successfulCast = true;
+
+                debugAssert(gateway1->state == gateway2->state);
+                debugAssert(gateway1->maybeTargetEntity == gateway2->maybeTargetEntity);
+            }
+
+            debugAssert(successfulCast);
+        }
+
+        if (auto mobileUnit1 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit1))
+            if (auto mobileUnit2 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit2))
+        {
+            debugAssert(maybeMoveTargetInfosAreEqual(mobileUnit1->getMaybeMoveTargetInfo(), mobileUnit2->getMaybeMoveTargetInfo()));
+            debugAssert(mobileUnit1->getDesiredVelocity() == mobileUnit2->getDesiredVelocity());
+            debugAssert(mobileUnit1->getLastVelocity() == mobileUnit2->getLastVelocity());
+
+            if (auto prime1 = boost::dynamic_pointer_cast<Prime, MobileUnit>(mobileUnit1))
+                if (auto prime2 = boost::dynamic_pointer_cast<Prime, MobileUnit>(mobileUnit2))
+            {
+                successfulCast = true;
+
+                debugAssert(prime1->heldGold.getInt() == prime2->heldGold.getInt());
+                debugAssert(prime1->behavior == prime2->behavior);
+                debugAssert(prime1->maybeGatherTargetPos == prime2->maybeGatherTargetPos);
+                debugAssert(prime1->state == prime2->state);
+                debugAssert(prime1->gonnabuildTypechar == prime2->gonnabuildTypechar);
+            }
+
+            if (auto fighter1 = boost::dynamic_pointer_cast<Fighter, MobileUnit>(mobileUnit1))
+                if (auto fighter2 = boost::dynamic_pointer_cast<Fighter, MobileUnit>(mobileUnit2))
+            {
+                successfulCast = true;
+
+                debugAssert(fighter1->state == fighter2->state);
+                debugAssert(maybeTargetsAreEqual(fighter1->state, fighter2->state));
+            }
+
+            debugAssert(successfulCast);
+        }
+
+        debugAssert(successfulCast);
+    }
+
+    return debugAssert(successfulCast);
+    // this repetition of debugAssert may seem redundant,
+    // but this way debugs trigger in a more informative position
+}
 
 
 RegInfo::RegInfo(Game *game, EntityRef ref, vector2i cell)
@@ -713,12 +877,16 @@ bool MobileUnit::isIdle()
     }
     return true;
 }
-optional<Target> MobileUnit::getMoveTarget()
+optional<Target> MobileUnit::getMaybeMoveTarget()
 {
     if (maybeTargetInfo)
         return maybeTargetInfo->target;
     else
         return {};
+}
+optional<MoveTargetInfo> MobileUnit::getMaybeMoveTargetInfo()
+{
+    return maybeTargetInfo;
 }
 
 void MobileUnit::moveWithVelocityAndUpdateCell(vector2f velocity)
@@ -1087,7 +1255,7 @@ void Gateway::unpackAndMoveIter(vchIter *iter)
 
 Gateway::Gateway(int ownerId, vector2f pos)
     : Building(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      state(Idle), inGameTransferState(NoGoldTransfer)
+      state(Idle), inGameTransferState_view(NoGoldTransfer)
 {}
 Gateway::Gateway(vchIter *iter) : Building(iter)
 {
@@ -1098,7 +1266,7 @@ void Gateway::iterate()
 {
     Game *game = getGameOrThrow();
 
-    inGameTransferState = NoGoldTransfer; // will possibly be updated in the following switch
+    inGameTransferState_view = NoGoldTransfer; // will possibly be updated in the following switch
     switch (state)
     {
         case Idle:
@@ -1174,7 +1342,7 @@ void Gateway::iterate()
                         }
                         if (amountDeposited > 0)
                         {
-                            inGameTransferState = Pushing;
+                            inGameTransferState_view = Pushing;
                         }
                     }
                 }
@@ -1189,7 +1357,7 @@ void Gateway::iterate()
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
-                        if ((!(mobileUnit->getMoveTarget())) || *(mobileUnit->getMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
+                        if ((!(mobileUnit->getMaybeMoveTarget())) || *(mobileUnit->getMaybeMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
                         {
                             // unit is no longer on its way; revert to Idle state
                             state = Idle;
@@ -1217,7 +1385,7 @@ void Gateway::iterate()
 
                     if (amountScuttled > 0)
                     {
-                        inGameTransferState = Pulling;
+                        inGameTransferState_view = Pulling;
                     }
                     else
                     {
@@ -1303,7 +1471,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 Prime::Prime(int ownerId, vector2f pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState(NoGoldTransfer)
+      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer)
 {}
 Prime::Prime(vchIter *iter) : MobileUnit(iter),
                               heldGold(PRIME_MAX_GOLD_HELD)
@@ -1457,7 +1625,7 @@ void Prime::iterate()
                         bool shouldMoveOn = true; // until proven otherwise
 
                         // here, we need to do something either when the Prime is full or when its current Target gets depleted
-                        if (auto moveTarget = getMoveTarget())
+                        if (auto moveTarget = getMaybeMoveTarget())
                         {
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(moveTarget->castToEntityPtr(*game)))
                             {
@@ -1487,7 +1655,7 @@ void Prime::iterate()
                         }
                         // as long as Gateawy (in moveTarget) is still valid, just continue til heldGold == 0
                         bool stillMovingTowardGateway = false; // until proven otherwise
-                        if (auto moveTarget = getMoveTarget())
+                        if (auto moveTarget = getMaybeMoveTarget())
                         {
                             if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(moveTarget->castToEntityPtr(*game)))
                             {
@@ -1521,13 +1689,13 @@ void Prime::iterate()
             break;
     }
 
-    goldTransferState = NoGoldTransfer;
+    goldTransferState_view = NoGoldTransfer;
     switch (state)
     {
     case NotTransferring:
         break;
     case PickupGold:
-        if (auto target = getMoveTarget())
+        if (auto target = getMaybeMoveTarget())
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
@@ -1549,14 +1717,14 @@ void Prime::iterate()
                         if (pickedUp == 0)
                             state = NotTransferring;
                         else
-                            goldTransferState = Pulling;
+                            goldTransferState_view = Pulling;
                     }
                 }
             }
         }
         break;
     case PutdownGold:
-        if (auto target = getMoveTarget())
+        if (auto target = getMaybeMoveTarget())
         if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
         {
             if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
@@ -1617,7 +1785,7 @@ void Prime::iterate()
                     }
                     if (amountPutDown != 0)
                     {
-                        goldTransferState = Pushing;
+                        goldTransferState_view = Pushing;
                     }
                 }
                 else
@@ -1629,7 +1797,7 @@ void Prime::iterate()
         }
         break;
     case Build:
-        if (auto target = getMoveTarget())
+        if (auto target = getMaybeMoveTarget())
         {
             if (optional<vector2f> point = target->castToPoint())
             {
@@ -1667,7 +1835,7 @@ void Prime::iterate()
                         coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
                         if (builtAmount > 0)
                         {
-                            goldTransferState = Pushing;
+                            goldTransferState_view = Pushing;
                         }
                     }
                     else
@@ -1872,7 +2040,7 @@ void Fighter::iterate()
                 }
 
                 // same for moveTarget, but don't return to idle; just clear the var so the next if catches
-                if (auto moveTarget = getMoveTarget())
+                if (auto moveTarget = getMaybeMoveTarget())
                 {
                     if (!moveTarget->isStillValid(*game))
                     {
@@ -1881,7 +2049,7 @@ void Fighter::iterate()
                 }
 
                 // if we're not moving toward the target, do so
-                if (!getMoveTarget())
+                if (!getMaybeMoveTarget())
                 {
                     if (attackingGeneralTarget->type == Target::PointTarget)
                     {
@@ -1916,7 +2084,7 @@ void Fighter::iterate()
                 boost::shared_ptr<Unit> bestTarget;
                 float bestTargetPriority;
                 bool alreadyHadTarget = false;
-                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(getMoveTarget()->castToEntityPtr(*game)))
+                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(getMaybeMoveTarget()->castToEntityPtr(*game)))
                 {
                     bestTarget = unit;
                     bestTargetPriority = this->calcAttackPriority(unit);
@@ -1973,7 +2141,7 @@ void Fighter::iterate()
         }
         break;
         case AttackingSpecific:
-            if (auto target = getMoveTarget())
+            if (auto target = getMaybeMoveTarget())
             {
                 bool returnToIdle = false;
                 if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
@@ -2029,7 +2197,7 @@ float Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
     else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
     {
         float baseFighterPriority = 3;
-        if (auto otherFighterTarget = fighter->getMoveTarget())
+        if (auto otherFighterTarget = fighter->getMaybeMoveTarget())
         {
             if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
             {

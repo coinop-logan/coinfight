@@ -457,3 +457,55 @@ void Game::iterate()
         }
     }
 }
+
+bool gameStatesAreIdentical_triggerDebugIfNot(Game* game1, Game* game2)
+{
+    if (game1->frame != game2->frame
+     || game1->entities.size() != game2->entities.size()
+     || game1->players.size() != game2->players.size()
+       )
+    {
+        triggerDebug();
+        return false;
+    }
+    
+    for (unsigned int i=0; i<game1->players.size(); i++)
+    {
+        if (game1->players[i].address != game2->players[i].address)
+        {
+            triggerDebug();
+            return false;
+        }
+        if (game1->players[i].beaconAvailable != game2->players[i].beaconAvailable)
+        {
+            triggerDebug();
+            return false;
+        }
+        if (game1->players[i].credit.getInt() != game2->players[i].credit.getInt())
+        {
+            triggerDebug();
+            return false;
+        }
+    }
+
+    if (!entitiesAreIdentical_triggerDebugIfNot(game1->honeypotGoldPileIfGameStarted, game2->honeypotGoldPileIfGameStarted))
+    {
+        return false;
+    }
+
+    for (unsigned int i=0; i<game1->entities.size(); i++)
+    {
+        if (!entitiesAreIdentical_triggerDebugIfNot(game1->entities[i], game2->entities[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void triggerDebug()
+{
+    int a;
+    a = 3; // meant to be tagged in an IDE with a breakpoint.
+}

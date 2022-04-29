@@ -14,6 +14,8 @@
 #include "sigWrapper.h"
 #include "events.h"
 
+const bool SEND_REGULAR_RESYNCS = true;
+
 using namespace std;
 using namespace boost::asio::ip;
 
@@ -479,26 +481,33 @@ int main(int argc, char *argv[])
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
         {
-            switch (clientChannels[i]->state)
+            if (clientChannels[i]->state == ClientChannel::DoingHandshake)
             {
-                case ClientChannel::DoingHandshake:
-                    break;
+                continue;
+            }
 
-                case ClientChannel::ReadyForFirstSync:
-                    clientChannels[i]->sendResyncPacket();
-                    clientChannels[i]->sendFrameCmdsPacket(fcp);
+            if (clientChannels[i]->state == ClientChannel::Closed)
+            {
+                clientChannels.erase(clientChannels.begin()+i);
+                i--;
+                continue;
+            }
 
-                    clientChannels[i]->state = ClientChannel::UpToDate;
-                    break;
+            bool sendResync = SEND_REGULAR_RESYNCS ? (game.frame % 100 == 0) : false;
+            if (clientChannels[i]->state == ClientChannel::ReadyForFirstSync || sendResync)
+            {
+                clientChannels[i]->sendResyncPacket();
+                clientChannels[i]->state = ClientChannel::UpToDate;
+            }
 
-                case ClientChannel::UpToDate:
-                    clientChannels[i]->sendFrameCmdsPacket(fcp);
-                    break;
-
-                case ClientChannel::Closed:
-                    clientChannels.erase(clientChannels.begin()+i);
-                    i--;
-                    break;
+            if (clientChannels[i]->state == ClientChannel::UpToDate)
+            {
+                clientChannels[i]->sendFrameCmdsPacket(fcp);
+            }
+            else
+            {
+                cout << "Unexpected behavior in server regarding ClientChannel state. Unexpected state: ";
+                cout << (unsigned int)(clientChannels[i]->state) << endl;
             }
         }
 

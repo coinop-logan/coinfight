@@ -167,19 +167,20 @@ private:
 
     void tryMoveTowardPoint(vector2f, float);
 public:
+    float angle_view;
     float getRotation() const { return angle_view; };
     void moveWithVelocityAndUpdateCell(vector2f toAdd);
     void setMoveTarget(Target _target, float range);
     void clearMoveTarget();
     bool isIdle();
-    float angle_view;
     virtual float getMaxSpeed() const;
     vector2f getDesiredVelocity() const;
     vector2f getLastVelocity() const;
     virtual float getRange() const;
     virtual void onMoveCmd(vector2f moveTo);
 
-    optional<Target> getMoveTarget();
+    optional<Target> getMaybeMoveTarget();
+    optional<MoveTargetInfo> getMaybeMoveTargetInfo();
 
     void packMobileUnit(vch *destVch);
     void unpackMobileUnitAndMoveIter(vchIter *iter);
@@ -240,10 +241,9 @@ public:
         Scuttle
     } state;
 
-    GoldTransferState inGameTransferState;
-
     optional<EntityRef> maybeTargetEntity;
 
+    GoldTransferState inGameTransferState_view;
     void pack(vch *dest);
     void unpackAndMoveIter(vchIter *iter);
 
@@ -294,7 +294,7 @@ public:
         Build
     } state;
 
-    GoldTransferState goldTransferState;
+    GoldTransferState goldTransferState_view;
 
     unsigned char gonnabuildTypechar;
 
@@ -384,5 +384,7 @@ public:
 };
 
 boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar);
+
+bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, boost::shared_ptr<Entity> entity2);
 
 #endif // ENTITIES_H

@@ -147,16 +147,6 @@ public:
             vchIter place = receivedBytes.begin();
 
             receivedResyncs.push_back(Game(&place));
-            vch verifyData;
-
-            // // verify that if we pack we get the same data we received
-            // receivedResyncs.back().pack(&verifyData);
-            // cout << "BYTES RECEIVED:" << endl;
-            // debugOutputVch(receivedBytes);
-            // cout << endl;
-            // cout << "BYTES REPACKED:" << endl;
-            // debugOutputVch(verifyData);
-            // cout << endl;
             
             clearVchAndReceiveNextPacket();
         }
@@ -305,6 +295,8 @@ int main(int argc, char *argv[])
 
     ParticlesContainer particles;
 
+    Game replacedGameOnResync;
+
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())
     {
@@ -330,6 +322,11 @@ int main(int argc, char *argv[])
 
         if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
         {
+            // replacedGameOnResync = game;
+            if (!gameStatesAreIdentical_triggerDebugIfNot(&game, &receivedResyncs[0]))
+            {
+                cout << "Uh oh, I'm seeing some desyncs!" << endl;
+            }
             game = receivedResyncs[0];
             game.reassignEntityGamePointers();
 
