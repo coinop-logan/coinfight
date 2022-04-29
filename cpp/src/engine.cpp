@@ -70,11 +70,13 @@ void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntit
 void Player::pack(vch *dest)
 {
     packStringToVch(dest, address);
+    packBool(dest, beaconAvailable);
     credit.pack(dest);
 }
 void Player::unpackAndMoveIter(vchIter *iter)
 {
     *iter = unpackStringFromIter(*iter, 50, &address);
+    beaconAvailable = unpackBoolAndMoveIter(iter);
     credit = Coins(iter);
 }
 
