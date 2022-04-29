@@ -755,13 +755,13 @@ void MobileUnit::mobileUnitIterate()
 {
     desiredVelocity = vector2f(0,0);
 
-    if (maybeTargetInfo)
+    if (auto targetInfo = maybeTargetInfo)
     {
-        if (optional<vector2f> p = maybeTargetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        if (optional<vector2f> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
             float distanceSquared = (getPos() - *p).getMagnitudeSquared();
             // if we're "breaking a record" for closest to the point, set frustration to 0
-            if (distanceSquared <= maybeTargetInfo->closestDistanceSquared)
+            if (distanceSquared <= targetInfo->closestDistanceSquared)
             {
                 maybeTargetInfo->closestDistanceSquared = distanceSquared;
                 maybeTargetInfo->frustration = 0;
@@ -772,15 +772,27 @@ void MobileUnit::mobileUnitIterate()
                 maybeTargetInfo->frustration += MOBILEUNIT_FRUSTRATION_GROWTH_FACTOR;
             }
 
-            // this factors in frustration, so the unit eventually gives up.
-            // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
-            if (distanceSquared < pow(EPSILON + maybeTargetInfo->frustration, 2))
+            // different satisfaction criteria depending on target type
+            bool satisfied;
+            if (targetInfo->target.type == Target::PointTarget)
+            {
+                // this factors in frustration, so the unit eventually gives up.
+                // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
+                satisfied = (distanceSquared < pow(EPSILON + targetInfo->frustration, 2));
+            }
+            else
+            {
+                // but if the target is an entity, we don't really want the unit to ever give up.
+                satisfied = (distanceSquared < pow(EPSILON, 2));
+            }
+
+            if (satisfied)
             {
                 clearMoveTarget();
             }
             else
             {
-                tryMoveTowardPoint(*p, maybeTargetInfo->desiredRange);
+                tryMoveTowardPoint(*p, targetInfo->desiredRange);
             }
         }
         else
