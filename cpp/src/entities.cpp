@@ -1291,7 +1291,7 @@ void Prime::unpackAndMoveIter(vchIter *iter)
 Prime::Prime(int ownerId, vector2f pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring)
+      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState(NoGoldTransfer)
 {}
 Prime::Prime(vchIter *iter) : MobileUnit(iter),
                               heldGold(PRIME_MAX_GOLD_HELD)
