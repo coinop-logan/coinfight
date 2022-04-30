@@ -2,6 +2,7 @@
 #include <optional>
 #include "engine.h"
 #include "myvectors.h"
+#include "fixed.h"
 
 // void makeSure(bool condition) // hacky test function
 // {
@@ -17,9 +18,15 @@ using namespace std;
 
 int main()
 {
-    SearchGrid sGrid;
+    vch dest;
 
-    auto nearby = sGrid.nearbyEntitiesSloppyIncludingEmpty(vector2f(10,10), 500);
+    dest.clear();
+    float a = -241.59759;
+    cout << "original: " << a << endl;
+    packToVch(&dest, "d", a);
+    float a2;
+    unpackFromIter(dest.begin(), "d", &a2);
+    cout << "result: " << a2 << endl;
     
     return 0;
 }
