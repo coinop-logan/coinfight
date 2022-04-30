@@ -52,5 +52,13 @@ void packi32(unsigned char *buf, uint32_t i);
 void packi64(unsigned char *buf, uint64_t i);
 
 int8_t unpacki8(unsigned char *buf);
+int16_t unpacki16(unsigned char *buf);
+int32_t unpacki32(unsigned char *buf);
+int64_t unpacki64(unsigned char *buf);
+
+uint8_t unpacku8(unsigned char *buf);
+uint16_t unpacku16(unsigned char *buf);
+uint32_t unpacku32(unsigned char *buf);
+uint64_t unpacku64(unsigned char *buf);
 
 #endif // NETPACK_H
