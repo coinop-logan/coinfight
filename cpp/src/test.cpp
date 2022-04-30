@@ -1,8 +1,6 @@
 #include <iostream>
 #include <optional>
-#include "engine.h"
-#include "myvectors.h"
-#include "fixed.h"
+#include "netpack.h"
 
 // void makeSure(bool condition) // hacky test function
 // {
@@ -18,15 +16,22 @@ using namespace std;
 
 int main()
 {
-    vch dest;
+    NetballSpooler nbs;
 
-    dest.clear();
-    float a = -241.59759;
-    cout << "original: " << a << endl;
-    packToVch(&dest, "d", a);
-    float a2;
-    unpackFromIter(dest.begin(), "d", &a2);
-    cout << "result: " << a2 << endl;
+    int8_t a = 3;
+    int8_t b = -77;
+    int8_t c = 101;
+
+    nbs.pack(a);
+    nbs.pack(b);
+    nbs.pack(c);
+
+    NetballUnspooler nbu(nbs);
+
+    cout << (int)nbu.consumeInt8_t() << endl;
+    cout << (int)nbu.consumeInt8_t() << endl;
+    cout << (int)nbu.consumeInt8_t() << endl;
+    
     
     return 0;
 }
