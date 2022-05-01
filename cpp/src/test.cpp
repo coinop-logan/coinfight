@@ -18,23 +18,22 @@ int main()
 {
     NetballSpooler nbs;
 
-    uint8_t a = 254;
-    int16_t b = 32012;
-    int16_t c = -14312;
-    uint16_t d = 60422;
+    uint32_t a = 4294967291;
+    int32_t b = 2047483648;
+    int64_t c = -8223372036854775808;
+    uint64_t d = 18446744073709551610;
 
     nbs.pack(a);
-    // nbs.pack(b);
-    // nbs.pack(c);
-    // nbs.pack(d);
+    nbs.pack(b);
+    nbs.pack(c);
+    nbs.pack(d);
 
     NetballUnspooler nbu(nbs);
 
-    cout << (int)nbu.consumeUint8_t() << endl;
-    // cout << (int)nbu.consumeInt16_t() << endl;
-    // cout << (int)nbu.consumeInt16_t() << endl;
-    // cout << (int)nbu.consumeUint16_t() << endl;
-    
+    cout << (long long int)nbu.consumeUint32_t() << endl;
+    cout << (long long int)nbu.consumeInt32_t() << endl;
+    cout << (long long int)nbu.consumeInt64_t() << endl;
+    cout << (long long unsigned int)nbu.consumeUint64_t() << endl;
     
     return 0;
 }

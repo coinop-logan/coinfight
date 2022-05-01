@@ -32,6 +32,36 @@ void NetballSpooler::pack(uint8_t i)
     data.insert(data.end(), 1, 0);
     packi8(&(*(data.end() - 1)), i);
 }
+void NetballSpooler::pack(int16_t i)
+{
+    data.insert(data.end(), 2, 0);
+    packi16(&(*(data.end() - 2)), i);
+}
+void NetballSpooler::pack(uint16_t i)
+{
+    data.insert(data.end(), 2, 0);
+    packi16(&(*(data.end() - 2)), i);
+}
+void NetballSpooler::pack(int32_t i)
+{
+    data.insert(data.end(), 4, 0);
+    packi32(&(*(data.end() - 4)), i);
+}
+void NetballSpooler::pack(uint32_t i)
+{
+    data.insert(data.end(), 4, 0);
+    packi32(&(*(data.end() - 4)), i);
+}
+void NetballSpooler::pack(int64_t i)
+{
+    data.insert(data.end(), 8, 0);
+    packi64(&(*(data.end() - 8)), i);
+}
+void NetballSpooler::pack(uint64_t i)
+{
+    data.insert(data.end(), 8, 0);
+    packi64(&(*(data.end() - 8)), i);
+}
 
 int8_t NetballUnspooler::consumeInt8_t()
 {
@@ -45,8 +75,44 @@ uint8_t NetballUnspooler::consumeUint8_t()
     consumePos += 1;
     return i;
 }
+int16_t NetballUnspooler::consumeInt16_t()
+{
+    int16_t i = unpacki16(&(*(consumePos)));
+    consumePos += 2;
+    return i;
+}
+uint16_t NetballUnspooler::consumeUint16_t()
+{
+    uint16_t i = unpacku16(&(*(consumePos)));
+    consumePos += 2;
+    return i;
+}
+int32_t NetballUnspooler::consumeInt32_t()
+{
+    int32_t i = unpacki32(&(*(consumePos)));
+    consumePos += 4;
+    return i;
+}
+uint32_t NetballUnspooler::consumeUint32_t()
+{
+    uint32_t i = unpacku32(&(*(consumePos)));
+    consumePos += 4;
+    return i;
+}
+int64_t NetballUnspooler::consumeInt64_t()
+{
+    int64_t i = unpacki64(&(*(consumePos)));
+    consumePos += 8;
+    return i;
+}
+uint64_t NetballUnspooler::consumeUint64_t()
+{
+    uint64_t i = unpacku64(&(*(consumePos)));
+    consumePos += 8;
+    return i;
+}
 
-// now just need the rest of the int consume funcs
+
 
 void packi8(unsigned char *buf, uint8_t i)
 {
