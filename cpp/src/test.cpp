@@ -1,39 +1,29 @@
 #include <iostream>
 #include <optional>
 #include "netpack.h"
+#include "fixed.h"
 
-// void makeSure(bool condition) // hacky test function
-// {
-//     cout << (condition ? "PASSED" : "FAILED") << endl;
-// }
+void makeSure(bool condition) // hacky test function
+{
+    cout << (condition ? "PASSED" : "FAILED") << endl;
+}
 
-// void makeSure(string name, bool condition) // hacky test function
-// {
-//     cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
-// }
+void makeSure(string name, bool condition) // hacky test function
+{
+    cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
+}
 
 using namespace std;
 
 int main()
 {
-    NetballSpooler nbs;
-
-    uint32_t a = 4294967291;
-    int32_t b = 2047483648;
-    int64_t c = -8223372036854775808;
-    uint64_t d = 18446744073709551610;
-
-    nbs.pack(a);
-    nbs.pack(b);
-    nbs.pack(c);
-    nbs.pack(d);
-
-    NetballUnspooler nbu(nbs);
-
-    cout << (long long int)nbu.consumeUint32_t() << endl;
-    cout << (long long int)nbu.consumeInt32_t() << endl;
-    cout << (long long int)nbu.consumeInt64_t() << endl;
-    cout << (long long unsigned int)nbu.consumeUint64_t() << endl;
+    numeric::fixed<32, 32> f1(-92758934.3439243214374312431423);
+    Netpack::Builder d;
+    d.packInt64_t(f1.data_);
+    Netpack::Consumer c(d);
+    numeric::fixed<32, 32> f2;
+    f2.data_ = c.consumeInt64_t();
+    makeSure(f1==f2 && (d.getHexString() == "0xfa789c69a7f49340"));
     
     return 0;
 }

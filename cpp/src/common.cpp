@@ -29,14 +29,6 @@ void packTypechar(vch *dest, unsigned char typechar)
     packToVch(dest, "C", typechar);
 }
 
-void debugOutputVch(vch out)
-{
-    cout << "0x";
-    for (unsigned int i = 0; i < out.size(); i++)
-    {
-        cout << hex << (unsigned int)(out[i]);
-    }
-}
 void debugOutputVector(const char *label, vector2f v)
 {
     fprintf(stdout, "%s", label);
