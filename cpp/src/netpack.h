@@ -1,7 +1,6 @@
 #include <vector>
 #include <stdint.h>
 #include <string>
-#include "fixed.h"
 
 #ifndef NETPACK_H
 #define NETPACK_H
