@@ -1,7 +1,7 @@
 #include <iostream>
 #include <optional>
 #include "netpack.h"
-#include "fixed.h"
+#include "fpm/fixed.hpp"
 
 void makeSure(bool condition) // hacky test function
 {
@@ -17,13 +17,14 @@ using namespace std;
 
 int main()
 {
-    numeric::fixed<32, 32> f1(-92758934.3439243214374312431423);
+    fpm::fixed_16_16 f1(-6432.7466);
     Netpack::Builder d;
-    d.packInt64_t(f1.data_);
+    d.packInt32_t(f1.raw_value());
+    // cout << d.getHexString() << endl;
     Netpack::Consumer c(d);
-    numeric::fixed<32, 32> f2;
-    f2.data_ = c.consumeInt64_t();
-    makeSure(f1==f2 && (d.getHexString() == "0xfa789c69a7f49340"));
+    fpm::fixed_16_16 f2 = fpm::fixed_16_16::from_raw_value(c.consumeInt32_t());
+
+    makeSure(f1==f2 && (d.getHexString() == "0xe6df40df"));
     
     return 0;
 }
