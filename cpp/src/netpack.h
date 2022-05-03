@@ -28,6 +28,12 @@ namespace Netpack
         void packInt16_t(int16_t);
         void packInt32_t(int32_t);
         void packInt64_t(int64_t);
+
+        void packBool(bool);
+        void packStringWithoutSize(string);
+        void packStringWith16bitSize(string);
+
+        void prependWith64bitSize();
     };
 
     class Consumer
@@ -49,6 +55,10 @@ namespace Netpack
         int16_t consumeInt16_t();
         int32_t consumeInt32_t();
         int64_t consumeInt64_t();
+
+        bool consumeBool();
+        string consumeStringGivenSize(size_t size);
+        string consumeStringWith16bitSize();
     };
 
     void packi8(unsigned char *buf, uint8_t i);

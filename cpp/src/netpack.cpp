@@ -1,16 +1,12 @@
-#include "netpack.h"
 #include <sstream>
+#include <assert.h>
+#include <cstring>
+#include "netpack.h"
 
 namespace Netpack
 {
     Builder::Builder()
         : data() {}
-
-    Consumer::Consumer(vch data)
-        : data(data), consumePos(data.begin()) {}
-
-    Consumer::Consumer(const Builder &spooler)
-        : data(spooler.getVch()), consumePos(data.begin()) {}
 
     vch Builder::getVch() const
     {
@@ -76,6 +72,41 @@ namespace Netpack
         packi64(&(*(data.end() - 8)), i);
     }
 
+    void Builder::packBool(bool flag)
+    {
+        packUint8_t(flag ? 1 : 0);
+    }
+    void Builder::packStringWithoutSize(string s)
+    {
+        size_t size = s.size();
+        data.insert(data.end(), size, 0);
+        memcpy(&(*(data.end() - size)), s.c_str(), size);
+    }
+    void Builder::packStringWith16bitSize(string s)
+    {
+        uint16_t size = s.size();
+        assert(size == s.size()); // verify string size can fit in bits
+
+        packUint16_t(size);
+        packStringWithoutSize(s);
+    }
+
+    void Builder::prependWith64bitSize()
+    {
+        Builder sizePacket;
+        sizePacket.packUint64_t(data.size());
+
+        data.insert(data.begin(), sizePacket.data.begin(), sizePacket.data.end());
+    }
+
+
+
+    Consumer::Consumer(vch data)
+        : data(data), consumePos(data.begin()) {}
+
+    Consumer::Consumer(const Builder &spooler)
+        : data(spooler.getVch()), consumePos(data.begin()) {}
+
     int8_t Consumer::consumeInt8_t()
     {
         int8_t i = unpacki8(&(*(consumePos)));
@@ -123,6 +154,24 @@ namespace Netpack
         uint64_t i = unpacku64(&(*(consumePos)));
         consumePos += 8;
         return i;
+    }
+
+    bool Consumer::consumeBool()
+    {
+        return (bool)(consumeUint8_t());
+    }
+    string Consumer::consumeStringGivenSize(size_t size)
+    {
+        string s(&(*consumePos), &(*(consumePos + size)));
+
+        consumePos += size;
+        
+        return s;
+    }
+    string Consumer::consumeStringWith16bitSize()
+    {
+        uint16_t size = consumeUint16_t();
+        return consumeStringGivenSize(size);
     }
 
 

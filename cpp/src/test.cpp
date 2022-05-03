@@ -17,14 +17,20 @@ using namespace std;
 
 int main()
 {
-    fpm::fixed_16_16 f1(-6432.7466);
-    Netpack::Builder d;
-    d.packInt32_t(f1.raw_value());
-    // cout << d.getHexString() << endl;
-    Netpack::Consumer c(d);
-    fpm::fixed_16_16 f2 = fpm::fixed_16_16::from_raw_value(c.consumeInt32_t());
+    // fpm::fixed_16_16 f1(-6432.7466);
+    // Netpack::Builder d;
+    // d.packInt32_t(f1.raw_value());
+    // // cout << d.getHexString() << endl;
+    // Netpack::Consumer c(d);
+    // fpm::fixed_16_16 f2 = fpm::fixed_16_16::from_raw_value(c.consumeInt32_t());
 
-    makeSure(f1==f2 && (d.getHexString() == "0xe6df40df"));
+    // makeSure(f1==f2 && (d.getHexString() == "0xe6df40df"));
+
+    Netpack::Builder b;
+    b.packStringWith16bitSize(string("hi there!!!"));
+    Netpack::Consumer c(b);
+    string s2 = c.consumeStringWith16bitSize();
+    cout << s2 << endl;
     
     return 0;
 }
