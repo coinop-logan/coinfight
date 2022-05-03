@@ -1,6 +1,7 @@
 #include <vector>
 #include <stdint.h>
 #include <string>
+#include <optional>
 
 #ifndef NETPACK_H
 #define NETPACK_H
@@ -33,6 +34,20 @@ namespace Netpack
         void packStringWithoutSize(string);
         void packStringWith16bitSize(string);
 
+        template<typename T>
+        void packOptional(optional<T> optVal, void (*packFunc)(Netpack::Builder*, T))
+        {
+            if (auto val = optVal)
+            {
+                this->packBool(true);
+                packFunc(this, *val);
+            }
+            else
+            {
+                this->packBool(false);
+            }
+        }
+
         void prependWith64bitSize();
     };
 
@@ -59,6 +74,19 @@ namespace Netpack
         bool consumeBool();
         string consumeStringGivenSize(size_t size);
         string consumeStringWith16bitSize();
+
+        template<typename T>
+        optional<T> consumeOptional(T (*consumeFunc)(Netpack::Consumer*))
+        {
+            if (this->consumeBool())
+            {
+                return {consumeFunc(this)};
+            }
+            else
+            {
+                return {};
+            }
+        }
     };
 
     void packi8(unsigned char *buf, uint8_t i);

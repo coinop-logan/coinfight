@@ -1,7 +1,9 @@
 #include <iostream>
 #include <optional>
 #include "netpack.h"
+#include "common.h"
 #include "fpm/fixed.hpp"
+#include "fpm/ios.hpp"
 
 void makeSure(bool condition) // hacky test function
 {
@@ -53,6 +55,22 @@ int main()
     // auto wCmd2 = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd22);
     // makeSure((bool)wCmd2);
     // makeSure(wCmd2->amount == 5666);
+
+
+    Netpack::Builder b;
+    optional<fpm::fixed_16_16> optf1 = {fpm::fixed_16_16(0)};
+    optional<fpm::fixed_16_16> optf2 = {};
+
+    b.packOptional(optf1, packFixed32);
+    b.packOptional(optf2, packFixed32);
+
+    Netpack::Consumer c(b);
+
+    optional<fpm::fixed_16_16> optf3 = c.consumeOptional(consumeFixed32);
+    optional<fpm::fixed_16_16> optf4 = c.consumeOptional(consumeFixed32);
+
+    makeSure(optf1 == optf3);
+    makeSure(optf2 == optf4);
     
     return 0;
 }
