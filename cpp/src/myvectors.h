@@ -47,6 +47,7 @@ struct vector2fp
     vector2fp(fixed32 _x, fixed32 _y);
     vector2fp(const vector2fp &c);
     vector2fp(const vector2i &c);
+    static const vector2fp zero;
     vector2fp operator=(const vector2fp &c);
     bool operator==(const vector2fp &c) const;
     vector2fp operator+(const vector2fp &c) const;

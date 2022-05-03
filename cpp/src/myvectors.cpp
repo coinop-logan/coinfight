@@ -135,6 +135,7 @@ vector2fp::vector2fp(const vector2i &c)
     x = fixed32(c.x);
     y = fixed32(c.y);
 }
+const vector2fp vector2fp::zero = vector2fp(fixed32(0), fixed32(0));
 vector2fp vector2fp::operator=(const vector2fp &c)
 {
 	x = c.x;
