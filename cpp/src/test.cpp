@@ -57,20 +57,51 @@ int main()
     // makeSure(wCmd2->amount == 5666);
 
 
-    Netpack::Builder b;
-    optional<fpm::fixed_16_16> optf1 = {fpm::fixed_16_16(0)};
-    optional<fpm::fixed_16_16> optf2 = {};
+    // Netpack::Builder b;
+    // optional<fpm::fixed_16_16> optf1 = {fpm::fixed_16_16(0)};
+    // optional<fpm::fixed_16_16> optf2 = {};
 
-    b.packOptional(optf1, packFixed32);
-    b.packOptional(optf2, packFixed32);
+    // b.packOptional(optf1, packFixed32);
+    // b.packOptional(optf2, packFixed32);
+
+    // Netpack::Consumer c(b);
+
+    // optional<fpm::fixed_16_16> optf3 = c.consumeOptional(consumeFixed32);
+    // optional<fpm::fixed_16_16> optf4 = c.consumeOptional(consumeFixed32);
+
+    // makeSure(optf1 == optf3);
+    // makeSure(optf2 == optf4);
+
+
+    enum TestThing
+    {
+        Thing1,
+        Thing2
+    };
+    enum TestStuff
+    {
+        TestStuff1,
+        TestStuffies,
+        TestSterf
+    };
+
+    TestThing a1 = Thing1;
+    TestThing a2 = Thing2;
+    TestStuff a3 = TestStuffies;
+
+    Netpack::Builder b;
+    b.packEnum(a1);
+    b.packEnum(a2);
+    b.packEnum(a3);
 
     Netpack::Consumer c(b);
+    TestThing b1 = c.consumeEnum<TestThing>();
+    TestThing b2 = c.consumeEnum<TestThing>();
+    TestStuff b3 = c.consumeEnum<TestStuff>();
 
-    optional<fpm::fixed_16_16> optf3 = c.consumeOptional(consumeFixed32);
-    optional<fpm::fixed_16_16> optf4 = c.consumeOptional(consumeFixed32);
-
-    makeSure(optf1 == optf3);
-    makeSure(optf2 == optf4);
+    makeSure(a1 == b1);
+    makeSure(a2 == b2);
+    makeSure(a3 == b3);
     
     return 0;
 }

@@ -48,6 +48,12 @@ namespace Netpack
             }
         }
 
+        template<typename T>
+        void packEnum(T val)
+        {
+            packUint8_t((uint8_t)val);
+        }
+
         void prependWith64bitSize();
     };
 
@@ -86,6 +92,13 @@ namespace Netpack
             {
                 return {};
             }
+        }
+
+        template<typename T>
+        T consumeEnum()
+        {
+            uint8_t enumInt = consumeUint8_t();
+            return static_cast<T>(enumInt);
         }
     };
 
