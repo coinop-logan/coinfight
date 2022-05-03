@@ -15,14 +15,17 @@ void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
 
-void packFixed32(Netpack::Builder *dest, fixed32 val);
+void packFixed32(Netpack::Builder* to, fixed32 val);
 fixed32 consumeFixed32(Netpack::Consumer *from);
 
-void packVector2fp(Netpack::Builder *dest, const vector2fp &v);
-vector2fp consumeVector2f(Netpack::Consumer *from);
+void packVector2fp(Netpack::Builder* to, const vector2fp &v);
+vector2fp consumeVector2fp(Netpack::Consumer *from);
 
-void packEntityRef(Netpack::Builder *dest, EntityRef ref);
-EntityRef consumeEntityRef(Netpack::Consumer *from);
+void packEntityRef(Netpack::Builder* to, EntityRef ref);
+EntityRef consumeEntityRef(Netpack::Consumer* from);
+
+void packTypechar(Netpack::Builder* to, uint8_t typechar);
+uint8_t consumeTypechar(Netpack::Consumer* from);
 
 // std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 

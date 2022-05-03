@@ -10,6 +10,9 @@ using namespace std;
 
 extern const coinsInt MAX_COINS;
 
+void packCoinsInt(Netpack::Builder* to, coinsInt amount);
+coinsInt consumeCoinsInt(Netpack::Consumer* from);
+
 coinsInt weiDepositStringToCoinsInt(string weiString);
 string coinsIntToWeiDepositString(coinsInt coins);
 

@@ -4,6 +4,15 @@
 #include "coins.h"
 #include "netpack.h"
 
+void packCoinsInt(Netpack::Builder* to, coinsInt amount)
+{
+    to->packUint32_t(amount);
+}
+coinsInt consumeCoinsInt(Netpack::Consumer* from)
+{
+    return from->consumeUint32_t();
+}
+
 Coins::Coins()
     : heldAmount(0), max(MAX_COINS) {}
 
@@ -122,10 +131,10 @@ bool Coins::tryTransfer(coinsInt transferAmount, Coins* to)
 }
 
 Coins::Coins(Netpack::Consumer* from)
-    : heldAmount(from->consumeUint32_t())
+    : heldAmount(consumeCoinsInt(from))
 {}
 
-void Coins::pack(Netpack::Builder* dest)
+void Coins::pack(Netpack::Builder* to)
 {
-    dest->packUint32_t(heldAmount);
+    packCoinsInt(to, heldAmount);
 }

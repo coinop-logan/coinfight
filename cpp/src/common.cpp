@@ -21,33 +21,42 @@ void debugOutputVector(const char *label, vector3f v)
     fprintf(stdout, ": %f,%f,%f\n", v.x, v.y, v.z);
 }
 
-void packFixed32(Netpack::Builder *dest, fixed32 val)
+void packFixed32(Netpack::Builder* to, fixed32 val)
 {
-    dest->packInt32_t(val.raw_value());
+    to->packInt32_t(val.raw_value());
 }
 fixed32 consumeFixed32(Netpack::Consumer *from)
 {
     return fixed32::from_raw_value(from->consumeInt32_t());
 }
 
-void packVector2fp(Netpack::Builder *dest, const vector2fp &v)
+void packVector2fp(Netpack::Builder* to, const vector2fp &v)
 {
-    packFixed32(dest, v.x);
-    packFixed32(dest, v.y);
+    packFixed32(to, v.x);
+    packFixed32(to, v.y);
 }
-vector2fp consumeVector2f(Netpack::Consumer *from)
+vector2fp consumeVector2fp(Netpack::Consumer *from)
 {
     return vector2fp(consumeFixed32(from), consumeFixed32(from));
 }
 
 
-void packEntityRef(Netpack::Builder *dest, EntityRef ref)
+void packEntityRef(Netpack::Builder* to, EntityRef ref)
 {
-    dest->packUint16_t(ref);
+    to->packUint16_t(ref);
 }
 EntityRef consumeEntityRef(Netpack::Consumer *from)
 {
     return from->consumeUint16_t();
+}
+
+void packTypechar(Netpack::Builder* to, uint8_t typechar)
+{
+    to->packUint8_t(typechar);
+}
+uint8_t consumeTypechar(Netpack::Consumer* from)
+{
+    return from->consumeUint8_t();
 }
 
 // std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)

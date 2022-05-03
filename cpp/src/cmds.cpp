@@ -5,33 +5,32 @@
 
 using namespace std;
 
-boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter)
+boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
 {
-    unsigned char typechar;
-    *iter = unpackTypecharFromIter(*iter, &typechar);
+    uint8_t typechar = consumeTypechar(from);
 
     switch (typechar)
     {
     case CMD_MOVE_CHAR:
-        return boost::shared_ptr<Cmd>(new MoveCmd(iter));
+        return boost::shared_ptr<Cmd>(new MoveCmd(from));
     case CMD_PICKUP_CHAR:
-        return boost::shared_ptr<Cmd>(new PickupCmd(iter));
+        return boost::shared_ptr<Cmd>(new PickupCmd(from));
     case CMD_PUTDOWN_CHAR:
-        return boost::shared_ptr<Cmd>(new PutdownCmd(iter));
+        return boost::shared_ptr<Cmd>(new PutdownCmd(from));
     case CMD_GATEWAYBUILD_CHAR:
-        return boost::shared_ptr<Cmd>(new GatewayBuildCmd(iter));
+        return boost::shared_ptr<Cmd>(new GatewayBuildCmd(from));
     case CMD_WITHDRAW_CHAR:
-        return boost::shared_ptr<Cmd>(new WithdrawCmd(iter));
+        return boost::shared_ptr<Cmd>(new WithdrawCmd(from));
     case CMD_ATTACK_CHAR:
-        return boost::shared_ptr<Cmd>(new AttackGatherCmd(iter));
+        return boost::shared_ptr<Cmd>(new AttackGatherCmd(from));
     case CMD_PRIMEBUILD_CHAR:
-        return boost::shared_ptr<Cmd>(new PrimeBuildCmd(iter));
+        return boost::shared_ptr<Cmd>(new PrimeBuildCmd(from));
     case CMD_RESUMEBUILDING_CHAR:
-        return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(iter));
+        return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(from));
     case CMD_SPAWNBEACON_CHAR:
-        return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(iter));
+        return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(from));
     case CMD_SCUTTLE_CHAR:
-        return boost::shared_ptr<Cmd>(new ScuttleCmd(iter));
+        return boost::shared_ptr<Cmd>(new ScuttleCmd(from));
     }
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
@@ -47,25 +46,20 @@ string Cmd::getTypename()
 {
     throw runtime_error("getTypename is not defined for this command");
 }
-void Cmd::pack(vch *dest)
+void Cmd::pack(Netpack::Builder* to)
 {
     throw runtime_error("pack is not defined for the command '" + getTypename() + "'");
 }
-void Cmd::unpackAndMoveIter(vchIter *iter)
+
+void Cmd::packCmdBasics(Netpack::Builder* to)
 {
-    throw runtime_error("unpackAndMoveIter is not defined for the command '" + getTypename() + "'");
+    packTypechar(to, getTypechar());
 }
-
-void Cmd::packCmd(vch *dest) {}
-
-void Cmd::unpackCmdAndMoveIter(vchIter *iter) {}
 
 Cmd::Cmd() {}
 
-Cmd::Cmd(vchIter *iter)
-{
-    unpackCmdAndMoveIter(iter);
-}
+Cmd::Cmd(Netpack::Consumer* from)
+{}
 
 
 unsigned char WithdrawCmd::getTypechar()
@@ -76,21 +70,18 @@ string WithdrawCmd::getTypename()
 {
     return "WithdrawCmd";
 }
-void WithdrawCmd::pack(vch *dest)
+void WithdrawCmd::pack(Netpack::Builder* to)
 {
-    packCmd(dest);
-    packToVch(dest, "L", amount);
-}
-void WithdrawCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackFromIter(*iter, "L", &amount);
+    this->packCmdBasics(to);
+    packCoinsInt(to, amount);
 }
 WithdrawCmd::WithdrawCmd(coinsInt amount)
     : amount(amount)
 {}
-WithdrawCmd::WithdrawCmd(vchIter *iter)
+WithdrawCmd::WithdrawCmd(Netpack::Consumer* from)
+    : Cmd(from)
 {
-    unpackAndMoveIter(iter);
+    amount = consumeCoinsInt(from);
 }
 
 
@@ -117,50 +108,45 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
         }
     }
 }
-void SpawnBeaconCmd::pack(vch *dest)
-{
-    packCmd(dest);
-    packVector2f(dest, pos);
-}
-void SpawnBeaconCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackVector2f(*iter, &pos);
-}
-SpawnBeaconCmd::SpawnBeaconCmd(vector2f pos)
+
+SpawnBeaconCmd::SpawnBeaconCmd(vector2fp pos)
     : pos(pos)
 {}
-SpawnBeaconCmd::SpawnBeaconCmd(vchIter *iter)
+SpawnBeaconCmd::SpawnBeaconCmd(Netpack::Consumer* from)
+    : Cmd(from)
 {
-    unpackAndMoveIter(iter);
+    pos = consumeVector2fp(from);
+}
+void SpawnBeaconCmd::pack(Netpack::Builder* to)
+{
+    packCmdBasics(to);
+    packVector2fp(to, pos);
 }
 
 
-UnitCmd::UnitCmd(vector<EntityRef> unitRefs) : unitRefs(unitRefs) {}
-UnitCmd::UnitCmd(vchIter *iter)
-{
-    unpackUnitCmdAndMoveIter(iter);
-}
-void UnitCmd::packUnitCmd(vch *dest)
+UnitCmd::UnitCmd(vector<EntityRef> unitRefs)
+    : unitRefs(unitRefs)
+{}
+
+void UnitCmd::packUnitCmdBasics(Netpack::Builder* to)
 {
     if (unitRefs.size() > 65535)
     {
         throw runtime_error("too many units referenced in that command!");
     }
-    uint16_t numUnitRefs = unitRefs.size();
-    packToVch(dest, "H", numUnitRefs);
-    for (unsigned i = 0; i < numUnitRefs; i++)
+    to->packUint16_t(unitRefs.size());
+    for (unsigned i = 0; i < unitRefs.size(); i++)
     {
-        packEntityRef(dest, unitRefs[i]);
+        packEntityRef(to, unitRefs[i]);
     }
 }
-void UnitCmd::unpackUnitCmdAndMoveIter(vchIter *iter)
+UnitCmd::UnitCmd(Netpack::Consumer* from)
+    : Cmd(from)
 {
-    uint16_t numUnitRefs;
-    *iter = unpackFromIter(*iter, "H", &numUnitRefs);
+    uint16_t numUnitRefs = from->consumeInt16_t();
     for (unsigned i = 0; i < numUnitRefs; i++)
     {
-        EntityRef unitRef;
-        *iter = unpackEntityRef(*iter, &unitRef);
+        EntityRef unitRef = consumeEntityRef(from);
         unitRefs.push_back(unitRef);
     }
 }
@@ -210,15 +196,6 @@ string MoveCmd::getTypename()
 {
     return "MoveCmd";
 }
-void MoveCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packVector2f(dest, pos);
-}
-void MoveCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackVector2f(*iter, &pos);
-}
 
 void MoveCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
@@ -232,10 +209,17 @@ void MoveCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-MoveCmd::MoveCmd(vector<EntityRef> units, vector2f pos) : UnitCmd(units), pos(pos) {}
-MoveCmd::MoveCmd(vchIter *iter) : UnitCmd(iter)
+MoveCmd::MoveCmd(vector<EntityRef> units, vector2fp pos)
+    : UnitCmd(units), pos(pos) {}
+void MoveCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packVector2fp(to, pos);
+}
+MoveCmd::MoveCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    pos = consumeVector2fp(from);
 }
 
 unsigned char PickupCmd::getTypechar()
@@ -245,15 +229,6 @@ unsigned char PickupCmd::getTypechar()
 string PickupCmd::getTypename()
 {
     return "PickupCmd";
-}
-void PickupCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packEntityRef(dest, goldRef);
-}
-void PickupCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &goldRef);
 }
 void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
@@ -267,10 +242,17 @@ void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-PickupCmd::PickupCmd(vector<EntityRef> units, EntityRef goldRef) : UnitCmd(units), goldRef(goldRef) {}
-PickupCmd::PickupCmd(vchIter *iter) : UnitCmd(iter)
+PickupCmd::PickupCmd(vector<EntityRef> units, EntityRef goldRef)
+    : UnitCmd(units), goldRef(goldRef) {}
+void PickupCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packEntityRef(to, goldRef);
+}
+PickupCmd::PickupCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    goldRef = consumeEntityRef(from);
 }
 
 unsigned char PutdownCmd::getTypechar()
@@ -280,15 +262,6 @@ unsigned char PutdownCmd::getTypechar()
 string PutdownCmd::getTypename()
 {
     return "PutdownCmd";
-}
-void PutdownCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    target.pack(dest);
-}
-void PutdownCmd::unpackAndMoveIter(vchIter *iter)
-{
-    target = Target(iter);
 }
 
 void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -303,11 +276,16 @@ void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         cout << "That's not a prime!!" << endl;
 }
 
-PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target) : UnitCmd(units), target(target) {}
-PutdownCmd::PutdownCmd(vchIter *iter) : UnitCmd(iter), target((EntityRef)0) // will be overwritten
+PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target)
+    : UnitCmd(units), target(target) {}
+void PutdownCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    target.pack(to);
 }
+PutdownCmd::PutdownCmd(Netpack::Consumer* from)
+    : UnitCmd(from), target(from)
+{}
 
 unsigned char GatewayBuildCmd::getTypechar()
 {
@@ -316,15 +294,6 @@ unsigned char GatewayBuildCmd::getTypechar()
 string GatewayBuildCmd::getTypename()
 {
     return "GatewayBuildCmd";
-}
-void GatewayBuildCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packTypechar(dest, buildTypechar);
-}
-void GatewayBuildCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackTypecharFromIter(*iter, &buildTypechar);
 }
 
 void GatewayBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -341,11 +310,15 @@ void GatewayBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
 GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, unsigned char buildTypechar)
     : UnitCmd(units), buildTypechar(buildTypechar) {}
-
-GatewayBuildCmd::GatewayBuildCmd(vchIter *iter)
-    : UnitCmd(iter)
+void GatewayBuildCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packTypechar(to, buildTypechar);
+}
+GatewayBuildCmd::GatewayBuildCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    buildTypechar = consumeTypechar(from);
 }
 
 unsigned char PrimeBuildCmd::getTypechar()
@@ -355,17 +328,6 @@ unsigned char PrimeBuildCmd::getTypechar()
 string PrimeBuildCmd::getTypename()
 {
     return "PrimeBuildCmd";
-}
-void PrimeBuildCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packTypechar(dest, buildTypechar);
-    packVector2f(dest, buildPos);
-}
-void PrimeBuildCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackTypecharFromIter(*iter, &buildTypechar);
-    *iter = unpackVector2f(*iter, &buildPos);
 }
 
 void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -380,13 +342,19 @@ void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, unsigned char buildTypechar, vector2f buildPos)
+PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, unsigned char buildTypechar, vector2fp buildPos)
     : UnitCmd(units), buildTypechar(buildTypechar), buildPos(buildPos) {}
-
-PrimeBuildCmd::PrimeBuildCmd(vchIter *iter)
-    : UnitCmd(iter)
+void PrimeBuildCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packTypechar(to, buildTypechar);
+    packVector2fp(to, buildPos);
+}
+PrimeBuildCmd::PrimeBuildCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    buildTypechar = consumeTypechar(from);
+    buildPos = consumeVector2fp(from);
 }
 
 unsigned char AttackGatherCmd::getTypechar()
@@ -396,15 +364,6 @@ unsigned char AttackGatherCmd::getTypechar()
 string AttackGatherCmd::getTypename()
 {
     return "AttackGatherCmd";
-}
-void AttackGatherCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    target.pack(dest);
-}
-void AttackGatherCmd::unpackAndMoveIter(vchIter *iter)
-{
-    target = Target(iter);
 }
 
 void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -425,11 +384,14 @@ void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 AttackGatherCmd::AttackGatherCmd(vector<EntityRef> units, Target target)
     : UnitCmd(units), target(target)
 {}
-AttackGatherCmd::AttackGatherCmd(vchIter *iter)
-    : UnitCmd(iter), target((EntityRef)0)
+void AttackGatherCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    target.pack(to);
 }
+AttackGatherCmd::AttackGatherCmd(Netpack::Consumer* from)
+    : UnitCmd(from), target(from)
+{}
 
 unsigned char ResumeBuildingCmd::getTypechar()
 {
@@ -438,15 +400,6 @@ unsigned char ResumeBuildingCmd::getTypechar()
 string ResumeBuildingCmd::getTypename()
 {
     return "ResumeBuildingCmd";
-}
-void ResumeBuildingCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packEntityRef(dest, targetUnit);
-}
-void ResumeBuildingCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &targetUnit);
 }
 
 void ResumeBuildingCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -460,10 +413,15 @@ void ResumeBuildingCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 ResumeBuildingCmd::ResumeBuildingCmd(vector<EntityRef> units, EntityRef targetUnit)
     : UnitCmd(units), targetUnit(targetUnit)
 {}
-ResumeBuildingCmd::ResumeBuildingCmd(vchIter *iter)
-    : UnitCmd(iter)
+void ResumeBuildingCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packEntityRef(to, targetUnit);
+}
+ResumeBuildingCmd::ResumeBuildingCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    targetUnit = consumeEntityRef(from);
 }
 
 unsigned char ScuttleCmd::getTypechar()
@@ -473,15 +431,6 @@ unsigned char ScuttleCmd::getTypechar()
 string ScuttleCmd::getTypename()
 {
     return "ScuttleCmd";
-}
-void ScuttleCmd::pack(vch *dest)
-{
-    packUnitCmd(dest);
-    packEntityRef(dest, targetUnit);
-}
-void ScuttleCmd::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackEntityRef(*iter, &targetUnit);
 }
 
 void ScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
@@ -503,8 +452,13 @@ void ScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 ScuttleCmd::ScuttleCmd(vector<EntityRef> units, EntityRef targetUnit)
     : UnitCmd(units), targetUnit(targetUnit)
 {}
-ScuttleCmd::ScuttleCmd(vchIter *iter)
-    : UnitCmd(iter)
+void ScuttleCmd::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packUnitCmdBasics(to);
+    packEntityRef(to, targetUnit);
+}
+ScuttleCmd::ScuttleCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    targetUnit = consumeEntityRef(from);
 }

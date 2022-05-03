@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string>
-#include "vchpack.h"
+#include "netpack.h"
 #include "myvectors.h"
 #include "engine.h"
 #include "config.h"
@@ -9,9 +9,6 @@
 #define CMDS_H
 
 using namespace std;
-
-using vch = vector<unsigned char>;
-using vchIter = vector<unsigned char>::iterator;
 
 const unsigned char CMD_MOVE_CHAR = 0;
 const unsigned char CMD_PICKUP_CHAR = 1;
@@ -28,15 +25,15 @@ struct Cmd
 {
     virtual string getTypename();
     virtual unsigned char getTypechar();
-    virtual void pack(vch *dest);
-    virtual void unpackAndMoveIter(vchIter *iter);
+    virtual void pack(Netpack::Builder* to);
 
-    void packCmd(vch *dest);
-    void unpackCmdAndMoveIter(vchIter *iter);
+    void packCmdBasics(Netpack::Builder* to);
 
     Cmd();
-    Cmd(vchIter *);
+    Cmd(Netpack::Consumer*);
 };
+
+boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from);
 
 struct AuthdCmd
 {
@@ -51,29 +48,25 @@ struct WithdrawCmd : public Cmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder* to);
 
     WithdrawCmd(coinsInt amount);
-    WithdrawCmd(vchIter *iter);
+    WithdrawCmd(Netpack::Consumer* from);
 };
 
 struct SpawnBeaconCmd : public Cmd
 {
-    vector2f pos;
+    vector2fp pos;
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder* to);
 
     void executeAsPlayer(Game* game, string playerAddress);
 
-    SpawnBeaconCmd(vector2f pos);
-    SpawnBeaconCmd(vchIter *iter);
+    SpawnBeaconCmd(vector2fp pos);
+    SpawnBeaconCmd(Netpack::Consumer* from);
 };
-
-boost::shared_ptr<Cmd> unpackFullCmdAndMoveIter(vchIter *iter);
 
 struct UnitCmd : public Cmd
 {
@@ -83,26 +76,24 @@ struct UnitCmd : public Cmd
     void executeAsPlayer(Game *, string userAddress);
     virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
 
-    void packUnitCmd(vch *dest);
-    void unpackUnitCmdAndMoveIter(vchIter *iter);
+    void packUnitCmdBasics(Netpack::Builder* to);
 
     UnitCmd(vector<EntityRef> entityRefs);
-    UnitCmd(vchIter *iter);
+    UnitCmd(Netpack::Consumer* from);
 };
 
 struct MoveCmd : public UnitCmd
 {
-    vector2f pos;
+    vector2fp pos;
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    MoveCmd(vector<EntityRef> unitRefs, vector2f pos);
-    MoveCmd(vchIter *iter);
+    MoveCmd(vector<EntityRef> unitRefs, vector2fp pos);
+    MoveCmd(Netpack::Consumer* from);
 };
 
 struct PickupCmd : public UnitCmd
@@ -111,13 +102,12 @@ struct PickupCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     PickupCmd(vector<EntityRef>, EntityRef);
-    PickupCmd(vchIter *iter);
+    PickupCmd(Netpack::Consumer* from);
 };
 
 struct PutdownCmd : public UnitCmd
@@ -126,13 +116,12 @@ struct PutdownCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     PutdownCmd(vector<EntityRef>, Target);
-    PutdownCmd(vchIter *iter);
+    PutdownCmd(Netpack::Consumer* from);
 };
 
 struct GatewayBuildCmd : public UnitCmd
@@ -141,29 +130,27 @@ struct GatewayBuildCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     GatewayBuildCmd(vector<EntityRef>, unsigned char buildTypechar);
-    GatewayBuildCmd(vchIter *iter);
+    GatewayBuildCmd(Netpack::Consumer* from);
 };
 
 struct PrimeBuildCmd : public UnitCmd
 {
     unsigned char buildTypechar;
-    vector2f buildPos;
+    vector2fp buildPos;
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    PrimeBuildCmd(vector<EntityRef>, unsigned char buildTypechar, vector2f buildPos);
-    PrimeBuildCmd(vchIter *iter);
+    PrimeBuildCmd(vector<EntityRef>, unsigned char buildTypechar, vector2fp buildPos);
+    PrimeBuildCmd(Netpack::Consumer* from);
 };
 
 struct AttackGatherCmd : public UnitCmd
@@ -172,13 +159,12 @@ struct AttackGatherCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     AttackGatherCmd(vector<EntityRef>, Target);
-    AttackGatherCmd(vchIter *iter);
+    AttackGatherCmd(Netpack::Consumer* from);
 };
 
 struct ResumeBuildingCmd : public UnitCmd
@@ -187,13 +173,12 @@ struct ResumeBuildingCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     ResumeBuildingCmd(vector<EntityRef>, EntityRef);
-    ResumeBuildingCmd(vchIter *iter);
+    ResumeBuildingCmd(Netpack::Consumer* from);
 };
 
 struct ScuttleCmd : public UnitCmd
@@ -202,13 +187,12 @@ struct ScuttleCmd : public UnitCmd
 
     unsigned char getTypechar();
     string getTypename();
-    void pack(vch *);
-    void unpackAndMoveIter(vchIter *);
+    void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     ScuttleCmd(vector<EntityRef>, EntityRef);
-    ScuttleCmd(vchIter *iter);
+    ScuttleCmd(Netpack::Consumer* from);
 };
 
 #endif // CMDS_H
