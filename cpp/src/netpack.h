@@ -70,6 +70,7 @@ namespace Netpack
         }
 
         void prependWith64bitSize();
+        void prependWith16bitSize();
     };
 
     class Consumer

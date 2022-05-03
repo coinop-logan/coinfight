@@ -98,6 +98,13 @@ namespace Netpack
 
         data.insert(data.begin(), sizePacket.data.begin(), sizePacket.data.end());
     }
+    void Builder::prependWith16bitSize()
+    {
+        Builder sizePacket;
+        sizePacket.packUint16_t(data.size());
+
+        data.insert(data.begin(), sizePacket.data.begin(), sizePacket.data.end());
+    }
 
 
 

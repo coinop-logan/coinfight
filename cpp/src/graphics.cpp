@@ -80,7 +80,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
     sf::Color backgroundCirclesColor(60, 0, 150);
     sf::Color backgroundSpokeEndColor(backgroundCirclesColor);
     backgroundSpokeEndColor.a = 50;
-    vector2f centerOfMapScreenPos = gamePosToScreenPos(camera, vector2f(0,0));
+    vector2fl centerOfMapScreenPos = gamePosToScreenPos(camera, vector2fp::zero);
 
     sf::CircleShape circle(1, 40);
     circle.setFillColor(sf::Color::Transparent);
@@ -108,11 +108,11 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
             for (unsigned int i=0; i<numSpokes; i++)
             {
                 float angle = ((float)i / numSpokes) * 2 * M_PI;
-                vector2f from = gamePosToScreenPos(camera, composeVector2f(angle, radius));
-                vector2f to = gamePosToScreenPos(camera, composeVector2f(angle, nextRadius));
+                vector2fl from = gamePosToScreenPos(camera, vector2fp(composeVector2fl(angle, radius)));
+                vector2fl to = gamePosToScreenPos(camera, vector2fp(composeVector2fl(angle, nextRadius)));
 
-                lines[i*2].position = sf::Vector2f(from.x, from.y);
-                lines[i*2+1].position = sf::Vector2f(to.x, to.y);
+                lines[i*2].position = toSFVec(from);
+                lines[i*2+1].position = toSFVec(to);
                 lines[i*2].color = backgroundCirclesColor;
                 lines[i*2+1].color = backgroundSpokeEndColor;
 
@@ -126,10 +126,10 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
 
 float unitDrawRotation(boost::shared_ptr<Unit> unit)
 {
-    return -unit->getRotation();
+    return -unit->getRotation_view();
 }
 
-void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2f drawPos)
+void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
 {
     float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
     float height = width * .4;
@@ -157,7 +157,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
 
 const sf::Color unitOutlineColor(100, 100, 100);
 
-void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, unsigned int alpha)
+void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -173,7 +173,7 @@ void drawBeacon(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor,
     window->draw(innerRect);
 }
 
-void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor, unsigned int alpha)
+void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
 
@@ -190,7 +190,7 @@ void drawGateway(sf::RenderWindow *window, vector2f drawPos, sf::Color teamColor
     drawBeacon(window, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2f drawPos, float drawRotation, unsigned int alpha)
+void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl drawPos, float drawRotation, unsigned int alpha)
 {
     sf::Transform transform = sf::Transform();
     transform.translate(drawPos.x, drawPos.y);
@@ -200,12 +200,12 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     sf::Color mainPrimeColor(teamColor.r, teamColor.g, teamColor.b, alpha);
 
     float borderThickness = 2;
-    float primeCavityRadius = PRIME_RADIUS - borderThickness;
+    float primeCavityRadius = static_cast<float>(PRIME_RADIUS) - borderThickness;
 
     sf::VertexArray wingPoints(sf::Triangles, 3);
-    wingPoints[0].position = sf::Vector2f(0, PRIME_RADIUS);
-    wingPoints[1].position = sf::Vector2f(-PRIME_RADIUS*1.4, PRIME_RADIUS);
-    wingPoints[2].position = toSFVec(composeVector2f(0.8 * M_PI, PRIME_RADIUS));
+    wingPoints[0].position = sf::Vector2f(0, static_cast<float>(PRIME_RADIUS));
+    wingPoints[1].position = sf::Vector2f(-static_cast<float>(PRIME_RADIUS)*1.4, static_cast<float>(PRIME_RADIUS));
+    wingPoints[2].position = toSFVec(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
     wingPoints[0].color = wingPoints[1].color = wingPoints[2].color = mainPrimeColor;
     window->draw(wingPoints, transform);
 
@@ -227,7 +227,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
 
     window->draw(thickBorder, transform);
 
-    float heldGoldRatio = prime->getHeldGoldRatio();
+    float heldGoldRatio = static_cast<float>(prime->getHeldGoldRatio());
     if (heldGoldRatio > 0)
     {
         float innerGoldRadius = 0.5 + (sqrt(heldGoldRatio) * (primeCavityRadius - 0.5));
@@ -281,7 +281,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     // window->draw(lines, transform);
 }
 
-void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -302,7 +302,7 @@ void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf:
     sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
     gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
     gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
-    gunBarrelPoints[2].position = sf::Vector2f(FIGHTER_SHOT_OFFSET.x, FIGHTER_SHOT_OFFSET.y);
+    gunBarrelPoints[2].position = toSFVec(FIGHTER_SHOT_OFFSET);
     gunBarrelPoints[0].color = fadedBarrelColor;
     gunBarrelPoints[1].color = fadedBarrelColor;
     gunBarrelPoints[2].color = fadedBarrelColor;
@@ -344,15 +344,15 @@ void drawFighter(sf::RenderWindow *window, vector2f drawPos, float rotation, sf:
     window->draw(lines, transform);
 }
 
-void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2f drawPos)
+void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
 {
     sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
-    float drawRotation = -unit->getRotation();
+    float drawRotation = -unit->getRotation_view();
 
     unsigned int fadedAlpha;
     if (!unit->isActive())
     {
-        fadedAlpha = unit->getBuiltRatio() * 0.8 * 255;
+        fadedAlpha = static_cast<float>(unit->getBuiltRatio()) * 0.8 * 255;
     }
     else
     {
@@ -397,7 +397,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vect
     }
 }
 
-vector2i scaledDownGamePosWithZCorrection(vector2f gamePos, float scaleDownFactor)
+vector2i scaledDownGamePosWithZCorrection(vector2fl gamePos, float scaleDownFactor)
 {
     return vector2i(
         (gamePos.x > 0 ?
@@ -413,13 +413,13 @@ vector2i scaledDownGamePosWithZCorrection(vector2f gamePos, float scaleDownFacto
 
 void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, int viewingPlayerIdOrNegativeOne, float zoomOutFactor)
 {
-    vector2i minimapPos = scaledDownGamePosWithZCorrection(entity->getPos(), zoomOutFactor);
+    vector2i minimapPos = scaledDownGamePosWithZCorrection(vector2fl(entity->getPos()), zoomOutFactor);
     minimapPos.y *= -1;
 
     sf::RectangleShape pixel(sf::Vector2f(1,1));
 
     pixel.setOrigin(sf::Vector2f(0.5, 0.5));
-    pixel.setPosition(toSFVec(minimapPos + screenCenter));
+    pixel.setPosition(sf::Vector2f(toSFVec(minimapPos + screenCenter)));
     pixel.setFillColor(entity->getTeamOrPrimaryColor());
 
     window->draw(pixel);
@@ -475,10 +475,10 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
     }
 }
 
-Particle::Particle(vector2f pos, Target target, sf::Color color)
+Particle::Particle(vector2fl pos, Target target, sf::Color color)
     : pos(pos), velocity(randomVectorWithMagnitude(3)), target(target), color(color), dead(false)
 {}
-FadingParticle::FadingParticle(vector2f pos, Target target, sf::Color color, bool fadeOut)
+FadingParticle::FadingParticle(vector2fl pos, Target target, sf::Color color, bool fadeOut)
     : Particle(pos, target, color), startPos(pos), fadeOut(fadeOut)
 {}
 
@@ -486,7 +486,7 @@ void Particle::iterate(const Game &game)
 {
     if (auto targetPos = target.getPointUnlessTargetDeleted(game))
     {
-        vector2f toTarget = *targetPos - pos;
+        vector2fl toTarget = vector2fl(*targetPos) - pos;
         if (toTarget.getMagnitude() < 10)
         {
             dead = true;
@@ -505,7 +505,7 @@ void Particle::drawWithColor(sf::RenderWindow *window, CameraState camera, sf::C
 {
     sf::RectangleShape pixel(sf::Vector2f(2,2));
     pixel.setOrigin(1,1);
-    vector2i drawPos = gamePosToScreenPos(camera, pos);
+    vector2i drawPos = gamePosToScreenPos(camera, vector2fp(pos));
     pixel.setPosition(drawPos.x, drawPos.y);
     pixel.setFillColor(whichColor);
 
@@ -519,7 +519,7 @@ void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
 {
     if (auto targetPoint = target.castToPoint())
     {
-        float progressRatio = (pos - *targetPoint).getMagnitudeSquared() / (startPos - *targetPoint).getMagnitudeSquared();
+        float progressRatio = (pos - vector2fl(*targetPoint)).getMagnitudeSquared() / (startPos - vector2fl(*targetPoint)).getMagnitudeSquared();
         float alphaFloat = this->fadeOut ? (1-progressRatio) : progressRatio;
         int alphaInt = alphaFloat * 255;
 
@@ -533,7 +533,7 @@ void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
     }
 }
 
-LineParticle::LineParticle(vector2f from, vector2f to, sf::Color color, int lifetime)
+LineParticle::LineParticle(vector2fl from, vector2fl to, sf::Color color, int lifetime)
     : from(from), to(to), color(color), lifetime(lifetime), timeLeft(lifetime), dead(false)
 {}
 void LineParticle::iterate()
@@ -545,8 +545,8 @@ void LineParticle::iterate()
 void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
 {
     sf::VertexArray lines(sf::Lines, 2);
-    vector2i drawFrom = gamePosToScreenPos(camera, from);
-    vector2i drawTo = gamePosToScreenPos(camera, to);
+    vector2i drawFrom = gamePosToScreenPos(camera, vector2fp(from));
+    vector2i drawTo = gamePosToScreenPos(camera, vector2fp(to));
     lines[0].position = sf::Vector2f(drawFrom.x, drawFrom.y);
     lines[1].position = sf::Vector2f(drawTo.x, drawTo.y);
 
@@ -818,14 +818,14 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             }
         }
 
-        vector2f entityPos = game->entities[i]->getPos();
+        vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
             sf::Text aboveText(displayAboveCoins->getDollarString(), mainFont, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
-            vector2f textGamePos = entityPos + vector2f(0, 30);
-            vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+            vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(30));
+            vector2fl textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
             aboveText.setFillColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
@@ -844,8 +844,8 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
             sf::Text belowText(displayBelowCoins->getDollarString(), mainFont, 16);
             sf::FloatRect textRec = belowText.getLocalBounds();
 
-            vector2f textGamePos = entityPos + vector2f(0, -20);
-            vector2f textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+            vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(-20));
+            vector2fl textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
 
             belowText.setFillColor(sf::Color(200, 200, 255));
             belowText.setOrigin(textRec.width / 2, textRec.height / 2);
@@ -885,15 +885,15 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
     float lineHeight = 12;
     float allLinesHeight = lineHeight * cmdNameLines.size();
     float topLineYFromCenter = - allLinesHeight / 2;
-    vector2f boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
+    vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
     for (unsigned int i=0; i<cmdNameLines.size(); i++)
     {
         sf::Text lineText(cmdNameLines[i], mainFont, 12);
 
         float width = lineText.getGlobalBounds().width;
         float lineXFromCenter = - width / 2;
-        vector2f positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
-        vector2f position = drawPos + boxCenter + positionFromCenter;
+        vector2fl positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
+        vector2fl position = drawPos + boxCenter + positionFromCenter;
         lineText.setPosition(sf::Vector2f(position.x, position.y));
 
         lineText.setFillColor(mainColor);
@@ -923,7 +923,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2f(10, screenDimensions.y - (hotkeyHelpBoxHeight + 10));
+    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, screenDimensions.y - (hotkeyHelpBoxHeight + 10));
 
     sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
     hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
@@ -1047,9 +1047,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         {
                             if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
-                                if (optional<vector2f> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
+                                if (optional<vector2fp> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
-                                    vector2f targetPos = *maybeTargetPos;
+                                    vector2fl targetPos(*maybeTargetPos);
                                     particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->getRefOrThrow()), sf::Color::Yellow)));
                                 }
                             }
@@ -1058,7 +1058,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         {
                             if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(prime->getPos(), *primeTarget, sf::Color::Yellow)));
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
                             }
                         }
                     }
@@ -1075,12 +1075,12 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                 break;
                                 case Pushing:
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(gateway->getPos(), Target(targetEntity), sf::Color::Yellow)));
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
                                 }
                                 break;
                                 case Pulling:
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetEntity->getPos(), Target(gateway), sf::Color::Yellow)));
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
                                 }
                                 break;
                             }
@@ -1095,22 +1095,23 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     {
                         if (auto fighterTarget = fighter->getMaybeMoveTarget())
                         {
-                            if (optional<vector2f> targetPos = fighterTarget->getPointUnlessTargetDeleted(*game))
+                            if (optional<vector2fp> targetPosFp = fighterTarget->getPointUnlessTargetDeleted(*game))
                             {
-                                vector2f relativeShotStartPos;
+                                vector2fl targetPos(*targetPosFp);
+                                vector2fl relativeShotStartPos;
                                 if (fighter->animateShot == Fighter::Left)
                                 {
                                     relativeShotStartPos = FIGHTER_SHOT_OFFSET;
                                 }
                                 else
                                 {
-                                    vector2f reversedShotOffset(FIGHTER_SHOT_OFFSET);
+                                    vector2fl reversedShotOffset(FIGHTER_SHOT_OFFSET);
                                     reversedShotOffset.y *= -1;
                                     relativeShotStartPos = reversedShotOffset;
                                 }
-                                vector2f rotated = relativeShotStartPos.rotated(fighter->angle_view);
-                                vector2f final = fighter->getPos() + rotated;
-                                boost::shared_ptr<LineParticle> line(new LineParticle(final, *targetPos, sf::Color::Red, 8));
+                                vector2fl rotated = relativeShotStartPos.rotated(fighter->getRotation_view());
+                                vector2fl final = vector2fl(fighter->getPos()) + rotated;
+                                boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, sf::Color::Red, 8));
                                 particles->addLineParticle(line);
                             }
                         }

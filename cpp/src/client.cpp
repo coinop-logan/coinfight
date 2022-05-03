@@ -20,9 +20,13 @@
 #include "input.h"
 #include "packets.h"
 #include "events.h"
+#include "netpack.h"
 
 using namespace std;
 using namespace boost::asio::ip;
+
+using vch = vector<unsigned char>;
+using vchIter = vch::iterator;
 
 Game game;
 
@@ -31,17 +35,13 @@ UI ui;
 vector<FrameEventsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
 
-void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
+vch buildCmdPacket(boost::shared_ptr<Cmd> cmd)
 {
-    dest->clear();
+    Netpack::Builder packet;
+    cmd->pack(&packet);
+    packet.prependWith16bitSize();
 
-    packTypechar(dest, cmd->getTypechar());
-    cmd->pack(dest);
-
-    vch prepended;
-    packToVch(&prepended, "H", (uint16_t)(dest->size()));
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
+    return packet.getVch();
 }
 
 class ConnectionHandler
@@ -95,11 +95,10 @@ public:
     {
         if (!error)
         {
-            vchIter place = receivedBytes.begin();
+            Netpack::Consumer typecharAndSizeData(receivedBytes);
 
-            unsigned char packetTypechar;
-            uint64_t size;
-            unpackFromIter(place, "CQ", &packetTypechar, &size);
+            uint8_t packetTypechar = typecharAndSizeData.consumeUint8_t();
+            uint64_t size = typecharAndSizeData.consumeUint64_t();
 
             switch (packetTypechar)
             {
@@ -144,9 +143,9 @@ public:
     {
         if (!error)
         {
-            vchIter place = receivedBytes.begin();
+            Netpack::Consumer data(receivedBytes);
 
-            receivedResyncs.push_back(Game(&place));
+            receivedResyncs.push_back(Game(&data));
             
             clearVchAndReceiveNextPacket();
         }
@@ -163,9 +162,9 @@ public:
         }
         else
         {
-            vchIter place = receivedBytes.begin();
+            Netpack::Consumer data(receivedBytes);
 
-            receivedFrameCmdsPackets.push_back(FrameEventsPacket(&place));
+            receivedFrameCmdsPackets.push_back(FrameEventsPacket(&data));
 
             clearVchAndReceiveNextPacket();
         }
@@ -174,8 +173,7 @@ public:
     void sendCmd(boost::shared_ptr<Cmd> cmd)
     {
         packetsToSend.push_back(new vch);
-
-        clearVchAndBuildCmdPacket(packetsToSend.back(), cmd);
+        *packetsToSend.back() = buildCmdPacket(cmd);
 
         sendNextPacketIfNotBusy();
     }
@@ -333,28 +331,28 @@ int main(int argc, char *argv[])
             receivedResyncs.erase(receivedResyncs.begin());
         }
 
-        FrameEventsPacket fcp = receivedFrameCmdsPackets[0];
+        FrameEventsPacket fep = receivedFrameCmdsPackets[0];
         receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
 
-        assert(fcp.frame == game.frame);
+        assert(fep.frame == game.frame);
 
         // go through events
-        for (unsigned int i = 0; i < fcp.events.size(); i++)
+        for (unsigned int i = 0; i < fep.events.size(); i++)
         {
-            fcp.events[i]->execute(&game);
+            fep.events[i]->execute(&game);
         }
 
         // go through cmds
-        for (unsigned int i = 0; i < fcp.authdCmds.size(); i++)
+        for (unsigned int i = 0; i < fep.authdCmds.size(); i++)
         {
-            auto cmd = fcp.authdCmds[i]->cmd;
+            auto cmd = fep.authdCmds[i]->cmd;
             if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
             {
-                unitCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+                unitCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
             }
             else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
             {
-                spawnBeaconCmd->executeAsPlayer(&game, fcp.authdCmds[i]->playerAddress);
+                spawnBeaconCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
             }
             else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
             {
@@ -380,9 +378,9 @@ int main(int argc, char *argv[])
         }
 
         // check for game start cmd, and do some ux prep if we got one
-        // for (unsigned int i=0; i<fcp.events.size(); i++)
+        // for (unsigned int i=0; i<fep.events.size(); i++)
         // {
-        //     if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fcp.events[i]))
+        //     if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fep.events[i]))
         //     {
         //         if (playerIdOrNegativeOne >= 0)
         //         {

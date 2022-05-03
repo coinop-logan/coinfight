@@ -14,7 +14,7 @@ bool isShiftPressed()
 UI::UI()
     : spawnBeaconInterfaceCmdWithState(boost::shared_ptr<InterfaceCmd>(new SpawnBeaconInterfaceCmd))
 {
-    camera.gamePos = vector2f(0, 0);
+    camera.gamePos = vector2fl(0, 0);
     debugInt = 0;
     cmdState = Default;
     minimapEnabled = false;
@@ -140,17 +140,17 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
     return {};
 }
 
-vector2f screenPosToGamePos(CameraState cameraState, vector2i screenPos)
+vector2fp screenPosToGamePos(CameraState cameraState, vector2i screenPos)
 {
     vector2i screenPosFromCenter = screenPos - screenCenter;
-    vector2f result = cameraState.gamePos + vector2f(screenPosFromCenter.x, -screenPosFromCenter.y);
+    vector2fp result = cameraState.gamePos + vector2fl(screenPosFromCenter.x, -screenPosFromCenter.y);
 
     return result;
 }
 
-vector2i gamePosToScreenPos(CameraState cameraState, vector2i gamePos)
+vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos)
 {
-    vector2f subtractedFromCamera = gamePos - cameraState.gamePos;
+    vector2fl subtractedFromCamera = vector2fl(gamePos) - cameraState.gamePos;
     subtractedFromCamera.y *= -1;
     vector2i result = subtractedFromCamera + screenCenter;
     return result;
@@ -167,9 +167,9 @@ vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
 
 Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i screenPos)
 {
-    vector2f gamePos = screenPosToGamePos(cameraState, screenPos);
+    vector2fp gamePos = screenPosToGamePos(cameraState, screenPos);
 
-    vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, 100);
+    vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, fixed32(100));
 
     boost::shared_ptr<Entity> closestValidEntity;
     float closestValidEntityDistance;
@@ -180,7 +180,7 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
         {
             if (e->collidesWithPoint(gamePos))
             {
-                float distance = (gamePos - e->getPos()).getMagnitude();
+                float distance = static_cast<float>((gamePos - e->getPos()).getMagnitude());
                 if (!closestValidEntity || distance < closestValidEntityDistance)
                 {
                     closestValidEntity = e;
@@ -201,7 +201,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     {
         return boost::shared_ptr<Cmd>();
     }
-    if (optional<vector2f> point = target.castToPoint())
+    if (optional<vector2fp> point = target.castToPoint())
     {
         return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), *point));
     }
@@ -218,7 +218,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
         {
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                if (unit->getBuiltRatio() < 1)
+                if (unit->getBuiltRatio() < fixed32(1))
                 {
                     vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
                     return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), unit->getRefOrThrow()));
@@ -269,7 +269,7 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
     return boost::shared_ptr<GatewayBuildCmd>();
 }
 
-boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, unsigned char buildUnitTypechar, vector2f buildPos)
+boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, unsigned char buildUnitTypechar, vector2fl buildPos)
 {
     auto selectedPrimes = filterForType<Prime, Unit>(selectedUnits);
     if (selectedPrimes.size() > 0)
@@ -278,10 +278,12 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
         float bestDistanceSquared;
         for (unsigned int i=0; i<selectedPrimes.size(); i++)
         {
+            vector2fl primePos(selectedPrimes[i]->getPos());
+
             if (!bestChoice)
             {
                 bestChoice = selectedPrimes[i];
-                bestDistanceSquared = (selectedPrimes[i]->getPos() - buildPos).getMagnitudeSquared();
+                bestDistanceSquared = (primePos - buildPos).getMagnitudeSquared();
                 continue;
             }
 
@@ -289,7 +291,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
             if (selectedPrimes[i]->state == Prime::Build)
                 continue;
 
-            float distanceSquared = (selectedPrimes[i]->getPos() - buildPos).getMagnitudeSquared();
+            float distanceSquared = (primePos - buildPos).getMagnitudeSquared();
             if (distanceSquared < bestDistanceSquared)
             {
                 bestChoice = selectedPrimes[i];
@@ -299,7 +301,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
 
         vector<EntityRef> onlyOnePrime;
         onlyOnePrime.push_back(bestChoice->getRefOrThrow());
-        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, buildPos));
+        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, vector2fp(buildPos)));
     }
     return boost::shared_ptr<PrimeBuildCmd>();
 }
@@ -340,7 +342,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
             {
                 if (ui->maybeSelectionBoxStart)
                 {
-                    vector2f mousePos = mouseButtonToVec(event.mouseButton);
+                    vector2fl mousePos = mouseButtonToVec(event.mouseButton);
                     if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
                     {
                         vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
@@ -384,7 +386,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                             {
                                 if (unit->ownerId == playerIdOrNeg1)
                                 {
-                                    if (selectionRectGameCoords.contains(sf::Vector2i(unit->getPos().x, unit->getPos().y)))
+                                    if (selectionRectGameCoords.contains(toSFVec(vector2i(unit->getPos()))))
                                     {
                                         ui->selectedUnits.push_back(unit);
                                     }
@@ -409,7 +411,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     break;
                     case UI::SpawnBeacon:
                     {
-                        vector2f spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
+                        vector2fp spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
 
                         cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
                         ui->cmdState = UI::Default;
@@ -434,7 +436,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                     case UI::Build:
                     {
                         vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                        vector2f buildPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
+                        vector2fl buildPos(screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton)));
                         cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos));
                         if (!isShiftPressed())
                         {
@@ -450,6 +452,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                         {
                         if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                         {
+                            vector2fl targetEntityPos(targetEntity->getPos());
+
                             vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
                             vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
                             // auto gatewaysAndPrimes = gatewaysInSelection;
@@ -462,14 +466,16 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                 float bestGatewayDistanceSquared;
                                 for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
                                 {
+                                    vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
+
                                     if (!bestChoice)
                                     {
                                         bestChoice = gatewaysInSelection[i];
-                                        bestGatewayDistanceSquared = (gatewaysInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
+                                        bestGatewayDistanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
                                     }
                                     else
                                     {
-                                        float distanceSquared = (gatewaysInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
+                                        float distanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
                                         if (distanceSquared < bestGatewayDistanceSquared)
                                         {
                                             bestChoice = gatewaysInSelection[i];
@@ -483,14 +489,16 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, i
                                     float bestPrimeDistanceSquared;
                                     for (unsigned int i=0; i<primesInSelection.size(); i++)
                                     {
+                                        vector2fl primePos(primesInSelection[i]->getPos());
+
                                         if (!bestChoice)
                                         {
                                             bestChoice = primesInSelection[i];
-                                            bestPrimeDistanceSquared = (primesInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
+                                            bestPrimeDistanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
                                         }
                                         else
                                         {
-                                            float distanceSquared = (primesInSelection[i]->getPos() - targetEntity->getPos()).getMagnitudeSquared();
+                                            float distanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
                                             if (distanceSquared < bestPrimeDistanceSquared)
                                             {
                                                 bestChoice = primesInSelection[i];

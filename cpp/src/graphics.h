@@ -14,32 +14,34 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
+const vector2fl FIGHTER_SHOT_OFFSET(20, 10);
+
 struct Particle
 {
-    vector2f pos;
-    vector2f velocity;
+    vector2fl pos;
+    vector2fl velocity;
     Target target;
     sf::Color color;
     bool dead;
-    Particle(vector2f pos, Target target, sf::Color color);
+    Particle(vector2fl pos, Target target, sf::Color color);
     void iterate(const Game &game);
     void drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color color);
     void draw(sf::RenderWindow *window, CameraState camera);
 };
 struct FadingParticle : public Particle
 {
-    vector2f startPos;
+    vector2fl startPos;
     bool fadeOut;
-    FadingParticle(vector2f pos, Target target, sf::Color color, bool fadeOut);
+    FadingParticle(vector2fl pos, Target target, sf::Color color, bool fadeOut);
     void draw(sf::RenderWindow *window, CameraState camera);
 };
 struct LineParticle
 {
-    vector2f from, to;
+    vector2fl from, to;
     sf::Color color;
     int lifetime, timeLeft;
     bool dead;
-    LineParticle(vector2f from, vector2f to, sf::Color color, int lifetime);
+    LineParticle(vector2fl from, vector2fl to, sf::Color color, int lifetime);
     void iterate();
     void draw(sf::RenderWindow *window, CameraState camera);
 };

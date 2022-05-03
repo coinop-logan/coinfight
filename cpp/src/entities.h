@@ -35,7 +35,7 @@ public:
     virtual string getTypeName() const;
     virtual void iterate();
     virtual sf::Color getTeamOrPrimaryColor();
-    virtual fixed32 getRotation() const { return fixed32(0); }
+    virtual float getRotation_view() const { return 0; }
     virtual vector<Coins*> getDroppableCoins();
     void die();
 
@@ -109,7 +109,7 @@ public:
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
-    virtual fixed32 getRotation() const { return fixed32(0);}
+    virtual float getRotation_view() const { return 0;}
 
     void packUnitBasics(Netpack::Builder* to);
     Unit(int, coinsInt, uint16_t, vector2fp);
@@ -331,7 +331,6 @@ const fixed32 FIGHTER_SIGHT_RANGE(250);
 const int FIGHTER_SHOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;
 const fixed32 FIGHTER_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
-const vector2fp FIGHTER_SHOT_OFFSET(fixed32(20), fixed32(10));
 
 class Fighter : public MobileUnit
 {

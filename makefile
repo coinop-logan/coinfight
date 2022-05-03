@@ -28,7 +28,7 @@ prep-server:
 	cp web3-api-key bin/web3-api-key
 	cp package-assets/server/* bin/
 
-client: pre-build client-build bin/coinfight_local
+client: pre-build client-build #bin/coinfight_local
 
 server: pre-build server-build prep-server
 
@@ -41,7 +41,7 @@ main-build: server-build client-build bin/coinfight_local prep-server
 
 server-build: bin/server
 
-client-build: bin/client bin/coinfight_local
+client-build: bin/client #bin/coinfight_local
 	cp assets/Andale_Mono.ttf bin/
 
 package-client:
@@ -50,13 +50,13 @@ package-client:
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o
+bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
-bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o
+bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
-bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o
+bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
 
 bin/test: cpp/obj/test.o cpp/obj/netpack.o cpp/obj/coins.o cpp/obj/common.o cpp/obj/myvectors.o
