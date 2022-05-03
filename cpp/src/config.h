@@ -5,7 +5,7 @@
 #include "myvectors.h"
 
 using EntityRef = uint16_t;
-using coinsInt = unsigned long;
+using coinsInt = uint32_t;
 
 const std::string SERVER_IP_DEFAULT = "18.206.114.77";
 const unsigned int MAIN_PORT = 8473;
@@ -13,7 +13,7 @@ const unsigned int MAIN_PORT = 8473;
 const unsigned int ESCAPE_TO_QUIT_TICKS = 70;
 const unsigned int ESCAPE_TO_QUIT_TEXT_LIFE = 30;
 
-const unsigned long MAX_COINS = UINT32_MAX;
+const coinsInt MAX_COINS = UINT32_MAX;
 
 const float EPSILON = 0.00001;
 

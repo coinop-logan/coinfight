@@ -1,14 +1,12 @@
 #include <algorithm>
 #include <SFML/Graphics.hpp>
 #include "config.h"
+#include "netpack.h"
 
 #ifndef COINS_H
 #define COINS_H
 
 using namespace std;
-using vch = vector<unsigned char>;
-using vchIter = vector<unsigned char>::iterator;
-using coinsInt = unsigned long;
 
 extern const coinsInt MAX_COINS;
 
@@ -29,14 +27,13 @@ public:
     sf::String getDollarString();
     Coins();
     Coins(coinsInt);
-    Coins(vchIter*);
+    Coins(Netpack::Consumer*);
     coinsInt getSpaceLeft();
     bool createMoreByFiat(coinsInt);
     bool destroySomeByFiat(coinsInt);
     coinsInt transferUpTo(coinsInt, Coins*);
     bool tryTransfer(coinsInt, Coins*);
-    void pack(vch*);
-    void unpackAndMoveIter(vchIter*);
+    void pack(Netpack::Builder*);
 };
 
 #endif // COINS_H

@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include "coins.h"
-#include "vchpack.h"
+#include "netpack.h"
 
 Coins::Coins()
     : heldAmount(0), max(MAX_COINS) {}
@@ -28,29 +28,29 @@ string coinsIntToWeiDepositString(coinsInt coins)
     return weiString;
 }
 
-unsigned long Coins::deductUpTo(unsigned long deductAmount)
+coinsInt Coins::deductUpTo(coinsInt deductAmount)
 {
     if (tryDeduct(deductAmount))
         return deductAmount;
     else
     {
-        unsigned long deducted = heldAmount;
+        coinsInt deducted = heldAmount;
         heldAmount = 0;
         return deducted;
     }
 }
-unsigned long Coins::addUpTo(unsigned long addAmount)
+coinsInt Coins::addUpTo(coinsInt addAmount)
 {
     if (tryAdd(addAmount))
         return addAmount;
     else
     {
-        unsigned long added = getSpaceLeft();
+        coinsInt added = getSpaceLeft();
         heldAmount = max;
         return added;
     }
 }
-bool Coins::tryDeduct(unsigned long deductAmount)
+bool Coins::tryDeduct(coinsInt deductAmount)
 {
     if (deductAmount > heldAmount)
         return false;
@@ -60,7 +60,7 @@ bool Coins::tryDeduct(unsigned long deductAmount)
         return true;
     }
 }
-bool Coins::tryAdd(unsigned long addAmount)
+bool Coins::tryAdd(coinsInt addAmount)
 {
     if (addAmount > getSpaceLeft())
         return false;
@@ -84,22 +84,22 @@ sf::String Coins::getDollarString()
     snprintf(buf, 100, "$%.2f", dollars);
     return sf::String(buf);
 }
-unsigned long Coins::getSpaceLeft()
+coinsInt Coins::getSpaceLeft()
 {
     return max - heldAmount;
 }
-bool Coins::createMoreByFiat(unsigned long createAmount)
+bool Coins::createMoreByFiat(coinsInt createAmount)
 {
     return tryAdd(createAmount);
 }
-bool Coins::destroySomeByFiat(unsigned long destroyAmount)
+bool Coins::destroySomeByFiat(coinsInt destroyAmount)
 {
     return tryDeduct(destroyAmount);
 }
-unsigned long Coins::transferUpTo(unsigned long transferAmount, Coins* to)
+coinsInt Coins::transferUpTo(coinsInt transferAmount, Coins* to)
 {
-    unsigned long maxPossible = min(this->heldAmount, to->getSpaceLeft());
-    unsigned long finalTransferAmount = min(maxPossible, transferAmount);
+    coinsInt maxPossible = min(this->heldAmount, to->getSpaceLeft());
+    coinsInt finalTransferAmount = min(maxPossible, transferAmount);
     if (this->tryDeduct(finalTransferAmount) && to->tryAdd(finalTransferAmount))
     {
         return finalTransferAmount;
@@ -107,9 +107,9 @@ unsigned long Coins::transferUpTo(unsigned long transferAmount, Coins* to)
     else
         throw logic_error("Unexpected mathematical error during Coins::transferUpTo");
 }
-bool Coins::tryTransfer(unsigned long transferAmount, Coins* to)
+bool Coins::tryTransfer(coinsInt transferAmount, Coins* to)
 {
-    unsigned long maxPossible = min(this->heldAmount, to->getSpaceLeft());
+    coinsInt maxPossible = min(this->heldAmount, to->getSpaceLeft());
     if (transferAmount > maxPossible)
         return false;
     else
@@ -121,18 +121,11 @@ bool Coins::tryTransfer(unsigned long transferAmount, Coins* to)
     }
 }
 
-using vch = vector<unsigned char>;
-using vchIter = vector<unsigned char>::iterator;
+Coins::Coins(Netpack::Consumer* from)
+    : heldAmount(from->consumeUint32_t())
+{}
 
-Coins::Coins(vchIter *iter)
+void Coins::pack(Netpack::Builder* dest)
 {
-    unpackAndMoveIter(iter);
-}
-void Coins::pack(vch *dest)
-{
-    packToVch(dest, "L", heldAmount);
-}
-void Coins::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackFromIter(*iter, "L", &heldAmount);
+    dest->packUint32_t(heldAmount);
 }
