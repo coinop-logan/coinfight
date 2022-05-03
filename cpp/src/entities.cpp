@@ -1,6 +1,9 @@
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include "engine.h"
 #include "entities.h"
+#include "fpm/math.hpp"
 
 
 
@@ -27,28 +30,7 @@
 
 
 
-void Target::pack(vch *dest)
-{
-    packToVch(dest, "C", (unsigned char)(type));
-
-    packVector2f(dest, pointTarget);
-    packEntityRef(dest, entityTarget);
-}
-void Target::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    type = static_cast<Type>(enumInt);
-
-    *iter = unpackVector2f(*iter, &pointTarget);
-    *iter = unpackEntityRef(*iter, &entityTarget);
-}
-
-Target::Target(vchIter *iter)
-{
-    unpackAndMoveIter(iter);
-}
-Target::Target(vector2f _pointTarget)
+Target::Target(vector2fp _pointTarget)
 {
     type = PointTarget;
     pointTarget = _pointTarget;
@@ -56,11 +38,23 @@ Target::Target(vector2f _pointTarget)
 Target::Target(EntityRef _entityTarget)
 {
     type = EntityTarget;
-    pointTarget = vector2f(0, 0);
+    pointTarget = vector2fp::zero;
     entityTarget = _entityTarget;
 }
 Target::Target(boost::shared_ptr<Entity> entity)
     : Target(entity->getRefOrThrow()) {}
+void Target::pack(Netpack::Builder* to)
+{
+    to->packEnum(type);
+    packVector2fp(to, pointTarget);
+    packEntityRef(to, entityTarget);
+}
+Target::Target(Netpack::Consumer* from)
+{
+    type = from->consumeEnum<Target::Type>();
+    pointTarget = consumeVector2fp(from);
+    entityTarget = consumeEntityRef(from);
+}
 
 bool Target::isStillValid(const Game &game)
 {
@@ -68,7 +62,7 @@ bool Target::isStillValid(const Game &game)
         (type == PointTarget) ||
         (maybeEntityRefToPtrOrNull(game, {entityTarget}) != NULL);
 }
-optional<vector2f> Target::getPointUnlessTargetDeleted(const Game &game)
+optional<vector2fp> Target::getPointUnlessTargetDeleted(const Game &game)
 {
     if (type == PointTarget)
         return {pointTarget};
@@ -90,7 +84,7 @@ optional<EntityRef> Target::castToEntityRef()
     }
 }
 
-optional<vector2f> Target::castToPoint()
+optional<vector2fp> Target::castToPoint()
 {
     if (type == PointTarget)
     {
@@ -334,7 +328,7 @@ boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game& game, optional<E
     }
 }
 
-unsigned char getMaybeNullEntityTypechar(boost::shared_ptr<Entity> e)
+uint8_t getMaybeNullEntityTypechar(boost::shared_ptr<Entity> e)
 {
     if (e)
         return e->typechar();
@@ -390,15 +384,15 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
 // ------------------------------------------------------------------------------
 
 
-vector2f Entity::getPos() const
+vector2fp Entity::getPos() const
 {
     return pos;
 }
-float Entity::getRadius() const
+fixed32 Entity::getRadius() const
 {
     throw runtime_error("getRadius() has not been defined for " + getTypeName() + ".\n");
 }
-void Entity::setPosAndUpdateCell(vector2f newPos)
+void Entity::setPosAndUpdateCell(vector2fp newPos)
 {
     pos = newPos;
     getGameOrThrow()->searchGrid.updateEntityCellRelation(this);
@@ -456,7 +450,7 @@ string Entity::getTypeName() const
     throw runtime_error("getTypeName() has not been defined for this unit.\n");
 }
 
-bool Entity::collidesWithPoint(vector2f point)
+bool Entity::collidesWithPoint(vector2fp point)
 {
     return (pos - point).getMagnitude() <= ENTITY_COLLIDE_RADIUS;
 }
@@ -469,35 +463,22 @@ sf::Color Entity::getTeamOrPrimaryColor()
 {
     throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypeName() + ".\n");
 }
-void Entity::pack(vch *dest)
+void Entity::pack(Netpack::Builder* to)
 {
     throw runtime_error("pack() has not been defined for " + getTypeName() + ".\n");
 }
-void Entity::unpackAndMoveIter(vchIter *iter, Game &game)
-{
-    throw runtime_error("unpackMoveIter() has not been defined for " + getTypeName() + ".\n");
-}
-void Entity::packEntity(vch *destVch)
-{
-    packToVch(destVch, "C", (unsigned char)dead);
-
-    packVector2f(destVch, pos);
-}
-void Entity::unpackEntityAndMoveIter(vchIter *iter)
-{
-    unsigned char deadChar;
-    *iter = unpackFromIter(*iter, "C", &deadChar);
-    dead = (bool)deadChar;
-
-    *iter = unpackVector2f(*iter, &pos);
-}
-Entity::Entity(vector2f pos) : pos(pos),
-                               dead(false)
-                               
+Entity::Entity(vector2fp pos) : pos(pos),
+                                dead(false)
 {}
-Entity::Entity(vchIter *iter)
+void Entity::packEntityBasics(Netpack::Builder* to)
 {
-    unpackEntityAndMoveIter(iter);
+    to->packBool(dead);
+    packVector2fp(to, pos);
+}
+Entity::Entity(Netpack::Consumer* from)
+{
+    dead = from->consumeBool();
+    pos = consumeVector2fp(from);
 }
 void Entity::die()
 {
@@ -536,30 +517,30 @@ vector<Coins*> GoldPile::getDroppableCoins()
 {
     return vector<Coins*>{&gold};
 }
-void GoldPile::pack(vch *dest)
+void GoldPile::pack(Netpack::Builder* to)
 {
-    packEntity(dest);
-    gold.pack(dest);
+    packEntityBasics(to);
+    gold.pack(to);
 }
-void GoldPile::unpackAndMoveIter(vchIter *iter)
+void GoldPile::unpackAndMoveIter(Netpack::Consumer* from)
 {
-    gold = Coins(iter);
+    gold = Coins(from);
 }
 sf::Color GoldPile::getTeamOrPrimaryColor()
 {
     return sf::Color(sf::Color::Yellow);
 }
 
-GoldPile::GoldPile(vector2f pos) : Entity(pos),
+GoldPile::GoldPile(vector2fp pos) : Entity(pos),
                                    gold(MAX_COINS)
 {}
-GoldPile::GoldPile(vchIter *iter) : Entity(iter),
+GoldPile::GoldPile(Netpack::Consumer* from) : Entity(from),
                                     gold(MAX_COINS)
 {
-    unpackAndMoveIter(iter);
+    unpackAndMoveIter(from);
 }
 
-float GoldPile::getRadius() const { return 10; }
+fixed32 GoldPile::getRadius() const { return fixed32(10); }
 unsigned char GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() const { return "GoldPile"; }
 void GoldPile::iterate()
@@ -604,35 +585,24 @@ uint16_t Unit::getMaxHealth() const
 {
     throw runtime_error("getMaxHeatlh() has not been defined for " + getTypeName() + ".");
 }
-void Unit::packUnit(vch *destVch)
-{
-    packEntity(destVch);
 
-    packToVch(destVch, "C", (unsigned char)ownerId);
-    packToVch(destVch, "H", health);
-
-    goldInvested.pack(destVch);
-}
-
-void Unit::unpackUnitAndMoveIter(vchIter *iter)
-{
-    unsigned char ownerIdChar;
-    *iter = unpackFromIter(*iter, "C", &ownerIdChar);
-    ownerId = ownerIdChar;
-
-    *iter = unpackFromIter(*iter, "H", &health);
-
-    goldInvested = Coins(iter);
-}
-
-Unit::Unit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+Unit::Unit(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Entity(pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
-
-Unit::Unit(vchIter *iter)
-    : Entity(iter),
-      goldInvested((coinsInt)0) // will get overwritten in unpack below
+void Unit::packUnitBasics(Netpack::Builder* to)
 {
-    unpackUnitAndMoveIter(iter);
+    packEntityBasics(to);
+
+    to->packUint8_t(ownerId);
+    to->packUint16_t(health);
+    goldInvested.pack(to);
+}
+Unit::Unit(Netpack::Consumer* from)
+    : Entity(from),
+      goldInvested((coinsInt)0) // will get overwritten with consume below
+{
+    ownerId = from->consumeUint8_t();
+    health = from->consumeUint16_t();
+    goldInvested = Coins(from);
 }
 
 coinsInt Unit::build(coinsInt attemptedAmount, Coins *fromCoins)
@@ -657,9 +627,9 @@ coinsInt Unit::getBuilt()
 {
     return goldInvested.getInt();
 }
-float Unit::getBuiltRatio()
+fixed32 Unit::getBuiltRatio()
 {
-    return (float)getBuilt() / getCost();
+    return (fixed32)getBuilt() / getCost();
 }
 
 bool Unit::isActive()
@@ -683,7 +653,7 @@ sf::Color Unit::getTeamColor()
     else
         return sf::Color(150, 150, 150);
 }
-void Unit::unitIterate() {}
+void Unit::iterateUnitBasics() {}
 void Unit::takeHit(uint16_t damage)
 {
     if (damage >= health)
@@ -722,24 +692,20 @@ uint16_t Unit::getHealth() { return health; }
 
 
 
-void Building::packBuilding(vch *destVch)
+void Building::packBuildingBasics(Netpack::Builder* to)
 {
-    packUnit(destVch);
-}
-void Building::unpackBuildingAndMoveIter(vchIter *iter)
-{
+    packUnitBasics(to);
 }
 
-Building::Building(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
+Building::Building(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Unit(ownerId, totalCost, health, pos) {}
-Building::Building(vchIter *iter) : Unit(iter)
-{
-    unpackBuildingAndMoveIter(iter);
-}
+Building::Building(Netpack::Consumer* from)
+    : Unit(from)
+    {}
 
-void Building::buildingIterate()
+void Building::iterateBuildingBasics()
 {
-    unitIterate();
+    iterateUnitBasics();
 }
 
 
@@ -765,94 +731,78 @@ void Building::buildingIterate()
 // ------------------------------------------------------------------------------
 
 
-void MoveTargetInfo::pack(vch *dest)
-{
-    target.pack(dest);
-    packToVch(dest, "fff", desiredRange, closestDistanceSquared, frustration);
-}
-void MoveTargetInfo::unpackAndMoveIter(vchIter *iter)
-{
-    target = Target(iter);
-    *iter = unpackFromIter(*iter, "fff", &desiredRange, &closestDistanceSquared, &frustration);
-}
-MoveTargetInfo::MoveTargetInfo(Target target, float desiredRange, float closestDistanceSquared)
+MoveTargetInfo::MoveTargetInfo(Target target, fixed32 desiredRange, fixed32 closestDistanceSquared)
     : target(target), desiredRange(desiredRange), closestDistanceSquared(closestDistanceSquared), frustration(0)
     {}
-MoveTargetInfo::MoveTargetInfo(vchIter *iter) : target((EntityRef)0)
+void MoveTargetInfo::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    target.pack(to);
+    packFixed32(to, desiredRange);
+    packFixed32(to, closestDistanceSquared);
+    packFixed32(to, frustration);
+}
+MoveTargetInfo::MoveTargetInfo(Netpack::Consumer* from) : target((EntityRef)0)
+{
+    target = Target(from);
+    desiredRange = consumeFixed32(from);
+    closestDistanceSquared = consumeFixed32(from);
+    frustration = consumeFixed32(from);
 }
 
-
-
-void MobileUnit::packMobileUnit(vch *dest)
+void packMoveTargetInfo(Netpack::Builder* to, MoveTargetInfo mti)
 {
-    packUnit(dest);
-    if (auto targetInfo = maybeTargetInfo)
-    {
-        packTrue(dest);
-
-        targetInfo->pack(dest);
-    }
-    else
-    {
-        packFalse(dest);
-    }
-
-    packVector2f(dest, desiredVelocity);
-    packVector2f(dest, lastVelocity);
+    mti.pack(to);
 }
-void MobileUnit::unpackMobileUnitAndMoveIter(vchIter *iter)
+MoveTargetInfo consumeMoveTargetInfo(Netpack::Consumer* from)
 {
-    if (unpackBoolAndMoveIter(iter))
-    {
-        MoveTargetInfo targetInfo(iter);
-        maybeTargetInfo = {targetInfo};
-    }
-    else
-    {
-        maybeTargetInfo = {};
-    }
-
-    *iter = unpackVector2f(*iter, &desiredVelocity);
-    *iter = unpackVector2f(*iter, &lastVelocity);
+    return MoveTargetInfo(from);
 }
 
-MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2f pos)
-    : Unit(ownerId, totalCost, health, pos), maybeTargetInfo({}), desiredVelocity(vector2f(0,0)), lastVelocity(vector2f(0,0)), angle_view(0)
+MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
+    : Unit(ownerId, totalCost, health, pos), maybeTargetInfo({}), desiredVelocity(vector2fp::zero), lastVelocity(vector2fp::zero), angle_view(0)
 {}
-MobileUnit::MobileUnit(vchIter *iter) : Unit(iter),
-                                        angle_view(0)
+void MobileUnit::packMobileUnitBasics(Netpack::Builder* to)
 {
-    unpackMobileUnitAndMoveIter(iter);
+    packUnitBasics(to);
+
+    to->packOptional<MoveTargetInfo>(maybeTargetInfo, packMoveTargetInfo);
+    packVector2fp(to, desiredVelocity);
+    packVector2fp(to, lastVelocity);
+}
+MobileUnit::MobileUnit(Netpack::Consumer* from)
+    : Unit(from), angle_view(0)
+{
+    maybeTargetInfo = from->consumeOptional(consumeMoveTargetInfo);
+    desiredVelocity = consumeVector2fp(from);
+    lastVelocity = consumeVector2fp(from);
 }
 
-float MobileUnit::getMaxSpeed() const
+fixed32 MobileUnit::getMaxSpeed() const
 {
     throw runtime_error("getMaxSpeed has not been defined for '" + getTypeName() + "'");
 }
-float MobileUnit::getRange() const
+fixed32 MobileUnit::getRange() const
 {
     throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
 }
-vector2f MobileUnit::getDesiredVelocity() const
+vector2fp MobileUnit::getDesiredVelocity() const
 {
     return desiredVelocity;
 }
-vector2f MobileUnit::getLastVelocity() const
+vector2fp MobileUnit::getLastVelocity() const
 {
     return lastVelocity;
 }
-void MobileUnit::onMoveCmd(vector2f moveTo)
+void MobileUnit::onMoveCmd(vector2fp moveTo)
 {
     throw runtime_error("onMoveCmd() has not been defined for '" + getTypeName() + "'");
 }
 
-void MobileUnit::setMoveTarget(Target _target, float newRange)
+void MobileUnit::setMoveTarget(Target _target, fixed32 newRange)
 {
     if (auto point = _target.getPointUnlessTargetDeleted(*this->getGameOrThrow()))
     {
-        float currentRangeSquared = (this->getPos() - *point).getMagnitudeSquared();
+        fixed32 currentRangeSquared = (this->getPos() - *point).getMagnitudeSquared();
         maybeTargetInfo = {MoveTargetInfo(_target, newRange, currentRangeSquared)};
     }
     else
@@ -868,10 +818,10 @@ bool MobileUnit::isIdle()
 {
     if (auto targetInfo = maybeTargetInfo)
     {
-        if (optional<vector2f> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        if (optional<vector2fp> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
-            vector2f toPoint = *p - getPos();
-            float distanceLeft = toPoint.getMagnitude() - targetInfo->desiredRange;
+            vector2fp toPoint = *p - getPos();
+            fixed32 distanceLeft = toPoint.getMagnitude() - targetInfo->desiredRange;
             return (distanceLeft <= EPSILON);
         }
     }
@@ -889,26 +839,26 @@ optional<MoveTargetInfo> MobileUnit::getMaybeMoveTargetInfo()
     return maybeTargetInfo;
 }
 
-void MobileUnit::moveWithVelocityAndUpdateCell(vector2f velocity)
+void MobileUnit::moveWithVelocityAndUpdateCell(vector2fp velocity)
 {
     lastVelocity = velocity;
     if (velocity.getMagnitudeSquared() >= EPSILON)
     {
-        angle_view = velocity.getAngle();
+        angle_view = static_cast<float>(velocity.getAngle());
     }
     setPosAndUpdateCell(getPos() + velocity);
 }
-void MobileUnit::tryMoveTowardPoint(vector2f dest, float range)
+void MobileUnit::tryMoveTowardPoint(vector2fp to, fixed32 range)
 {
-    vector2f toPoint = dest - getPos();
-    float distanceLeft = toPoint.getMagnitude() - range;
+    vector2fp toPoint = to - getPos();
+    fixed32 distanceLeft = toPoint.getMagnitude() - range;
     if (distanceLeft <= EPSILON)
     {
         return;
     }
 
-    vector2f unitDir = toPoint.normalized();
-    angle_view = unitDir.getAngle();
+    vector2fp unitDir = toPoint.normalized();
+    angle_view = static_cast<float>(unitDir.getAngle());
 
     if (distanceLeft <= getMaxSpeed())
     {
@@ -919,20 +869,20 @@ void MobileUnit::tryMoveTowardPoint(vector2f dest, float range)
         desiredVelocity = unitDir * getMaxSpeed();
     }
 }
-void MobileUnit::mobileUnitIterate()
+void MobileUnit::iterateMobileUnitBasics()
 {
-    desiredVelocity = vector2f(0,0);
+    desiredVelocity = vector2fp::zero;
 
     if (auto targetInfo = maybeTargetInfo)
     {
-        if (optional<vector2f> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
+        if (optional<vector2fp> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
-            float distanceSquared = (getPos() - *p).getMagnitudeSquared();
+            fixed32 distanceSquared = (getPos() - *p).getMagnitudeSquared();
             // if we're "breaking a record" for closest to the point, set frustration to 0
             if (distanceSquared <= targetInfo->closestDistanceSquared)
             {
                 maybeTargetInfo->closestDistanceSquared = distanceSquared;
-                maybeTargetInfo->frustration = 0;
+                maybeTargetInfo->frustration = fixed32(0);
             }
             // otherwise, frustration mounts!
             else
@@ -966,11 +916,11 @@ void MobileUnit::mobileUnitIterate()
         else
             clearMoveTarget();
     }
-    unitIterate();
+    iterateUnitBasics();
 }
-void MobileUnit::cmdMove(vector2f pointTarget)
+void MobileUnit::cmdMove(vector2fp pointTarget)
 {
-    setMoveTarget(Target(pointTarget), 0);
+    setMoveTarget(Target(pointTarget), fixed32(0));
     onMoveCmd(pointTarget);
 }
 
@@ -998,32 +948,26 @@ void MobileUnit::cmdMove(vector2f pointTarget)
 
 
 
-float Beacon::getRadius() const { return BEACON_RADIUS; }
+fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 unsigned char Beacon::typechar() const { return BEACON_TYPECHAR; }
 string Beacon::getTypeName() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
-void Beacon::pack(vch *dest)
-{
-    packBuilding(dest);
-
-    packToVch(dest, "C", (unsigned char)(state));
-}
-void Beacon::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
-}
-
-Beacon::Beacon(int ownerId, vector2f pos, State state)
+Beacon::Beacon(int ownerId, vector2fp pos, State state)
     : Building(ownerId, GATEWAY_COST, BEACON_HEALTH, pos),
       state(state)
 {}
-Beacon::Beacon(vchIter *iter) : Building(iter)
+void Beacon::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packBuildingBasics(to);
+
+    to->packEnum(state);
+}
+Beacon::Beacon(Netpack::Consumer* from)
+    : Building(from)
+{
+    state = from->consumeEnum<Beacon::State>();
 }
 
 void Beacon::iterate()
@@ -1083,7 +1027,7 @@ void Beacon::iterate()
 
 
 
-float Gateway::getRadius() const {return GATEWAY_RADIUS;}
+fixed32 Gateway::getRadius() const {return GATEWAY_RADIUS;}
 unsigned char Gateway::typechar() const { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() const { return "Gateway"; }
 coinsInt Gateway::getCost() const { return GATEWAY_COST; }
@@ -1094,8 +1038,8 @@ void Gateway::cmdBuildUnit(unsigned char unitTypechar)
     if (this->isActive())
     {
         // determine position of new unit. Hacky - should replace very soon!
-        float angle = (getGameOrThrow()->frame / 10.0);
-        vector2f newUnitPos = this->getPos() + composeVector2f(angle, GATEWAY_RANGE / 2);
+        fixed32 angle = getGameOrThrow()->frame / fixed32(10);
+        vector2fp newUnitPos = this->getPos() + composeVector2fp(angle, GATEWAY_RANGE / 2);
         boost::shared_ptr<Unit> littleBabyUnitAwwwwSoCute;
         switch (unitTypechar)
         {
@@ -1213,53 +1157,32 @@ void Gateway::cmdScuttle(EntityRef targetRef)
     }
 }
 
-float Gateway::buildQueueWeight()
+fixed32 Gateway::buildQueueWeight()
 {
     if (!isActive())
-        return 10;
+        return fixed32(10);
     else if (state == Idle)
-        return 0;
+        return fixed32(0);
     else
-        return 1;
+        return fixed32(1);
 }
 
-void Gateway::pack(vch *dest)
-{
-    packBuilding(dest);
-
-    packToVch(dest, "C", (unsigned char)(state));
-
-    if (auto targetEntity = maybeTargetEntity)
-    {
-        packTrue(dest);
-        packEntityRef(dest, *targetEntity);
-    }
-    else
-    {
-        packFalse(dest);
-    }
-}
-void Gateway::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
-
-    if (unpackBoolAndMoveIter(iter))
-    {
-        EntityRef targetEntity;
-        *iter = unpackEntityRef(*iter, &targetEntity);
-        maybeTargetEntity = {targetEntity};
-    }
-}
-
-Gateway::Gateway(int ownerId, vector2f pos)
+Gateway::Gateway(int ownerId, vector2fp pos)
     : Building(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
       state(Idle), inGameTransferState_view(NoGoldTransfer)
 {}
-Gateway::Gateway(vchIter *iter) : Building(iter)
+void Gateway::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packBuildingBasics(to);
+
+    to->packEnum(state);
+    to->packOptional(maybeTargetEntity, packEntityRef);
+}
+Gateway::Gateway(Netpack::Consumer* from)
+    : Building(from)
+{
+    state = from->consumeEnum<Gateway::State>();
+    maybeTargetEntity = from->consumeOptional(consumeEntityRef);
 }
 
 void Gateway::iterate()
@@ -1274,7 +1197,7 @@ void Gateway::iterate()
             // search for units near enough to complete
             vector<EntityRef> nearbyEntityRefs = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(this->getPos(), GATEWAY_RANGE);
 
-            float rangeSquared = pow(GATEWAY_RANGE, 2);
+            fixed32 rangeSquared = pow(GATEWAY_RANGE, 2);
             for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
             {
                 boost::shared_ptr<Entity> entity = maybeEntityRefToPtrOrNull(*game, {nearbyEntityRefs[i]});
@@ -1282,7 +1205,7 @@ void Gateway::iterate()
                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
                     if (unit->ownerId == this->ownerId)
-                        if (unit->getBuiltRatio() < 1)
+                        if (unit->getBuiltRatio() < fixed32(1))
                             if ((unit->getPos() - this->getPos()).getMagnitudeSquared() <= rangeSquared)
                                 {
                                     state = DepositTo;
@@ -1312,7 +1235,7 @@ void Gateway::iterate()
                     }
                     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(depositingToEntityPtr))
                     {
-                        if (unit->getBuiltRatio() < 1)
+                        if (unit->getBuiltRatio() < fixed32(1))
                         {
                             maybeCoinsToDepositTo = &unit->goldInvested;
                             maybeBuildingUnit = unit;
@@ -1330,7 +1253,7 @@ void Gateway::iterate()
                     if (maybeCoinsToDepositTo)
                     {
                         coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
-                        if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == 1)
+                        if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
                         {
                             state = Idle;
                             maybeTargetEntity = {};
@@ -1423,60 +1346,31 @@ void Gateway::iterate()
 
 
 
-void Prime::pack(vch *dest)
-{
-    packMobileUnit(dest);
 
-    packToVch(dest, "C", (unsigned char)(behavior));
-    packToVch(dest, "C", (unsigned char)(state));
-
-    if (auto gatherTarget = maybeGatherTargetPos)
-    {
-        packTrue(dest);
-        packVector2f(dest, *gatherTarget);
-    }
-    else
-    {
-        packFalse(dest);
-    }
-
-    heldGold.pack(dest);
-    packTypechar(dest, gonnabuildTypechar);
-}
-void Prime::unpackAndMoveIter(vchIter *iter)
-{
-    unsigned char enumInt;
-    
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    behavior = static_cast<Behavior>(enumInt);
-
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
-
-    if (unpackBoolAndMoveIter(iter))
-    {
-        vector2f targetPos;
-        *iter = unpackVector2f(*iter, &targetPos);
-        maybeGatherTargetPos = {targetPos};
-    }
-    else
-    {
-        maybeGatherTargetPos = {};
-    }
-
-    heldGold = Coins(iter);
-    *iter = unpackTypecharFromIter(*iter, &gonnabuildTypechar);
-}
-
-Prime::Prime(int ownerId, vector2f pos)
+Prime::Prime(int ownerId, vector2fp pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer)
 {}
-Prime::Prime(vchIter *iter) : MobileUnit(iter),
-                              heldGold(PRIME_MAX_GOLD_HELD)
+void Prime::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packMobileUnitBasics(to);
+
+    to->packEnum(behavior);
+    to->packEnum(state);
+    to->packOptional(maybeGatherTargetPos, packVector2fp);
+    heldGold.pack(to);
+    packTypechar(to, gonnabuildTypechar);
+}
+Prime::Prime(Netpack::Consumer* from)
+    : MobileUnit(from),
+    heldGold(PRIME_MAX_GOLD_HELD)
+{
+    behavior = from->consumeEnum<Behavior>();
+    state = from->consumeEnum<State>();
+    maybeGatherTargetPos = from->consumeOptional(consumeVector2fp);
+    heldGold = Coins(from);
+    gonnabuildTypechar = consumeTypechar(from);
 }
 
 void Prime::cmdPickup(Target _target)
@@ -1493,7 +1387,7 @@ void Prime::cmdPutdown(Target _target)
 
     setMoveTarget(_target, PRIME_TRANSFER_RANGE);
 }
-void Prime::cmdBuild(unsigned char buildTypechar, vector2f buildPos)
+void Prime::cmdBuild(unsigned char buildTypechar, vector2fp buildPos)
 {
     behavior = Basic;
     state = Build;
@@ -1508,26 +1402,26 @@ void Prime::cmdResumeBuilding(EntityRef targetUnit)
 
     setMoveTarget(Target(targetUnit), PRIME_TRANSFER_RANGE);
 }
-void Prime::cmdGather(vector2f targetPos)
+void Prime::cmdGather(vector2fp targetPos)
 {
     behavior = Gather;
     state = NotTransferring;
     maybeGatherTargetPos = {targetPos};
-    setMoveTarget(targetPos, 0);
+    setMoveTarget(targetPos, fixed32(0));
 }
 void Prime::cmdScuttle(EntityRef targetUnit)
 {
     #warning prime doesnt know how to scuttle yet
 }
 
-float Prime::getHeldGoldRatio()
+fixed32 Prime::getHeldGoldRatio()
 {
-    return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
+    return ((fixed32)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
 }
 
-float Prime::getRadius() const { return PRIME_RADIUS; }
-float Prime::getMaxSpeed() const { return PRIME_SPEED; }
-float Prime::getRange() const { return PRIME_TRANSFER_RANGE; }
+fixed32 Prime::getRadius() const { return PRIME_RADIUS; }
+fixed32 Prime::getMaxSpeed() const { return PRIME_SPEED; }
+fixed32 Prime::getRange() const { return PRIME_TRANSFER_RANGE; }
 coinsInt Prime::getCost() const { return PRIME_COST; }
 uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
@@ -1555,7 +1449,7 @@ void Prime::iterate()
                 // our job here is to switch these states when necessary...
 
                 // firstly, if heldGold is maxed, return gold to nearest gateway
-                if (getHeldGoldRatio() == 1)
+                if (getHeldGoldRatio() == fixed32(0))
                 {
                     setStateToReturnGoldOrResetBehavior();
                 }
@@ -1565,18 +1459,18 @@ void Prime::iterate()
                     case NotTransferring:
                     {
                         // in theory this should already be set, but in some cases doesn't seem to be
-                        setMoveTarget(*gatherTargetPos, 0);
+                        setMoveTarget(*gatherTargetPos, fixed32(0));
                         
                         // scan for any GoldPile and choose the closest
                         boost::shared_ptr<GoldPile> bestTarget;
-                        float bestTargetDistanceSquared;
+                        fixed32 bestTargetDistanceSquared;
 
                         auto entitiesInSight = game->entitiesWithinCircle(getPos(), PRIME_SIGHT_RANGE);
                         for (unsigned int i=0; i<entitiesInSight.size(); i++)
                         {
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
                             {
-                                float distanceSquared = (this->getPos() - goldPile->getPos()).getMagnitudeSquared();
+                                fixed32 distanceSquared = (this->getPos() - goldPile->getPos()).getMagnitudeSquared();
                                 if (!bestTarget || distanceSquared < bestTargetDistanceSquared)
                                 {
                                     bestTarget = goldPile;
@@ -1639,7 +1533,7 @@ void Prime::iterate()
                         if (shouldMoveOn)
                         {
                             state = NotTransferring;
-                            setMoveTarget(*gatherTargetPos, 0);
+                            setMoveTarget(*gatherTargetPos, fixed32(0));
                             break;
                         }
                         
@@ -1650,7 +1544,7 @@ void Prime::iterate()
                         if (heldGold.getInt() == 0)
                         {
                             state = NotTransferring;
-                            setMoveTarget(*gatherTargetPos, 0);
+                            setMoveTarget(*gatherTargetPos, fixed32(0));
                             break;
                         }
                         // as long as Gateawy (in moveTarget) is still valid, just continue til heldGold == 0
@@ -1725,7 +1619,7 @@ void Prime::iterate()
         break;
     case PutdownGold:
         if (auto target = getMaybeMoveTarget())
-        if (optional<vector2f> point = target->getPointUnlessTargetDeleted(*game))
+        if (optional<vector2fp> point = target->getPointUnlessTargetDeleted(*game))
         {
             if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
             {
@@ -1740,7 +1634,7 @@ void Prime::iterate()
                     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                     {
                         // first try to complete it if it's not yet built
-                        if (unit->getBuiltRatio() < 1)
+                        if (unit->getBuiltRatio() < fixed32(1))
                         {
                             coinsToPushTo = &unit->goldInvested;
                             stopOnTransferZero = true;
@@ -1799,7 +1693,7 @@ void Prime::iterate()
     case Build:
         if (auto target = getMaybeMoveTarget())
         {
-            if (optional<vector2f> point = target->castToPoint())
+            if (optional<vector2fp> point = target->castToPoint())
             {
                 if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
                 {
@@ -1830,7 +1724,7 @@ void Prime::iterate()
             {
                 if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
                 {
-                    if (building->getBuiltRatio() < 1)
+                    if (building->getBuiltRatio() < fixed32(1))
                     {
                         coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
                         if (builtAmount > 0)
@@ -1856,7 +1750,7 @@ void Prime::iterate()
         }
         break;
     }
-    mobileUnitIterate();
+    iterateMobileUnitBasics();
 }
 
 void Prime::setStateToReturnGoldOrResetBehavior()
@@ -1865,14 +1759,14 @@ void Prime::setStateToReturnGoldOrResetBehavior()
 
     // find nearest gateway and bring gold to it
     boost::shared_ptr<Gateway> bestChoice;
-    float bestChoiceDistanceSquared;
+    fixed32 bestChoiceDistanceSquared;
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
         if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
         {
             if (getAllianceType(this->ownerId, gateway) == Owned)
             {
-                float distanceSquared = (this->getPos() - gateway->getPos()).getMagnitudeSquared();
+                fixed32 distanceSquared = (this->getPos() - gateway->getPos()).getMagnitudeSquared();
                 if (!bestChoice || distanceSquared < bestChoiceDistanceSquared)
                 {
                     bestChoice = gateway;
@@ -1896,7 +1790,7 @@ void Prime::setStateToReturnGoldOrResetBehavior()
     }
 }
 
-void Prime::onMoveCmd(vector2f moveTo)
+void Prime::onMoveCmd(vector2fp moveTo)
 {
     behavior = Basic;
     state = NotTransferring;
@@ -1929,48 +1823,33 @@ vector<Coins*> Prime::getDroppableCoins()
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 
-
-
-void Fighter::pack(vch *dest)
+void packTarget(Netpack::Builder* to, Target target)
 {
-    packMobileUnit(dest);
-
-    packToVch(dest, "C", (unsigned char)(state));
-    
-    if (maybeAttackingGeneralTarget)
-    {
-        packTrue(dest);
-        maybeAttackingGeneralTarget->pack(dest);
-    }
-    else
-    {
-        packFalse(dest);
-    }
-
-    packToVch(dest, "H", shootCooldown);
+    target.pack(to);
 }
-void Fighter::unpackAndMoveIter(vchIter *iter)
+Target consumeTarget(Netpack::Consumer* from)
 {
-    unsigned char enumInt;
-    *iter = unpackFromIter(*iter, "C", &enumInt);
-    state = static_cast<State>(enumInt);
-
-    if (unpackBoolAndMoveIter(iter))
-    {
-        maybeAttackingGeneralTarget = Target(iter);
-    }
-
-    *iter = unpackFromIter(*iter, "H", &shootCooldown);
+    return Target(from);
 }
 
-Fighter::Fighter(int ownerId, vector2f pos)
+Fighter::Fighter(int ownerId, vector2fp pos)
     : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
       state(NotAttacking), maybeAttackingGeneralTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
 {}
-Fighter::Fighter(vchIter *iter)
-    : MobileUnit(iter)
+void Fighter::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packMobileUnitBasics(to);
+
+    to->packEnum(state);
+    to->packOptional(maybeAttackingGeneralTarget, packTarget);
+    to->packUint16_t(shootCooldown);
+}
+Fighter::Fighter(Netpack::Consumer* from)
+    : MobileUnit(from)
+{
+    state = from->consumeEnum<State>();
+    maybeAttackingGeneralTarget = from->consumeOptional(consumeTarget);
+    shootCooldown = from->consumeUint16_t();
 }
 
 void Fighter::cmdAttack(Target target)
@@ -1984,7 +1863,7 @@ void Fighter::cmdAttack(Target target)
     {
         state = AttackingGeneral;
         maybeAttackingGeneralTarget = point;
-        setMoveTarget(target, 0);
+        setMoveTarget(target, fixed32(0));
     }
 }
 void Fighter::iterate()
@@ -2004,13 +1883,13 @@ void Fighter::iterate()
                 auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
 
                 boost::shared_ptr<Entity> closestValidTarget;
-                float closestDistanceSquared;
+                fixed32 closestDistanceSquared;
                 for (unsigned int i=0; i<entitiesInSight.size(); i++)
                 {
                     auto entity = entitiesInSight[i];
                     if (getAllianceType(this->ownerId, entity) == Foreign)
                     {
-                        float distanceSquared = (this->getPos() - entity->getPos()).getMagnitudeSquared();
+                        fixed32 distanceSquared = (this->getPos() - entity->getPos()).getMagnitudeSquared();
                         if (!closestValidTarget || distanceSquared < closestDistanceSquared)
                         {
                             closestValidTarget = entity;
@@ -2053,7 +1932,7 @@ void Fighter::iterate()
                 {
                     if (attackingGeneralTarget->type == Target::PointTarget)
                     {
-                        setMoveTarget(*attackingGeneralTarget, 0);
+                        setMoveTarget(*attackingGeneralTarget, fixed32(0));
                     }
                     else
                     {
@@ -2082,7 +1961,7 @@ void Fighter::iterate()
                 
                 // we will search for good options for attack
                 boost::shared_ptr<Unit> bestTarget;
-                float bestTargetPriority;
+                fixed32 bestTargetPriority;
                 bool alreadyHadTarget = false;
                 if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(getMaybeMoveTarget()->castToEntityPtr(*game)))
                 {
@@ -2100,7 +1979,7 @@ void Fighter::iterate()
                         {
                             bool thisIsBetterTarget = false; // until proven otherwise
 
-                            float priority = this->calcAttackPriority(unit);
+                            fixed32 priority = this->calcAttackPriority(unit);
 
                             // if there is not yet a bestTarget, or if the priority is higher
                             if ((!bestTarget) || priority > bestTargetPriority)
@@ -2112,8 +1991,8 @@ void Fighter::iterate()
                             else if (priority == bestTargetPriority && !alreadyHadTarget)
                             {
                                 // compare distances
-                                float currentDistanceSquared = (this->getPos() - bestTarget->getPos()).getMagnitudeSquared();
-                                float distanceSquared = (this->getPos() - unit->getPos()).getMagnitudeSquared();
+                                fixed32 currentDistanceSquared = (this->getPos() - bestTarget->getPos()).getMagnitudeSquared();
+                                fixed32 distanceSquared = (this->getPos() - unit->getPos()).getMagnitudeSquared();
                                 if (distanceSquared < currentDistanceSquared)
                                     thisIsBetterTarget = true;
                             }
@@ -2163,17 +2042,17 @@ void Fighter::iterate()
             }
             break;
     }
-    mobileUnitIterate();
+    iterateMobileUnitBasics();
 }
-void Fighter::onMoveCmd(vector2f moveTo)
+void Fighter::onMoveCmd(vector2fp moveTo)
 {
     state = NotAttacking;
 }
 
 void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 {
-    vector2f toTarget = (targetUnit->getPos() - this->getPos());
-    angle_view = toTarget.getAngle();
+    vector2fp toTarget = (targetUnit->getPos() - this->getPos());
+    angle_view = static_cast<float>(toTarget.getAngle());
     if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + EPSILON)
     {
         if (shootCooldown == 0)
@@ -2184,19 +2063,19 @@ void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
         }
     }
 }
-float Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
+fixed32 Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
 {
     if (auto building = boost::dynamic_pointer_cast<Building, Unit>(foreignUnit))
     {
-        return 1;
+        return fixed32(1);
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(foreignUnit))
     {
-        return 2;
+        return fixed32(2);
     }
     else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
     {
-        float baseFighterPriority = 3;
+        fixed32 baseFighterPriority(3);
         if (auto otherFighterTarget = fighter->getMaybeMoveTarget())
         {
             if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
@@ -2212,7 +2091,7 @@ float Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
     else
     {
         cout << "I can't find the priority of that unit!" << endl;
-        return 0;
+        return fixed32(0);
     }
 }
 void Fighter::shootAt(boost::shared_ptr<Unit> unit)
@@ -2221,9 +2100,9 @@ void Fighter::shootAt(boost::shared_ptr<Unit> unit)
     unit->takeHit(FIGHTER_DAMAGE);
 }
 
-float Fighter::getRadius() const { return FIGHTER_RADIUS; }
-float Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
-float Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
+fixed32 Fighter::getRadius() const { return FIGHTER_RADIUS; }
+fixed32 Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
+fixed32 Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() const { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 
@@ -2254,27 +2133,29 @@ string Fighter::getTypename() const { return "Fighter"; }
 
 
 
-boost::shared_ptr<Entity> unpackFullEntityAndMoveIter(vchIter *iter, unsigned char typechar)
+boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from)
 {
+    uint8_t typechar = consumeTypechar(from);
+    
     switch (typechar)
     {
     case NULL_TYPECHAR:
         return boost::shared_ptr<Entity>();
         break;
     case GOLDPILE_TYPECHAR:
-        return boost::shared_ptr<Entity>(new GoldPile(iter));
+        return boost::shared_ptr<Entity>(new GoldPile(from));
         break;
     case BEACON_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Beacon(iter));
+        return boost::shared_ptr<Entity>(new Beacon(from));
         break;
     case GATEWAY_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Gateway(iter));
+        return boost::shared_ptr<Entity>(new Gateway(from));
         break;
     case PRIME_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Prime(iter));
+        return boost::shared_ptr<Entity>(new Prime(from));
         break;
     case FIGHTER_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Fighter(iter));
+        return boost::shared_ptr<Entity>(new Fighter(from));
         break;
     }
     throw runtime_error("Trying to unpack an unrecognized entity");

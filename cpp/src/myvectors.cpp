@@ -181,6 +181,10 @@ vector2fp vector2fp::operator/(fixed32 c) const
 {
 	return vector2fp(x / c, y / c);
 }
+vector2fp vector2fp::operator/(int c) const
+{
+    return vector2fp(x / c, y / c);
+}
 fixed32 vector2fp::getMagnitudeSquared() const
 {
 	return x * x + y * y;
@@ -242,6 +246,11 @@ vector2i::vector2i(const vector2fl &c)
 {
 	x = c.x;
 	y = c.y;
+}
+vector2i::vector2i(const vector2fp &c)
+{
+    x = static_cast<int>(c.x);
+    y = static_cast<int>(c.y);
 }
 vector2i::vector2i(const vector2i &c)
 {

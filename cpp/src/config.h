@@ -15,7 +15,7 @@ const unsigned int ESCAPE_TO_QUIT_TEXT_LIFE = 30;
 
 const coinsInt MAX_COINS = UINT32_MAX;
 
-const float EPSILON = 0.00001;
+const fixed32 EPSILON(0.001);
 
 const unsigned char NULL_TYPECHAR = 0;
 
@@ -30,7 +30,7 @@ const unsigned char GATEWAY_TYPECHAR = 5;
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
-const float ENTITY_COLLIDE_RADIUS = 15;
+const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
 const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
@@ -40,6 +40,6 @@ const float PARTICLE_FRICTION_CONSTANT = 0.9;
 
 const int CURSOR_SIZE = 26;
 
-const float COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH = 50;
+const fixed32 COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH(50);
 
 #endif // CONFIG_H

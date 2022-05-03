@@ -2,9 +2,9 @@
 #define EVENTS_H
 
 #include <string>
-#include "vchpack.h"
 #include "coins.h"
 #include "engine.h"
+#include "netpack.h"
 
 using namespace std;
 
@@ -13,20 +13,18 @@ const unsigned char EVENT_HONEYPOT_CHAR = 2;
 
 struct Event;
 
-boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter);
+boost::shared_ptr<Event> consumeEvent(Netpack::Consumer*);
 
 struct Event
 {
     virtual unsigned char typechar();
-    virtual void pack(vch *dest);
-    virtual void unpackAndMoveIter(vchIter *iter);
     virtual void execute(Game *game);
 
-    void packEvent(vch *dest);
-    void unpackEventAndMoveIter(vchIter *iter);
+    void packEventBasics(Netpack::Builder*);
+    virtual void pack(Netpack::Builder*);
 
     Event();
-    Event(vchIter *iter);
+    Event(Netpack::Consumer*);
 };
 
 struct BalanceUpdateEvent : public Event
@@ -39,11 +37,10 @@ struct BalanceUpdateEvent : public Event
 
     void execute(Game *game);
 
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder*);
 
     BalanceUpdateEvent(string userAddress, coinsInt amount, bool isDeposit);
-    BalanceUpdateEvent(vchIter *iter);
+    BalanceUpdateEvent(Netpack::Consumer*);
 };
 
 struct HoneypotAddedEvent : public Event
@@ -54,11 +51,10 @@ struct HoneypotAddedEvent : public Event
 
     void execute(Game *game);
 
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder*);
 
     HoneypotAddedEvent(coinsInt honeypotAmount);
-    HoneypotAddedEvent(vchIter *iter);
+    HoneypotAddedEvent(Netpack::Consumer*);
 };
 
 #endif // EVENTS_H

@@ -6,59 +6,56 @@ unsigned char Packet::typechar()
     throw runtime_error("typechar() has not been defined for a packet type.");
 }
 
-void Packet::pack(vch *dest)
+void Packet::pack(Netpack::Builder* to)
 {
     throw runtime_error("pack() has not been defined for a packet");
 }
-void Packet::unpackAndMoveIter(vchIter *iter)
-{
-    throw runtime_error("unpackMoveIter() has not been defined for a packet");
-}
 
-void Packet::packPacket(vch *destVch) {}
-void Packet::unpackPacketAndMoveIter(vchIter *iter) {}
+void Packet::packPacketBasics(Netpack::Builder* to)
+{
+    packTypechar(to, typechar());
+}
 
 Packet::Packet() {}
-Packet::Packet(vchIter *iter)
-{
-    unpackPacketAndMoveIter(iter);
-}
+Packet::Packet(Netpack::Consumer* from) {}
 
 unsigned char FrameEventsPacket::typechar()
 {
     return PACKET_FRAMECMDS_CHAR;
 }
-void FrameEventsPacket::pack(vch *dest)
-{
-    packPacket(dest);
 
-    packToVch(dest, "QCC", frame, (unsigned char)(authdCmds.size()), (unsigned char)(events.size()));
+FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<Event>> events)
+    : frame(frame), authdCmds(authdCmds), events(events) {}
+void FrameEventsPacket::pack(Netpack::Builder* to)
+{
+    packPacketBasics(to);
+
+    to->packUint64_t(frame);
+    to->packUint16_t(authdCmds.size());
+    to->packUint16_t(events.size());
 
     for (unsigned int i = 0; i < authdCmds.size(); i++)
     {
-        packStringToVch(dest, authdCmds[i]->playerAddress);
-        packTypechar(dest, authdCmds[i]->cmd->getTypechar());
-        authdCmds[i]->cmd->pack(dest);
+        to->packStringWithoutSize(authdCmds[i]->playerAddress);
+        authdCmds[i]->cmd->pack(to);
     }
 
     for (unsigned int i = 0; i < events.size(); i++)
     {
-        packTypechar(dest, events[i]->typechar());
-        events[i]->pack(dest);
+        events[i]->pack(to);
     }
 }
-
-void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
+FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
 {
-    unsigned char numCmds, numEvents;
-    *iter = unpackFromIter(*iter, "QCC", &frame, &numCmds, &numEvents);
+    frame = from->consumeUint64_t();
+    uint16_t numCmds = from->consumeUint16_t();
+    uint16_t numEvents = from->consumeUint16_t();
 
     authdCmds.clear();
     for (unsigned int i = 0; i < numCmds; i++)
     {
-        string playerAddress;
-        *iter = unpackStringFromIter(*iter, 42, &playerAddress);
-        boost::shared_ptr<Cmd> unauthdCmd = unpackFullCmdAndMoveIter(iter);
+        string playerAddress = from->consumeStringGivenSize(42);
+        boost::shared_ptr<Cmd> unauthdCmd = consumeCmd(from);
 
         authdCmds.push_back(boost::shared_ptr<AuthdCmd>(new AuthdCmd(unauthdCmd, playerAddress)));
     }
@@ -66,14 +63,6 @@ void FrameEventsPacket::unpackAndMoveIter(vchIter *iter)
     events.clear();
     for (unsigned int i = 0; i < numEvents; i++)
     {
-        events.push_back(unpackFullEventAndMoveIter(iter));
+        events.push_back(consumeEvent(from));
     }
-}
-
-FrameEventsPacket::FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<Event>> events)
-    : frame(frame), authdCmds(authdCmds), events(events) {}
-
-FrameEventsPacket::FrameEventsPacket(vchIter *iter)
-{
-    unpackAndMoveIter(iter);
 }

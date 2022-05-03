@@ -1,4 +1,6 @@
 #include <iostream>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <optional>
 #include "netpack.h"
 #include "common.h"
@@ -19,6 +21,9 @@ using namespace std;
 
 int main()
 {
+    fixed32 f(-3.8);
+    cout << static_cast<int>(f) << endl;
+
     // fpm::fixed_16_16 f1(-6432.7466);
     // Netpack::Builder d;
     // d.packInt32_t(f1.raw_value());
@@ -71,37 +76,6 @@ int main()
 
     // makeSure(optf1 == optf3);
     // makeSure(optf2 == optf4);
-
-
-    enum TestThing
-    {
-        Thing1,
-        Thing2
-    };
-    enum TestStuff
-    {
-        TestStuff1,
-        TestStuffies,
-        TestSterf
-    };
-
-    TestThing a1 = Thing1;
-    TestThing a2 = Thing2;
-    TestStuff a3 = TestStuffies;
-
-    Netpack::Builder b;
-    b.packEnum(a1);
-    b.packEnum(a2);
-    b.packEnum(a3);
-
-    Netpack::Consumer c(b);
-    TestThing b1 = c.consumeEnum<TestThing>();
-    TestThing b2 = c.consumeEnum<TestThing>();
-    TestStuff b3 = c.consumeEnum<TestStuff>();
-
-    makeSure(a1 == b1);
-    makeSure(a2 == b2);
-    makeSure(a3 == b3);
     
     return 0;
 }

@@ -2,55 +2,47 @@
 #include <boost/shared_ptr.hpp>
 #include "events.h"
 #include "common.h"
-#include "vchpack.h"
+#include "netpack.h"
 #include "config.h"
 
 using namespace std;
 
-boost::shared_ptr<Event> unpackFullEventAndMoveIter(vchIter *iter)
+boost::shared_ptr<Event> consumeEvent(Netpack::Consumer* from)
 {
-    unsigned char typechar;
-    *iter = unpackTypecharFromIter(*iter, &typechar);
+    uint8_t typechar = consumeTypechar(from);
 
     switch (typechar)
     {
     case NULL_TYPECHAR:
         return boost::shared_ptr<Event>();
     case EVENT_BALANCEUPDATE_CHAR:
-        return boost::shared_ptr<Event>(new BalanceUpdateEvent(iter));
+        return boost::shared_ptr<Event>(new BalanceUpdateEvent(from));
     case EVENT_HONEYPOT_CHAR:
-        return boost::shared_ptr<Event>(new HoneypotAddedEvent(iter));
+        return boost::shared_ptr<Event>(new HoneypotAddedEvent(from));
     }
     throw runtime_error("Trying to unpack an unrecognized event");
 }
 
-unsigned char Event::typechar()
+uint8_t Event::typechar()
 {
     throw runtime_error("typechar() has not been defined for an event.");
 }
-void Event::pack(vch *dest)
+void Event::pack(Netpack::Builder*)
 {
     throw runtime_error("pack() has not been defined for an event.");
-}
-void Event::unpackAndMoveIter(vchIter *iter)
-{
-    throw runtime_error("unpackAndMoveIter() has not been defined for an event.");
 }
 void Event::execute(Game *game)
 {
     throw runtime_error("execute() has not been defined for an event.");
 }
 
-void Event::packEvent(vch *dest) {}
-
-void Event::unpackEventAndMoveIter(vchIter *iter) {}
 
 Event::Event() {}
-
-Event::Event(vchIter *iter)
+void Event::packEventBasics(Netpack::Builder* to)
 {
-    unpackEventAndMoveIter(iter);
+    packTypechar(to, typechar());
 }
+Event::Event(Netpack::Consumer* from) {}
 
 unsigned char BalanceUpdateEvent::typechar()
 {
@@ -85,35 +77,28 @@ void BalanceUpdateEvent::execute(Game *game)
         game->players[playerId].credit.destroySomeByFiat(amount);
     }
 }
-void BalanceUpdateEvent::pack(vch *dest)
-{
-    packEvent(dest);
-
-    packStringToVch(dest, userAddress);
-    packToVch(dest, "L", amount);
-    packToVch(dest, "C", (unsigned char)isDeposit);
-}
-void BalanceUpdateEvent::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackStringFromIter(*iter, 50, &userAddress);
-    cout << "userAddress after unpack: " << userAddress << endl;
-    *iter = unpackFromIter(*iter, "L", &amount);
-    unsigned char isDepositBoolChar;
-    *iter = unpackFromIter(*iter, "C", &isDepositBoolChar);
-    isDeposit = (bool)isDepositBoolChar;
-}
 
 BalanceUpdateEvent::BalanceUpdateEvent(string userAddress, coinsInt amount, bool isDeposit)
     : Event(),
       userAddress(userAddress), amount(amount), isDeposit(isDeposit) {}
-
-BalanceUpdateEvent::BalanceUpdateEvent(vchIter *iter)
-    : Event(iter)
+void BalanceUpdateEvent::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packEventBasics(to);
+
+    to->packStringWithoutSize(userAddress);
+    packCoinsInt(to, amount); 
+    to->packBool(isDeposit);
+}
+BalanceUpdateEvent::BalanceUpdateEvent(Netpack::Consumer* from)
+    : Event(from)
+{
+    userAddress = from->consumeStringGivenSize(42);
+    // cout << "userAddress after unpack: " << userAddress << endl;
+    amount = consumeCoinsInt(from);
+    isDeposit = from->consumeBool();
 }
 
-unsigned char HoneypotAddedEvent::typechar()
+uint8_t HoneypotAddedEvent::typechar()
 {
     return EVENT_HONEYPOT_CHAR;
 }
@@ -126,27 +111,22 @@ void HoneypotAddedEvent::execute(Game *game)
     }
     else
     {
-        game->honeypotGoldPileIfGameStarted = boost::shared_ptr<GoldPile>(new GoldPile(vector2f(0,0)));
+        game->honeypotGoldPileIfGameStarted = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp::zero));
         game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
         game->registerNewEntityIgnoringCollision(game->honeypotGoldPileIfGameStarted);
     }
 }
 
-void HoneypotAddedEvent::pack(vch *dest)
-{
-    packToVch(dest, "L", honeypotAmount);
-    packEvent(dest);
-}
-void HoneypotAddedEvent::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackFromIter(*iter, "L", &honeypotAmount);
-}
-
 HoneypotAddedEvent::HoneypotAddedEvent(coinsInt honeypotAmount)
     : Event(), honeypotAmount(honeypotAmount)
     {}
-HoneypotAddedEvent::HoneypotAddedEvent(vchIter *iter)
-    : Event(iter)
+void HoneypotAddedEvent::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    packEventBasics(to);
+    packCoinsInt(to, honeypotAmount);
+}
+HoneypotAddedEvent::HoneypotAddedEvent(Netpack::Consumer *from)
+    : Event(from)
+{
+    honeypotAmount = consumeCoinsInt(from);
 }

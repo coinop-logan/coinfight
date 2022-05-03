@@ -18,7 +18,7 @@ void debugOutputVector(const char *,vector3f);
 void packFixed32(Netpack::Builder* to, fixed32 val);
 fixed32 consumeFixed32(Netpack::Consumer *from);
 
-void packVector2fp(Netpack::Builder* to, const vector2fp &v);
+void packVector2fp(Netpack::Builder* to, vector2fp v);
 vector2fp consumeVector2fp(Netpack::Consumer *from);
 
 void packEntityRef(Netpack::Builder* to, EntityRef ref);

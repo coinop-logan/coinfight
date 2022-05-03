@@ -8,7 +8,7 @@
 #include <set>
 #include "coins.h"
 #include "myvectors.h"
-#include "vchpack.h"
+#include "netpack.h"
 #include "common.h"
 #include "events.h"
 #include "entities.h"
@@ -32,14 +32,11 @@ struct Player
     Coins credit;
     bool beaconAvailable;
 
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder*);
 
     Player(string address);
-    Player(vchIter *iter);
+    Player(Netpack::Consumer*);
 };
-
-void packFrameCmdsPacket(vch *dest, uint64_t frame);
 
 struct SearchGridRect
 {
@@ -53,17 +50,17 @@ class SearchGrid
     bool cellIsValid(vector2i cell);
     void registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef);
     void deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entityRef);
-    vector2f gamePosToCellSpace(vector2f gamePos);
-    vector2i gamePosToCellConstrained(vector2f gamePos);
+    vector2fp gamePosToCellSpace(vector2fp gamePos);
+    vector2i gamePosToCellConstrained(vector2fp gamePos);
 public:
     SearchGrid();
     set<EntityRef> getCell(vector2i cell);
-    optional<vector2i> gamePosToCell(vector2f gamePos);
+    optional<vector2i> gamePosToCell(vector2fp gamePos);
     optional<vector2i> registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref);
     optional<vector2i> updateEntityCellRelation(Entity* entity);
-    SearchGridRect gridRectAroundGamePos(vector2f gamePos, float radius);
+    SearchGridRect gridRectAroundGamePos(vector2fp gamePos, fixed32 radius);
     vector<EntityRef> entitiesInGridRect(SearchGridRect rect);
-    vector<EntityRef> nearbyEntitiesSloppyIncludingEmpty(vector2f gamePos, float radius);
+    vector<EntityRef> nearbyEntitiesSloppyIncludingEmpty(vector2fp gamePos, fixed32 radius);
 };
 
 class Game
@@ -84,15 +81,14 @@ public:
     bool getPlayerBeaconAvailable(unsigned int playerId);
     void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
 
-    vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2f centerPos, float radius);
-    vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2f centerPos, float halfWidth);
-    vector<boost::shared_ptr<Unit>> unitsCollidingWithCircle(vector2f centerPos, float radius);
+    vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2fp centerPos, fixed32 radius);
+    vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2fp centerPos, fixed32 halfWidth);
+    vector<boost::shared_ptr<Unit>> unitsCollidingWithCircle(vector2fp centerPos, fixed32 radius);
 
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder*);
 
     Game();
-    Game(vchIter *);
+    Game(Netpack::Consumer*);
     void reassignEntityGamePointers();
 
     void iterate();

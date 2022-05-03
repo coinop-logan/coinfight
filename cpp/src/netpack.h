@@ -1,5 +1,6 @@
 #include <vector>
 #include <stdint.h>
+#include <boost/function.hpp>
 #include <string>
 #include <optional>
 
@@ -47,6 +48,20 @@ namespace Netpack
                 this->packBool(false);
             }
         }
+
+        // template<typename T>
+        // void packOptional(optional<T> optVal, boost::function<void (Netpack::Builder*, T)> packFunc)
+        // {
+        //     if (auto val = optVal)
+        //     {
+        //         this->packBool(true);
+        //         packFunc(this, *val);
+        //     }
+        //     else
+        //     {
+        //         this->packBool(false);
+        //     }
+        // }
 
         template<typename T>
         void packEnum(T val)

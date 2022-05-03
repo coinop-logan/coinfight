@@ -1,6 +1,6 @@
 #include <boost/shared_ptr.hpp>
 #include "cmds.h"
-#include "vchpack.h"
+#include "netpack.h"
 #include "stdint.h"
 #include "events.h"
 
@@ -12,33 +12,30 @@ using namespace std;
 class Packet
 {
 public:
-    virtual unsigned char typechar();
+    virtual uint8_t typechar();
 
-    virtual void pack(vch *dest);
-    virtual void unpackAndMoveIter(vchIter *iter);
+    virtual void pack(Netpack::Builder*);
 
-    void packPacket(vch *destVch);
-    void unpackPacketAndMoveIter(vchIter *iter);
+    void packPacketBasics(Netpack::Builder*);
 
     Packet();
-    Packet(vchIter *iter);
+    Packet(Netpack::Consumer*);
 };
 
 // note that a resync packet is so simple that it's just made directly in server and client
 
 struct FrameEventsPacket : public Packet
 {
-    unsigned char typechar();
+    uint8_t typechar();
 
     uint64_t frame;
     vector<boost::shared_ptr<AuthdCmd>> authdCmds;
     vector<boost::shared_ptr<Event>> events;
 
-    void pack(vch *dest);
-    void unpackAndMoveIter(vchIter *iter);
+    void pack(Netpack::Builder*);
 
     FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<Event>> events);
-    FrameEventsPacket(vchIter *iter);
+    FrameEventsPacket(Netpack::Consumer*);
 };
 
 #endif // PACKETS_H

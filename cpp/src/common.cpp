@@ -30,7 +30,7 @@ fixed32 consumeFixed32(Netpack::Consumer *from)
     return fixed32::from_raw_value(from->consumeInt32_t());
 }
 
-void packVector2fp(Netpack::Builder* to, const vector2fp &v)
+void packVector2fp(Netpack::Builder* to, vector2fp v)
 {
     packFixed32(to, v.x);
     packFixed32(to, v.y);

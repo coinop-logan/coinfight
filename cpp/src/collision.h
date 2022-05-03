@@ -41,17 +41,17 @@
 
 using namespace std;
 
-const float RVO_EPSILON = 0.00001f;
+const fixed32 RVO_EPSILON(0.0001);
 
 struct Line {
-    vector2f point;
-    vector2f direction;
+    vector2fp point;
+    vector2fp direction;
 };
 
-vector2f calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, vector<boost::shared_ptr<Unit>> nearbyUnits, float timeHorizon, float timeStep);
+vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, vector<boost::shared_ptr<Unit>> nearbyUnits, fixed32 timeHorizon, fixed32 timeStep);
 
-bool linearProgram1(const std::vector<Line> &lines, size_t lineNo, float radius, const vector2f &optVelocity, bool directionOpt, vector2f &result);
-size_t linearProgram2(const std::vector<Line> &lines, float radius, const vector2f &optVelocity, bool directionOpt, vector2f &result);
-void linearProgram3(const std::vector<Line> &lines, size_t numObstLines, size_t beginLine, float radius, vector2f &result);
+bool linearProgram1(const std::vector<Line> &lines, size_t lineNo, fixed32 radius, const vector2fp &optVelocity, bool directionOpt, vector2fp &result);
+size_t linearProgram2(const std::vector<Line> &lines, fixed32 radius, const vector2fp &optVelocity, bool directionOpt, vector2fp &result);
+void linearProgram3(const std::vector<Line> &lines, size_t numObstLines, size_t beginLine, fixed32 radius, vector2fp &result);
 
 #endif

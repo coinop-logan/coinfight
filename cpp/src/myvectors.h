@@ -58,6 +58,7 @@ struct vector2fp
     fixed32 operator*(const vector2fp &vector) const;
     void operator*=(fixed32 c);
     vector2fp operator/(fixed32 c) const;
+    vector2fp operator/(int c) const;
     fixed32 getMagnitudeSquared() const;
     fixed32 getMagnitude() const;
     fixed32 getAngle() const;
@@ -77,6 +78,7 @@ struct vector2i
     vector2i();
     vector2i(int _x, int _y);
     vector2i(const vector2fl &c);
+    vector2i(const vector2fp &c);
     vector2i(const vector2i &c);
     vector2i operator=(const vector2i &c);
     bool operator==(const vector2i &c) const;

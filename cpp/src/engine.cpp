@@ -6,11 +6,12 @@
 #include <string>
 #include "myvectors.h"
 #include "config.h"
-#include "vchpack.h"
+#include "netpack.h"
 #include "engine.h"
 #include "coins.h"
 #include "events.h"
 #include "collision.h"
+#include "fpm/math.hpp"
 
 using namespace std;
 
@@ -67,25 +68,20 @@ void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntit
     }
 }
 
-void Player::pack(vch *dest)
-{
-    packStringToVch(dest, address);
-    packBool(dest, beaconAvailable);
-    credit.pack(dest);
-}
-void Player::unpackAndMoveIter(vchIter *iter)
-{
-    *iter = unpackStringFromIter(*iter, 50, &address);
-    beaconAvailable = unpackBoolAndMoveIter(iter);
-    credit = Coins(iter);
-}
 
 Player::Player(string address)
     : address(address), credit(), beaconAvailable(true) {}
-
-Player::Player(vchIter *iter)
+void Player::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(iter);
+    to->packStringWithoutSize(address);
+    to->packBool(beaconAvailable);
+    credit.pack(to);
+}
+Player::Player(Netpack::Consumer* from)
+{
+    address = from->consumeStringGivenSize(42);
+    beaconAvailable = from->consumeBool();
+    credit = Coins(from);
 }
 
 SearchGridRect::SearchGridRect(vector2i start, vector2i end)
@@ -129,19 +125,19 @@ void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entity
     }
 }
 
-vector2f SearchGrid::gamePosToCellSpace(vector2f gamePos)
+vector2fp SearchGrid::gamePosToCellSpace(vector2fp gamePos)
 {
     // since map center is (0,0), search grid should be centered on (0,0)
-    float halfSearchGridWidth = SEARCH_GRID_TOTAL_WIDTH / 2.0;
-    vector2f searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
+    fixed32 halfSearchGridWidth = fixed32(SEARCH_GRID_TOTAL_WIDTH) / 2;
+    vector2fp searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
     return (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
 }
 
-vector2i SearchGrid::gamePosToCellConstrained(vector2f gamePos)
+vector2i SearchGrid::gamePosToCellConstrained(vector2fp gamePos)
 {
-    vector2f cellSpacePos = gamePosToCellSpace(gamePos);
-    cellSpacePos.x = min((float)SEARCH_GRID_NUM_ROWS-1, max(0.0f, cellSpacePos.x));
-    cellSpacePos.y = min((float)SEARCH_GRID_NUM_ROWS-1, max(0.0f, cellSpacePos.y));
+    vector2fp cellSpacePos = gamePosToCellSpace(gamePos);
+    cellSpacePos.x = min((fixed32)SEARCH_GRID_NUM_ROWS-1, max(fixed32(0), cellSpacePos.x));
+    cellSpacePos.y = min((fixed32)SEARCH_GRID_NUM_ROWS-1, max(fixed32(0), cellSpacePos.y));
     return cellSpacePos;
 }
 
@@ -150,14 +146,14 @@ set<EntityRef> SearchGrid::getCell(vector2i cell)
 {
     return cells[cell.x][cell.y];
 }
-optional<vector2i> SearchGrid::gamePosToCell(vector2f gamePos)
+optional<vector2i> SearchGrid::gamePosToCell(vector2fp gamePos)
 {
-    vector2f gamePosInSearchGridSpace = gamePosToCellSpace(gamePos);
+    vector2fp gamePosInSearchGridSpace = gamePosToCellSpace(gamePos);
 
-    if (gamePosInSearchGridSpace.x < 0 ||
-        gamePosInSearchGridSpace.x >= SEARCH_GRID_NUM_ROWS ||
-        gamePosInSearchGridSpace.y < 0 ||
-        gamePosInSearchGridSpace.y >= SEARCH_GRID_NUM_ROWS)
+    if (gamePosInSearchGridSpace.x < fixed32(0) ||
+        gamePosInSearchGridSpace.x >= fixed32(SEARCH_GRID_NUM_ROWS) ||
+        gamePosInSearchGridSpace.y < fixed32(0) ||
+        gamePosInSearchGridSpace.y >= fixed32(SEARCH_GRID_NUM_ROWS))
     {
         return {};
     }
@@ -202,10 +198,10 @@ optional<vector2i> SearchGrid::updateEntityCellRelation(Entity* entity)
 
     return {};
 }
-SearchGridRect SearchGrid::gridRectAroundGamePos(vector2f gamePos, float radius)
+SearchGridRect SearchGrid::gridRectAroundGamePos(vector2fp gamePos, fixed32 radius)
 {
-    vector2f startGamePos = gamePos - vector2f(radius, radius);
-    vector2f endGamePos = gamePos + vector2f(radius, radius);
+    vector2fp startGamePos = gamePos - vector2fp(radius, radius);
+    vector2fp endGamePos = gamePos + vector2fp(radius, radius);
 
     vector2i startCell = gamePosToCellConstrained(startGamePos);
     vector2i endCell = gamePosToCellConstrained(endGamePos);
@@ -224,7 +220,7 @@ vector<EntityRef> SearchGrid::entitiesInGridRect(SearchGridRect rect)
     }
     return entities;
 }
-vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2f gamePos, float radius)
+vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2fp gamePos, fixed32 radius)
 {
     return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
@@ -252,9 +248,9 @@ void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
 }
-vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2f fromPos, float radius)
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, fixed32 radius)
 {
-    float radiusSquared = pow(radius, 2);
+    fixed32 radiusSquared = pow(radius, 2);
 
     auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(fromPos, radius);
 
@@ -272,7 +268,7 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2f fromPos, f
 
     return entitiesToReturn;
 }
-vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2f centerPos, float halfWidth)
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2fp centerPos, fixed32 halfWidth)
 {
     auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(centerPos, halfWidth);
 
@@ -281,7 +277,7 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2f centerPos,
     {
         if (auto entity = this->entities[nearbyEntityRefs[i]])
         {
-            vector2f entityPos = entity->getPos();
+            vector2fp entityPos = entity->getPos();
             if (abs(centerPos.x - entityPos.x) <= halfWidth && abs(centerPos.y - entityPos.y) <= halfWidth)
             {
                 entitiesToReturn.push_back(entity);
@@ -291,7 +287,7 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2f centerPos,
 
     return entitiesToReturn;
 }
-vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2f centerPos, float radius)
+vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerPos, fixed32 radius)
 {
     auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(centerPos, radius + MAX_UNIT_RADIUS);
 
@@ -300,7 +296,7 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2f centerPo
     {
         if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(this->entities[nearbyEntityRefs[i]]))
         {
-            float combinedRadius = radius + unit->getRadius();
+            fixed32 combinedRadius = radius + unit->getRadius();
             if ((centerPos - unit->getPos()).getMagnitudeSquared() < pow(combinedRadius, 2))
             {
                 unitsToReturn.push_back(unit);
@@ -311,59 +307,49 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2f centerPo
     return unitsToReturn;
 }
 
-void Game::pack(vch *dest)
-{
-    packToVch(dest, "Q", frame);
 
-    packToVch(dest, "C", (unsigned char)(players.size()));
+Game::Game()
+    : frame(0) {}
+void Game::pack(Netpack::Builder* to)
+{
+    to->packUint64_t(frame);
+    to->packUint8_t((uint8_t)players.size());
     for (unsigned int i=0; i < players.size(); i++)
     {
-        players[i].pack(dest);
+        players[i].pack(to);
     }
 
-    packToVch(dest, "H", (EntityRef)(entities.size()));
+    to->packUint16_t((uint16_t)entities.size());
     for (EntityRef i = 0; i < entities.size(); i++)
     {
-        unsigned char typechar = getMaybeNullEntityTypechar(entities[i]);
+        uint8_t typechar = getMaybeNullEntityTypechar(entities[i]);
 
-        packTypechar(dest, typechar);
+        packTypechar(to, typechar);
 
         if (typechar != NULL_TYPECHAR)
         {
-            entities[i]->pack(dest);
+            entities[i]->pack(to);
         }
     }
 }
-void Game::unpackAndMoveIter(vchIter *iter)
+Game::Game(Netpack::Consumer* from)
 {
-    *iter = unpackFromIter(*iter, "Q", &frame);
-
-    uint8_t playersSize;
-    *iter = unpackFromIter(*iter, "C", &playersSize);
+    frame = from->consumeUint64_t();
+    uint8_t playersSize = from->consumeUint8_t();
+    
     players.clear();
-
-    for (int i = 0; i < playersSize; i++)
+    for (unsigned int i = 0; i < playersSize; i++)
     {
-        players.push_back(Player(iter));
+        players.push_back(Player(from));
     }
 
-    uint16_t entitiesSize;
-    *iter = unpackFromIter(*iter, "H", &entitiesSize);
+    uint16_t entitiesSize = from->consumeUint16_t();
+
     entities.clear();
-
-    for (int i = 0; i < entitiesSize; i++)
+    for (unsigned int i = 0; i < entitiesSize; i++)
     {
-        unsigned char typechar;
-        *iter = unpackTypecharFromIter(*iter, &typechar);
-
-        registerNewEntityIgnoringCollision(unpackFullEntityAndMoveIter(iter, typechar));
+        registerNewEntityIgnoringCollision(consumeEntity(from));
     }
-}
-
-Game::Game() : frame(0) {}
-Game::Game(vchIter *iter)
-{
-    unpackAndMoveIter(iter);
 }
 void Game::reassignEntityGamePointers()
 {
@@ -415,7 +401,7 @@ void Game::iterate()
                     }
                 }
 
-                vector2f velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, 40, 1);
+                vector2fp velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, fixed32(40), fixed32(1));
                 // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
 
                 mobileUnit->moveWithVelocityAndUpdateCell(velocity);
@@ -510,4 +496,5 @@ void triggerDebug()
 {
     int a;
     a = 3; // meant to be tagged in an IDE with a breakpoint.
+    a ++;
 }
