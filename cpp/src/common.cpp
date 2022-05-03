@@ -5,31 +5,12 @@
 
 using namespace std;
 
-void packTrue(vch *dest)
+void debugOutputVector(const char *label, vector2fp v)
 {
-    packToVch(dest, "C", (unsigned char)1);
+    fprintf(stdout, "%s", label);
+    fprintf(stdout, ": %f,%f\n", v.x, v.y);
 }
-void packFalse(vch *dest)
-{
-    packToVch(dest, "C", (unsigned char)0);
-}
-void packBool(vch *dest, bool flag)
-{
-    packToVch(dest, "C", (unsigned char)(flag ? 1 : 0));
-}
-bool unpackBoolAndMoveIter(vchIter *iter)
-{
-    unsigned char boolChar;
-    *iter = unpackFromIter(*iter, "C", &boolChar);
-    return (boolChar != 0);
-}
-
-void packTypechar(vch *dest, unsigned char typechar)
-{
-    packToVch(dest, "C", typechar);
-}
-
-void debugOutputVector(const char *label, vector2f v)
+void debugOutputVector(const char *label, vector2fl v)
 {
     fprintf(stdout, "%s", label);
     fprintf(stdout, ": %f,%f\n", v.x, v.y);
@@ -40,67 +21,45 @@ void debugOutputVector(const char *label, vector3f v)
     fprintf(stdout, ": %f,%f,%f\n", v.x, v.y, v.z);
 }
 
-void prependVchWithSize(vch *vchDest)
+void packFixed32(Netpack::Builder *dest, fixed32 val)
 {
-    uint64_t packetSize = vchDest->size();
-    vch sizeData;
-    packToVch(&sizeData, "Q", packetSize);
-
-    vchDest->insert(vchDest->begin(), sizeData.begin(), sizeData.end());
+    dest->packInt32_t(val.raw_value());
+}
+fixed32 consumeFixed32(Netpack::Consumer *from)
+{
+    return fixed32::from_raw_value(from->consumeInt32_t());
 }
 
-void packVector2f(vch *destVch, const vector2f &v)
+void packVector2fp(Netpack::Builder *dest, const vector2fp &v)
 {
-    packToVch(destVch, "ff", v.x, v.y);
+    packFixed32(dest, v.x);
+    packFixed32(dest, v.y);
+}
+vector2fp consumeVector2f(Netpack::Consumer *from)
+{
+    return vector2fp(consumeFixed32(from), consumeFixed32(from));
 }
 
-vchIter unpackVector2f(vchIter src, vector2f *v)
+
+void packEntityRef(Netpack::Builder *dest, EntityRef ref)
 {
-    return unpackFromIter(src, "ff", &v->x, &v->y);
+    dest->packUint16_t(ref);
+}
+EntityRef consumeEntityRef(Netpack::Consumer *from)
+{
+    return from->consumeUint16_t();
 }
 
-vchIter unpackTypecharFromIter(vchIter src, unsigned char *typechar)
-{
-    return unpackFromIter(src, "C", typechar);
-}
-
-void packEntityRef(vch *destVch, EntityRef ref)
-{
-    packToVch(destVch, "H", ref);
-}
-vchIter unpackEntityRef(vchIter iter, EntityRef *ref)
-{
-    return unpackFromIter(iter, "H", ref);
-}
-
-void packStringToVch(std::vector<unsigned char> *vch, string s)
-{
-    char* cstr;
-    cstr = &s[0];
-    packToVch(vch, "s", cstr);
-}
-vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s)
-{
-    char formatStr[7];
-    snprintf(formatStr, sizeof(formatStr), "%ds", maxSize);
-
-    char cstr[maxSize+1];
-    vchIter newIter = unpackFromIter(iter, formatStr, cstr);
-    *s = string(cstr);
-
-    return newIter;
-}
-
-std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
-{
-    unsigned int sum = a + b;
-    if (sum < a) {
-        return {};
-    }
-    else {
-        return {sum};
-    }
-}
+// std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
+// {
+//     unsigned int sum = a + b;
+//     if (sum < a) {
+//         return {};
+//     }
+//     else {
+//         return {sum};
+//     }
+// }
 
 coinsInt dollarsToCoinsInt(float dollars)
 {
@@ -120,23 +79,23 @@ float radToDeg(float rad)
     return rad * (180 / M_PI);
 }
 
-vector2f randomVectorWithMagnitude(float magnitude)
+vector2fl randomVectorWithMagnitude(float magnitude)
 {
     float angle = ((double)rand() / RAND_MAX) * M_PI * 2;
-    return composeVector2f(angle, magnitude);
+    return composeVector2fl(angle, magnitude);
 }
 
-vector2f randomVectorWithMagnitudeRange(float min, float max)
+vector2fl randomVectorWithMagnitudeRange(float min, float max)
 {
     float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + min;
     return randomVectorWithMagnitude(magnitude);
 }
 
-sf::Vector2f toSFVec(vector2f v)
+sf::Vector2f toSFVec(vector2fl v)
 {
     return sf::Vector2f(v.x, v.y);
 }
-vector2f fromSFVec(sf::Vector2f v)
+vector2fl fromSFVec(sf::Vector2f v)
 {
-    return vector2f(v.x, v.y);
+    return vector2fl(v.x, v.y);
 }

@@ -2,7 +2,8 @@
 #include <optional>
 #include <boost/shared_ptr.hpp>
 #include "myvectors.h"
-#include "vchpack.h"
+#include "netpack.h"
+#include "fpm/fixed.hpp"
 #include "coins.h"
 
 #ifndef COMMON_H
@@ -10,33 +11,20 @@
 
 using namespace std;
 
-using vch = vector<unsigned char>;
-using vchIter = vector<unsigned char>::iterator;
-
-void packTrue(vch *dest);
-void packFalse(vch *dest);
-void packBool(vch *dest, bool flag);
-bool unpackBoolAndMoveIter(vchIter *iter);
-
-void packTypechar(vch *dest, unsigned char typechar);
-
-void debugOutputVector(const char *,vector2f);
+void debugOutputVector(const char *,vector2fp);
+void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
 
-void prependVchWithSize(vch *vchDest);
+void packFixed32(Netpack::Builder *dest, fixed32 val);
+fixed32 consumeFixed32(Netpack::Consumer *from);
 
-void packVector2f(vch *destVch, const vector2f &v);
-vchIter unpackVector2f(vchIter src, vector2f *v);
+void packVector2fp(Netpack::Builder *dest, const vector2fp &v);
+vector2fp consumeVector2f(Netpack::Consumer *from);
 
-vchIter unpackTypecharFromIter(vchIter src, unsigned char *typechar);
+void packEntityRef(Netpack::Builder *dest, EntityRef ref);
+EntityRef consumeEntityRef(Netpack::Consumer *from);
 
-void packEntityRef(vch *destVch, EntityRef ref);
-vchIter unpackEntityRef(vchIter iter, EntityRef *ref);
-
-void packStringToVch(std::vector<unsigned char> *vch, string s);
-vchIter unpackStringFromIter(vchIter iter, uint16_t maxSize, string *s);
-
-std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
+// std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
 
 coinsInt dollarsToCoinsInt(float dollars);
 float coinsIntToDollars(coinsInt coins);
@@ -44,8 +32,8 @@ float coinsIntToDollars(coinsInt coins);
 float degToRad(float);
 float radToDeg(float);
 
-vector2f randomVectorWithMagnitude(float magnitude);
-vector2f randomVectorWithMagnitudeRange(float min, float max);
+vector2fl randomVectorWithMagnitude(float magnitude);
+vector2fl randomVectorWithMagnitudeRange(float min, float max);
 
 template<class T, class U> vector<boost::shared_ptr<T>> filterForType(vector<boost::shared_ptr<U>> v)
 {
@@ -73,7 +61,7 @@ template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContain
     return filtered;
 }
 
-sf::Vector2f toSFVec(vector2f v);
-vector2f fromSFVec(sf::Vector2f v);
+sf::Vector2f toSFVec(vector2fl v);
+vector2fl fromSFVec(sf::Vector2f v);
 
 #endif // COMMON_H

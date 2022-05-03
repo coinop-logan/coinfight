@@ -1,114 +1,227 @@
 #include <cmath>
 
 #include "myvectors.h"
+#include "fpm/math.hpp"
 
-vector2f::vector2f()
+vector2fl::vector2fl()
 {
 	x = 0;
 	y = 0;
 }
-vector2f::vector2f(float _x, float _y)
+vector2fl::vector2fl(float _x, float _y)
 {
 	x = _x;
 	y = _y;
 }
-vector2f::vector2f(const vector2f &c)
+vector2fl::vector2fl(const vector2fl &c)
 {
 	x = c.x;
 	y = c.y;
 }
-vector2f::vector2f(const vector2i &c)
+vector2fl::vector2fl(const vector2i &c)
 {
     x = c.x;
     y = c.y;
 }
-vector2f vector2f::operator=(const vector2f &c)
+vector2fl vector2fl::operator=(const vector2fl &c)
 {
 	x = c.x;
 	y = c.y;
 	return (*this);
 }
-bool vector2f::operator==(const vector2f &c) const
+bool vector2fl::operator==(const vector2fl &c) const
 {
 	return (x == c.x && y == c.y);
 }
-vector2f vector2f::operator+(const vector2f &c) const
+vector2fl vector2fl::operator+(const vector2fl &c) const
 {
-	return vector2f(x + c.x, y + c.y);
+	return vector2fl(x + c.x, y + c.y);
 }
-void vector2f::operator+=(const vector2f &c)
+void vector2fl::operator+=(const vector2fl &c)
 {
 	x += c.x;
 	y += c.y;
 }
-vector2f vector2f::operator-(const vector2f &c) const
+vector2fl vector2fl::operator-(const vector2fl &c) const
 {
-	return vector2f(x - c.x, y - c.y);
+	return vector2fl(x - c.x, y - c.y);
 }
-void vector2f::operator-=(const vector2f &c)
+void vector2fl::operator-=(const vector2fl &c)
 {
 	x -= c.x;
 	y -= c.y;
 }
-vector2f vector2f::operator*(float c) const
+vector2fl vector2fl::operator*(float c) const
 {
-	return vector2f(x * c, y * c);
+	return vector2fl(x * c, y * c);
 }
-float vector2f::operator*(const vector2f &vector) const
+float vector2fl::operator*(const vector2fl &vector) const
     {
         return x * vector.x + y * vector.y;
     }
-void vector2f::operator*=(float c)
+void vector2fl::operator*=(float c)
 {
 	x *= c;
 	y *= c;
 }
-vector2f vector2f::operator/(float c) const
+vector2fl vector2fl::operator/(float c) const
 {
-	return vector2f(x / c, y / c);
+	return vector2fl(x / c, y / c);
 }
-float vector2f::getMagnitudeSquared() const
+float vector2fl::getMagnitudeSquared() const
 {
 	return x * x + y * y;
 }
-float vector2f::getMagnitude() const
+float vector2fl::getMagnitude() const
 {
 	return sqrt(getMagnitudeSquared());
 }
-float vector2f::getAngle() const
+float vector2fl::getAngle() const
 {
 	return atan2(y, x);
 }
-vector2f vector2f::normalized() const
+vector2fl vector2fl::normalized() const
 {
 	float magnitude = getMagnitude();
-	return vector2f(x / magnitude, y / magnitude);
+	return vector2fl(x / magnitude, y / magnitude);
 }
-vector2f vector2f::rotated(float angle) const
+vector2fl vector2fl::rotated(float angle) const
 {
 	float newAngle = angle + getAngle();
-	return composeVector2f(newAngle, getMagnitude());
+	return composeVector2fl(newAngle, getMagnitude());
 }
-vector2f composeVector2f(float angle, float magnitude) {
-	return vector2f(magnitude * cos(angle), magnitude * sin(angle));
+vector2fl composeVector2fl(float angle, float magnitude) {
+	return vector2fl(magnitude * cos(angle), magnitude * sin(angle));
 }
-vector2f interpolate(vector2f a, vector2f b, float i) {
+vector2fl interpolate(vector2fl a, vector2fl b, float i) {
     return ((b - a) * i) + a;
 }
-vector2f operator*(float s, const vector2f &vector)
+vector2fl operator*(float s, const vector2fl &vector)
 {
-    return vector2f(s * vector.x, s * vector.y);
+    return vector2fl(s * vector.x, s * vector.y);
 }
-vector2i vector2f::floored() const
+vector2i vector2fl::floored() const
 {
     return vector2i((int)x, (int)y);
 }
-vector2f vector2f::operator-() const
+vector2fl vector2fl::operator-() const
 {
-    return vector2f(-x, -y);
+    return vector2fl(-x, -y);
 }
 
-float det(const vector2f &vector1, const vector2f &vector2)
+float det(const vector2fl &vector1, const vector2fl &vector2)
+{
+    return vector1.x * vector2.y - vector1.y * vector2.x;
+}
+
+
+vector2fp::vector2fp()
+{
+	x = fixed32(0);
+	y = fixed32(0);
+}
+vector2fp::vector2fp(fixed32 _x, fixed32 _y)
+{
+	x = _x;
+	y = _y;
+}
+vector2fp::vector2fp(const vector2fp &c)
+{
+	x = c.x;
+	y = c.y;
+}
+vector2fp::vector2fp(const vector2i &c)
+{
+    x = fixed32(c.x);
+    y = fixed32(c.y);
+}
+vector2fp vector2fp::operator=(const vector2fp &c)
+{
+	x = c.x;
+	y = c.y;
+	return (*this);
+}
+bool vector2fp::operator==(const vector2fp &c) const
+{
+	return (x == c.x && y == c.y);
+}
+vector2fp vector2fp::operator+(const vector2fp &c) const
+{
+	return vector2fp(x + c.x, y + c.y);
+}
+void vector2fp::operator+=(const vector2fp &c)
+{
+	x += c.x;
+	y += c.y;
+}
+vector2fp vector2fp::operator-(const vector2fp &c) const
+{
+	return vector2fp(x - c.x, y - c.y);
+}
+void vector2fp::operator-=(const vector2fp &c)
+{
+	x -= c.x;
+	y -= c.y;
+}
+vector2fp vector2fp::operator*(fixed32 c) const
+{
+	return vector2fp(x * c, y * c);
+}
+fixed32 vector2fp::operator*(const vector2fp &vector) const
+    {
+        return x * vector.x + y * vector.y;
+    }
+void vector2fp::operator*=(fixed32 c)
+{
+	x *= c;
+	y *= c;
+}
+vector2fp vector2fp::operator/(fixed32 c) const
+{
+	return vector2fp(x / c, y / c);
+}
+fixed32 vector2fp::getMagnitudeSquared() const
+{
+	return x * x + y * y;
+}
+fixed32 vector2fp::getMagnitude() const
+{
+	return sqrt(getMagnitudeSquared());
+}
+fixed32 vector2fp::getAngle() const
+{
+	return atan2(y, x);
+}
+vector2fp vector2fp::normalized() const
+{
+	fixed32 magnitude = getMagnitude();
+	return vector2fp(x / magnitude, y / magnitude);
+}
+vector2fp vector2fp::rotated(fixed32 angle) const
+{
+	fixed32 newAngle = angle + getAngle();
+	return composeVector2fp(newAngle, getMagnitude());
+}
+vector2fp composeVector2fp(fixed32 angle, fixed32 magnitude) {
+	return vector2fp(magnitude * cos(angle), magnitude * sin(angle));
+}
+vector2fp interpolate(vector2fp a, vector2fp b, fixed32 i) {
+    return ((b - a) * i) + a;
+}
+vector2fp operator*(fixed32 s, const vector2fp &vector)
+{
+    return vector2fp(s * vector.x, s * vector.y);
+}
+vector2i vector2fp::floored() const
+{
+    return vector2i((int)x, (int)y);
+}
+vector2fp vector2fp::operator-() const
+{
+    return vector2fp(-x, -y);
+}
+
+fixed32 det(const vector2fp &vector1, const vector2fp &vector2)
 {
     return vector1.x * vector2.y - vector1.y * vector2.x;
 }
@@ -124,7 +237,7 @@ vector2i::vector2i(int _x, int _y)
 	x = _x;
 	y = _y;
 }
-vector2i::vector2i(const vector2f &c)
+vector2i::vector2i(const vector2fl &c)
 {
 	x = c.x;
 	y = c.y;
@@ -162,9 +275,9 @@ void vector2i::operator-=(const vector2i &c)
 	x -= c.x;
 	y -= c.y;
 }
-vector2f vector2i::operator*(float c) const
+vector2fl vector2i::operator*(float c) const
 {
-	return vector2f(x * c, y * c);
+	return vector2fl(x * c, y * c);
 }
 vector2i vector2i::operator*(int c) const
 {
@@ -180,9 +293,9 @@ void vector2i::operator*=(int c)
 	x *= c;
 	y *= c;
 }
-vector2f vector2i::operator/(float c) const
+vector2fl vector2i::operator/(float c) const
 {
-	return vector2f(x / c, y / c);
+	return vector2fl(x / c, y / c);
 }
 vector2i vector2i::operator/(int c) const
 {
@@ -200,16 +313,16 @@ float vector2i::getAngle() const
 {
 	return atan2(y, x);
 }
-vector2f vector2i::normalized() const
+vector2fl vector2i::normalized() const
 {
 	float magnitude = getMagnitude();
-	return vector2f(x / magnitude, y / magnitude);
+	return vector2fl(x / magnitude, y / magnitude);
 }
-vector2f vector2i::rotated(float angle) const
+vector2fl vector2i::rotated(float angle) const
 {
 	float magnitude = getMagnitude();
 	float newAngle = angle + getAngle();
-	return vector2f(magnitude * cos(newAngle), magnitude * sin(newAngle));
+	return vector2fl(magnitude * cos(newAngle), magnitude * sin(newAngle));
 }
 
 vector3f::vector3f()
@@ -230,15 +343,15 @@ vector3f::vector3f(const vector3f &c)
 	y = c.y;
 	z = c.z;
 }
-vector3f::vector3f(const vector2f &c)
+vector3f::vector3f(const vector2fl &c)
 {
 	x = c.x;
 	y = c.y;
 	z = 0;
 }
-vector2f vector3f::vec2() const
+vector2fl vector3f::vec2() const
 {
-	return vector2f(x, y);
+	return vector2fl(x, y);
 }
 vector3f vector3f::operator=(const vector3f &c)
 {
@@ -309,9 +422,9 @@ void vector3f::normalize()
 	*this = normalized();
 }
 
-vector2f vector3fTo2f(const vector3f &c)
+vector2fl vector3fTo2f(const vector3f &c)
 {
-	return vector2f(c.x, c.y);
+	return vector2fl(c.x, c.y);
 }
 
 void quaternion::normalize()
@@ -390,10 +503,10 @@ vector3f quaternion::operator*(const vector3f &c)
 
 	return vector3f(resQuat.x, resQuat.y, resQuat.z) * vecMag;
 }
-vector2f quaternion::operator*(const vector2f &c)
+vector2fl quaternion::operator*(const vector2fl &c)
 {
 	vector3f v = (*this) * vector3f(c.x, 0, c.y);
-	return vector2f(v.x, v.z);
+	return vector2fl(v.x, v.z);
 }
 quaternion quaternion::nlerp(const quaternion &c, float s)
 {
