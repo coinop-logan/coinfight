@@ -26,7 +26,6 @@ using namespace std;
 using namespace boost::asio::ip;
 
 using vch = vector<unsigned char>;
-using vchIter = vch::iterator;
 
 Game game;
 
@@ -35,13 +34,13 @@ UI ui;
 vector<FrameEventsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
 
-vch buildCmdPacket(boost::shared_ptr<Cmd> cmd)
+void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
 {
-    Netpack::Builder packet;
+    dest->clear();
+
+    Netpack::Builder packet(dest);
     cmd->pack(&packet);
     packet.prependWith16bitSize();
-
-    return packet.getVch();
 }
 
 class ConnectionHandler
@@ -95,10 +94,12 @@ public:
     {
         if (!error)
         {
-            Netpack::Consumer typecharAndSizeData(receivedBytes);
+            Netpack::Consumer typecharAndSizeData(receivedBytes.begin());
+
+            uint64_t size = typecharAndSizeData.consumeUint64_t();
 
             uint8_t packetTypechar = typecharAndSizeData.consumeUint8_t();
-            uint64_t size = typecharAndSizeData.consumeUint64_t();
+            size -= 1; // since that included the packetTypechar we also just consumed
 
             switch (packetTypechar)
             {
@@ -143,7 +144,7 @@ public:
     {
         if (!error)
         {
-            Netpack::Consumer data(receivedBytes);
+            Netpack::Consumer data(receivedBytes.begin());
 
             receivedResyncs.push_back(Game(&data));
             
@@ -162,7 +163,7 @@ public:
         }
         else
         {
-            Netpack::Consumer data(receivedBytes);
+            Netpack::Consumer data(receivedBytes.begin());
 
             receivedFrameCmdsPackets.push_back(FrameEventsPacket(&data));
 
@@ -173,7 +174,8 @@ public:
     void sendCmd(boost::shared_ptr<Cmd> cmd)
     {
         packetsToSend.push_back(new vch);
-        *packetsToSend.back() = buildCmdPacket(cmd);
+
+        clearVchAndBuildCmdPacket(packetsToSend.back(), cmd);
 
         sendNextPacketIfNotBusy();
     }

@@ -17,16 +17,16 @@ const coinsInt MAX_COINS = UINT32_MAX;
 
 const fixed32 EPSILON(0.001);
 
-const unsigned char NULL_TYPECHAR = 0;
+const uint8_t NULL_TYPECHAR = 0;
 
-const unsigned char PACKET_RESYNC_CHAR = 1;
-const unsigned char PACKET_FRAMECMDS_CHAR = 2;
+const uint8_t PACKET_RESYNC_CHAR = 1;
+const uint8_t PACKET_FRAMECMDS_CHAR = 2;
 
-const unsigned char GOLDPILE_TYPECHAR = 1;
-const unsigned char BEACON_TYPECHAR = 2;
-const unsigned char FIGHTER_TYPECHAR = 3;
-const unsigned char PRIME_TYPECHAR = 4;
-const unsigned char GATEWAY_TYPECHAR = 5;
+const uint8_t GOLDPILE_TYPECHAR = 1;
+const uint8_t BEACON_TYPECHAR = 2;
+const uint8_t FIGHTER_TYPECHAR = 3;
+const uint8_t PRIME_TYPECHAR = 4;
+const uint8_t GATEWAY_TYPECHAR = 5;
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 

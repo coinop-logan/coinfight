@@ -16,10 +16,9 @@ namespace Netpack
 
     class Builder
     {
-        vch data;
     public:
-        Builder();
-        vch getVch() const;
+        vch* data;
+        Builder(vch* data);
         string getHexString();
 
         void packUint8_t(uint8_t);
@@ -49,20 +48,6 @@ namespace Netpack
             }
         }
 
-        // template<typename T>
-        // void packOptional(optional<T> optVal, boost::function<void (Netpack::Builder*, T)> packFunc)
-        // {
-        //     if (auto val = optVal)
-        //     {
-        //         this->packBool(true);
-        //         packFunc(this, *val);
-        //     }
-        //     else
-        //     {
-        //         this->packBool(false);
-        //     }
-        // }
-
         template<typename T>
         void packEnum(T val)
         {
@@ -75,12 +60,10 @@ namespace Netpack
 
     class Consumer
     {
-        vch data;
         vchIter consumePos;
     public:
-        Consumer(vch data);
+        Consumer(vchIter consumePos);
         Consumer(const Builder &);
-        vch getVch() const;
         vchIter getCurrentIter() const;
         void debugOutput();
 

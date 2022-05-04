@@ -19,6 +19,8 @@ const bool SEND_REGULAR_RESYNCS = true;
 using namespace std;
 using namespace boost::asio::ip;
 
+using vch = vector<unsigned char>;
+
 class ClientChannel;
 
 vector<ClientChannel *> clientChannels;
@@ -59,25 +61,21 @@ void testHandler(const boost::system::error_code &error, size_t numSent)
 void clearVchAndPackResyncPacket(vch *dest)
 {
     dest->clear();
-    game.pack(dest);
+    Netpack::Builder builder(dest);
 
-    vch prepended;
-    packToVch(&prepended, "C", PACKET_RESYNC_CHAR);
-    packToVch(&prepended, "Q", (uint64_t)(dest->size()));
+    builder.packUint8_t(PACKET_RESYNC_CHAR);
+    game.pack(&builder);
 
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
+    builder.prependWith64bitSize();
 }
-void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
+void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fep)
 {
     dest->clear();
+    Netpack::Builder builder(dest);
 
-    fcp.pack(dest);
+    fep.pack(&builder);
 
-    vch prepended;
-    packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);
-    packToVch(&prepended, "Q", (uint64_t)dest->size());
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
+    builder.prependWith64bitSize();
 }
 
 vector<boost::shared_ptr<AuthdCmd>> pendingCmds;
@@ -218,11 +216,11 @@ public:
         sendNextPacketIfNotBusy();
     }
 
-    void sendFrameCmdsPacket(FrameEventsPacket fcp)
+    void sendFrameCmdsPacket(FrameEventsPacket fep)
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fcp);
+        clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fep);
 
         sendNextPacketIfNotBusy();
     }
@@ -251,7 +249,7 @@ public:
     {
         if (error)
         {
-            cout << "Error sending packet to " << connectionAuthdUserAddress << ". Kicking." << endl;
+            cout << "Error sending packet to " << connectionAuthdUserAddress << ": " << error.message() << endl << "Kicking." << endl;
             state = Closed;
         }
         else
@@ -287,10 +285,9 @@ public:
         }
         else
         {
-            vchIter place = receivedBytes.begin();
+            Netpack::Consumer source(receivedBytes.begin());
 
-            uint16_t size;
-            unpackFromIter(place, "H", &size);
+            uint16_t size = source.consumeUint16_t();
 
             clearVchAndReceiveCmdBody(size);
         }
@@ -315,9 +312,9 @@ public:
         }
         else
         {
-            vchIter place = receivedBytes.begin();
+            Netpack::Consumer source(receivedBytes.begin());
 
-            boost::shared_ptr<Cmd> cmd = unpackFullCmdAndMoveIter(&place);
+            boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
             boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, this->connectionAuthdUserAddress));
 
             pendingCmds.push_back(authdCmd);
@@ -476,7 +473,7 @@ int main(int argc, char *argv[])
 
         // build FrameEventsPacket for this frame
         // includes all cmds we've received from clients since last time and all new events
-        FrameEventsPacket fcp(game.frame, pendingCmds, pendingEvents);
+        FrameEventsPacket fep(game.frame, pendingCmds, pendingEvents);
 
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
@@ -502,7 +499,7 @@ int main(int argc, char *argv[])
 
             if (clientChannels[i]->state == ClientChannel::UpToDate)
             {
-                clientChannels[i]->sendFrameCmdsPacket(fcp);
+                clientChannels[i]->sendFrameCmdsPacket(fep);
             }
             else
             {

@@ -37,7 +37,8 @@ pre-build:
 	mkdir -p bin/
 	mkdir -p dist/
 
-main-build: server-build client-build bin/coinfight_local prep-server
+# main-build: server-build client-build bin/coinfight_local prep-server
+main-build: server-build client-build prep-server
 
 server-build: bin/server
 

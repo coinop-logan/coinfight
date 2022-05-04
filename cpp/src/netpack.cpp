@@ -5,71 +5,59 @@
 
 namespace Netpack
 {
-    Builder::Builder()
-        : data() {}
+    Builder::Builder(vch* data)
+        : data(data) {}
 
-    vch Builder::getVch() const
-    {
-        return data;
-    }
     string Builder::getHexString()
     {
         stringstream s;
         s << "0x";
-        for (unsigned int i = 0; i < data.size(); i++)
+        for (unsigned int i = 0; i < data->size(); i++)
         {
-            s << hex << (unsigned int)(data[i]);
+            s << hex << (unsigned int)((*data)[i]);
         }
         return s.str();
-    }
-    vch Consumer::getVch() const
-    {
-        return data;
-    }
-    vchIter Consumer::getCurrentIter() const
-    {
-        return consumePos;
     }
 
     void Builder::packInt8_t(int8_t i)
     {
-        data.insert(data.end(), 1, 0);
-        packi8(&(*(data.end() - 1)), i);
+        data->insert(data->end(), 1, 0);
+        packi8(&(*(data->end() - 1)), i);
     }
     void Builder::packUint8_t(uint8_t i)
     {
-        data.insert(data.end(), 1, 0);
-        packi8(&(*(data.end() - 1)), i);
+        data->insert(data->end(), 1, 0);
+        packi8(&(*(data->end() - 1)), i);
     }
     void Builder::packInt16_t(int16_t i)
     {
-        data.insert(data.end(), 2, 0);
-        packi16(&(*(data.end() - 2)), i);
+        data->insert(data->end(), 2, 0);
+        packi16(&(*(data->end() - 2)), i);
     }
     void Builder::packUint16_t(uint16_t i)
     {
-        data.insert(data.end(), 2, 0);
-        packi16(&(*(data.end() - 2)), i);
+        data->insert(data->end(), 2, 0);
+        packi16(&(*(data->end() - 2)), i);
     }
     void Builder::packInt32_t(int32_t i)
     {
-        data.insert(data.end(), 4, 0);
-        packi32(&(*(data.end() - 4)), i);
+        data->insert(data->end(), 4, 0);
+        packi32(&(*(data->end() - 4)), i);
     }
     void Builder::packUint32_t(uint32_t i)
     {
-        data.insert(data.end(), 4, 0);
-        packi32(&(*(data.end() - 4)), i);
+        data->insert(data->end(), 4, 0);
+        packi32(&(*(data->end() - 4)), i);
     }
     void Builder::packInt64_t(int64_t i)
     {
-        data.insert(data.end(), 8, 0);
-        packi64(&(*(data.end() - 8)), i);
+        data->insert(data->end(), 8, 0);
+        packi64(&(*(data->end() - 8)), i);
     }
     void Builder::packUint64_t(uint64_t i)
     {
-        data.insert(data.end(), 8, 0);
-        packi64(&(*(data.end() - 8)), i);
+        data->insert(data->end(), 8, 0);
+        packi64(&(*(data->end() - 8)), i);
     }
 
     void Builder::packBool(bool flag)
@@ -79,8 +67,8 @@ namespace Netpack
     void Builder::packStringWithoutSize(string s)
     {
         size_t size = s.size();
-        data.insert(data.end(), size, 0);
-        memcpy(&(*(data.end() - size)), s.c_str(), size);
+        data->insert(data->end(), size, 0);
+        memcpy(&(*(data->end() - size)), s.c_str(), size);
     }
     void Builder::packStringWith16bitSize(string s)
     {
@@ -93,26 +81,33 @@ namespace Netpack
 
     void Builder::prependWith64bitSize()
     {
-        Builder sizePacket;
-        sizePacket.packUint64_t(data.size());
+        vch sizeData;
+        Builder sizePacket(&sizeData);
+        sizePacket.packUint64_t(data->size());
 
-        data.insert(data.begin(), sizePacket.data.begin(), sizePacket.data.end());
+        data->insert(data->begin(), sizeData.begin(), sizeData.end());
     }
     void Builder::prependWith16bitSize()
     {
-        Builder sizePacket;
-        sizePacket.packUint16_t(data.size());
+        vch sizeData;
+        Builder sizePacket(&sizeData);
+        sizePacket.packUint16_t(data->size());
 
-        data.insert(data.begin(), sizePacket.data.begin(), sizePacket.data.end());
+        data->insert(data->begin(), sizeData.begin(), sizeData.end());
     }
 
 
 
-    Consumer::Consumer(vch data)
-        : data(data), consumePos(data.begin()) {}
+    Consumer::Consumer(vchIter consumePos)
+        : consumePos(consumePos) {}
 
-    Consumer::Consumer(const Builder &spooler)
-        : data(spooler.getVch()), consumePos(data.begin()) {}
+    Consumer::Consumer(const Builder &builder)
+        : consumePos(builder.data->begin()) {}
+    
+    vchIter Consumer::getCurrentIter() const
+    {
+        return consumePos;
+    }
 
     int8_t Consumer::consumeInt8_t()
     {
