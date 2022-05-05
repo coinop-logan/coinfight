@@ -114,8 +114,6 @@ uint32_t newtonSqrtFloor(uint32_t x) {
         lastChange = int64_t(val) - last;
         last = val;
         val = (val + dividend / val) / 2;
-        if (abs(int64_t(val) - last) == 0)
-            return val;
         if (val - last == (-lastChange))
             return min(val, last);
     }
