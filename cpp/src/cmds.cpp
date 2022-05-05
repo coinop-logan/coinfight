@@ -38,7 +38,7 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
 AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress)
     : cmd(cmd), playerAddress(playerAddress){}
 
-unsigned char Cmd::getTypechar()
+uint8_t Cmd::getTypechar()
 {
     throw runtime_error("getTypechar is not defined for '" + getTypename() + "'");
 }
@@ -62,7 +62,7 @@ Cmd::Cmd(Netpack::Consumer* from)
 {}
 
 
-unsigned char WithdrawCmd::getTypechar()
+uint8_t WithdrawCmd::getTypechar()
 {
     return CMD_WITHDRAW_CHAR;
 }
@@ -85,7 +85,7 @@ WithdrawCmd::WithdrawCmd(Netpack::Consumer* from)
 }
 
 
-unsigned char SpawnBeaconCmd::getTypechar()
+uint8_t SpawnBeaconCmd::getTypechar()
 {
     return CMD_SPAWNBEACON_CHAR;
 }
@@ -188,7 +188,7 @@ vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
     return units;
 }
 
-unsigned char MoveCmd::getTypechar()
+uint8_t MoveCmd::getTypechar()
 {
     return CMD_MOVE_CHAR;
 }
@@ -222,7 +222,7 @@ MoveCmd::MoveCmd(Netpack::Consumer* from)
     pos = consumeVector2fp(from);
 }
 
-unsigned char PickupCmd::getTypechar()
+uint8_t PickupCmd::getTypechar()
 {
     return CMD_PICKUP_CHAR;
 }
@@ -255,7 +255,7 @@ PickupCmd::PickupCmd(Netpack::Consumer* from)
     goldRef = consumeEntityRef(from);
 }
 
-unsigned char PutdownCmd::getTypechar()
+uint8_t PutdownCmd::getTypechar()
 {
     return CMD_PUTDOWN_CHAR;
 }
@@ -287,7 +287,7 @@ PutdownCmd::PutdownCmd(Netpack::Consumer* from)
     : UnitCmd(from), target(from)
 {}
 
-unsigned char GatewayBuildCmd::getTypechar()
+uint8_t GatewayBuildCmd::getTypechar()
 {
     return CMD_GATEWAYBUILD_CHAR;
 }
@@ -308,7 +308,7 @@ void GatewayBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, unsigned char buildTypechar)
+GatewayBuildCmd::GatewayBuildCmd(vector<EntityRef> units, uint8_t buildTypechar)
     : UnitCmd(units), buildTypechar(buildTypechar) {}
 void GatewayBuildCmd::pack(Netpack::Builder* to)
 {
@@ -321,7 +321,7 @@ GatewayBuildCmd::GatewayBuildCmd(Netpack::Consumer* from)
     buildTypechar = consumeTypechar(from);
 }
 
-unsigned char PrimeBuildCmd::getTypechar()
+uint8_t PrimeBuildCmd::getTypechar()
 {
     return CMD_PRIMEBUILD_CHAR;
 }
@@ -342,7 +342,7 @@ void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
 }
 
-PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, unsigned char buildTypechar, vector2fp buildPos)
+PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, uint8_t buildTypechar, vector2fp buildPos)
     : UnitCmd(units), buildTypechar(buildTypechar), buildPos(buildPos) {}
 void PrimeBuildCmd::pack(Netpack::Builder* to)
 {
@@ -357,7 +357,7 @@ PrimeBuildCmd::PrimeBuildCmd(Netpack::Consumer* from)
     buildPos = consumeVector2fp(from);
 }
 
-unsigned char AttackGatherCmd::getTypechar()
+uint8_t AttackGatherCmd::getTypechar()
 {
     return CMD_ATTACK_CHAR;
 }
@@ -393,7 +393,7 @@ AttackGatherCmd::AttackGatherCmd(Netpack::Consumer* from)
     : UnitCmd(from), target(from)
 {}
 
-unsigned char ResumeBuildingCmd::getTypechar()
+uint8_t ResumeBuildingCmd::getTypechar()
 {
     return CMD_RESUMEBUILDING_CHAR;
 }
@@ -424,7 +424,7 @@ ResumeBuildingCmd::ResumeBuildingCmd(Netpack::Consumer* from)
     targetUnit = consumeEntityRef(from);
 }
 
-unsigned char ScuttleCmd::getTypechar()
+uint8_t ScuttleCmd::getTypechar()
 {
     return CMD_SCUTTLE_CHAR;
 }

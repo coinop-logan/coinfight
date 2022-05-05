@@ -10,21 +10,21 @@
 
 using namespace std;
 
-const unsigned char CMD_MOVE_CHAR = 0;
-const unsigned char CMD_PICKUP_CHAR = 1;
-const unsigned char CMD_PUTDOWN_CHAR = 2;
-const unsigned char CMD_GATEWAYBUILD_CHAR = 3;
-const unsigned char CMD_WITHDRAW_CHAR = 4;
-const unsigned char CMD_ATTACK_CHAR = 5;
-const unsigned char CMD_PRIMEBUILD_CHAR = 6;
-const unsigned char CMD_RESUMEBUILDING_CHAR = 7;
-const unsigned char CMD_SPAWNBEACON_CHAR = 8;
-const unsigned char CMD_SCUTTLE_CHAR = 9;
+const uint8_t CMD_MOVE_CHAR = 0;
+const uint8_t CMD_PICKUP_CHAR = 1;
+const uint8_t CMD_PUTDOWN_CHAR = 2;
+const uint8_t CMD_GATEWAYBUILD_CHAR = 3;
+const uint8_t CMD_WITHDRAW_CHAR = 4;
+const uint8_t CMD_ATTACK_CHAR = 5;
+const uint8_t CMD_PRIMEBUILD_CHAR = 6;
+const uint8_t CMD_RESUMEBUILDING_CHAR = 7;
+const uint8_t CMD_SPAWNBEACON_CHAR = 8;
+const uint8_t CMD_SCUTTLE_CHAR = 9;
 
 struct Cmd
 {
     virtual string getTypename();
-    virtual unsigned char getTypechar();
+    virtual uint8_t getTypechar();
     virtual void pack(Netpack::Builder* to);
 
     void packCmdBasics(Netpack::Builder* to);
@@ -46,7 +46,7 @@ struct WithdrawCmd : public Cmd
 {
     coinsInt amount;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -58,7 +58,7 @@ struct SpawnBeaconCmd : public Cmd
 {
     vector2fp pos;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -86,7 +86,7 @@ struct MoveCmd : public UnitCmd
 {
     vector2fp pos;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -100,7 +100,7 @@ struct PickupCmd : public UnitCmd
 {
     EntityRef goldRef;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -114,7 +114,7 @@ struct PutdownCmd : public UnitCmd
 {
     Target target;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -126,30 +126,30 @@ struct PutdownCmd : public UnitCmd
 
 struct GatewayBuildCmd : public UnitCmd
 {
-    unsigned char buildTypechar;
+    uint8_t buildTypechar;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    GatewayBuildCmd(vector<EntityRef>, unsigned char buildTypechar);
+    GatewayBuildCmd(vector<EntityRef>, uint8_t buildTypechar);
     GatewayBuildCmd(Netpack::Consumer* from);
 };
 
 struct PrimeBuildCmd : public UnitCmd
 {
-    unsigned char buildTypechar;
+    uint8_t buildTypechar;
     vector2fp buildPos;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    PrimeBuildCmd(vector<EntityRef>, unsigned char buildTypechar, vector2fp buildPos);
+    PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos);
     PrimeBuildCmd(Netpack::Consumer* from);
 };
 
@@ -157,7 +157,7 @@ struct AttackGatherCmd : public UnitCmd
 {
     Target target;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -171,7 +171,7 @@ struct ResumeBuildingCmd : public UnitCmd
 {
     EntityRef targetUnit;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
@@ -185,7 +185,7 @@ struct ScuttleCmd : public UnitCmd
 {
     EntityRef targetUnit;
 
-    unsigned char getTypechar();
+    uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
