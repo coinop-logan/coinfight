@@ -21,7 +21,12 @@ using namespace std;
 
 int main()
 {
-    cout << ipow((uint32_t)10, (uint32_t)3) << endl;
+    for (uint32_t x = 1; x < 20000000; x++)
+    {
+        uint32_t myResult = newtonSqrtFloor(x);
+        int refResult = floor(sqrt(x));
+        assert(refResult == myResult);
+    }
 
     // fpm::fixed_16_16 f1(-6432.7466);
     // Netpack::Builder d;
