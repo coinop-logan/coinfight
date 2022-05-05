@@ -37,7 +37,9 @@ void packVector2fp(Netpack::Builder* to, vector2fp v)
 }
 vector2fp consumeVector2fp(Netpack::Consumer *from)
 {
-    return vector2fp(consumeFixed32(from), consumeFixed32(from));
+    fixed32 x = consumeFixed32(from);
+    fixed32 y = consumeFixed32(from);
+    return vector2fp(x, y);
 }
 
 
