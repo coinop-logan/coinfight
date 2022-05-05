@@ -130,6 +130,8 @@ UnitCmd::UnitCmd(vector<EntityRef> unitRefs)
 
 void UnitCmd::packUnitCmdBasics(Netpack::Builder* to)
 {
+    packCmdBasics(to);
+    
     if (unitRefs.size() > 65535)
     {
         throw runtime_error("too many units referenced in that command!");

@@ -3,7 +3,7 @@
 #include <boost/function.hpp>
 #include <optional>
 #include "netpack.h"
-#include "common.h"
+#include "myvectors.h"
 #include "fpm/fixed.hpp"
 #include "fpm/ios.hpp"
 
@@ -21,9 +21,6 @@ using namespace std;
 
 int main()
 {
-    fixed32 f(-3.8);
-    cout << static_cast<int>(f) << endl;
-
     // fpm::fixed_16_16 f1(-6432.7466);
     // Netpack::Builder d;
     // d.packInt32_t(f1.raw_value());
