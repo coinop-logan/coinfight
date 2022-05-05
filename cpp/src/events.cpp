@@ -105,16 +105,9 @@ uint8_t HoneypotAddedEvent::typechar()
 
 void HoneypotAddedEvent::execute(Game *game)
 {
-    if (game->honeypotGoldPileIfGameStarted)
-    {
-        game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
-    }
-    else
-    {
-        game->honeypotGoldPileIfGameStarted = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp::zero));
-        game->honeypotGoldPileIfGameStarted->gold.createMoreByFiat(honeypotAmount);
-        game->registerNewEntityIgnoringCollision(game->honeypotGoldPileIfGameStarted);
-    }
+    boost::shared_ptr<GoldPile> gp(new GoldPile(vector2fp::zero));
+    gp->gold.createMoreByFiat(honeypotAmount);
+    game->registerNewEntityIgnoringCollision(gp);
 }
 
 HoneypotAddedEvent::HoneypotAddedEvent(coinsInt honeypotAmount)

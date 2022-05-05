@@ -479,11 +479,6 @@ bool gameStatesAreIdentical_triggerDebugIfNot(Game* game1, Game* game2)
         }
     }
 
-    if (!entitiesAreIdentical_triggerDebugIfNot(game1->honeypotGoldPileIfGameStarted, game2->honeypotGoldPileIfGameStarted))
-    {
-        return false;
-    }
-
     for (unsigned int i=0; i<game1->entities.size(); i++)
     {
         if (!entitiesAreIdentical_triggerDebugIfNot(game1->entities[i], game2->entities[i]))

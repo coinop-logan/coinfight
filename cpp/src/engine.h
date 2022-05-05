@@ -69,7 +69,6 @@ public:
     uint64_t frame;
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
-    boost::shared_ptr<GoldPile> honeypotGoldPileIfGameStarted;
     SearchGrid searchGrid;
 
     bool registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity);
