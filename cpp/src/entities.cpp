@@ -1349,7 +1349,7 @@ void Gateway::iterate()
 Prime::Prime(int ownerId, vector2fp pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer)
+      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer), gonnabuildTypechar(NULL_TYPECHAR)
 {}
 void Prime::pack(Netpack::Builder* to)
 {
