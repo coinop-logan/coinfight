@@ -2,10 +2,10 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <optional>
-#include "netpack.h"
 #include "myvectors.h"
 #include "fpm/fixed.hpp"
 #include "fpm/ios.hpp"
+#include "common.h"
 
 void makeSure(bool condition) // hacky test function
 {
@@ -21,6 +21,8 @@ using namespace std;
 
 int main()
 {
+    cout << ipow((uint32_t)10, (uint32_t)3) << endl;
+
     // fpm::fixed_16_16 f1(-6432.7466);
     // Netpack::Builder d;
     // d.packInt32_t(f1.raw_value());

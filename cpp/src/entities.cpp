@@ -441,7 +441,7 @@ void Entity::updateGamePointerOrThrow(Game *game)
         throw runtime_error("Trying to update the Game pointer for an entity that has not been registered within a Game.\n");
     }
 }
-unsigned char Entity::typechar() const
+uint8_t Entity::typechar() const
 {
     throw runtime_error("typechar() has not been defined for " + getTypeName() + "\n");
 }
@@ -541,7 +541,7 @@ GoldPile::GoldPile(Netpack::Consumer* from) : Entity(from),
 }
 
 fixed32 GoldPile::getRadius() const { return fixed32(10); }
-unsigned char GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
+uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypeName() const { return "GoldPile"; }
 void GoldPile::iterate()
 {
@@ -949,7 +949,7 @@ void MobileUnit::cmdMove(vector2fp pointTarget)
 
 
 fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
-unsigned char Beacon::typechar() const { return BEACON_TYPECHAR; }
+uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
 string Beacon::getTypeName() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
@@ -1028,12 +1028,12 @@ void Beacon::iterate()
 
 
 fixed32 Gateway::getRadius() const {return GATEWAY_RADIUS;}
-unsigned char Gateway::typechar() const { return GATEWAY_TYPECHAR; }
+uint8_t Gateway::typechar() const { return GATEWAY_TYPECHAR; }
 string Gateway::getTypeName() const { return "Gateway"; }
 coinsInt Gateway::getCost() const { return GATEWAY_COST; }
 uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
 
-void Gateway::cmdBuildUnit(unsigned char unitTypechar)
+void Gateway::cmdBuildUnit(uint8_t unitTypechar)
 {
     if (this->isActive())
     {
@@ -1386,7 +1386,7 @@ void Prime::cmdPutdown(Target _target)
 
     setMoveTarget(_target, PRIME_TRANSFER_RANGE);
 }
-void Prime::cmdBuild(unsigned char buildTypechar, vector2fp buildPos)
+void Prime::cmdBuild(uint8_t buildTypechar, vector2fp buildPos)
 {
     behavior = Basic;
     state = Build;
@@ -1424,7 +1424,7 @@ fixed32 Prime::getRange() const { return PRIME_TRANSFER_RANGE; }
 coinsInt Prime::getCost() const { return PRIME_COST; }
 uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
-unsigned char Prime::typechar() const { return PRIME_TYPECHAR; }
+uint8_t Prime::typechar() const { return PRIME_TYPECHAR; }
 string Prime::getTypeName() const { return "Prime"; }
 
 void Prime::iterate()
@@ -2105,7 +2105,7 @@ fixed32 Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() const { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 
-unsigned char Fighter::typechar() const { return FIGHTER_TYPECHAR; }
+uint8_t Fighter::typechar() const { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() const { return "Fighter"; }
 
 

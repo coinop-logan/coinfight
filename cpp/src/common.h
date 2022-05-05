@@ -27,13 +27,8 @@ EntityRef consumeEntityRef(Netpack::Consumer* from);
 void packTypechar(Netpack::Builder* to, uint8_t typechar);
 uint8_t consumeTypechar(Netpack::Consumer* from);
 
-// std::optional<unsigned int> safeUIntAdd(unsigned int, unsigned int);
-
-coinsInt dollarsToCoinsInt(float dollars);
-float coinsIntToDollars(coinsInt coins);
-
-float degToRad(float);
-float radToDeg(float);
+coinsInt dollarsToCoinsIntND(float dollars);
+float coinsIntToDollarsND(coinsInt coins);
 
 vector2fl randomVectorWithMagnitude(float magnitude);
 vector2fl randomVectorWithMagnitudeRange(float min, float max);
@@ -71,5 +66,20 @@ vector2i fromSFVec(sf::Vector2i v);
 
 uint32_t floorSquareFixed(fixed32);
 uint32_t newtonSqrtFloor(uint32_t x);
+uint64_t constexpr ipow(uint32_t base, uint32_t exp)
+{
+    uint64_t result = 1;
+    for (;;)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        if (!exp)
+            break;
+        base *= base;
+    }
+
+    return result;
+}
 
 #endif // COMMON_H

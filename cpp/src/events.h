@@ -8,8 +8,8 @@
 
 using namespace std;
 
-const unsigned char EVENT_BALANCEUPDATE_CHAR = 1;
-const unsigned char EVENT_HONEYPOT_CHAR = 2;
+const uint8_t EVENT_BALANCEUPDATE_CHAR = 1;
+const uint8_t EVENT_HONEYPOT_CHAR = 2;
 
 struct Event;
 
@@ -17,7 +17,7 @@ boost::shared_ptr<Event> consumeEvent(Netpack::Consumer*);
 
 struct Event
 {
-    virtual unsigned char typechar();
+    virtual uint8_t typechar();
     virtual void execute(Game *game);
 
     void packEventBasics(Netpack::Builder*);
@@ -33,7 +33,7 @@ struct BalanceUpdateEvent : public Event
     coinsInt amount;
     bool isDeposit;
 
-    unsigned char typechar();
+    uint8_t typechar();
 
     void execute(Game *game);
 
@@ -47,7 +47,7 @@ struct HoneypotAddedEvent : public Event
 {
     coinsInt honeypotAmount;
 
-    unsigned char typechar();
+    uint8_t typechar();
 
     void execute(Game *game);
 

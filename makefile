@@ -59,5 +59,5 @@ bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
 
-bin/test: cpp/obj/test.o cpp/obj/myvectors.o
+bin/test: cpp/obj/test.o cpp/obj/myvectors.o cpp/obj/common.o cpp/obj/netpack.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT) $(LIBSERVER)

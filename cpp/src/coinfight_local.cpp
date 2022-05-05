@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
     {
         honeypotStartingDollars = 50;
     }
-    coinsInt honeypotStartingAmount = dollarsToCoinsInt(honeypotStartingDollars);
-    coinsInt playerStartCredit = dollarsToCoinsInt(playerStartDollars);
+    coinsInt honeypotStartingAmount = dollarsToCoinsIntND(honeypotStartingDollars);
+    coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
 
     bool fullscreen = true;
     bool smallScreen = false;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
     ui = UI();
-    unsigned int currentPlayerId = 0;
+    uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
-                unsigned int newPlayerId = ui.debugInt % game.players.size();
+                uint8_t newPlayerId = ui.debugInt % game.players.size();
                 if (newPlayerId != currentPlayerId)
                 {
                     currentPlayerId = newPlayerId;

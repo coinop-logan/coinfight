@@ -18,10 +18,10 @@ using namespace std;
 sf::Color playerAddressToColor(string address)
 {
     int vals[3];
-    for (unsigned int i=0; i<3; i++)
+    for (uint8_t i=0; i<3; i++)
     {
         string charStr = address.substr(2 + i, 1);
-        unsigned int intVal = std::stoul(charStr, nullptr, 16);
+        uint8_t intVal = std::stoul(charStr, nullptr, 16);
         vals[i] = 55 + ((intVal / 15.0) * 200);
     }
     return sf::Color(vals[0], vals[1], vals[2]);
@@ -238,15 +238,15 @@ int Game::playerAddressToIdOrNegativeOne(string address)
     }
     return -1;
 }
-string Game::playerIdToAddress(unsigned int playerId)
+string Game::playerIdToAddress(uint8_t playerId)
 {
     return players[playerId].address;
 }
-bool Game::getPlayerBeaconAvailable(unsigned int playerId)
+bool Game::getPlayerBeaconAvailable(uint8_t playerId)
 {
     return players[playerId].beaconAvailable;
 }
-void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
+void Game::setPlayerBeaconAvailable(uint8_t playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
 }

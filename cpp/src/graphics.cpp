@@ -16,6 +16,11 @@ const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
 sf::Font mainFont;
 
+float radToDeg(float rad)
+{
+    return rad * (180 / M_PI);
+}
+
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))

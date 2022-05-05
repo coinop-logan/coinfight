@@ -76,9 +76,9 @@ public:
     boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
     int playerAddressToIdOrNegativeOne(string address);
-    string playerIdToAddress(unsigned int playerId);
-    bool getPlayerBeaconAvailable(unsigned int playerId);
-    void setPlayerBeaconAvailable(unsigned int playerId, bool flag);
+    string playerIdToAddress(uint8_t playerId);
+    bool getPlayerBeaconAvailable(uint8_t playerId);
+    void setPlayerBeaconAvailable(uint8_t playerId, bool flag);
 
     vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2fp centerPos, fixed32 radius);
     vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2fp centerPos, fixed32 halfWidth);

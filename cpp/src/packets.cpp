@@ -1,7 +1,7 @@
 #include "packets.h"
 #include "events.h"
 
-unsigned char Packet::typechar()
+uint8_t Packet::typechar()
 {
     throw runtime_error("typechar() has not been defined for a packet type.");
 }
@@ -19,7 +19,7 @@ void Packet::packPacketBasics(Netpack::Builder* to)
 Packet::Packet() {}
 Packet::Packet(Netpack::Consumer* from) {}
 
-unsigned char FrameEventsPacket::typechar()
+uint8_t FrameEventsPacket::typechar()
 {
     return PACKET_FRAMECMDS_CHAR;
 }

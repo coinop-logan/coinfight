@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
             else
             {
                 cout << "Unexpected behavior in server regarding ClientChannel state. Unexpected state: ";
-                cout << (unsigned int)(clientChannels[i]->state) << endl;
+                cout << (uint8_t)(clientChannels[i]->state) << endl;
             }
         }
 

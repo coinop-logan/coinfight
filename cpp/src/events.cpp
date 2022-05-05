@@ -44,7 +44,7 @@ void Event::packEventBasics(Netpack::Builder* to)
 }
 Event::Event(Netpack::Consumer* from) {}
 
-unsigned char BalanceUpdateEvent::typechar()
+uint8_t BalanceUpdateEvent::typechar()
 {
     return EVENT_BALANCEUPDATE_CHAR;
 }

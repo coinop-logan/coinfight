@@ -61,33 +61,13 @@ uint8_t consumeTypechar(Netpack::Consumer* from)
     return from->consumeUint8_t();
 }
 
-// std::optional<unsigned int> safeUIntAdd(unsigned int a, unsigned int b)
-// {
-//     unsigned int sum = a + b;
-//     if (sum < a) {
-//         return {};
-//     }
-//     else {
-//         return {sum};
-//     }
-// }
-
-coinsInt dollarsToCoinsInt(float dollars)
+coinsInt dollarsToCoinsIntND(float dollars)
 {
     return dollars * (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
 }
-float coinsIntToDollars(coinsInt coins)
+float coinsIntToDollarsND(coinsInt coins)
 {
     return coins / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
-}
-
-float degToRad(float deg)
-{
-    return deg / (180 / M_PI);
-}
-float radToDeg(float rad)
-{
-    return rad * (180 / M_PI);
 }
 
 vector2fl randomVectorWithMagnitude(float magnitude)

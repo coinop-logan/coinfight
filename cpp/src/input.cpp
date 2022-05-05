@@ -242,7 +242,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     return boost::shared_ptr<Cmd>(); // return null cmd
 }
 
-boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, unsigned char buildUnitTypechar)
+boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar)
 {
     auto selectedGateways = filterForType<Gateway, Unit>(selectedUnits);
     if (selectedGateways.size() > 0)
@@ -269,7 +269,7 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
     return boost::shared_ptr<GatewayBuildCmd>();
 }
 
-boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, unsigned char buildUnitTypechar, vector2fl buildPos)
+boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos)
 {
     auto selectedPrimes = filterForType<Prime, Unit>(selectedUnits);
     if (selectedPrimes.size() > 0)
