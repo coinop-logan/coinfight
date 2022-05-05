@@ -9,6 +9,8 @@
 
 using namespace std;
 
+using vch = vector<unsigned char>;
+
 class Packet
 {
 public:
@@ -21,8 +23,6 @@ public:
     Packet();
     Packet(Netpack::Consumer*);
 };
-
-// note that a resync packet is so simple that it's just made directly in server and client
 
 struct FrameEventsPacket : public Packet
 {
@@ -37,5 +37,9 @@ struct FrameEventsPacket : public Packet
     FrameEventsPacket(uint64_t frame, vector<boost::shared_ptr<AuthdCmd>> authdCmds, vector<boost::shared_ptr<Event>> events);
     FrameEventsPacket(Netpack::Consumer*);
 };
+
+void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd);
+void clearVchAndBuildResyncPacket(vch *dest, Game* game);
+void clearVchAndBuildFrameCmdsPacket(vch *dest, FrameEventsPacket fep);
 
 #endif // PACKETS_H

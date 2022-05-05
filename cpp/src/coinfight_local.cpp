@@ -24,42 +24,6 @@ Game game;
 
 UI ui;
 
-void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
-{
-    dest->clear();
-
-    packTypechar(dest, cmd->getTypechar());
-    cmd->pack(dest);
-
-    vch prepended;
-    packToVch(&prepended, "H", (uint16_t)(dest->size()));
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
-}
-void clearVchAndPackResyncPacket(vch *dest)
-{
-    dest->clear();
-    game.pack(dest);
-
-    vch prepended;
-    packToVch(&prepended, "C", PACKET_RESYNC_CHAR);
-    packToVch(&prepended, "Q", (uint64_t)(dest->size()));
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
-}
-void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fep)
-{
-    dest->clear();
-
-    fep.pack(dest);
-
-    vch prepended;
-    packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);
-    packToVch(&prepended, "Q", (uint64_t)dest->size());
-
-    dest->insert(dest->begin(), prepended.begin(), prepended.end());
-}
-
 int main(int argc, char *argv[])
 {
     unsigned int playerStartDollars;
@@ -171,9 +135,9 @@ int main(int argc, char *argv[])
             vector<boost::shared_ptr<AuthdCmd>> authdCmds;
             for (unsigned int i=0; i<packages.size(); i++)
             {
-                vchIter place = packages[i]->begin() + 2; // we're looking past the size specifier, because in this case we already know...
+                Netpack::Consumer source(packages[i]->begin() + 2); // we're looking past the size specifier, because in this case we already know...
 
-                boost::shared_ptr<Cmd> cmd = unpackFullCmdAndMoveIter(&place);
+                boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
                 boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
 
                 authdCmds.push_back(authdCmd);

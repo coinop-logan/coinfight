@@ -28,7 +28,7 @@ prep-server:
 	cp web3-api-key bin/web3-api-key
 	cp package-assets/server/* bin/
 
-client: pre-build client-build #bin/coinfight_local
+client: pre-build client-build bin/coinfight_local
 
 server: pre-build server-build prep-server
 
@@ -37,12 +37,11 @@ pre-build:
 	mkdir -p bin/
 	mkdir -p dist/
 
-# main-build: server-build client-build bin/coinfight_local prep-server
-main-build: server-build client-build prep-server
+main-build: server-build client-build bin/coinfight_local prep-server
 
 server-build: bin/server
 
-client-build: bin/client #bin/coinfight_local
+client-build: bin/client
 	cp assets/Andale_Mono.ttf bin/
 
 package-client:

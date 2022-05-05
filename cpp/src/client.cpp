@@ -34,15 +34,6 @@ UI ui;
 vector<FrameEventsPacket> receivedFrameCmdsPackets;
 vector<Game> receivedResyncs;
 
-void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
-{
-    dest->clear();
-
-    Netpack::Builder packet(dest);
-    cmd->pack(&packet);
-    packet.prependWith16bitSize();
-}
-
 class ConnectionHandler
 {
     vch receivedBytes;

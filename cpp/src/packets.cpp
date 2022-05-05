@@ -66,3 +66,33 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
         events.push_back(consumeEvent(from));
     }
 }
+
+void clearVchAndBuildCmdPacket(vch *dest, boost::shared_ptr<Cmd> cmd)
+{
+    dest->clear();
+
+    Netpack::Builder packet(dest);
+    cmd->pack(&packet);
+    packet.prependWith16bitSize();
+}
+
+void clearVchAndBuildResyncPacket(vch *dest, Game* game)
+{
+    dest->clear();
+    Netpack::Builder builder(dest);
+
+    builder.packUint8_t(PACKET_RESYNC_CHAR);
+    game->pack(&builder);
+
+    builder.prependWith64bitSize();
+}
+
+void clearVchAndBuildFrameCmdsPacket(vch *dest, FrameEventsPacket fep)
+{
+    dest->clear();
+    Netpack::Builder builder(dest);
+
+    fep.pack(&builder);
+
+    builder.prependWith64bitSize();
+}

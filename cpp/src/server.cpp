@@ -58,26 +58,6 @@ void testHandler(const boost::system::error_code &error, size_t numSent)
     }
 }
 
-void clearVchAndPackResyncPacket(vch *dest)
-{
-    dest->clear();
-    Netpack::Builder builder(dest);
-
-    builder.packUint8_t(PACKET_RESYNC_CHAR);
-    game.pack(&builder);
-
-    builder.prependWith64bitSize();
-}
-void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fep)
-{
-    dest->clear();
-    Netpack::Builder builder(dest);
-
-    fep.pack(&builder);
-
-    builder.prependWith64bitSize();
-}
-
 vector<boost::shared_ptr<AuthdCmd>> pendingCmds;
 
 class ClientChannel
@@ -211,7 +191,7 @@ public:
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndPackResyncPacket(packetsToSend.back());
+        clearVchAndBuildResyncPacket(packetsToSend.back(), &game);
 
         sendNextPacketIfNotBusy();
     }
@@ -220,7 +200,7 @@ public:
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndPackFrameCmdsPacket(packetsToSend.back(), fep);
+        clearVchAndBuildFrameCmdsPacket(packetsToSend.back(), fep);
 
         sendNextPacketIfNotBusy();
     }
