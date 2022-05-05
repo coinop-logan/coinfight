@@ -1448,7 +1448,7 @@ void Prime::iterate()
                 // our job here is to switch these states when necessary...
 
                 // firstly, if heldGold is maxed, return gold to nearest gateway
-                if (getHeldGoldRatio() == fixed32(0))
+                if (getHeldGoldRatio() == fixed32(1))
                 {
                     setStateToReturnGoldOrResetBehavior();
                 }
