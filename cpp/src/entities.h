@@ -112,7 +112,7 @@ public:
     virtual float getRotation_view() const { return 0;}
 
     void packUnitBasics(Netpack::Builder* to);
-    Unit(int, coinsInt, uint16_t, vector2fp);
+    Unit(uint8_t, coinsInt, uint16_t, vector2fp);
     Unit(Netpack::Consumer*);
 
     sf::Color getTeamOrPrimaryColor();
@@ -134,7 +134,7 @@ class Building : public Unit
 public:
     void packBuildingBasics(Netpack::Builder* to);
 
-    Building(int, coinsInt, uint16_t, vector2fp);
+    Building(uint8_t, coinsInt, uint16_t, vector2fp);
     Building(Netpack::Consumer*);
 
     void iterateBuildingBasics();
@@ -187,7 +187,7 @@ public:
 
     void cmdMove(vector2fp target);
 
-    MobileUnit(int ownerId, coinsInt totalCost, uint16_t, vector2fp pos);
+    MobileUnit(uint8_t ownerId, coinsInt totalCost, uint16_t, vector2fp pos);
     MobileUnit(Netpack::Consumer* from);
 };
 
@@ -211,7 +211,7 @@ public:
 
     void pack(Netpack::Builder* to);
 
-    Beacon(int ownerId, vector2fp pos, State state);
+    Beacon(uint8_t ownerId, vector2fp pos, State state);
     Beacon(Netpack::Consumer* from);
 
     fixed32 getRadius() const;
@@ -244,7 +244,7 @@ public:
     GoldTransferState inGameTransferState_view;
     void pack(Netpack::Builder* to);
 
-    Gateway(int ownerId, vector2fp pos);
+    Gateway(uint8_t ownerId, vector2fp pos);
     Gateway(Netpack::Consumer* from);
 
     void cmdBuildUnit(uint8_t unitTypechar);
@@ -302,7 +302,7 @@ public:
 
     void pack(Netpack::Builder* to);
 
-    Prime(int ownerId, vector2fp pos);
+    Prime(uint8_t ownerId, vector2fp pos);
     Prime(Netpack::Consumer* from);
 
     void cmdPickup(Target);
@@ -331,8 +331,8 @@ const fixed32 FIGHTER_SPEED(3);
 const fixed32 FIGHTER_SHOT_RANGE(200);
 const uint32_t FIGHTER_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(FIGHTER_SHOT_RANGE);
 const fixed32 FIGHTER_SIGHT_RANGE(250);
-const int FIGHTER_SHOT_COOLDOWN = 20;
-const int FIGHTER_DAMAGE = 10;
+const uint8_t FIGHTER_SHOT_COOLDOWN = 20;
+const uint8_t FIGHTER_DAMAGE = 10;
 const fixed32 FIGHTER_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
 
 class Fighter : public MobileUnit
@@ -362,7 +362,7 @@ public:
 
     void pack(Netpack::Builder* to);
 
-    Fighter(int ownerId, vector2fp pos);
+    Fighter(uint8_t ownerId, vector2fp pos);
     Fighter(Netpack::Consumer* from);
 
     void cmdAttack(Target target);

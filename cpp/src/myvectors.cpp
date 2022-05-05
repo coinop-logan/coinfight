@@ -181,7 +181,7 @@ vector2fp vector2fp::operator/(fixed32 c) const
 {
 	return vector2fp(x / c, y / c);
 }
-vector2fp vector2fp::operator/(int c) const
+vector2fp vector2fp::operator/(int32_t c) const
 {
     return vector2fp(x / c, y / c);
 }

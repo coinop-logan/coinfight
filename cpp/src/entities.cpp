@@ -586,7 +586,7 @@ uint16_t Unit::getMaxHealth() const
     throw runtime_error("getMaxHeatlh() has not been defined for " + getTypeName() + ".");
 }
 
-Unit::Unit(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
+Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Entity(pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
 void Unit::packUnitBasics(Netpack::Builder* to)
 {
@@ -697,7 +697,7 @@ void Building::packBuildingBasics(Netpack::Builder* to)
     packUnitBasics(to);
 }
 
-Building::Building(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
+Building::Building(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Unit(ownerId, totalCost, health, pos) {}
 Building::Building(Netpack::Consumer* from)
     : Unit(from)
@@ -758,7 +758,7 @@ MoveTargetInfo consumeMoveTargetInfo(Netpack::Consumer* from)
     return MoveTargetInfo(from);
 }
 
-MobileUnit::MobileUnit(int ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
+MobileUnit::MobileUnit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Unit(ownerId, totalCost, health, pos), maybeTargetInfo({}), desiredVelocity(vector2fp::zero), lastVelocity(vector2fp::zero), angle_view(0)
 {}
 void MobileUnit::packMobileUnitBasics(Netpack::Builder* to)
@@ -954,7 +954,7 @@ string Beacon::getTypeName() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
-Beacon::Beacon(int ownerId, vector2fp pos, State state)
+Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
     : Building(ownerId, GATEWAY_COST, BEACON_HEALTH, pos),
       state(state)
 {}
@@ -1167,7 +1167,7 @@ fixed32 Gateway::buildQueueWeight()
         return fixed32(1);
 }
 
-Gateway::Gateway(int ownerId, vector2fp pos)
+Gateway::Gateway(uint8_t ownerId, vector2fp pos)
     : Building(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
       state(Idle), inGameTransferState_view(NoGoldTransfer)
 {}
@@ -1346,7 +1346,7 @@ void Gateway::iterate()
 
 
 
-Prime::Prime(int ownerId, vector2fp pos)
+Prime::Prime(uint8_t ownerId, vector2fp pos)
     : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer), gonnabuildTypechar(NULL_TYPECHAR)
@@ -1831,7 +1831,7 @@ Target consumeTarget(Netpack::Consumer* from)
     return Target(from);
 }
 
-Fighter::Fighter(int ownerId, vector2fp pos)
+Fighter::Fighter(uint8_t ownerId, vector2fp pos)
     : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
       state(NotAttacking), maybeAttackingGeneralTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
 {}

@@ -17,7 +17,7 @@ using namespace std;
 
 sf::Color playerAddressToColor(string address)
 {
-    int vals[3];
+    uint8_t vals[3];
     for (uint8_t i=0; i<3; i++)
     {
         string charStr = address.substr(2 + i, 1);
@@ -118,7 +118,7 @@ void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entity
         throw logic_error("Trying to SearchGrid::deregisterEntityForCellOrThrow, but cell is out of bounds\n");
     }
     
-    int numErased = cells[cell.x][cell.y].erase(entityRef);
+    uint8_t numErased = cells[cell.x][cell.y].erase(entityRef);
     if (numErased == 0)
     {
         throw logic_error("Trying to SearchGrid::registerEntityForCellOrThrow, but it wasn't registered here\n");
