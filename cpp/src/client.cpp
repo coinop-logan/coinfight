@@ -327,8 +327,8 @@ int main(int argc, char *argv[])
             {
                 cout << "Uh oh, I'm seeing some desyncs!" << endl;
             }
-            game = receivedResyncs[0];
-            game.reassignEntityGamePointers();
+            // game = receivedResyncs[0];
+            // game.reassignEntityGamePointers();
 
             receivedResyncs.erase(receivedResyncs.begin());
         }

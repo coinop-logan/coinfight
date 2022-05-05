@@ -14,7 +14,7 @@
 #include "sigWrapper.h"
 #include "events.h"
 
-const bool SEND_REGULAR_RESYNCS = true;
+const bool SEND_REGULAR_RESYNC_CHECKS = true;
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            bool sendResync = SEND_REGULAR_RESYNCS ? (game.frame % 100 == 0) : false;
+            bool sendResync = SEND_REGULAR_RESYNC_CHECKS ? (game.frame % 100 == 0) : false;
             if (clientChannels[i]->state == ClientChannel::ReadyForFirstSync || sendResync)
             {
                 clientChannels[i]->sendResyncPacket();
