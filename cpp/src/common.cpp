@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdio.h>
+#include <fpm/ios.hpp>
 #include "common.h"
 #include "coins.h"
 
@@ -7,8 +8,8 @@ using namespace std;
 
 void debugOutputVector(const char *label, vector2fp v)
 {
-    fprintf(stdout, "%s", label);
-    fprintf(stdout, ": %f,%f\n", v.x, v.y);
+    fprintf(stdout, "%s: ", label);
+    cout << v.x << "," << v.y << endl;
 }
 void debugOutputVector(const char *label, vector2fl v)
 {

@@ -240,7 +240,7 @@ namespace Netpack
 
     int16_t unpacki16(unsigned char *buf)
     {
-        int16_t i2 = unpacku16(buf);
+        uint16_t i2 = unpacku16(buf);
         int16_t i;
 
         // change unsigned numbers to signed
