@@ -416,7 +416,7 @@ vector2i scaledDownGamePosWithZCorrection(vector2fl gamePos, float scaleDownFact
     );
 }
 
-void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, int viewingPlayerIdOrNegativeOne, float zoomOutFactor)
+void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, optional<uint8_t> maybeViewingPlayerId, float zoomOutFactor)
 {
     vector2i minimapPos = scaledDownGamePosWithZCorrection(vector2fl(entity->getPos()), zoomOutFactor);
     minimapPos.y *= -1;
@@ -705,7 +705,7 @@ void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
     window->draw(rect);
 }
 
-void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
+void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t> maybePlayerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
@@ -721,7 +721,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
             case UI::Default:
                 if (ui.mouseoverEntity)
                 {
-                    if (getAllianceType(playerId, ui.mouseoverEntity) == Foreign)
+                    if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Foreign)
                     {
                         drawBracketsCursor(window, mousePos, sf::Color::Red);
                     }
@@ -754,7 +754,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, int playerId)
             case UI::Scuttle:
                 if (ui.mouseoverEntity)
                 {
-                    if (getAllianceType(playerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
+                    if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
                     {
                         drawBracketsCursor(window, mousePos, sf::Color::Yellow);
                     }
@@ -787,7 +787,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
     drawCircleAround(window, gamePosToScreenPos(camera, entity->getPos()), 15, 1, sf::Color::Green);
 }
 
-void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int playerIdOrNegativeOne)
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, optional<uint8_t> maybePlayerId)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -797,7 +797,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, int pl
         Coins *displayBelowCoins = NULL;
 
         sf::Color topTextColor;
-        switch (getAllianceType(playerIdOrNegativeOne, game->entities[i]))
+        switch (getAllianceType(maybePlayerId, game->entities[i]))
         {
             case Owned:
                 topTextColor = sf::Color::Green;
@@ -1007,7 +1007,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdo
     }
 }
 
-void displayMinimap(sf::RenderWindow *window, Game *game, int playerIdOrNegativeOne, vector2i minimapDimensions)
+void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
 {
     sf::Color backgroundColor(50, 50, 100);
     window->clear(backgroundColor);
@@ -1018,17 +1018,17 @@ void displayMinimap(sf::RenderWindow *window, Game *game, int playerIdOrNegative
     {
         if (game->entities[i])
         {
-            drawEntitySymbolOnMinimap(window, game->entities[i], playerIdOrNegativeOne, zoomOutFactor);
+            drawEntitySymbolOnMinimap(window, game->entities[i], maybePlayerId, zoomOutFactor);
         }
     }
 }
 
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerIdOrNegativeOne)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId)
 {
     if (ui.minimapEnabled)
     {
-        displayMinimap(window, game, playerIdOrNegativeOne, screenDimensions);
+        displayMinimap(window, game, maybePlayerId, screenDimensions);
     }
     else {
         drawBackground(window, ui.camera);
@@ -1130,11 +1130,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
 
         if (!ui.cleanDrawEnabled)
-        drawUnitDroppableValues(window, game, ui, playerIdOrNegativeOne);
+        drawUnitDroppableValues(window, game, ui, maybePlayerId);
 
-        if (playerIdOrNegativeOne >= 0)
+        if (maybePlayerId)
         {
-            unsigned int playerId = playerIdOrNegativeOne;
+            uint8_t playerId = *maybePlayerId;
             coinsInt playerCredit = game->players[playerId].credit.getInt();
 
             sf::Color balanceTextColor =
@@ -1155,7 +1155,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         for (unsigned int i=0; i<game->entities.size(); i++)
         {
             if (game->entities[i])
-                if (getAllianceType(playerIdOrNegativeOne, game->entities[i]) == Owned)
+                if (getAllianceType(maybePlayerId, game->entities[i]) == Owned)
                 {
                     playerOwnsUnits = true;
                     break;
@@ -1171,7 +1171,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
             drawEscapeQuitText(window, (unsigned int)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
         }
 
-        drawCursorOrSelectionBox(window, ui, playerIdOrNegativeOne);
+        drawCursorOrSelectionBox(window, ui, maybePlayerId);
     }
 
     window->display();

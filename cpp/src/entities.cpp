@@ -336,7 +336,7 @@ uint8_t getMaybeNullEntityTypechar(boost::shared_ptr<Entity> e)
         return NULL_TYPECHAR;
 }
 
-AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity> entity)
+AllianceType getAllianceType(optional<uint8_t> maybePlayerId, boost::shared_ptr<Entity> entity)
 {
     if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
@@ -344,7 +344,7 @@ AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity
     }
     else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
     {
-        if (playerIdOrNegativeOne == unit->ownerId)
+        if ((maybePlayerId) && *maybePlayerId == unit->ownerId)
         {
             return Owned;
         }

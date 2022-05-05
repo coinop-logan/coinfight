@@ -227,16 +227,16 @@ vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2fp gameP
     return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
 
-int Game::playerAddressToIdOrNegativeOne(string address)
+optional<uint8_t> Game::playerAddressToMaybeId(string address)
 {
-    for (unsigned int i=0; i<players.size(); i++)
+    for (uint8_t i=0; i<players.size(); i++)
     {
         if (players[i].address == address)
         {
-            return i;
+            return {i};
         }
     }
-    return -1;
+    return {};
 }
 string Game::playerIdToAddress(uint8_t playerId)
 {

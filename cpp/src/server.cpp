@@ -434,15 +434,22 @@ int main(int argc, char *argv[])
         // If so, actuate and queue for in-game processing
         for (unsigned int i=0; i<pendingWithdrawEvents.size(); i++)
         {
-            // just make sure again the math works out
-            if (pendingWithdrawEvents[i].amountInCoins > game.players[game.playerAddressToIdOrNegativeOne(pendingWithdrawEvents[i].userAddress)].credit.getInt())
+            if (auto playerId = game.playerAddressToMaybeId(pendingWithdrawEvents[i].userAddress))
             {
-                cout << "Somehow an invalid withdrawal event was about to get processed..." << endl;
+                // just make sure again the math works out
+                if (pendingWithdrawEvents[i].amountInCoins > game.players[*playerId].credit.getInt())
+                {
+                    cout << "Somehow an invalid withdrawal event was about to get processed..." << endl;
+                }
+                else
+                {
+                    actuateWithdrawal(pendingWithdrawEvents[i].userAddress, pendingWithdrawEvents[i].amountInCoins);
+                    pendingEvents.push_back(pendingWithdrawEvents[i].toEventSharedPtr());
+                }
             }
             else
             {
-                actuateWithdrawal(pendingWithdrawEvents[i].userAddress, pendingWithdrawEvents[i].amountInCoins);
-                pendingEvents.push_back(pendingWithdrawEvents[i].toEventSharedPtr());
+                cout << "Somehow trying to process an event for which there is no player..." << endl;
             }
         }
         pendingWithdrawEvents.clear();
@@ -509,12 +516,13 @@ int main(int argc, char *argv[])
             }
             else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(pendingCmds[i]->cmd))
             {
-                int playerId = game.playerAddressToIdOrNegativeOne(pendingCmds[i]->playerAddress);
-                if (playerId < 0)
+                optional<uint8_t> maybePlayerId = game.playerAddressToMaybeId(pendingCmds[i]->playerAddress);
+                if (!maybePlayerId)
                 {
                     cout << "Woah, getting a negative playerId when processing a withdraw cmd..." << endl;
                     continue;
                 }
+                uint8_t playerId = *maybePlayerId;
                 // if 0, interpret this as "all"
                 coinsInt withdrawSpecified = withdrawCmd->amount > 0 ? withdrawCmd->amount : game.players[playerId].credit.getInt();
                 coinsInt amountToWithdraw = min(withdrawSpecified, game.players[playerId].credit.getInt());

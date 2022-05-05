@@ -54,7 +54,7 @@ enum AllianceType {
     Foreign,
     Neutral
 };
-AllianceType getAllianceType(int playerIdOrNegativeOne, boost::shared_ptr<Entity> entity);
+AllianceType getAllianceType(optional<uint8_t> maybePlayerId, boost::shared_ptr<Entity> entity);
 
 class Target
 {

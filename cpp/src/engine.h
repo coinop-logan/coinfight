@@ -75,7 +75,7 @@ public:
     void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
     boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
-    int playerAddressToIdOrNegativeOne(string address);
+    optional<uint8_t> playerAddressToMaybeId(string address);
     string playerIdToAddress(uint8_t playerId);
     bool getPlayerBeaconAvailable(uint8_t playerId);
     void setPlayerBeaconAvailable(uint8_t playerId, bool flag);

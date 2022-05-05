@@ -56,7 +56,7 @@ struct ParticlesContainer
 };
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, int playerId);
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId);
 void cleanupGraphics();
 
 #endif // GRAPHICS_H

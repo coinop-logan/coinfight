@@ -95,9 +95,11 @@ string SpawnBeaconCmd::getTypename()
 }
 void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
 {
-    int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
-    if (playerId == -1)
+    optional<uint8_t> maybePlayerId = game->playerAddressToMaybeId(playerAddress);
+    if (!maybePlayerId)
         return;
+    
+    uint8_t playerId = *maybePlayerId;
 
     if (game->getPlayerBeaconAvailable(playerId))
     {
@@ -155,9 +157,11 @@ UnitCmd::UnitCmd(Netpack::Consumer* from)
 
 void UnitCmd::executeAsPlayer(Game *game, string playerAddress)
 {
-    int playerId = game->playerAddressToIdOrNegativeOne(playerAddress);
-    if (playerId == -1)
+    optional<uint8_t> maybePlayerId = game->playerAddressToMaybeId(playerAddress);
+    if (!maybePlayerId)
         return;
+    
+    uint8_t playerId = *maybePlayerId;
 
     vector<boost::shared_ptr<Unit>> units = getUnits(game);
     for (unsigned int i = 0; i < units.size(); i++)

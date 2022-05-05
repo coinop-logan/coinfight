@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     // HANDSHAKE
 
     string playerAddress;
-    int playerIdOrNegativeOne = -1;
+    optional<uint8_t> maybePlayerId = {};
 
     // Wait for the sig challenge and respond with the user's help
     string sigChallenge = connectionHandler.receiveSigChallenge();
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 
         nextFrameStart += ONE_FRAME;
 
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, playerIdOrNegativeOne, window);
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window);
 
         for (unsigned int i=0; i < cmdsToSend.size(); i++)
         {
@@ -365,9 +365,9 @@ int main(int argc, char *argv[])
         }
 
         // Try to update playerId if necessary
-        if (playerIdOrNegativeOne < 0)
+        if (!maybePlayerId)
         {
-            playerIdOrNegativeOne = game.playerAddressToIdOrNegativeOne(playerAddress);
+            maybePlayerId = game.playerAddressToMaybeId(playerAddress);
         }
 
         // check for game start cmd, and do some ux prep if we got one
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
         // only display if we're not behind schedule
         now = chrono::system_clock::now();
         if (now <= nextFrameStart)
-            display(window, &game, ui, &particles, game.playerAddressToIdOrNegativeOne(playerAddress));
+            display(window, &game, ui, &particles, maybePlayerId);
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
@@ -403,9 +403,9 @@ int main(int argc, char *argv[])
     delete window;
 
     cout << "Okay bye!" << endl;
-    if (playerIdOrNegativeOne >= 0)
+    if (maybePlayerId)
     {
-        cout << "Withdrawing your " << game.players[playerIdOrNegativeOne].credit.getDollarString().toAnsiString() << " now..." << endl;
+        cout << "Withdrawing your " << game.players[*maybePlayerId].credit.getDollarString().toAnsiString() << " now..." << endl;
         boost::shared_ptr<WithdrawCmd> withdrawCmd(new WithdrawCmd(coinsInt(0)));
         connectionHandler.sendCmd(withdrawCmd);
     }
