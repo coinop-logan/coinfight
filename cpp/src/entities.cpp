@@ -896,7 +896,7 @@ void MobileUnit::iterateMobileUnitBasics()
             {
                 // this factors in frustration, so the unit eventually gives up.
                 // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
-                satisfied = (distanceFloorSquared < floorSquareFixed(targetInfo->frustration));
+                satisfied = (distanceFloorSquared <= floorSquareFixed(targetInfo->frustration));
             }
             else
             {
