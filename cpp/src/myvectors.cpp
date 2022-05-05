@@ -193,6 +193,8 @@ uint32_t vector2fp::getFloorMagnitudeSquared() const
 }
 fixed32 vector2fp::getRoughMagnitude() const
 {
+    if (x == fixed32(0) && y == fixed32(0))
+        return fixed32(0);
     fixed32 angle = getAngle();
     fixed32 cosRes = cos(angle);
     if (abs(cosRes) > fixed32(0.01))
