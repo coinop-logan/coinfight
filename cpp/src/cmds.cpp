@@ -143,7 +143,7 @@ void UnitCmd::packUnitCmdBasics(Netpack::Builder* to)
 UnitCmd::UnitCmd(Netpack::Consumer* from)
     : Cmd(from)
 {
-    uint16_t numUnitRefs = from->consumeInt16_t();
+    uint16_t numUnitRefs = from->consumeUint16_t();
     for (unsigned i = 0; i < numUnitRefs; i++)
     {
         EntityRef unitRef = consumeEntityRef(from);
