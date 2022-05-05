@@ -185,13 +185,25 @@ vector2fp vector2fp::operator/(int c) const
 {
     return vector2fp(x / c, y / c);
 }
-fixed32 vector2fp::getMagnitudeSquared() const
+uint32_t vector2fp::getFloorMagnitudeSquared() const
 {
-	return x * x + y * y;
+	int32_t xi = static_cast<int32_t>(x);
+    int32_t yi = static_cast<int32_t>(y);
+    return xi * xi + yi * yi;
 }
-fixed32 vector2fp::getMagnitude() const
+fixed32 vector2fp::getRoughMagnitude() const
 {
-	return sqrt(getMagnitudeSquared());
+    fixed32 angle = getAngle();
+    fixed32 cosRes = cos(angle);
+    if (abs(cosRes) > fixed32(0.01))
+    {
+        return x / cosRes;
+    }
+    else
+    {
+        fixed32 sinRes = sin(angle);
+        return y / sinRes;
+    }
 }
 fixed32 vector2fp::getAngle() const
 {
@@ -199,13 +211,13 @@ fixed32 vector2fp::getAngle() const
 }
 vector2fp vector2fp::normalized() const
 {
-	fixed32 magnitude = getMagnitude();
-	return vector2fp(x / magnitude, y / magnitude);
+    fixed32 angle = getAngle();
+    return composeVector2fp(angle, fixed32(1));
 }
 vector2fp vector2fp::rotated(fixed32 angle) const
 {
 	fixed32 newAngle = angle + getAngle();
-	return composeVector2fp(newAngle, getMagnitude());
+	return composeVector2fp(newAngle, getRoughMagnitude());
 }
 vector2fp composeVector2fp(fixed32 angle, fixed32 magnitude) {
 	return vector2fp(magnitude * cos(angle), magnitude * sin(angle));

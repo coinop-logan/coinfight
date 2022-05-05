@@ -47,11 +47,11 @@ void clearVchAndPackResyncPacket(vch *dest)
 
     dest->insert(dest->begin(), prepended.begin(), prepended.end());
 }
-void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fcp)
+void clearVchAndPackFrameCmdsPacket(vch *dest, FrameEventsPacket fep)
 {
     dest->clear();
 
-    fcp.pack(dest);
+    fep.pack(dest);
 
     vch prepended;
     packToVch(&prepended, "C", PACKET_FRAMECMDS_CHAR);

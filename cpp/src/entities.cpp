@@ -182,7 +182,7 @@ bool maybeMoveTargetInfosAreEqual(optional<MoveTargetInfo> mt1, optional<MoveTar
     return (
         targetsAreEqual(mt1->target, mt2->target)
      && mt1->desiredRange == mt2->desiredRange
-     && mt1->closestDistanceSquared == mt2->closestDistanceSquared
+     && mt1->closestDistanceFloorSquared == mt2->closestDistanceFloorSquared
      && mt1->frustration == mt2->frustration
     );
 }
@@ -452,7 +452,7 @@ string Entity::getTypeName() const
 
 bool Entity::collidesWithPoint(vector2fp point)
 {
-    return (pos - point).getMagnitude() <= ENTITY_COLLIDE_RADIUS;
+    return (pos - point).getRoughMagnitude() <= ENTITY_COLLIDE_RADIUS;
 }
 
 void Entity::iterate()
@@ -731,21 +731,21 @@ void Building::iterateBuildingBasics()
 // ------------------------------------------------------------------------------
 
 
-MoveTargetInfo::MoveTargetInfo(Target target, fixed32 desiredRange, fixed32 closestDistanceSquared)
-    : target(target), desiredRange(desiredRange), closestDistanceSquared(closestDistanceSquared), frustration(0)
+MoveTargetInfo::MoveTargetInfo(Target target, fixed32 desiredRange, uint32_t closestDistanceFloorSquared)
+    : target(target), desiredRange(desiredRange), closestDistanceFloorSquared(closestDistanceFloorSquared), frustration(0)
     {}
 void MoveTargetInfo::pack(Netpack::Builder* to)
 {
     target.pack(to);
     packFixed32(to, desiredRange);
-    packFixed32(to, closestDistanceSquared);
+    to->packUint32_t(closestDistanceFloorSquared);
     packFixed32(to, frustration);
 }
 MoveTargetInfo::MoveTargetInfo(Netpack::Consumer* from) : target((EntityRef)0)
 {
     target = Target(from);
     desiredRange = consumeFixed32(from);
-    closestDistanceSquared = consumeFixed32(from);
+    closestDistanceFloorSquared = from->consumeUint32_t();
     frustration = consumeFixed32(from);
 }
 
@@ -802,7 +802,7 @@ void MobileUnit::setMoveTarget(Target _target, fixed32 newRange)
 {
     if (auto point = _target.getPointUnlessTargetDeleted(*this->getGameOrThrow()))
     {
-        fixed32 currentRangeSquared = (this->getPos() - *point).getMagnitudeSquared();
+        uint32_t currentRangeSquared = (this->getPos() - *point).getFloorMagnitudeSquared();
         maybeTargetInfo = {MoveTargetInfo(_target, newRange, currentRangeSquared)};
     }
     else
@@ -821,7 +821,7 @@ bool MobileUnit::isIdle()
         if (optional<vector2fp> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
             vector2fp toPoint = *p - getPos();
-            fixed32 distanceLeft = toPoint.getMagnitude() - targetInfo->desiredRange;
+            fixed32 distanceLeft = toPoint.getRoughMagnitude() - targetInfo->desiredRange;
             return (distanceLeft <= EPSILON);
         }
     }
@@ -842,16 +842,16 @@ optional<MoveTargetInfo> MobileUnit::getMaybeMoveTargetInfo()
 void MobileUnit::moveWithVelocityAndUpdateCell(vector2fp velocity)
 {
     lastVelocity = velocity;
-    if (velocity.getMagnitudeSquared() >= EPSILON)
+    if (velocity == vector2fp::zero)
     {
-        angle_view = static_cast<float>(velocity.getAngle());
+        return;
     }
     setPosAndUpdateCell(getPos() + velocity);
 }
 void MobileUnit::tryMoveTowardPoint(vector2fp to, fixed32 range)
 {
     vector2fp toPoint = to - getPos();
-    fixed32 distanceLeft = toPoint.getMagnitude() - range;
+    fixed32 distanceLeft = toPoint.getRoughMagnitude() - range;
     if (distanceLeft <= EPSILON)
     {
         return;
@@ -877,11 +877,11 @@ void MobileUnit::iterateMobileUnitBasics()
     {
         if (optional<vector2fp> p = targetInfo->target.getPointUnlessTargetDeleted(*getGameOrThrow()))
         {
-            fixed32 distanceSquared = (getPos() - *p).getMagnitudeSquared();
+            uint32_t distanceFloorSquared = (getPos() - *p).getFloorMagnitudeSquared();
             // if we're "breaking a record" for closest to the point, set frustration to 0
-            if (distanceSquared <= targetInfo->closestDistanceSquared)
+            if (distanceFloorSquared <= targetInfo->closestDistanceFloorSquared)
             {
-                maybeTargetInfo->closestDistanceSquared = distanceSquared;
+                maybeTargetInfo->closestDistanceFloorSquared = distanceFloorSquared;
                 maybeTargetInfo->frustration = fixed32(0);
             }
             // otherwise, frustration mounts!
@@ -896,12 +896,12 @@ void MobileUnit::iterateMobileUnitBasics()
             {
                 // this factors in frustration, so the unit eventually gives up.
                 // this is primarly to avoid frantic swarming when large numbers of units all go toward the same point.
-                satisfied = (distanceSquared < pow(EPSILON + targetInfo->frustration, 2));
+                satisfied = (distanceFloorSquared < floorSquareFixed(targetInfo->frustration));
             }
             else
             {
                 // but if the target is an entity, we don't really want the unit to ever give up.
-                satisfied = (distanceSquared < pow(EPSILON, 2));
+                satisfied = (distanceFloorSquared == 0); // note that this will happen whenever (getPos - *p) above is within the bounds (-1,-1) : (1, 1) due to the flooring.
             }
 
             if (satisfied)
@@ -1068,7 +1068,7 @@ void Gateway::cmdDepositTo(Target target)
         // if target is a point, check range and create goldPile
         if (auto point = target.castToPoint())
         {
-            if ((*point - this->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+            if ((*point - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
             {
                 return;
             }
@@ -1110,7 +1110,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                 {
                     if (getAllianceType(this->ownerId, unit) == Owned)
                     {
-                        if ((this->getPos() - unit->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                        if ((this->getPos() - unit->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                         {
                             if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit))
                             {
@@ -1136,7 +1136,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                 }
                 else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
-                    if ((this->getPos() - goldpile->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                    if ((this->getPos() - goldpile->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                     {
                         // too far away!
                         state = Idle;
@@ -1197,7 +1197,6 @@ void Gateway::iterate()
             // search for units near enough to complete
             vector<EntityRef> nearbyEntityRefs = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(this->getPos(), GATEWAY_RANGE);
 
-            fixed32 rangeSquared = pow(GATEWAY_RANGE, 2);
             for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
             {
                 boost::shared_ptr<Entity> entity = maybeEntityRefToPtrOrNull(*game, {nearbyEntityRefs[i]});
@@ -1206,7 +1205,7 @@ void Gateway::iterate()
                 {
                     if (unit->ownerId == this->ownerId)
                         if (unit->getBuiltRatio() < fixed32(1))
-                            if ((unit->getPos() - this->getPos()).getMagnitudeSquared() <= rangeSquared)
+                            if ((unit->getPos() - this->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
                                 {
                                     state = DepositTo;
                                     maybeTargetEntity = {unit->getRefOrThrow()};
@@ -1220,7 +1219,7 @@ void Gateway::iterate()
             if (boost::shared_ptr<Entity> depositingToEntityPtr = maybeEntityRefToPtrOrNull(*game, maybeTargetEntity))
             {
                 // stop if it's out of range
-                if ((depositingToEntityPtr->getPos() - this->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE, 2))
+                if ((depositingToEntityPtr->getPos() - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                 {
                     state = Idle;
                     maybeTargetEntity = {};
@@ -1276,7 +1275,7 @@ void Gateway::iterate()
         {
             if (auto entity = (maybeEntityRefToPtrOrNull(*game, maybeTargetEntity)))
             {
-                if ((this->getPos() - entity->getPos()).getMagnitudeSquared() > pow(GATEWAY_RANGE + EPSILON, 2))
+                if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                 {
                     if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                     {
@@ -1463,18 +1462,18 @@ void Prime::iterate()
                         
                         // scan for any GoldPile and choose the closest
                         boost::shared_ptr<GoldPile> bestTarget;
-                        fixed32 bestTargetDistanceSquared;
+                        uint16_t bestTargetDistanceFloorSquared;
 
                         auto entitiesInSight = game->entitiesWithinCircle(getPos(), PRIME_SIGHT_RANGE);
                         for (unsigned int i=0; i<entitiesInSight.size(); i++)
                         {
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
                             {
-                                fixed32 distanceSquared = (this->getPos() - goldPile->getPos()).getMagnitudeSquared();
-                                if (!bestTarget || distanceSquared < bestTargetDistanceSquared)
+                                uint16_t distanceFloorSquared = (this->getPos() - goldPile->getPos()).getFloorMagnitudeSquared();
+                                if (!bestTarget || distanceFloorSquared < bestTargetDistanceFloorSquared)
                                 {
                                     bestTarget = goldPile;
-                                    bestTargetDistanceSquared = distanceSquared;
+                                    bestTargetDistanceFloorSquared = distanceFloorSquared;
                                 }
                             }
                         }
@@ -1487,7 +1486,7 @@ void Prime::iterate()
                             break;
                         }
                         // otoh, if we've arrived at the target without finding Gold to pickup...
-                        else if ((*gatherTargetPos - this->getPos()).getMagnitudeSquared() < EPSILON)
+                        else if ((*gatherTargetPos - this->getPos()).getFloorMagnitudeSquared() == 0)
                         {
                             // if we have no Gold, return to basic/idle behavior
                             if (heldGold.getInt() == 0)
@@ -1593,7 +1592,7 @@ void Prime::iterate()
         {
             if (boost::shared_ptr<Entity> e = target->castToEntityPtr(*game))
             {
-                if ((e->getPos() - this->getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
+                if ((e->getPos() - this->getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
                 {
                     optional<Coins*> coinsToPullFrom;
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(e))
@@ -1621,7 +1620,7 @@ void Prime::iterate()
         if (auto target = getMaybeMoveTarget())
         if (optional<vector2fp> point = target->getPointUnlessTargetDeleted(*game))
         {
-            if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
+            if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
             {
                 optional<Coins*> coinsToPushTo;
                 bool stopOnTransferZero = false;
@@ -1695,7 +1694,7 @@ void Prime::iterate()
         {
             if (optional<vector2fp> point = target->castToPoint())
             {
-                if ((*point - getPos()).getMagnitude() <= PRIME_TRANSFER_RANGE + EPSILON)
+                if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
                 {
                     // create unit if typechar checks out and change target to new unit
                     boost::shared_ptr<Building> buildingToBuild;
@@ -1759,18 +1758,18 @@ void Prime::setStateToReturnGoldOrResetBehavior()
 
     // find nearest gateway and bring gold to it
     boost::shared_ptr<Gateway> bestChoice;
-    fixed32 bestChoiceDistanceSquared;
+    uint32_t bestChoiceDistanceFloorSquared;
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
         if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
         {
             if (getAllianceType(this->ownerId, gateway) == Owned)
             {
-                fixed32 distanceSquared = (this->getPos() - gateway->getPos()).getMagnitudeSquared();
-                if (!bestChoice || distanceSquared < bestChoiceDistanceSquared)
+                uint32_t distanceFloorSquared = (this->getPos() - gateway->getPos()).getFloorMagnitudeSquared();
+                if (!bestChoice || distanceFloorSquared < bestChoiceDistanceFloorSquared)
                 {
                     bestChoice = gateway;
-                    bestChoiceDistanceSquared = distanceSquared;
+                    bestChoiceDistanceFloorSquared = distanceFloorSquared;
                 }
             }
         }
@@ -1883,17 +1882,17 @@ void Fighter::iterate()
                 auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
 
                 boost::shared_ptr<Entity> closestValidTarget;
-                fixed32 closestDistanceSquared;
+                uint32_t closestDistanceFloorSquared;
                 for (unsigned int i=0; i<entitiesInSight.size(); i++)
                 {
                     auto entity = entitiesInSight[i];
                     if (getAllianceType(this->ownerId, entity) == Foreign)
                     {
-                        fixed32 distanceSquared = (this->getPos() - entity->getPos()).getMagnitudeSquared();
-                        if (!closestValidTarget || distanceSquared < closestDistanceSquared)
+                        uint32_t distanceFloorSquared = (this->getPos() - entity->getPos()).getFloorMagnitudeSquared();
+                        if (!closestValidTarget || distanceFloorSquared < closestDistanceFloorSquared)
                         {
                             closestValidTarget = entity;
-                            closestDistanceSquared = distanceSquared;
+                            closestDistanceFloorSquared = distanceFloorSquared;
                         }
                     }
                 }
@@ -1943,7 +1942,7 @@ void Fighter::iterate()
                 // if the target is a point and we've arrived, go back to Idle
                 if (auto point = attackingGeneralTarget->castToPoint())
                 {
-                    if ((*point - this->getPos()).getMagnitudeSquared() < EPSILON)
+                    if ((*point - this->getPos()).getFloorMagnitudeSquared() == 0)
                     {
                         state = NotAttacking;
                         attackingGeneralTarget = {};
@@ -1991,9 +1990,9 @@ void Fighter::iterate()
                             else if (priority == bestTargetPriority && !alreadyHadTarget)
                             {
                                 // compare distances
-                                fixed32 currentDistanceSquared = (this->getPos() - bestTarget->getPos()).getMagnitudeSquared();
-                                fixed32 distanceSquared = (this->getPos() - unit->getPos()).getMagnitudeSquared();
-                                if (distanceSquared < currentDistanceSquared)
+                                uint32_t currentDistanceFloorSquared = (this->getPos() - bestTarget->getPos()).getFloorMagnitudeSquared();
+                                uint32_t distanceFloorSquared = (this->getPos() - unit->getPos()).getFloorMagnitudeSquared();
+                                if (distanceFloorSquared < currentDistanceFloorSquared)
                                     thisIsBetterTarget = true;
                             }
 
@@ -2053,7 +2052,7 @@ void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 {
     vector2fp toTarget = (targetUnit->getPos() - this->getPos());
     angle_view = static_cast<float>(toTarget.getAngle());
-    if (toTarget.getMagnitude() <= FIGHTER_SHOT_RANGE + EPSILON)
+    if (toTarget.getFloorMagnitudeSquared() <= FIGHTER_SHOT_RANGE_FLOORSQUARED)
     {
         if (shootCooldown == 0)
         {

@@ -144,13 +144,13 @@ struct MoveTargetInfo
 {
     Target target;
     fixed32 desiredRange;
-    fixed32 closestDistanceSquared;
+    uint32_t closestDistanceFloorSquared;
     fixed32 frustration;
 
     void pack(Netpack::Builder* to);
     void unpackAndMoveIter(Netpack::Consumer* from);
 
-    MoveTargetInfo(Target target, fixed32 desiredRange, fixed32 closestDistanceSquared);
+    MoveTargetInfo(Target target, fixed32 desiredRange, uint32_t closestDistanceFloorSquared);
     MoveTargetInfo(Netpack::Consumer* from);
 };
 
@@ -225,6 +225,7 @@ public:
 const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
+const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const coinsInt GATEWAY_SCUTTLE_RATE = 5;
 const coinsInt GATEWAY_BUILD_RATE = 8;
 const fixed32 GATEWAY_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
@@ -263,6 +264,7 @@ const coinsInt PRIME_COST = 500;
 const uint16_t PRIME_HEALTH = 100;
 const fixed32 PRIME_SPEED(2);
 const fixed32 PRIME_TRANSFER_RANGE(150);
+const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
 const coinsInt PRIME_PICKUP_RATE = 2;
 const coinsInt PRIME_PUTDOWN_RATE = 5;
@@ -327,6 +329,7 @@ const coinsInt FIGHTER_COST = 1500;
 const uint16_t FIGHTER_HEALTH = 300;
 const fixed32 FIGHTER_SPEED(3);
 const fixed32 FIGHTER_SHOT_RANGE(200);
+const uint32_t FIGHTER_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(FIGHTER_SHOT_RANGE);
 const fixed32 FIGHTER_SIGHT_RANGE(250);
 const int FIGHTER_SHOT_COOLDOWN = 20;
 const int FIGHTER_DAMAGE = 10;

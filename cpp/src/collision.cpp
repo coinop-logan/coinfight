@@ -39,9 +39,9 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
             otherVelocity = vector2fp::zero;
         }
         vector2fp relativeVelocity = unit->getLastVelocity() - otherVelocity;
-        fixed32 distSq = relativePosition.getMagnitudeSquared();
+        uint32_t distSq = relativePosition.getFloorMagnitudeSquared();
         fixed32 combinedRadius = unit->getRadius() + other->getRadius();
-        const fixed32 combinedRadiusSq = sqr(combinedRadius);
+        uint32_t combinedRadiusSq = floorSquareFixed(combinedRadius);
 
         Line line;
         vector2fp u;
@@ -50,13 +50,13 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
             /* No collision. */
             vector2fp w = relativeVelocity - invTimeHorizon * relativePosition;
             /* Vector from cutoff center to relative velocity. */
-            const fixed32 wLengthSq = w.getMagnitudeSquared();
+            const uint32_t wLengthSq = w.getFloorMagnitudeSquared();
 
             const fixed32 dotProduct1 = w * relativePosition;
 
-            if (dotProduct1 < fixed32(0) && sqr(dotProduct1) > combinedRadiusSq * wLengthSq) {
+            if (dotProduct1 < fixed32(0) && floorSquareFixed(dotProduct1) > combinedRadiusSq * wLengthSq) {
                 /* Project on cut-off circle. */
-                const fixed32 wLength = sqrt(wLengthSq);
+                const fixed32 wLength = w.getRoughMagnitude();
                 const vector2fp unitW = w / wLength;
 
                 line.direction = vector2fp(unitW.y, -unitW.x);
@@ -64,7 +64,7 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
             }
             else {
                 /* Project on legs. */
-                const fixed32 leg = sqrt(distSq - combinedRadiusSq);
+                const fixed32 leg(newtonSqrtFloor(distSq - combinedRadiusSq));
 
                 if (det(relativePosition, w) > fixed32(0)) {
                     /* Project on left leg. */
@@ -87,7 +87,7 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
             /* Vector from cutoff center to relative velocity. */
             vector2fp w = relativeVelocity - invTimeStep * relativePosition;
 
-            const fixed32 wLength = w.getMagnitude();
+            const fixed32 wLength = w.getRoughMagnitude();
             const vector2fp unitW = w / wLength;
 
             line.direction = vector2fp(unitW.y, -unitW.x);
@@ -112,7 +112,7 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
 bool linearProgram1(const std::vector<Line> &lines, size_t lineNo, fixed32 radius, const vector2fp &optVelocity, bool directionOpt, vector2fp &result)
 {
     const fixed32 dotProduct = lines[lineNo].point * lines[lineNo].direction;
-    const fixed32 discriminant = sqr(dotProduct) + sqr(radius) - lines[lineNo].point.getMagnitudeSquared();
+    const fixed32 discriminant = sqr(dotProduct) + sqr(radius) - lines[lineNo].point.getFloorMagnitudeSquared();
 
     if (discriminant < fixed32(0)) {
         /* Max speed circle fully invalidates line lineNo. */
@@ -191,7 +191,7 @@ size_t linearProgram2(const std::vector<Line> &lines, fixed32 radius, const vect
             */
         result = optVelocity * radius;
     }
-    else if (optVelocity.getMagnitudeSquared() > sqr(radius)) {
+    else if (optVelocity.getFloorMagnitudeSquared() > floorSquareFixed(radius)) {
         /* Optimize closest point and outside circle. */
         result = optVelocity.normalized() * radius;
     }

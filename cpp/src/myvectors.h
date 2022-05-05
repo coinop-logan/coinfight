@@ -59,8 +59,8 @@ struct vector2fp
     void operator*=(fixed32 c);
     vector2fp operator/(fixed32 c) const;
     vector2fp operator/(int c) const;
-    fixed32 getMagnitudeSquared() const;
-    fixed32 getMagnitude() const;
+    uint32_t getFloorMagnitudeSquared() const;
+    fixed32 getRoughMagnitude() const;
     fixed32 getAngle() const;
     vector2fp normalized() const;
     vector2fp rotated(fixed32 angle) const;

@@ -116,3 +116,20 @@ vector2i fromSFVec(sf::Vector2i v)
 {
     return vector2i(v.x, v.y);
 }
+
+uint32_t floorSquareFixed(fixed32 val)
+{
+    int32_t floored = static_cast<int32_t>(val);
+    return (floored * floored);
+}
+uint32_t newtonSqrtFloor(uint32_t x) {
+    if (x==0) return x;
+    uint32_t dividend = x;
+    uint32_t val = x;
+    uint32_t last;
+    do {
+        last = val;
+        val = (val + dividend / val) / 2;
+    } while(val - last != 0);
+    return (int)val;        
+}

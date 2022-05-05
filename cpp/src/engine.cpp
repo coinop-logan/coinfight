@@ -128,7 +128,7 @@ void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entity
 vector2fp SearchGrid::gamePosToCellSpace(vector2fp gamePos)
 {
     // since map center is (0,0), search grid should be centered on (0,0)
-    fixed32 halfSearchGridWidth = fixed32(SEARCH_GRID_TOTAL_WIDTH) / 2;
+    fixed32 halfSearchGridWidth = fixed32(SEARCH_GRID_TOTAL_WIDTH/2);
     vector2fp searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
     return (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
 }
@@ -148,7 +148,9 @@ set<EntityRef> SearchGrid::getCell(vector2i cell)
 }
 optional<vector2i> SearchGrid::gamePosToCell(vector2fp gamePos)
 {
+    vector2fl gamePosFl(gamePos);
     vector2fp gamePosInSearchGridSpace = gamePosToCellSpace(gamePos);
+    vector2fl test(gamePosInSearchGridSpace);
 
     if (gamePosInSearchGridSpace.x < fixed32(0) ||
         gamePosInSearchGridSpace.x >= fixed32(SEARCH_GRID_NUM_ROWS) ||
@@ -250,7 +252,7 @@ void Game::setPlayerBeaconAvailable(unsigned int playerId, bool flag)
 }
 vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, fixed32 radius)
 {
-    fixed32 radiusSquared = pow(radius, 2);
+    uint32_t radiusFloorSquared = floorSquareFixed(radius);
 
     auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(fromPos, radius);
 
@@ -259,7 +261,7 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, 
     {
         if (auto entity = this->entities[nearbyEntityRefs[i]])
         {
-            if ((fromPos - entity->getPos()).getMagnitudeSquared() <= radiusSquared)
+            if ((fromPos - entity->getPos()).getFloorMagnitudeSquared() <= radiusFloorSquared)
             {
                 entitiesToReturn.push_back(entity);
             }
@@ -297,7 +299,8 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
         if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(this->entities[nearbyEntityRefs[i]]))
         {
             fixed32 combinedRadius = radius + unit->getRadius();
-            if ((centerPos - unit->getPos()).getMagnitudeSquared() < pow(combinedRadius, 2))
+            uint32_t combinedRadiusFloorSquared = floorSquareFixed(combinedRadius);
+            if ((centerPos - unit->getPos()).getFloorMagnitudeSquared() < combinedRadiusFloorSquared)
             {
                 unitsToReturn.push_back(unit);
             }

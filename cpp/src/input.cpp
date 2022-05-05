@@ -180,7 +180,7 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
         {
             if (e->collidesWithPoint(gamePos))
             {
-                float distance = static_cast<float>((gamePos - e->getPos()).getMagnitude());
+                float distance = vector2fl((gamePos - e->getPos())).getMagnitude();
                 if (!closestValidEntity || distance < closestValidEntityDistance)
                 {
                     closestValidEntity = e;

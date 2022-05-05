@@ -69,4 +69,7 @@ sf::Vector2i toSFVec(vector2i v);
 vector2fl fromSFVec(sf::Vector2f v);
 vector2i fromSFVec(sf::Vector2i v);
 
+uint32_t floorSquareFixed(fixed32);
+uint32_t newtonSqrtFloor(uint32_t x);
+
 #endif // COMMON_H
