@@ -1,12 +1,21 @@
 #!/bin/bash
 
-rm -f coinfight-client-linux.zip
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     machineName=linux;;
+    Darwin*)    machineName=mac;;
+    *)
+        echo "Can't build for platform ${unameOut}"
+        exit 1;;
+esac
 
-mkdir coinfight-client-linux
-cp install.sh coinfight-client-linux/
-cp ../../bin/Andale_Mono.ttf coinfight-client-linux/
-cp ../../bin/client coinfight-client-linux/coinfight
-cp ../../bin/coinfight_local coinfight-client-linux/local_demo
+rm -f coinfight-client-${machineName}.zip
 
-zip -r coinfight-client-linux.zip coinfight-client-linux
-rm -rf coinfight-client-linux
+mkdir coinfight-client-${machineName}
+cp install.sh coinfight-client-${machineName}/
+cp ../../bin/Andale_Mono.ttf coinfight-client-${machineName}/
+cp ../../bin/client coinfight-client-${machineName}/coinfight
+cp ../../bin/coinfight_local coinfight-client-${machineName}/local_demo
+
+zip -r coinfight-client-${machineName}.zip coinfight-client-${machineName}
+rm -rf coinfight-client-${machineName}
