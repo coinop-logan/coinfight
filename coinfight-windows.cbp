@@ -144,6 +144,18 @@
 			<Option target="Debug Demo" />
 			<Option target="Debug Client" />
 		</Unit>
+		<Unit filename="cpp/src/collision.cpp">
+			<Option target="Release Client" />
+			<Option target="Release Demo" />
+			<Option target="Debug Demo" />
+			<Option target="Debug Client" />
+		</Unit>
+		<Unit filename="cpp/src/collision.h">
+			<Option target="Release Client" />
+			<Option target="Release Demo" />
+			<Option target="Debug Demo" />
+			<Option target="Debug Client" />
+		</Unit>
 		<Unit filename="cpp/src/common.cpp">
 			<Option target="Release Client" />
 			<Option target="Release Demo" />
@@ -279,18 +291,6 @@
 			<Option target="Debug Client" />
 		</Unit>
 		<Unit filename="cpp/src/unit_interface_cmds.h">
-			<Option target="Release Client" />
-			<Option target="Release Demo" />
-			<Option target="Debug Demo" />
-			<Option target="Debug Client" />
-		</Unit>
-		<Unit filename="cpp/src/vchpack.cpp">
-			<Option target="Release Client" />
-			<Option target="Release Demo" />
-			<Option target="Debug Demo" />
-			<Option target="Debug Client" />
-		</Unit>
-		<Unit filename="cpp/src/vchpack.h">
 			<Option target="Release Client" />
 			<Option target="Release Demo" />
 			<Option target="Debug Demo" />
