@@ -287,7 +287,8 @@ public:
     {
         if (error)
         {
-            cout << "Error receiving cmd body from " << connectionAuthdUserAddress << ". Kicking." << endl;
+            cout << "Error receiving cmd body from " << connectionAuthdUserAddress << ": " << error.message() << endl;
+            cout << "Kicking." << endl;
             state = Closed;
         }
         else
