@@ -46,7 +46,7 @@ struct SearchGridRect
 
 class SearchGrid
 {
-    set<EntityRef> cells[SEARCH_GRID_NUM_ROWS][SEARCH_GRID_NUM_ROWS];
+    vector<vector<set<EntityRef>>> cells;
     bool cellIsValid(vector2i cell);
     void registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef);
     void deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entityRef);

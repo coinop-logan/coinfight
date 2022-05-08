@@ -141,7 +141,14 @@ vector2i SearchGrid::gamePosToCellConstrained(vector2fp gamePos)
     return cellSpacePos;
 }
 
-SearchGrid::SearchGrid() {}
+SearchGrid::SearchGrid()
+{
+    cells.resize(SEARCH_GRID_NUM_ROWS);
+    for (unsigned int i=0; i<SEARCH_GRID_NUM_ROWS; i++)
+    {
+        cells[i].resize(SEARCH_GRID_NUM_ROWS);
+    }
+}
 set<EntityRef> SearchGrid::getCell(vector2i cell)
 {
     return cells[cell.x][cell.y];
