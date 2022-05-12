@@ -10,16 +10,16 @@
 
 using namespace std;
 
-const uint8_t CMD_MOVE_CHAR = 0;
-const uint8_t CMD_PICKUP_CHAR = 1;
-const uint8_t CMD_PUTDOWN_CHAR = 2;
-const uint8_t CMD_GATEWAYBUILD_CHAR = 3;
-const uint8_t CMD_WITHDRAW_CHAR = 4;
-const uint8_t CMD_ATTACK_CHAR = 5;
-const uint8_t CMD_PRIMEBUILD_CHAR = 6;
-const uint8_t CMD_RESUMEBUILDING_CHAR = 7;
-const uint8_t CMD_SPAWNBEACON_CHAR = 8;
-const uint8_t CMD_SCUTTLE_CHAR = 9;
+const uint8_t CMD_MOVE_CHAR = 1;
+const uint8_t CMD_PICKUP_CHAR = 2;
+const uint8_t CMD_PUTDOWN_CHAR = 3;
+const uint8_t CMD_GATEWAYBUILD_CHAR = 4;
+const uint8_t CMD_WITHDRAW_CHAR = 5;
+const uint8_t CMD_ATTACK_CHAR = 6;
+const uint8_t CMD_PRIMEBUILD_CHAR = 7;
+const uint8_t CMD_RESUMEBUILDING_CHAR = 8;
+const uint8_t CMD_SPAWNBEACON_CHAR = 9;
+const uint8_t CMD_SCUTTLE_CHAR = 10;
 
 struct Cmd
 {
