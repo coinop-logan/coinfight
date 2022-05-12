@@ -69,7 +69,6 @@ public:
     } type;
 
     void pack(Netpack::Builder* to);
-    void unpackAndMoveIter(Netpack::Consumer* from);
 
     Target(vector2fp);
     Target(EntityRef);
@@ -89,7 +88,6 @@ public:
     Coins gold;
     vector<Coins*> getDroppableCoins();
     void pack(Netpack::Builder* to);
-    void unpackAndMoveIter(Netpack::Consumer* from);
     GoldPile(vector2fp);
     GoldPile(Netpack::Consumer*);
     sf::Color getTeamOrPrimaryColor();

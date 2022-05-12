@@ -517,15 +517,6 @@ vector<Coins*> GoldPile::getDroppableCoins()
 {
     return vector<Coins*>{&gold};
 }
-void GoldPile::pack(Netpack::Builder* to)
-{
-    packEntityBasics(to);
-    gold.pack(to);
-}
-void GoldPile::unpackAndMoveIter(Netpack::Consumer* from)
-{
-    gold = Coins(from);
-}
 sf::Color GoldPile::getTeamOrPrimaryColor()
 {
     return sf::Color(sf::Color::Yellow);
@@ -534,11 +525,14 @@ sf::Color GoldPile::getTeamOrPrimaryColor()
 GoldPile::GoldPile(vector2fp pos) : Entity(pos),
                                    gold(MAX_COINS)
 {}
-GoldPile::GoldPile(Netpack::Consumer* from) : Entity(from),
-                                    gold(MAX_COINS)
+void GoldPile::pack(Netpack::Builder* to)
 {
-    unpackAndMoveIter(from);
+    packEntityBasics(to);
+    gold.pack(to);
 }
+GoldPile::GoldPile(Netpack::Consumer* from)
+    : Entity(from), gold(from)
+{}
 
 fixed32 GoldPile::getRadius() const { return fixed32(10); }
 uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
@@ -1355,20 +1349,20 @@ void Prime::pack(Netpack::Builder* to)
 {
     packMobileUnitBasics(to);
 
-    to->packEnum(behavior);
-    to->packEnum(state);
-    to->packOptional(maybeGatherTargetPos, packVector2fp);
     heldGold.pack(to);
+    to->packEnum(behavior);
+    to->packOptional(maybeGatherTargetPos, packVector2fp);
+    to->packEnum(state);
     packTypechar(to, gonnabuildTypechar);
 }
 Prime::Prime(Netpack::Consumer* from)
     : MobileUnit(from),
     heldGold(PRIME_MAX_GOLD_HELD)
 {
-    behavior = from->consumeEnum<Behavior>();
-    state = from->consumeEnum<State>();
-    maybeGatherTargetPos = from->consumeOptional(consumeVector2fp);
     heldGold = Coins(from);
+    behavior = from->consumeEnum<Behavior>();
+    maybeGatherTargetPos = from->consumeOptional(consumeVector2fp);
+    state = from->consumeEnum<State>();
     gonnabuildTypechar = consumeTypechar(from);
 }
 
