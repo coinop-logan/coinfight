@@ -290,8 +290,10 @@ void PutdownCmd::pack(Netpack::Builder* to)
     target.pack(to);
 }
 PutdownCmd::PutdownCmd(Netpack::Consumer* from)
-    : UnitCmd(from), target(from)
-{}
+    : UnitCmd(from), target((EntityRef)0)
+{
+    target = Target(from);
+}
 
 uint8_t GatewayBuildCmd::getTypechar()
 {
@@ -396,8 +398,10 @@ void AttackGatherCmd::pack(Netpack::Builder* to)
     target.pack(to);
 }
 AttackGatherCmd::AttackGatherCmd(Netpack::Consumer* from)
-    : UnitCmd(from), target(from)
-{}
+    : UnitCmd(from), target((EntityRef)0)
+{
+    target = Target(from);
+}
 
 uint8_t ResumeBuildingCmd::getTypechar()
 {

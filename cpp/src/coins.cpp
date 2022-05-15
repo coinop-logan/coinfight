@@ -131,8 +131,10 @@ bool Coins::tryTransfer(coinsInt transferAmount, Coins* to)
 }
 
 Coins::Coins(Netpack::Consumer* from)
-    : max(consumeCoinsInt(from)), heldAmount(consumeCoinsInt(from))
-{}
+{
+    max = consumeCoinsInt(from);
+    heldAmount = consumeCoinsInt(from);
+}
 
 void Coins::pack(Netpack::Builder* to)
 {

@@ -531,8 +531,10 @@ void GoldPile::pack(Netpack::Builder* to)
     gold.pack(to);
 }
 GoldPile::GoldPile(Netpack::Consumer* from)
-    : Entity(from), gold(from)
-{}
+    : Entity(from)
+{
+    gold = Coins(from);
+}
 
 fixed32 GoldPile::getRadius() const { return fixed32(10); }
 uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
@@ -735,7 +737,8 @@ void MoveTargetInfo::pack(Netpack::Builder* to)
     to->packUint32_t(closestDistanceFloorSquared);
     packFixed32(to, frustration);
 }
-MoveTargetInfo::MoveTargetInfo(Netpack::Consumer* from) : target((EntityRef)0)
+MoveTargetInfo::MoveTargetInfo(Netpack::Consumer* from)
+    : target((EntityRef)0)
 {
     target = Target(from);
     desiredRange = consumeFixed32(from);
