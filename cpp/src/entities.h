@@ -107,6 +107,7 @@ public:
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
+    virtual fixed32 getRange() const;
     virtual float getRotation_view() const { return 0;}
 
     void packUnitBasics(Netpack::Builder* to);
@@ -173,7 +174,6 @@ public:
     virtual fixed32 getMaxSpeed() const;
     vector2fp getDesiredVelocity() const;
     vector2fp getLastVelocity() const;
-    virtual fixed32 getRange() const;
     virtual void onMoveCmd(vector2fp moveTo);
 
     optional<Target> getMaybeMoveTarget();

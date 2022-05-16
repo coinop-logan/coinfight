@@ -627,6 +627,10 @@ fixed32 Unit::getBuiltRatio()
 {
     return (fixed32)getBuilt() / getCost();
 }
+fixed32 Unit::getRange() const
+{
+    throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
+}
 
 bool Unit::isActive()
 {
@@ -777,10 +781,6 @@ MobileUnit::MobileUnit(Netpack::Consumer* from)
 fixed32 MobileUnit::getMaxSpeed() const
 {
     throw runtime_error("getMaxSpeed has not been defined for '" + getTypeName() + "'");
-}
-fixed32 MobileUnit::getRange() const
-{
-    throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
 }
 vector2fp MobileUnit::getDesiredVelocity() const
 {
