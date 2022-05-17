@@ -29,7 +29,7 @@ struct Event
 
 struct BalanceUpdateEvent : public Event
 {
-    string userAddress;
+    Address userAddress;
     coinsInt amount;
     bool isDeposit;
 
@@ -39,7 +39,7 @@ struct BalanceUpdateEvent : public Event
 
     void pack(Netpack::Builder*);
 
-    BalanceUpdateEvent(string userAddress, coinsInt amount, bool isDeposit);
+    BalanceUpdateEvent(Address userAddress, coinsInt amount, bool isDeposit);
     BalanceUpdateEvent(Netpack::Consumer*);
 };
 

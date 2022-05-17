@@ -9,6 +9,6 @@
 
 using namespace std;
 
-optional<string> signedMsgToAddress(string message, string sig, string *error);
+optional<string> signedMsgToAddressString(string message, string sig, string *error);
 
 #endif // SIGWARPPER_H

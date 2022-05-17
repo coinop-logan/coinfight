@@ -36,7 +36,7 @@ void FrameEventsPacket::pack(Netpack::Builder* to)
 
     for (unsigned int i = 0; i < authdCmds.size(); i++)
     {
-        to->packStringWithoutSize(authdCmds[i]->playerAddress);
+        authdCmds[i]->playerAddress.pack(to);
         authdCmds[i]->cmd->pack(to);
     }
 
@@ -54,7 +54,7 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
     authdCmds.clear();
     for (unsigned int i = 0; i < numCmds; i++)
     {
-        string playerAddress = from->consumeStringGivenSize(42);
+        Address playerAddress(from);
         boost::shared_ptr<Cmd> unauthdCmd = consumeCmd(from);
 
         authdCmds.push_back(boost::shared_ptr<AuthdCmd>(new AuthdCmd(unauthdCmd, playerAddress)));

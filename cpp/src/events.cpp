@@ -81,21 +81,21 @@ void BalanceUpdateEvent::execute(Game *game)
     }
 }
 
-BalanceUpdateEvent::BalanceUpdateEvent(string userAddress, coinsInt amount, bool isDeposit)
+BalanceUpdateEvent::BalanceUpdateEvent(Address userAddress, coinsInt amount, bool isDeposit)
     : Event(),
       userAddress(userAddress), amount(amount), isDeposit(isDeposit) {}
 void BalanceUpdateEvent::pack(Netpack::Builder* to)
 {
     packEventBasics(to);
 
-    to->packStringWithoutSize(userAddress);
+    userAddress.pack(to);
     packCoinsInt(to, amount); 
     to->packBool(isDeposit);
 }
 BalanceUpdateEvent::BalanceUpdateEvent(Netpack::Consumer* from)
-    : Event(from)
+    : Event(from), userAddress(zeroAddress)
 {
-    userAddress = from->consumeStringGivenSize(42);
+    userAddress = Address(from);
     // cout << "userAddress after unpack: " << userAddress << endl;
     amount = consumeCoinsInt(from);
     isDeposit = from->consumeBool();

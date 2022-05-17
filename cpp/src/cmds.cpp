@@ -35,7 +35,7 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
 
-AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress)
+AuthdCmd::AuthdCmd(boost::shared_ptr<Cmd> cmd, Address playerAddress)
     : cmd(cmd), playerAddress(playerAddress){}
 
 uint8_t Cmd::getTypechar()
@@ -93,7 +93,7 @@ string SpawnBeaconCmd::getTypename()
 {
     return "SpawnBeaconCmd";
 }
-void SpawnBeaconCmd::executeAsPlayer(Game* game, string playerAddress)
+void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
 {
     optional<uint8_t> maybePlayerId = game->playerAddressToMaybeId(playerAddress);
     if (!maybePlayerId)
@@ -155,7 +155,7 @@ UnitCmd::UnitCmd(Netpack::Consumer* from)
     }
 }
 
-void UnitCmd::executeAsPlayer(Game *game, string playerAddress)
+void UnitCmd::executeAsPlayer(Game *game, Address playerAddress)
 {
     optional<uint8_t> maybePlayerId = game->playerAddressToMaybeId(playerAddress);
     if (!maybePlayerId)

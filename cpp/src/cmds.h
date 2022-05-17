@@ -38,8 +38,8 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from);
 struct AuthdCmd
 {
     boost::shared_ptr<Cmd> cmd;
-    string playerAddress;
-    AuthdCmd(boost::shared_ptr<Cmd> cmd, string playerAddress);
+    Address playerAddress;
+    AuthdCmd(boost::shared_ptr<Cmd> cmd, Address playerAddress);
 };
 
 struct WithdrawCmd : public Cmd
@@ -62,7 +62,7 @@ struct SpawnBeaconCmd : public Cmd
     string getTypename();
     void pack(Netpack::Builder* to);
 
-    void executeAsPlayer(Game* game, string playerAddress);
+    void executeAsPlayer(Game* game, Address playerAddress);
 
     SpawnBeaconCmd(vector2fp pos);
     SpawnBeaconCmd(Netpack::Consumer* from);
@@ -73,7 +73,7 @@ struct UnitCmd : public Cmd
     vector<EntityRef> unitRefs;
     vector<boost::shared_ptr<Unit>> getUnits(Game *game);
 
-    void executeAsPlayer(Game *, string userAddress);
+    void executeAsPlayer(Game *, Address userAddress);
     virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
 
     void packUnitCmdBasics(Netpack::Builder* to);

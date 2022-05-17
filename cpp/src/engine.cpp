@@ -15,12 +15,12 @@
 
 using namespace std;
 
-sf::Color playerAddressToColor(string address)
+sf::Color playerAddressToColor(Address address)
 {
     uint8_t vals[3];
     for (uint8_t i=0; i<3; i++)
     {
-        string charStr = address.substr(2 + i, 1);
+        string charStr = address.getString().substr(2 + i, 1);
         uint8_t intVal = std::stoul(charStr, nullptr, 16);
         vals[i] = 55 + ((intVal / 15.0) * 200);
     }
@@ -69,17 +69,44 @@ void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntit
 }
 
 
-Player::Player(string address)
+Address::Address(string _s)
+{
+    assert(_s.size() == 42);
+    s = _s;
+}
+Address::Address(Netpack::Consumer* from)
+{
+    s = from->consumeStringGivenSize(42);
+}
+string Address::getString() const
+{
+    return s;
+}
+void Address::pack(Netpack::Builder* to)
+{
+    to->packStringWithoutSize(s);
+}
+bool Address::operator ==(const Address &other)
+{
+    return (s == other.getString());
+}
+bool Address::operator !=(const Address &other)
+{
+    return (s != other.getString());
+}
+
+
+Player::Player(Address address)
     : address(address), credit(), beaconAvailable(true) {}
 void Player::pack(Netpack::Builder* to)
 {
-    to->packStringWithoutSize(address);
+    address.pack(to);
     to->packBool(beaconAvailable);
     credit.pack(to);
 }
 Player::Player(Netpack::Consumer* from)
+    : address(from)
 {
-    address = from->consumeStringGivenSize(42);
     beaconAvailable = from->consumeBool();
     credit = Coins(from);
 }
@@ -234,7 +261,7 @@ vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2fp gameP
     return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
 
-optional<uint8_t> Game::playerAddressToMaybeId(string address)
+optional<uint8_t> Game::playerAddressToMaybeId(Address address)
 {
     for (uint8_t i=0; i<players.size(); i++)
     {
@@ -245,7 +272,7 @@ optional<uint8_t> Game::playerAddressToMaybeId(string address)
     }
     return {};
 }
-string Game::playerIdToAddress(uint8_t playerId)
+Address Game::playerIdToAddress(uint8_t playerId)
 {
     return players[playerId].address;
 }

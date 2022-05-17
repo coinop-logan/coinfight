@@ -20,7 +20,7 @@ string getPythonErrorText()
     return "... but I can't get the error string for some reason :/";
 }
 
-optional<string> signedMsgToAddress(string message, string sig, string *error)
+optional<string> signedMsgToAddressString(string message, string sig, string *error)
 {
     Py_Initialize();
 

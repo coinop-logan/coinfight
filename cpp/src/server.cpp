@@ -98,9 +98,9 @@ public:
         UpToDate,
         Closed
     } state;
-    string connectionAuthdUserAddress;
+    Address connectionAuthdUserAddress;
     ClientChannel(boost::asio::io_service &ioService_, boost::shared_ptr<tcp::socket> socket_)
-        : ioService(ioService_), socket(socket_), receivedSig(150)
+        : ioService(ioService_), socket(socket_), receivedSig(150), connectionAuthdUserAddress(zeroAddress)
     {
         state = DoingHandshake;
         sending = false;
@@ -139,7 +139,7 @@ public:
         cout << "sig received" << endl;
         if (error)
         {
-            cout << "Error receiving sig from " << connectionAuthdUserAddress << ". Kicking." << endl;
+            cout << "Error receiving sig from " << connectionAuthdUserAddress.getString() << ". Kicking." << endl;
             state = Closed;
         }
         else
@@ -164,7 +164,7 @@ public:
             {
                 // now have sig and sentChallenge as strings.
                 string error;
-                if (auto maybeRecoveredAddress = signedMsgToAddress(sentChallenge, sig, &error))
+                if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
                 {
                     connectionAuthdUserAddress = *maybeRecoveredAddress;
                 }
@@ -180,7 +180,7 @@ public:
             cout << "Player authenticated and connected." << endl;
 
             // should really return a fail/success code here. On fail client just hangs atm.
-            boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress));
+            boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress.getString()));
 
             state = ReadyForFirstSync;
             startReceivingLoop();
@@ -229,7 +229,7 @@ public:
     {
         if (error)
         {
-            cout << "Error sending packet to " << connectionAuthdUserAddress << ": " << error.message() << endl << "Kicking." << endl;
+            cout << "Error sending packet to " << connectionAuthdUserAddress.getString() << ": " << error.message() << endl << "Kicking." << endl;
             state = Closed;
         }
         else
@@ -260,7 +260,7 @@ public:
     {
         if (error)
         {
-            cout << "Error receiving cmd size from " << connectionAuthdUserAddress << ": " << error.message() << endl << "Kicking." << endl;
+            cout << "Error receiving cmd size from " << connectionAuthdUserAddress.getString() << ": " << error.message() << endl << "Kicking." << endl;
             state = Closed;
         }
         else
@@ -287,7 +287,7 @@ public:
     {
         if (error)
         {
-            cout << "Error receiving cmd body from " << connectionAuthdUserAddress << ": " << error.message() << endl;
+            cout << "Error receiving cmd body from " << connectionAuthdUserAddress.getString() << ": " << error.message() << endl;
             cout << "Kicking." << endl;
             state = Closed;
         }
@@ -325,9 +325,9 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
 
 struct WithdrawEvent
 {
-    string userAddress;
+    Address userAddress;
     coinsInt amountInCoins;
-    WithdrawEvent(string userAddress, coinsInt amountInCoins)
+    WithdrawEvent(Address userAddress, coinsInt amountInCoins)
         : userAddress(userAddress), amountInCoins(amountInCoins) {}
     boost::shared_ptr<Event> toEventSharedPtr()
     {
@@ -335,10 +335,10 @@ struct WithdrawEvent
     }
 };
 
-void actuateWithdrawal(string userAddress, coinsInt amount)
+void actuateWithdrawal(Address userAddress, coinsInt amount)
 {
     string weiString = coinsIntToWeiDepositString(amount);
-    string writeData = userAddress + " " + weiString;
+    string writeData = userAddress.getString() + " " + weiString;
 
     string filename = to_string(time(0)) + "-" + to_string(clock());
     ofstream withdrawDescriptorFile(filename);
@@ -383,7 +383,7 @@ vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
                     }
                     else
                     {
-                        events.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddressOrHoneypotString, depositInCoins, true)));
+                        events.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address(userAddressOrHoneypotString), depositInCoins, true)));
                     }
                 }
             }

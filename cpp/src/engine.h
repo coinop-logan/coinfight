@@ -22,19 +22,33 @@ const int SEARCH_GRID_NUM_ROWS = 200;
 const int SEARCH_GRID_CELL_WIDTH = 200;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
 
-sf::Color playerAddressToColor(string address);
+class Address
+{
+    string s;
+public:
+    Address(string s);
+    Address(Netpack::Consumer*);
+    string getString() const;
+    void pack(Netpack::Builder*);
+    bool operator ==(const Address &other);
+    bool operator !=(const Address &other);
+};
+
+sf::Color playerAddressToColor(Address address);
 
 class Game;
 
+const Address zeroAddress("0x0000000000000000000000000000000000000000");
+
 struct Player
 {
-    string address;
+    Address address;
     Coins credit;
     bool beaconAvailable;
 
     void pack(Netpack::Builder*);
 
-    Player(string address);
+    Player(Address);
     Player(Netpack::Consumer*);
 };
 
@@ -75,8 +89,8 @@ public:
     void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
     boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
-    optional<uint8_t> playerAddressToMaybeId(string address);
-    string playerIdToAddress(uint8_t playerId);
+    optional<uint8_t> playerAddressToMaybeId(Address address);
+    Address playerIdToAddress(uint8_t playerId);
     bool getPlayerBeaconAvailable(uint8_t playerId);
     void setPlayerBeaconAvailable(uint8_t playerId, bool flag);
 

@@ -59,11 +59,11 @@ public:
     {
         boost::asio::write(socket, boost::asio::buffer(sig));
     }
-    string receiveAddress()
+    Address receiveAddress()
     {
         boost::asio::streambuf buf(42);
         boost::asio::read(socket, buf);
-        return string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size());
+        return Address(string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size()));
     }
     void startReceivingLoop()
     {
@@ -249,7 +249,6 @@ int main(int argc, char *argv[])
 
     // HANDSHAKE
 
-    string playerAddress;
     optional<uint8_t> maybePlayerId = {};
 
     // Wait for the sig challenge and respond with the user's help
@@ -261,7 +260,7 @@ int main(int argc, char *argv[])
     cin >> userResponse;
 
     connectionHandler.sendSignature(userResponse + "\n");
-    playerAddress = connectionHandler.receiveAddress();
+    Address playerAddress = connectionHandler.receiveAddress();
 
     connectionHandler.startReceivingLoop();
 
