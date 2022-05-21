@@ -16,10 +16,14 @@ namespace Netpack
 
     class Builder
     {
+        bool debugOutputEnabled;
     public:
         vch* data;
         Builder(vch* data);
         string getHexString();
+        void enableDebugOutput();
+        template <typename V>
+        void maybeDebugOutput(V val, size_t size);
 
         void packUint8_t(uint8_t);
         void packUint16_t(uint16_t);
@@ -61,11 +65,15 @@ namespace Netpack
     class Consumer
     {
         vchIter consumePos;
+        bool debugOutputEnabled;
     public:
         Consumer(vchIter consumePos);
         Consumer(const Builder &);
         vchIter getCurrentIter() const;
         void debugOutput();
+        void enableDebugOutput();
+        template<typename V>
+        void maybeDebugOutput(V val, size_t size);
 
         uint8_t consumeUint8_t();
         uint16_t consumeUint16_t();

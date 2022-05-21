@@ -1,12 +1,23 @@
 #include <sstream>
 #include <assert.h>
 #include <cstring>
+#include <iostream>
 #include "netpack.h"
 
 namespace Netpack
 {
+    string vchToHexNo0x(vch* data)
+    {
+        stringstream s;
+        for (unsigned int i = 0; i < data->size(); i++)
+        {
+            s << hex << (unsigned int)((*data)[i]);
+        }
+        return s.str();
+    }
+
     Builder::Builder(vch* data)
-        : data(data) {}
+        : debugOutputEnabled(false), data(data) {}
 
     string Builder::getHexString()
     {
@@ -19,45 +30,69 @@ namespace Netpack
         return s.str();
     }
 
+    void Builder::enableDebugOutput()
+    {
+        debugOutputEnabled = true;
+    }
+    template <typename V>
+    void Builder::maybeDebugOutput(V val, size_t size)
+    {
+        if (debugOutputEnabled)
+        {
+            vch beforePlus(data->begin(), data->end() - size);
+            vch afterPlus(data->end() - size, data->end());
+
+            cout << val << " -> " << vchToHexNo0x(&beforePlus) << "+" << vchToHexNo0x(&afterPlus) << " (" << data->size() << ")" << endl;
+        }
+    }
+
     void Builder::packInt8_t(int8_t i)
     {
         data->insert(data->end(), 1, 0);
         packi8(&(*(data->end() - 1)), i);
+        maybeDebugOutput((int)i, 1);
     }
     void Builder::packUint8_t(uint8_t i)
     {
         data->insert(data->end(), 1, 0);
         packi8(&(*(data->end() - 1)), i);
+        maybeDebugOutput((int)i, 1);
     }
     void Builder::packInt16_t(int16_t i)
     {
         data->insert(data->end(), 2, 0);
         packi16(&(*(data->end() - 2)), i);
+        maybeDebugOutput((int)i, 2);
     }
     void Builder::packUint16_t(uint16_t i)
     {
         data->insert(data->end(), 2, 0);
         packi16(&(*(data->end() - 2)), i);
+        maybeDebugOutput((int)i, 2);
     }
     void Builder::packInt32_t(int32_t i)
     {
         data->insert(data->end(), 4, 0);
         packi32(&(*(data->end() - 4)), i);
+        maybeDebugOutput((long int)i, 4);
     }
     void Builder::packUint32_t(uint32_t i)
     {
         data->insert(data->end(), 4, 0);
         packi32(&(*(data->end() - 4)), i);
+        maybeDebugOutput((long int)i, 4);
     }
     void Builder::packInt64_t(int64_t i)
     {
         data->insert(data->end(), 8, 0);
         packi64(&(*(data->end() - 8)), i);
+        maybeDebugOutput((long long int)i, 8);
     }
     void Builder::packUint64_t(uint64_t i)
     {
         data->insert(data->end(), 8, 0);
         packi64(&(*(data->end() - 8)), i);
+        maybeDebugOutput((long long int)i, 8);
     }
 
     void Builder::packBool(bool flag)
@@ -69,13 +104,20 @@ namespace Netpack
         size_t size = s.size();
         data->insert(data->end(), size, 0);
         memcpy(&(*(data->end() - size)), s.c_str(), size);
+        maybeDebugOutput("s", size);
     }
     void Builder::packStringWith16bitSize(string s)
     {
-        uint16_t size = s.size();
-        assert(size == s.size()); // verify string size can fit in bits
+        uint16_t strSize = s.size();
+        assert(strSize == s.size()); // verify string size can fit in bits
 
-        packUint16_t(size);
+        // bool reEnableDebug = debugOutputEnabled;
+        // debugOutputEnabled = false;
+        if (debugOutputEnabled)
+        {
+            cout << "s]";
+        }
+        packUint16_t(strSize);
         packStringWithoutSize(s);
     }
 
@@ -83,78 +125,117 @@ namespace Netpack
     {
         vch sizeData;
         Builder sizePacket(&sizeData);
+        if (debugOutputEnabled)
+        {
+            cout << "prepending with 64 bit size: " << data->size() << endl;
+            sizePacket.enableDebugOutput();
+        }
         sizePacket.packUint64_t(data->size());
 
         data->insert(data->begin(), sizeData.begin(), sizeData.end());
+        if (debugOutputEnabled)
+        {
+            cout << "new data: " << vchToHexNo0x(data) << endl;
+        }
     }
     void Builder::prependWith16bitSize()
     {
         vch sizeData;
         Builder sizePacket(&sizeData);
+        if (debugOutputEnabled)
+        {
+            cout << "prepending with 16 bit size: " << data->size() << endl;
+            sizePacket.enableDebugOutput();
+        }
         sizePacket.packUint16_t(data->size());
 
         data->insert(data->begin(), sizeData.begin(), sizeData.end());
+        if (debugOutputEnabled)
+        {
+            cout << "new data: " << vchToHexNo0x(data) << endl;
+        }
     }
 
 
 
     Consumer::Consumer(vchIter consumePos)
-        : consumePos(consumePos) {}
+        : consumePos(consumePos), debugOutputEnabled(false) {}
 
     Consumer::Consumer(const Builder &builder)
-        : consumePos(builder.data->begin()) {}
+        : consumePos(builder.data->begin()), debugOutputEnabled(false) {}
     
     vchIter Consumer::getCurrentIter() const
     {
         return consumePos;
+    }
+    void Consumer::enableDebugOutput()
+    {
+        debugOutputEnabled = true;
+    }
+    template<typename V>
+    void Consumer::maybeDebugOutput(V val, size_t size)
+    {
+        if (debugOutputEnabled)
+        {
+            vch consumed(consumePos - size, consumePos);
+            cout << val << " <- " << vchToHexNo0x(&consumed) << " (" << size << ")" << endl;
+        }
     }
 
     int8_t Consumer::consumeInt8_t()
     {
         int8_t i = unpacki8(&(*(consumePos)));
         consumePos += 1;
+        maybeDebugOutput((int)i, 1);
         return i;
     }
     uint8_t Consumer::consumeUint8_t()
     {
         uint8_t i = unpacku8(&(*(consumePos)));
         consumePos += 1;
+        maybeDebugOutput((int)i, 1);
         return i;
     }
     int16_t Consumer::consumeInt16_t()
     {
         int16_t i = unpacki16(&(*(consumePos)));
         consumePos += 2;
+        maybeDebugOutput((int)i, 2);
         return i;
     }
     uint16_t Consumer::consumeUint16_t()
     {
         uint16_t i = unpacku16(&(*(consumePos)));
         consumePos += 2;
+        maybeDebugOutput((int)i, 2);
         return i;
     }
     int32_t Consumer::consumeInt32_t()
     {
         int32_t i = unpacki32(&(*(consumePos)));
         consumePos += 4;
+        maybeDebugOutput((long int)i, 4);
         return i;
     }
     uint32_t Consumer::consumeUint32_t()
     {
         uint32_t i = unpacku32(&(*(consumePos)));
         consumePos += 4;
+        maybeDebugOutput((long int)i, 4);
         return i;
     }
     int64_t Consumer::consumeInt64_t()
     {
         int64_t i = unpacki64(&(*(consumePos)));
         consumePos += 8;
+        maybeDebugOutput((long int)i, 8);
         return i;
     }
     uint64_t Consumer::consumeUint64_t()
     {
         uint64_t i = unpacku64(&(*(consumePos)));
         consumePos += 8;
+        maybeDebugOutput((long int)i, 8);
         return i;
     }
 
@@ -166,12 +247,22 @@ namespace Netpack
     {
         string s(&(*consumePos), &(*(consumePos + size)));
 
+        if (debugOutputEnabled)
+        {
+            vch strData(&(*consumePos), &(*(consumePos + size)));
+            cout << "s" << " <- " << vchToHexNo0x(&strData) << endl;
+        }
+
         consumePos += size;
         
         return s;
     }
     string Consumer::consumeStringWith16bitSize()
     {
+        if (debugOutputEnabled)
+        {
+            cout << "s]";
+        }
         uint16_t size = consumeUint16_t();
         return consumeStringGivenSize(size);
     }
