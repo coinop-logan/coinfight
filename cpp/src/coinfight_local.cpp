@@ -167,7 +167,32 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // iterate, but sandwiched between some packing tests
+            // cout << "PACKING GAME PRE-ITERATE" << endl;
+            vch packData1;
+            Netpack::Builder b(&packData1);
+            // b.enableDebugOutput();
+            game.pack(&b);
+
+            // cout << "UNPACKING GAME" << endl;
+            Netpack::Consumer c(packData1.begin());
+            // c.enableDebugOutput();
+            Game oldGameFromUnpack(&c);
+
             game.iterate();
+
+            // cout << "PACKING GAME POST-ITERATE" << endl;
+            vch packData2;
+            b = Netpack::Builder(&packData2);
+            // b.enableDebugOutput();
+            game.pack(&b);
+
+            // cout << "UNPACKING GAME" << endl;
+            c = Netpack::Consumer(packData2.begin());
+            // c.enableDebugOutput();
+            Game newUnpackedGame(&c);
+
+            assert(gameStatesAreIdentical_triggerDebugIfNot(&game, &newUnpackedGame));
 
             ui.iterate();
             if (ui.quitNow)
