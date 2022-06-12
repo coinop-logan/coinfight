@@ -115,6 +115,25 @@ bool PrimeBuildGatewayInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 
 
 
+sf::Keyboard::Key PrimeBuildTurretInterfaceCmd::getKey()
+{
+    return sf::Keyboard::R;
+}
+vector<boost::shared_ptr<Cmd>> PrimeBuildTurretInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::Build;
+    ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
+
+    return noCmds;
+}
+bool PrimeBuildTurretInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == PRIME_TYPECHAR);
+}
+
+
+
+
 sf::Keyboard::Key ScuttleInterfaceCmd::getKey()
 {
     return sf::Keyboard::F;

@@ -25,6 +25,7 @@ UI::UI()
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new ScuttleInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new AttackGatherInterfaceCmd())
     };

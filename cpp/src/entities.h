@@ -4,7 +4,7 @@
 #ifndef ENTITIES_H
 #define ENTITIES_H
 
-const fixed32 MAX_UNIT_RADIUS(20);
+const fixed32 MAX_UNIT_RADIUS(30);
 
 class Game;
 
@@ -209,6 +209,11 @@ public:
 
     bool combatUnitIsIdle();
 
+    virtual uint32_t getShotRangeFloorsquared() const;
+    virtual uint16_t getShotCooldown() const;
+    virtual uint16_t getShotDamage() const;
+    virtual fixed32 getShotRange() const;
+
     virtual fixed32 getAggressionRange() const;
 
     void cmdAttack(Target target);
@@ -263,7 +268,7 @@ const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const coinsInt GATEWAY_SCUTTLE_RATE = 5;
 const coinsInt GATEWAY_BUILD_RATE = 8;
-const fixed32 GATEWAY_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
+const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Gateway : public Building
 {
@@ -306,7 +311,7 @@ const fixed32 PRIME_SIGHT_RANGE(200);
 const coinsInt PRIME_PICKUP_RATE = 2;
 const coinsInt PRIME_PUTDOWN_RATE = 5;
 const coinsInt PRIME_MAX_GOLD_HELD = 5000;
-const fixed32 PRIME_RADIUS(10); // don't forget about MAX_UNIT_RADIUS!!
+const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
 {
@@ -369,10 +374,10 @@ const uint16_t FIGHTER_HEALTH = 300;
 const fixed32 FIGHTER_SPEED(3);
 const fixed32 FIGHTER_SHOT_RANGE(200);
 const uint32_t FIGHTER_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(FIGHTER_SHOT_RANGE);
-const fixed32 FIGHTER_SIGHT_RANGE(250);
+const fixed32 FIGHTER_AGGRESSION_RANGE(250);
 const uint8_t FIGHTER_SHOT_COOLDOWN = 20;
-const uint8_t FIGHTER_DAMAGE = 10;
-const fixed32 FIGHTER_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
+const uint8_t FIGHTER_SHOT_DAMAGE = 10;
+const fixed32 FIGHTER_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Fighter : public MobileUnit, public CombatUnit
 {
@@ -388,6 +393,44 @@ public:
     
     bool isIdle();
 
+    uint32_t getShotRangeFloorsquared() const;
+    uint16_t getShotCooldown() const;
+    uint16_t getShotDamage() const;
+    fixed32 getShotRange() const;
+
+    fixed32 getRadius() const;
+    uint8_t typechar() const;
+    string getTypename() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
+    fixed32 getAggressionRange() const;
+    void iterate();
+};
+
+const coinsInt TURRET_COST = 3000;
+const uint16_t TURRET_HEALTH = 900;
+const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
+const fixed32 TURRET_SHOT_RANGE(400);
+const uint32_t TURRET_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(TURRET_SHOT_RANGE);
+const uint8_t TURRET_SHOT_COOLDOWN = 15;
+const uint8_t TURRET_SHOT_DAMAGE = 40;
+
+class Turret : public Building, public CombatUnit
+{
+public:
+    void pack(Netpack::Builder* to);
+
+    Turret(uint8_t ownerId, vector2fp pos);
+    Turret(Netpack::Consumer* from);
+
+    bool isIdle();
+
+    uint32_t getShotRangeFloorsquared() const;
+    uint16_t getShotCooldown() const;
+    uint16_t getShotDamage() const;
+    fixed32 getShotRange() const;
+
+    fixed32 getRange() const;
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;

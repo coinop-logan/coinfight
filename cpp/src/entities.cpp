@@ -250,6 +250,15 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
                 debugAssert(gateway1->maybeTargetEntity == gateway2->maybeTargetEntity);
             }
 
+            if (auto turret1 = boost::dynamic_pointer_cast<Turret, Building>(building1))
+                if (auto turret2 = boost::dynamic_pointer_cast<Turret, Building>(building2))
+            {
+                successfulCast = true;
+
+                debugAssert(turret1->state == turret2->state);
+                debugAssert(maybeTargetsAreEqual(turret1->maybeAttackingTarget, turret2->maybeAttackingTarget));
+            }
+
             debugAssert(successfulCast);
         }
 
@@ -278,7 +287,7 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
                 successfulCast = true;
 
                 debugAssert(fighter1->state == fighter2->state);
-                debugAssert(maybeTargetsAreEqual(fighter1->state, fighter2->state));
+                debugAssert(maybeTargetsAreEqual(fighter1->maybeAttackingTarget, fighter2->maybeAttackingTarget));
             }
 
             debugAssert(successfulCast);
@@ -1715,6 +1724,9 @@ void Prime::iterate()
                         case GATEWAY_TYPECHAR:
                             buildingToBuild = boost::shared_ptr<Building>(new Gateway(this->ownerId, *point));
                             break;
+                        case TURRET_TYPECHAR:
+                            buildingToBuild = boost::shared_ptr<Building>(new Turret(this->ownerId, *point));
+                            break;
                     }
 
                     if (buildingToBuild)
@@ -1867,7 +1879,7 @@ void CombatUnit::cmdAttack(Target target)
         state = AttackingSpecific;
         if (MobileUnit* mobileUnitSidecast = dynamic_cast<MobileUnit*>(this))
         {
-            mobileUnitSidecast->setMoveTarget(target, FIGHTER_SHOT_RANGE);
+            mobileUnitSidecast->setMoveTarget(target, getShotRange());
         }
     }
     else if (auto point = target.castToPoint())
@@ -1885,7 +1897,7 @@ void CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 {
     vector2fp toTarget = (targetUnit->getPos() - this->getPos());
     angle_view = static_cast<float>(toTarget.getAngle());
-    if (toTarget.getFloorMagnitudeSquared() <= FIGHTER_SHOT_RANGE_FLOORSQUARED)
+    if (toTarget.getFloorMagnitudeSquared() <= getShotRangeFloorsquared())
     {
         if (shootCooldown == 0)
         {
@@ -1928,8 +1940,8 @@ fixed32 CombatUnit::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
 }
 void CombatUnit::shootAt(boost::shared_ptr<Unit> unit)
 {
-    shootCooldown = FIGHTER_SHOT_COOLDOWN;
-    unit->takeHit(FIGHTER_DAMAGE);
+    shootCooldown = getShotCooldown();
+    unit->takeHit(getShotDamage());
 }
 
 bool CombatUnit::combatUnitIsIdle()
@@ -1937,6 +1949,22 @@ bool CombatUnit::combatUnitIsIdle()
     return (state == NotAttacking);
 }
 
+uint32_t CombatUnit::getShotRangeFloorsquared() const
+{
+    throw runtime_error("getShotRangeFloorsquared() has not been defined for " + getTypename() + ".\n");
+}
+uint16_t CombatUnit::getShotCooldown() const
+{
+    throw runtime_error("getShotCooldown() has not been defined for " + getTypename() + ".\n");
+}
+uint16_t CombatUnit::getShotDamage() const
+{
+    throw runtime_error("getShotDamage() has not been defined for " + getTypename() + ".\n");
+}
+fixed32 CombatUnit::getShotRange() const
+{
+    throw runtime_error("getShotRange() has not been defined for " + getTypename() + ".\n");
+}
 fixed32 CombatUnit::getAggressionRange() const
 {
     throw runtime_error("getAggressionRange() has not been defined for " + getTypename() + ".\n");
@@ -2078,7 +2106,7 @@ void CombatUnit::iterateCombatUnitBasics()
                 {
                     if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
                     {
-                        mobileUnitSelf->setMoveTarget(Target(bestTarget), FIGHTER_SHOT_RANGE);
+                        mobileUnitSelf->setMoveTarget(Target(bestTarget), getShotRange());
                     }
                     tryShootAt(bestTarget);
                 }
@@ -2169,12 +2197,16 @@ void Fighter::onMoveCmd(vector2fp moveTo)
     state = NotAttacking;
 }
 
+uint32_t Fighter::getShotRangeFloorsquared() const { return FIGHTER_SHOT_RANGE_FLOORSQUARED; }
+uint16_t Fighter::getShotCooldown() const { return FIGHTER_SHOT_COOLDOWN; }
+uint16_t Fighter::getShotDamage() const { return FIGHTER_SHOT_DAMAGE; }
+fixed32 Fighter::getShotRange() const { return FIGHTER_SHOT_RANGE; }
+fixed32 Fighter::getAggressionRange() const { return FIGHTER_AGGRESSION_RANGE; }
 fixed32 Fighter::getRadius() const { return FIGHTER_RADIUS; }
 fixed32 Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
 fixed32 Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() const { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
-fixed32 Fighter::getAggressionRange() const { return FIGHTER_SIGHT_RANGE; }
 
 uint8_t Fighter::typechar() const { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() const { return "Fighter"; }
@@ -2182,6 +2214,66 @@ string Fighter::getTypename() const { return "Fighter"; }
 bool Fighter::isIdle()
 {
     return (mobileUnitIsIdle() && combatUnitIsIdle());
+}
+
+
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------- TURRET ------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+
+Turret::Turret(uint8_t ownerId, vector2fp pos)
+    : Unit(ownerId, TURRET_COST, TURRET_HEALTH, pos)
+{}
+void Turret::pack(Netpack::Builder* to)
+{
+    packEntityAndUnitBasics(to);
+    packBuildingBasics(to);
+    packCombatUnitBasics(to);
+}
+Turret::Turret(Netpack::Consumer* from)
+    : Unit(from)
+    , Building(from)
+    , CombatUnit(from)
+{}
+
+void Turret::iterate()
+{
+    iterateCombatUnitBasics();
+    iterateBuildingBasics();
+}
+
+uint32_t Turret::getShotRangeFloorsquared() const { return TURRET_SHOT_RANGE_FLOORSQUARED; }
+uint16_t Turret::getShotCooldown() const { return TURRET_SHOT_COOLDOWN; }
+uint16_t Turret::getShotDamage() const { return TURRET_SHOT_DAMAGE; }
+fixed32 Turret::getShotRange() const { return TURRET_SHOT_RANGE; }
+fixed32 Turret::getRadius() const { return TURRET_RADIUS; }
+fixed32 Turret::getRange() const { return TURRET_SHOT_RANGE; }
+coinsInt Turret::getCost() const { return TURRET_COST; }
+uint16_t Turret::getMaxHealth() const { return TURRET_HEALTH; }
+fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }
+
+uint8_t Turret::typechar() const { return TURRET_TYPECHAR; }
+string Turret::getTypename() const { return "Fighter"; }
+
+bool Turret::isIdle()
+{
+    return (combatUnitIsIdle());
 }
 
 
@@ -2231,6 +2323,9 @@ boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from)
         break;
     case FIGHTER_TYPECHAR:
         return boost::shared_ptr<Entity>(new Fighter(from));
+        break;
+    case TURRET_TYPECHAR:
+        return boost::shared_ptr<Entity>(new Turret(from));
         break;
     }
     throw runtime_error("Trying to unpack an unrecognized entity");

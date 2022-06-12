@@ -53,6 +53,12 @@ struct PrimeBuildGatewayInterfaceCmd : public UnitInterfaceCmd
     vector<boost::shared_ptr<Cmd>> execute(UI *ui);
     bool isUnitEligible(boost::shared_ptr<Unit> unit);
 };
+struct PrimeBuildTurretInterfaceCmd : public UnitInterfaceCmd
+{
+    sf::Keyboard::Key getKey();
+    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
+    bool isUnitEligible(boost::shared_ptr<Unit> unit);
+};
 struct ScuttleInterfaceCmd : public UnitInterfaceCmd
 {
     sf::Keyboard::Key getKey();

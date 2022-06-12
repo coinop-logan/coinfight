@@ -348,6 +348,23 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     window->draw(lines, transform);
 }
 
+void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+{
+    sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
+
+    sf::CircleShape outerHex(30, 6);
+    outerHex.setOrigin(15, 15);
+    outerHex.setFillColor(fillColorFaded);
+    outerHex.setOutlineColor(unitOutlineColor);
+    outerHex.setOutlineThickness(1);
+    outerHex.setPosition(drawPos.x, drawPos.y);
+    outerHex.setRotation(90);
+
+    window->draw(outerHex);
+
+    drawBeacon(window, drawPos, teamColor, alpha);
+}
+
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
 {
     sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
@@ -379,6 +396,10 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
     else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
     {
         drawFighter(window, drawPos, drawRotation, teamColor, fadedAlpha);
+    }
+    else if (auto turret = boost::dynamic_pointer_cast<Turret, Unit>(unit))
+    {
+        drawTurret(window, drawPos, drawRotation, teamColor, fadedAlpha);
     }
     else {
         throw runtime_error("No drawing code implemented for unit " + unit->getTypename() + ".");
@@ -918,7 +939,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::Q, 'Q', {"Build", "Prime"}},
         {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
         {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
-        {sf::Keyboard::R, 'R', {}},
+        {sf::Keyboard::R, 'R', {"Build", "Turret"}},
         {sf::Keyboard::A, 'A', {"Attack/", "Gather"}},
         {sf::Keyboard::S, 'S', {}},
         {sf::Keyboard::D, 'D', {"Deposit"}},

@@ -27,6 +27,7 @@ const uint8_t BEACON_TYPECHAR = 2;
 const uint8_t FIGHTER_TYPECHAR = 3;
 const uint8_t PRIME_TYPECHAR = 4;
 const uint8_t GATEWAY_TYPECHAR = 5;
+const uint8_t TURRET_TYPECHAR = 6;
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
