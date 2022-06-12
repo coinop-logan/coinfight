@@ -289,7 +289,7 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
 
     return debugAssert(successfulCast);
     // this repetition of debugAssert may seem redundant,
-    // but this way debugs trigger in a more informative position
+    // but this way, breakpoints trigger in a more informative position
 }
 
 
@@ -390,7 +390,7 @@ vector2fp Entity::getPos() const
 }
 fixed32 Entity::getRadius() const
 {
-    throw runtime_error("getRadius() has not been defined for " + getTypeName() + ".\n");
+    throw runtime_error("getRadius() has not been defined for " + getTypename() + ".\n");
 }
 void Entity::setPosAndUpdateCell(vector2fp newPos)
 {
@@ -443,11 +443,11 @@ void Entity::updateGamePointerOrThrow(Game *game)
 }
 uint8_t Entity::typechar() const
 {
-    throw runtime_error("typechar() has not been defined for " + getTypeName() + "\n");
+    throw runtime_error("typechar() has not been defined for " + getTypename() + "\n");
 }
-string Entity::getTypeName() const
+string Entity::getTypename() const
 {
-    throw runtime_error("getTypeName() has not been defined for this unit.\n");
+    throw runtime_error("getTypename() has not been defined for this unit.\n");
 }
 
 bool Entity::collidesWithPoint(vector2fp point)
@@ -457,15 +457,19 @@ bool Entity::collidesWithPoint(vector2fp point)
 
 void Entity::iterate()
 {
-    throw runtime_error("go() has not been defined for " + getTypeName() + ".\n");
+    throw runtime_error("go() has not been defined for " + getTypename() + ".\n");
 }
 sf::Color Entity::getTeamOrPrimaryColor()
 {
-    throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypeName() + ".\n");
+    throw runtime_error("getTeamOrPrimaryColor() has not been defined for " + getTypename() + ".\n");
 }
 void Entity::pack(Netpack::Builder* to)
 {
-    throw runtime_error("pack() has not been defined for " + getTypeName() + ".\n");
+    throw runtime_error("pack() has not been defined for " + getTypename() + ".\n");
+}
+Entity::Entity()
+{
+    throw logic_error("Default constructor for Entity called. This should never happen! Check virtual inheritance structure.\n");
 }
 Entity::Entity(vector2fp pos) : pos(pos),
                                 dead(false)
@@ -486,7 +490,7 @@ void Entity::die()
 }
 vector<Coins*> Entity::getDroppableCoins()
 {
-    throw runtime_error("getDroppableCoins has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getDroppableCoins has not been defined for " + getTypename() + ".");
 }
 
 
@@ -538,7 +542,7 @@ GoldPile::GoldPile(Netpack::Consumer* from)
 
 fixed32 GoldPile::getRadius() const { return fixed32(10); }
 uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
-string GoldPile::getTypeName() const { return "GoldPile"; }
+string GoldPile::getTypename() const { return "GoldPile"; }
 void GoldPile::iterate()
 {
     if (gold.getInt() == 0)
@@ -575,16 +579,18 @@ vector<Coins*> Unit::getDroppableCoins()
 }
 coinsInt Unit::getCost() const
 {
-    throw runtime_error("getCost() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getCost() has not been defined for " + getTypename() + ".\n");
 }
 uint16_t Unit::getMaxHealth() const
 {
-    throw runtime_error("getMaxHeatlh() has not been defined for " + getTypeName() + ".");
+    throw runtime_error("getMaxHeatlh() has not been defined for " + getTypename() + ".\n");
 }
+
+Unit::Unit() : Entity() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
 Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
     : Entity(pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
-void Unit::packUnitBasics(Netpack::Builder* to)
+void Unit::packEntityAndUnitBasics(Netpack::Builder* to)
 {
     packEntityBasics(to);
 
@@ -594,7 +600,8 @@ void Unit::packUnitBasics(Netpack::Builder* to)
 }
 Unit::Unit(Netpack::Consumer* from)
     : Entity(from),
-      goldInvested((coinsInt)0) // will get overwritten with consume below
+      goldInvested((coinsInt)0), // will get overwritten with consume below
+      angle_view(0)
 {
     ownerId = from->consumeUint8_t();
     health = from->consumeUint16_t();
@@ -629,7 +636,10 @@ fixed32 Unit::getBuiltRatio()
 }
 fixed32 Unit::getRange() const
 {
-    throw runtime_error("getRange has not been defined for '" + getTypeName() + "'");
+    throw runtime_error("getRange has not been defined for '" + getTypename() + "'");
+}
+bool Unit::isIdle() {
+    throw runtime_error("isIdle has not been defined for '" + getTypename() + "'");
 }
 
 bool Unit::isActive()
@@ -691,17 +701,11 @@ uint16_t Unit::getHealth() { return health; }
 // ------------------------------------------------------------------------------
 
 
+Building::Building() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
-void Building::packBuildingBasics(Netpack::Builder* to)
-{
-    packUnitBasics(to);
-}
-
-Building::Building(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
-    : Unit(ownerId, totalCost, health, pos) {}
+void Building::packBuildingBasics(Netpack::Builder* to) {}
 Building::Building(Netpack::Consumer* from)
-    : Unit(from)
-    {}
+    : Unit(from) {}
 
 void Building::iterateBuildingBasics()
 {
@@ -759,19 +763,15 @@ MoveTargetInfo consumeMoveTargetInfo(Netpack::Consumer* from)
     return MoveTargetInfo(from);
 }
 
-MobileUnit::MobileUnit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
-    : Unit(ownerId, totalCost, health, pos), maybeTargetInfo({}), desiredVelocity(vector2fp::zero), lastVelocity(vector2fp::zero), angle_view(0)
-{}
+MobileUnit::MobileUnit() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 void MobileUnit::packMobileUnitBasics(Netpack::Builder* to)
 {
-    packUnitBasics(to);
-
     to->packOptional<MoveTargetInfo>(maybeTargetInfo, packMoveTargetInfo);
     packVector2fp(to, desiredVelocity);
     packVector2fp(to, lastVelocity);
 }
 MobileUnit::MobileUnit(Netpack::Consumer* from)
-    : Unit(from), angle_view(0)
+    : Unit(from)
 {
     maybeTargetInfo = from->consumeOptional(consumeMoveTargetInfo);
     desiredVelocity = consumeVector2fp(from);
@@ -780,7 +780,7 @@ MobileUnit::MobileUnit(Netpack::Consumer* from)
 
 fixed32 MobileUnit::getMaxSpeed() const
 {
-    throw runtime_error("getMaxSpeed has not been defined for '" + getTypeName() + "'");
+    throw runtime_error("getMaxSpeed has not been defined for '" + getTypename() + "'");
 }
 vector2fp MobileUnit::getDesiredVelocity() const
 {
@@ -792,7 +792,7 @@ vector2fp MobileUnit::getLastVelocity() const
 }
 void MobileUnit::onMoveCmd(vector2fp moveTo)
 {
-    throw runtime_error("onMoveCmd() has not been defined for '" + getTypeName() + "'");
+    throw runtime_error("onMoveCmd() has not been defined for '" + getTypename() + "'");
 }
 
 void MobileUnit::setMoveTarget(Target _target, fixed32 newRange)
@@ -811,7 +811,7 @@ void MobileUnit::clearMoveTarget()
 {
     maybeTargetInfo = {};
 }
-bool MobileUnit::isIdle()
+bool MobileUnit::mobileUnitIsIdle()
 {
     if (auto targetInfo = maybeTargetInfo)
     {
@@ -947,22 +947,24 @@ void MobileUnit::cmdMove(vector2fp pointTarget)
 
 fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
-string Beacon::getTypeName() const { return "Beacon"; }
+string Beacon::getTypename() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
 Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
-    : Building(ownerId, GATEWAY_COST, BEACON_HEALTH, pos),
-      state(state)
+    : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
+    , state(state)
 {}
 void Beacon::pack(Netpack::Builder* to)
 {
+    packEntityAndUnitBasics(to);
     packBuildingBasics(to);
 
     to->packEnum(state);
 }
 Beacon::Beacon(Netpack::Consumer* from)
-    : Building(from)
+    : Unit(from)
+    , Building(from)
 {
     state = from->consumeEnum<Beacon::State>();
 }
@@ -1026,9 +1028,13 @@ void Beacon::iterate()
 
 fixed32 Gateway::getRadius() const {return GATEWAY_RADIUS;}
 uint8_t Gateway::typechar() const { return GATEWAY_TYPECHAR; }
-string Gateway::getTypeName() const { return "Gateway"; }
+string Gateway::getTypename() const { return "Gateway"; }
 coinsInt Gateway::getCost() const { return GATEWAY_COST; }
 uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
+
+bool Gateway::isIdle() {
+    return state == Idle;
+}
 
 void Gateway::cmdBuildUnit(uint8_t unitTypechar)
 {
@@ -1165,18 +1171,20 @@ fixed32 Gateway::buildQueueWeight()
 }
 
 Gateway::Gateway(uint8_t ownerId, vector2fp pos)
-    : Building(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
+    : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
       state(Idle), inGameTransferState_view(NoGoldTransfer)
 {}
 void Gateway::pack(Netpack::Builder* to)
 {
+    packEntityAndUnitBasics(to);
     packBuildingBasics(to);
 
     to->packEnum(state);
     to->packOptional(maybeTargetEntity, packEntityRef);
 }
 Gateway::Gateway(Netpack::Consumer* from)
-    : Building(from)
+    : Unit(from)
+    , Building(from)
 {
     state = from->consumeEnum<Gateway::State>();
     maybeTargetEntity = from->consumeOptional(consumeEntityRef);
@@ -1344,12 +1352,13 @@ void Gateway::iterate()
 
 
 Prime::Prime(uint8_t ownerId, vector2fp pos)
-    : MobileUnit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
+    : Unit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
       behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer), gonnabuildTypechar(NULL_TYPECHAR)
 {}
 void Prime::pack(Netpack::Builder* to)
 {
+    packEntityAndUnitBasics(to);
     packMobileUnitBasics(to);
 
     heldGold.pack(to);
@@ -1359,7 +1368,8 @@ void Prime::pack(Netpack::Builder* to)
     packTypechar(to, gonnabuildTypechar);
 }
 Prime::Prime(Netpack::Consumer* from)
-    : MobileUnit(from),
+    : Unit(from)
+    , MobileUnit(from),
     heldGold(PRIME_MAX_GOLD_HELD)
 {
     heldGold = Coins(from);
@@ -1422,7 +1432,12 @@ coinsInt Prime::getCost() const { return PRIME_COST; }
 uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
 uint8_t Prime::typechar() const { return PRIME_TYPECHAR; }
-string Prime::getTypeName() const { return "Prime"; }
+string Prime::getTypename() const { return "Prime"; }
+
+bool Prime::isIdle()
+{
+    return (mobileUnitIsIdle() && (behavior == Basic && state == NotTransferring));
+}
 
 void Prime::iterate()
 {
@@ -1808,7 +1823,7 @@ vector<Coins*> Prime::getDroppableCoins()
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
-// ------- FIGHTER ------
+// ------- COMBATUNIT ------
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
@@ -1818,6 +1833,7 @@ vector<Coins*> Prime::getDroppableCoins()
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
+
 
 void packTarget(Netpack::Builder* to, Target target)
 {
@@ -1828,41 +1844,105 @@ Target consumeTarget(Netpack::Consumer* from)
     return Target(from);
 }
 
-Fighter::Fighter(uint8_t ownerId, vector2fp pos)
-    : MobileUnit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos),
-      state(NotAttacking), maybeAttackingGeneralTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
+CombatUnit::CombatUnit()
+    : state(NotAttacking), maybeAttackingTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
 {}
-void Fighter::pack(Netpack::Builder* to)
+void CombatUnit::packCombatUnitBasics(Netpack::Builder* to)
 {
-    packMobileUnitBasics(to);
-
     to->packEnum(state);
-    to->packOptional(maybeAttackingGeneralTarget, packTarget);
+    to->packOptional(maybeAttackingTarget, packTarget);
     to->packUint16_t(shootCooldown);
 }
-Fighter::Fighter(Netpack::Consumer* from)
-    : MobileUnit(from)
+CombatUnit::CombatUnit(Netpack::Consumer* from)
 {
     state = from->consumeEnum<State>();
-    maybeAttackingGeneralTarget = from->consumeOptional(consumeTarget);
+    maybeAttackingTarget = from->consumeOptional(consumeTarget);
     shootCooldown = from->consumeUint16_t();
 }
 
-void Fighter::cmdAttack(Target target)
+void CombatUnit::cmdAttack(Target target)
 {
     if (auto ref = target.castToEntityRef())
     {
         state = AttackingSpecific;
-        setMoveTarget(target, FIGHTER_SHOT_RANGE);
+        if (MobileUnit* mobileUnitSidecast = dynamic_cast<MobileUnit*>(this))
+        {
+            mobileUnitSidecast->setMoveTarget(target, FIGHTER_SHOT_RANGE);
+        }
     }
     else if (auto point = target.castToPoint())
     {
-        state = AttackingGeneral;
-        maybeAttackingGeneralTarget = point;
-        setMoveTarget(target, fixed32(0));
+        if (MobileUnit* mobileUnitSidecast = dynamic_cast<MobileUnit*>(this))
+        {
+            state = AttackingGeneral;
+            maybeAttackingTarget = point;
+            mobileUnitSidecast->setMoveTarget(target, fixed32(0));
+        }
     }
 }
-void Fighter::iterate()
+
+void CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
+{
+    vector2fp toTarget = (targetUnit->getPos() - this->getPos());
+    angle_view = static_cast<float>(toTarget.getAngle());
+    if (toTarget.getFloorMagnitudeSquared() <= FIGHTER_SHOT_RANGE_FLOORSQUARED)
+    {
+        if (shootCooldown == 0)
+        {
+            shootAt(targetUnit);
+            animateShot = (lastShot != Left) ? Left : Right;
+            lastShot = animateShot;
+        }
+    }
+}
+fixed32 CombatUnit::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
+{
+    if (auto building = boost::dynamic_pointer_cast<Building, Unit>(foreignUnit))
+    {
+        return fixed32(1);
+    }
+    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(foreignUnit))
+    {
+        return fixed32(2);
+    }
+    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
+    {
+        fixed32 baseFighterPriority(3);
+        if (auto otherFighterTarget = fighter->getMaybeMoveTarget())
+        {
+            if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
+            {
+                if (*otherFighterTargetRef == this->getRefOrThrow())
+                {
+                    return baseFighterPriority + 1;
+                }
+            }
+        }
+        return baseFighterPriority;
+    }
+    else
+    {
+        cout << "I can't find the priority of that unit!" << endl;
+        return fixed32(0);
+    }
+}
+void CombatUnit::shootAt(boost::shared_ptr<Unit> unit)
+{
+    shootCooldown = FIGHTER_SHOT_COOLDOWN;
+    unit->takeHit(FIGHTER_DAMAGE);
+}
+
+bool CombatUnit::combatUnitIsIdle()
+{
+    return (state == NotAttacking);
+}
+
+fixed32 CombatUnit::getAggressionRange() const
+{
+    throw runtime_error("getAggressionRange() has not been defined for " + getTypename() + ".\n");
+}
+
+void CombatUnit::iterateCombatUnitBasics()
 {
     Game *game = getGameOrThrow();
 
@@ -1874,9 +1954,9 @@ void Fighter::iterate()
     {
         case NotAttacking:
         {
-            if (MobileUnit::isIdle())
+            if (isIdle())
             {
-                auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
+                auto entitiesInSight = game->entitiesWithinCircle(getPos(), getAggressionRange());
 
                 boost::shared_ptr<Entity> closestValidTarget;
                 uint32_t closestDistanceFloorSquared;
@@ -1897,52 +1977,44 @@ void Fighter::iterate()
                 if (closestValidTarget)
                 {
                     state = AttackingGeneral;
-                    maybeAttackingGeneralTarget = Target(closestValidTarget->getRefOrThrow());
+                    maybeAttackingTarget = Target(closestValidTarget->getRefOrThrow());
                 }
             }
         }
         break;
         case AttackingGeneral:
         {
-            if (auto attackingGeneralTarget = maybeAttackingGeneralTarget)
+            if (auto attackingTarget = maybeAttackingTarget)
             {
                 // first make sure we're not going after some dead unit
-                if (!attackingGeneralTarget->isStillValid(*game))
+                if (!attackingTarget->isStillValid(*game))
                 {
                     state = NotAttacking;
-                    attackingGeneralTarget = {};
+                    attackingTarget = {};
                     break;
                 }
 
-                // same for moveTarget, but don't return to idle; just clear the var so the next if catches
-                if (auto moveTarget = getMaybeMoveTarget())
+                // if we're a mobile unit, make sure we're approaching the target
+                if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
                 {
-                    if (!moveTarget->isStillValid(*game))
+                    if (attackingTarget->type == Target::PointTarget)
                     {
-                        MobileUnit::clearMoveTarget();
-                    }
-                }
-
-                // if we're not moving toward the target, do so
-                if (!getMaybeMoveTarget())
-                {
-                    if (attackingGeneralTarget->type == Target::PointTarget)
-                    {
-                        setMoveTarget(*attackingGeneralTarget, fixed32(0));
+                        mobileUnitSelf->setMoveTarget(*attackingTarget, fixed32(0));
                     }
                     else
                     {
-                        setMoveTarget(*attackingGeneralTarget, FIGHTER_SHOT_RANGE);
+                        mobileUnitSelf->setMoveTarget(*attackingTarget, getRange());
                     }
                 }
 
-                // if the target is a point and we've arrived, go back to Idle
-                if (auto point = attackingGeneralTarget->castToPoint())
+                // if the target is a point and we've arrived (or if we're a building so we can't move), go back to Idle
+                if (auto point = attackingTarget->castToPoint())
                 {
-                    if ((*point - this->getPos()).getFloorMagnitudeSquared() == 0)
+                    bool isBuilding = (dynamic_cast<Building*>(this));
+                    if (isBuilding || (*point - this->getPos()).getFloorMagnitudeSquared() == 0)
                     {
                         state = NotAttacking;
-                        attackingGeneralTarget = {};
+                        attackingTarget = {};
                         break;
                     }
                 }
@@ -1951,7 +2023,7 @@ void Fighter::iterate()
                     // the target is either a live unit or a position we haven't arrived at
                     // we are moving toward the target or staying within range
                 
-                // we must also keep in mind that moveTarget may be different than attackingGeneralTarget
+                // we must also keep in mind that moveTarget may be different than attackingTarget
                     // (the former changes more often, the latter is the Fighter's "higher order" command)
                     // the moveTarget is what the Figher is attacking "right now"
                 
@@ -1959,14 +2031,14 @@ void Fighter::iterate()
                 boost::shared_ptr<Unit> bestTarget;
                 fixed32 bestTargetPriority;
                 bool alreadyHadTarget = false;
-                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(getMaybeMoveTarget()->castToEntityPtr(*game)))
+                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(attackingTarget->castToEntityPtr(*game)))
                 {
                     bestTarget = unit;
                     bestTargetPriority = this->calcAttackPriority(unit);
                     alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
                 }
 
-                auto entitiesInSight = game->entitiesWithinCircle(getPos(), FIGHTER_SIGHT_RANGE);
+                auto entitiesInSight = game->entitiesWithinCircle(getPos(), getAggressionRange());
                 for (unsigned int i=0; i<entitiesInSight.size(); i++)
                 {
                     if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSight[i]))
@@ -2004,25 +2076,32 @@ void Fighter::iterate()
 
                 if (bestTarget)
                 {
-                    setMoveTarget(Target(bestTarget), FIGHTER_SHOT_RANGE);
+                    if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
+                    {
+                        mobileUnitSelf->setMoveTarget(Target(bestTarget), FIGHTER_SHOT_RANGE);
+                    }
                     tryShootAt(bestTarget);
                 }
             }
             else
             {
-                cout << "state is attackingGeneral, but there is no attackingGeneralTarget..." << endl;
+                cout << "state is attackingGeneral, but there is no attackingTarget..." << endl;
                 state = NotAttacking;
             }
         }
         break;
         case AttackingSpecific:
-            if (auto target = getMaybeMoveTarget())
+            if (auto target = maybeAttackingTarget)
             {
                 bool returnToIdle = false;
                 if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
                 {
                     if (auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity))
                     {
+                        if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
+                        {
+                            mobileUnitSelf->setMoveTarget(*target, getRange());
+                        }
                         tryShootAt(targetUnit);
                     }
                     else
@@ -2033,11 +2112,56 @@ void Fighter::iterate()
 
                 if (returnToIdle)
                 {
+                    if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
+                    {
+                        mobileUnitSelf->clearMoveTarget();
+                    }
                     state = NotAttacking;
                 }
             }
             break;
     }
+}
+
+
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------- FIGHTER ------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+
+Fighter::Fighter(uint8_t ownerId, vector2fp pos)
+    : Unit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos)
+{}
+void Fighter::pack(Netpack::Builder* to)
+{
+    packEntityAndUnitBasics(to);
+    packMobileUnitBasics(to);
+    packCombatUnitBasics(to);
+}
+Fighter::Fighter(Netpack::Consumer* from)
+    : Unit(from)
+    , MobileUnit(from)
+    , CombatUnit(from)
+{}
+
+void Fighter::iterate()
+{
+    iterateCombatUnitBasics();
     iterateMobileUnitBasics();
 }
 void Fighter::onMoveCmd(vector2fp moveTo)
@@ -2045,65 +2169,20 @@ void Fighter::onMoveCmd(vector2fp moveTo)
     state = NotAttacking;
 }
 
-void Fighter::tryShootAt(boost::shared_ptr<Unit> targetUnit)
-{
-    vector2fp toTarget = (targetUnit->getPos() - this->getPos());
-    angle_view = static_cast<float>(toTarget.getAngle());
-    if (toTarget.getFloorMagnitudeSquared() <= FIGHTER_SHOT_RANGE_FLOORSQUARED)
-    {
-        if (shootCooldown == 0)
-        {
-            shootAt(targetUnit);
-            animateShot = (lastShot != Left) ? Left : Right;
-            lastShot = animateShot;
-        }
-    }
-}
-fixed32 Fighter::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
-{
-    if (auto building = boost::dynamic_pointer_cast<Building, Unit>(foreignUnit))
-    {
-        return fixed32(1);
-    }
-    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(foreignUnit))
-    {
-        return fixed32(2);
-    }
-    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
-    {
-        fixed32 baseFighterPriority(3);
-        if (auto otherFighterTarget = fighter->getMaybeMoveTarget())
-        {
-            if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
-            {
-                if (*otherFighterTargetRef == this->getRefOrThrow())
-                {
-                    return baseFighterPriority + 1;
-                }
-            }
-        }
-        return baseFighterPriority;
-    }
-    else
-    {
-        cout << "I can't find the priority of that unit!" << endl;
-        return fixed32(0);
-    }
-}
-void Fighter::shootAt(boost::shared_ptr<Unit> unit)
-{
-    shootCooldown = FIGHTER_SHOT_COOLDOWN;
-    unit->takeHit(FIGHTER_DAMAGE);
-}
-
 fixed32 Fighter::getRadius() const { return FIGHTER_RADIUS; }
 fixed32 Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
 fixed32 Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() const { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
+fixed32 Fighter::getAggressionRange() const { return FIGHTER_SIGHT_RANGE; }
 
 uint8_t Fighter::typechar() const { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() const { return "Fighter"; }
+
+bool Fighter::isIdle()
+{
+    return (mobileUnitIsIdle() && combatUnitIsIdle());
+}
 
 
 

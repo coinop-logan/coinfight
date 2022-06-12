@@ -133,11 +133,6 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
     }
 }
 
-float unitDrawRotation(boost::shared_ptr<Unit> unit)
-{
-    return -unit->getRotation_view();
-}
-
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
 {
     float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
@@ -356,7 +351,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
 {
     sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
-    float drawRotation = -unit->getRotation_view();
+    float drawRotation = -unit->angle_view;
 
     unsigned int fadedAlpha;
     if (!unit->isActive())
@@ -386,7 +381,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
         drawFighter(window, drawPos, drawRotation, teamColor, fadedAlpha);
     }
     else {
-        throw runtime_error("No drawing code implemented for unit " + unit->getTypeName() + ".");
+        throw runtime_error("No drawing code implemented for unit " + unit->getTypename() + ".");
     }
 }
 
@@ -402,7 +397,7 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vect
     }
     else
     {
-        throw runtime_error("No drawing code implemented for entity " + entity->getTypeName() + ".");
+        throw runtime_error("No drawing code implemented for entity " + entity->getTypename() + ".");
     }
 }
 
@@ -1118,7 +1113,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                     reversedShotOffset.y *= -1;
                                     relativeShotStartPos = reversedShotOffset;
                                 }
-                                vector2fl rotated = relativeShotStartPos.rotated(fighter->getRotation_view());
+                                vector2fl rotated = relativeShotStartPos.rotated(fighter->angle_view);
                                 vector2fl final = vector2fl(fighter->getPos()) + rotated;
                                 boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, sf::Color::Red, 8));
                                 particles->addLineParticle(line);

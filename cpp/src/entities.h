@@ -32,19 +32,20 @@ public:
     void updateGamePointerOrThrow(Game *game);
 
     virtual uint8_t typechar() const;
-    virtual string getTypeName() const;
+    virtual string getTypename() const;
     virtual void iterate();
     virtual sf::Color getTeamOrPrimaryColor();
-    virtual float getRotation_view() const { return 0; }
+    // virtual float getRotation_view() const { return 0; }
     virtual vector<Coins*> getDroppableCoins();
+    virtual void pack(Netpack::Builder* to);
+
     void die();
 
     bool collidesWithPoint(vector2fp);
-
-    void packEntityBasics(Netpack::Builder* to);
-
+protected:
+    Entity(); // this will throw if called. Needed for virtual inheritance later but should never be called.
     Entity(vector2fp pos);
-    virtual void pack(Netpack::Builder* to);
+    void packEntityBasics(Netpack::Builder* to);
     Entity(Netpack::Consumer* from);
 };
 
@@ -94,7 +95,7 @@ public:
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
-    string getTypeName() const;
+    string getTypename() const;
     void iterate();
 };
 
@@ -108,11 +109,8 @@ public:
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
     virtual fixed32 getRange() const;
-    virtual float getRotation_view() const { return 0;}
-
-    void packUnitBasics(Netpack::Builder* to);
-    Unit(uint8_t, coinsInt, uint16_t, vector2fp);
-    Unit(Netpack::Consumer*);
+    virtual bool isIdle();
+    float angle_view;
 
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
@@ -126,16 +124,20 @@ public:
     void iterateUnitBasics();
     void takeHit(uint16_t damage);
     uint16_t getHealth();
+
+protected:
+    Unit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos);
+    void packEntityAndUnitBasics(Netpack::Builder* to);
+    Unit(Netpack::Consumer*);
+    Unit(); // this will throw if called. Needed for virtual inheritance later but should never be called.
 };
 
-class Building : public Unit
+class Building : public virtual Unit
 {
 public:
-    void packBuildingBasics(Netpack::Builder* to);
-
-    Building(uint8_t, coinsInt, uint16_t, vector2fp);
+    Building(); // this will throw if called. Needed for virtual inheritance later but should never be called.
     Building(Netpack::Consumer*);
-
+    void packBuildingBasics(Netpack::Builder*);
     void iterateBuildingBasics();
 };
 
@@ -147,7 +149,6 @@ struct MoveTargetInfo
     fixed32 frustration;
 
     void pack(Netpack::Builder* to);
-    void unpackAndMoveIter(Netpack::Consumer* from);
 
     MoveTargetInfo(Target target, fixed32 desiredRange, uint32_t closestDistanceFloorSquared);
     MoveTargetInfo(Netpack::Consumer* from);
@@ -155,7 +156,7 @@ struct MoveTargetInfo
 
 const fixed32 MOBILEUNIT_FRUSTRATION_GROWTH_FACTOR(2);
 
-class MobileUnit : public Unit
+class MobileUnit : public virtual Unit
 {
 private:
     optional<MoveTargetInfo> maybeTargetInfo;
@@ -163,14 +164,10 @@ private:
     vector2fp lastVelocity;
 
     void tryMoveTowardPoint(vector2fp, fixed32);
-protected:
-    float angle_view;
 public:
-    float getRotation_view() const { return angle_view; };
     void moveWithVelocityAndUpdateCell(vector2fp toAdd);
     void setMoveTarget(Target _target, fixed32 range);
     void clearMoveTarget();
-    bool isIdle();
     virtual fixed32 getMaxSpeed() const;
     vector2fp getDesiredVelocity() const;
     vector2fp getLastVelocity() const;
@@ -178,15 +175,52 @@ public:
 
     optional<Target> getMaybeMoveTarget();
     optional<MoveTargetInfo> getMaybeMoveTargetInfo();
-
-    void packMobileUnitBasics(Netpack::Builder*);
-
-    void iterateMobileUnitBasics();
+    bool mobileUnitIsIdle();
 
     void cmdMove(vector2fp target);
 
-    MobileUnit(uint8_t ownerId, coinsInt totalCost, uint16_t, vector2fp pos);
+protected:
+    MobileUnit(); // this will throw if called. Needed for virtual inheritance later but should never be called.
     MobileUnit(Netpack::Consumer* from);
+    void packMobileUnitBasics(Netpack::Builder*);
+    void iterateMobileUnitBasics();
+};
+
+class CombatUnit : public virtual Unit
+{
+public:
+    enum State
+    {
+        NotAttacking,
+        AttackingGeneral,
+        AttackingSpecific
+    } state;
+
+    optional<Target> maybeAttackingTarget;
+
+    uint16_t shootCooldown;
+
+    enum AnimateShot
+    {
+        None,
+        Right,
+        Left
+    } animateShot, lastShot;
+
+    bool combatUnitIsIdle();
+
+    virtual fixed32 getAggressionRange() const;
+
+    void cmdAttack(Target target);
+    fixed32 calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
+    void tryShootAt(boost::shared_ptr<Unit> targetUnit);
+    void shootAt(boost::shared_ptr<Unit> targetUnit);
+
+protected:
+    CombatUnit();
+    CombatUnit(Netpack::Consumer* from);
+    void packCombatUnitBasics(Netpack::Builder*);
+    void iterateCombatUnitBasics();
 };
 
 enum GoldTransferState {
@@ -214,9 +248,12 @@ public:
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
-    string getTypeName() const;
+    string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
+
+    bool isIdle() { return false; }
+
     void iterate();
 };
 
@@ -250,9 +287,11 @@ public:
     void cmdScuttle(EntityRef targetRef);
     fixed32 buildQueueWeight();
 
+    bool isIdle();
+
     fixed32 getRadius() const;
     uint8_t typechar() const;
-    string getTypeName() const;
+    string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
     void iterate();
@@ -314,9 +353,11 @@ public:
 
     fixed32 getHeldGoldRatio();
 
+    bool isIdle();
+
     fixed32 getRadius() const;
     uint8_t typechar() const;
-    string getTypeName() const;
+    string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
     void iterate();
@@ -333,27 +374,9 @@ const uint8_t FIGHTER_SHOT_COOLDOWN = 20;
 const uint8_t FIGHTER_DAMAGE = 10;
 const fixed32 FIGHTER_RADIUS(15); // don't forget about MAX_UNIT_RADIUS!!
 
-class Fighter : public MobileUnit
+class Fighter : public MobileUnit, public CombatUnit
 {
 public:
-    enum State
-    {
-        NotAttacking,
-        AttackingGeneral,
-        AttackingSpecific
-    } state;
-
-    optional<Target> maybeAttackingGeneralTarget;
-
-    uint16_t shootCooldown;
-
-    enum AnimateShot
-    {
-        None,
-        Right,
-        Left
-    } animateShot, lastShot;
-
     fixed32 getMaxSpeed() const;
     fixed32 getRange() const;
     void onMoveCmd(vector2fp moveTo);
@@ -362,19 +385,16 @@ public:
 
     Fighter(uint8_t ownerId, vector2fp pos);
     Fighter(Netpack::Consumer* from);
-
-    void cmdAttack(Target target);
+    
+    bool isIdle();
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
+    fixed32 getAggressionRange() const;
     void iterate();
-
-    fixed32 calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
-    void tryShootAt(boost::shared_ptr<Unit> targetUnit);
-    void shootAt(boost::shared_ptr<Unit> targetUnit);
 };
 
 boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from);
