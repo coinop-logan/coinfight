@@ -14,7 +14,7 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-const vector2fl FIGHTER_SHOT_OFFSET(20, 10);
+const vector2fl COMBATUNIT_SHOT_OFFSET(20, 10);
 
 struct Particle
 {

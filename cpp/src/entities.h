@@ -221,6 +221,7 @@ public:
     void tryShootAt(boost::shared_ptr<Unit> targetUnit);
     void shootAt(boost::shared_ptr<Unit> targetUnit);
 
+    optional<EntityRef> getMaybeTargetUnit();
 protected:
     CombatUnit();
     CombatUnit(Netpack::Consumer* from);
@@ -412,8 +413,8 @@ const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(400);
 const uint32_t TURRET_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(TURRET_SHOT_RANGE);
-const uint8_t TURRET_SHOT_COOLDOWN = 15;
-const uint8_t TURRET_SHOT_DAMAGE = 40;
+const uint8_t TURRET_SHOT_COOLDOWN = 50;
+const uint8_t TURRET_SHOT_DAMAGE = 100;
 
 class Turret : public Building, public CombatUnit
 {
