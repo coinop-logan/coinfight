@@ -14,6 +14,8 @@ const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
 const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
+const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
+
 sf::Font mainFont;
 
 float radToDeg(float rad)
@@ -159,7 +161,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
     }
 }
 
-const sf::Color unitOutlineColor(100, 100, 100);
+const sf::Color UNIT_OUTLINE_COLOR(100, 100, 100);
 
 void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
@@ -179,12 +181,12 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
 
 void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
-    sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
+    sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, alpha);
 
     sf::CircleShape outerHex(15, 6);
     outerHex.setOrigin(15, 15);
     outerHex.setFillColor(fillColorFaded);
-    outerHex.setOutlineColor(unitOutlineColor);
+    outerHex.setOutlineColor(UNIT_OUTLINE_COLOR);
     outerHex.setOutlineThickness(1);
     outerHex.setPosition(drawPos.x, drawPos.y);
     outerHex.setRotation(90);
@@ -221,7 +223,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     sf::CircleShape structureOutline(primeCavityRadius);
     structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));
     structureOutline.setFillColor(sf::Color::Transparent);
-    structureOutline.setOutlineColor(unitOutlineColor);
+    structureOutline.setOutlineColor(UNIT_OUTLINE_COLOR);
     structureOutline.setOutlineThickness(1);
     window->draw(structureOutline, transform);
 
@@ -297,11 +299,11 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     lines[2].position = back;
     lines[3].position = left;
     lines[4].position = front;
-    lines[0].color = unitOutlineColor;
-    lines[1].color = unitOutlineColor;
-    lines[2].color = unitOutlineColor;
-    lines[3].color = unitOutlineColor;
-    lines[4].color = unitOutlineColor;
+    lines[0].color = UNIT_OUTLINE_COLOR;
+    lines[1].color = UNIT_OUTLINE_COLOR;
+    lines[2].color = UNIT_OUTLINE_COLOR;
+    lines[3].color = UNIT_OUTLINE_COLOR;
+    lines[4].color = UNIT_OUTLINE_COLOR;
 
     transform = sf::Transform();
     transform.translate(drawPos.x, drawPos.y);
@@ -311,19 +313,21 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 
 void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
-    sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.r, alpha);
+    sf::Color fillColorFaded(TURRET_MAIN_COLOR.r,TURRET_MAIN_COLOR.g, TURRET_MAIN_COLOR.b, alpha);
 
-    sf::CircleShape outerHex(30, 6);
-    outerHex.setOrigin(15, 15);
-    outerHex.setFillColor(fillColorFaded);
-    outerHex.setOutlineColor(unitOutlineColor);
-    outerHex.setOutlineThickness(1);
-    outerHex.setPosition(drawPos.x, drawPos.y);
-    outerHex.setRotation(90);
+    int halfWidth = int(TURRET_RADIUS * fixed32(0.85));
+    int width = halfWidth * 2;
 
-    window->draw(outerHex);
+    sf::RectangleShape box(sf::Vector2f(width, width));
+    box.setOrigin(halfWidth, halfWidth);
+    box.setFillColor(fillColorFaded);
+    box.setOutlineColor(UNIT_OUTLINE_COLOR);
+    box.setOutlineThickness(1);
+    box.setPosition(drawPos.x, drawPos.y);
 
-    drawBeacon(window, drawPos, teamColor, alpha);
+    window->draw(box);
+
+    drawFighter(window, drawPos, rotation, teamColor, alpha);
 }
 
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
