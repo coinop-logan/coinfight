@@ -244,45 +244,6 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
 
         window->draw(heldGoldCircle);
     }
-
-    // sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
-
-    // sf::ConvexShape oneSide;
-    // oneSide.setPointCount(3);
-
-    // oneSide.setFillColor(fillColorFaded);
-    // oneSide.setPosition(drawPos.x, drawPos.y);
-    // oneSide.setRotation(radToDeg(rotation));
-
-    // sf::Vector2f front = sf::Vector2f(12, 0);
-    // sf::Vector2f back = sf::Vector2f(-4, 0);
-    // sf::Vector2f right = sf::Vector2f(-12, 8);
-    // sf::Vector2f left = sf::Vector2f(-12, -8);
-
-    // // draw two triangles
-    // oneSide.setPoint(1, front);
-    // oneSide.setPoint(0, back);
-    // oneSide.setPoint(2, right);
-    // window->draw(oneSide);
-    // oneSide.setPoint(2, left);
-    // window->draw(oneSide);
-
-    // // draw outline
-    // sf::VertexArray lines(sf::LinesStrip, 5);
-    // lines[0].position = front;
-    // lines[1].position = right;
-    // lines[2].position = back;
-    // lines[3].position = left;
-    // lines[4].position = front;
-    // lines[0].color = unitOutlineColor;
-    // lines[1].color = unitOutlineColor;
-    // lines[2].color = unitOutlineColor;
-    // lines[3].color = unitOutlineColor;
-    // lines[4].color = unitOutlineColor;
-    // sf::Transform transform;
-    // transform.translate(drawPos.x, drawPos.y);
-    // transform.rotate(radToDeg(rotation));
-    // window->draw(lines, transform);
 }
 
 void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
