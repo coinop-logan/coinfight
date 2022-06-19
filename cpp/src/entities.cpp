@@ -1858,7 +1858,7 @@ Target consumeTarget(Netpack::Consumer* from)
 }
 
 CombatUnit::CombatUnit()
-    : state(NotAttacking), maybeAttackObjective({}), shootCooldown(0), animateShot(None), lastShot(None)
+    : state(NotAttacking), maybeAttackObjective({}), shootCooldown(0), animateShot_view(None), lastShot_view(None)
 {}
 void CombatUnit::packCombatUnitBasics(Netpack::Builder* to)
 {
@@ -1902,8 +1902,6 @@ bool CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
         if (shootCooldown == 0)
         {
             shootAt(targetUnit);
-            animateShot = (lastShot != Left) ? Left : Right;
-            lastShot = animateShot;
             return true;
         }
     }
@@ -1942,6 +1940,10 @@ fixed32 CombatUnit::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
 }
 void CombatUnit::shootAt(boost::shared_ptr<Unit> unit)
 {
+    animateShot_view = (lastShot_view != Left) ? Left : Right;
+    lastShot_view = animateShot_view;
+    lastShotTargetPos_view = unit->getPos();
+
     shootCooldown = getShotCooldown();
     unit->takeHit(getShotDamage());
 }
@@ -1976,7 +1978,7 @@ void CombatUnit::iterateCombatUnitBasics()
 {
     Game *game = getGameOrThrow();
 
-    animateShot = None;
+    animateShot_view = None;
     if (shootCooldown > 0)
         shootCooldown --;
 

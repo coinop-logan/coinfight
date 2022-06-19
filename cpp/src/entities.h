@@ -206,7 +206,8 @@ public:
         None,
         Right,
         Left
-    } animateShot, lastShot;
+    } animateShot_view, lastShot_view;
+    vector2fp lastShotTargetPos_view;
 
     bool combatUnitIsIdle();
 
