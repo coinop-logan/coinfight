@@ -1909,33 +1909,25 @@ bool CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 }
 fixed32 CombatUnit::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
 {
-    if (auto building = boost::dynamic_pointer_cast<Building, Unit>(foreignUnit))
+    if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(foreignUnit))
     {
-        return fixed32(1);
+        fixed32 baseCombatUnitPriority(3);
+        if (auto otherCombatUnitTargetRef = combatUnit->maybeAttackTarget)
+        {
+            if (*otherCombatUnitTargetRef == this->getRefOrThrow())
+            {
+                return baseCombatUnitPriority + 1;
+            }
+        }
+        return baseCombatUnitPriority;
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(foreignUnit))
     {
         return fixed32(2);
     }
-    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(foreignUnit))
-    {
-        fixed32 baseFighterPriority(3);
-        if (auto otherFighterTarget = fighter->getMaybeMoveTarget())
-        {
-            if (auto otherFighterTargetRef = otherFighterTarget->castToEntityRef())
-            {
-                if (*otherFighterTargetRef == this->getRefOrThrow())
-                {
-                    return baseFighterPriority + 1;
-                }
-            }
-        }
-        return baseFighterPriority;
-    }
     else
     {
-        cout << "I can't find the priority of that unit!" << endl;
-        return fixed32(0);
+        return fixed32(1);
     }
 }
 void CombatUnit::shootAt(boost::shared_ptr<Unit> unit)
