@@ -868,7 +868,8 @@ void MobileUnit::tryMoveTowardPoint(vector2fp to, fixed32 range)
 
     if (distanceLeft <= getMaxSpeed())
     {
-        desiredVelocity = unitDir * distanceLeft;
+        desiredVelocity = unitDir * min(getMaxSpeed(), toPoint.getRoughMagnitude());
+        // the min in the above line ensures the unit takes a "full step" toward a possibly fleeing enemy
     }
     else
     {
@@ -2081,6 +2082,10 @@ void CombatUnit::iterateCombatUnitBasics()
                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*game, *maybeAttackTarget)))
                 {
                     didShoot = tryShootAt(unit);
+                    if (unit->dead)
+                    {
+                        maybeAttackTarget = {};
+                    }
                 }
                 else
                 {
@@ -2104,7 +2109,8 @@ void CombatUnit::iterateCombatUnitBasics()
                         approachTarget = *maybeAttackObjective;
                     }
                     else {
-                        cout << "Logic error in CombatUnit::iterate: I should have an attackObjective or attackTarget but don't have either" << endl;
+                        // target probably died
+                        state = NotAttacking;
                         break;
                     }
                     
