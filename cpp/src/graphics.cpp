@@ -1083,27 +1083,24 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (combatUnit->animateShot != CombatUnit::None)
                     {
-                        if (auto combatUnitTarget = combatUnit->maybeAttackingTarget)
+                        if (auto combatUnitTarget = maybeEntityRefToPtrOrNull(*game, combatUnit->maybeAttackTarget))
                         {
-                            if (optional<vector2fp> targetPosFp = combatUnitTarget->getPointUnlessTargetDeleted(*game))
+                            vector2fl targetPos = vector2fl(combatUnitTarget->getPos());
+                            vector2fl relativeShotStartPos;
+                            if (combatUnit->animateShot == CombatUnit::Left)
                             {
-                                vector2fl targetPos(*targetPosFp);
-                                vector2fl relativeShotStartPos;
-                                if (combatUnit->animateShot == CombatUnit::Left)
-                                {
-                                    relativeShotStartPos = COMBATUNIT_SHOT_OFFSET;
-                                }
-                                else
-                                {
-                                    vector2fl reversedShotOffset(COMBATUNIT_SHOT_OFFSET);
-                                    reversedShotOffset.y *= -1;
-                                    relativeShotStartPos = reversedShotOffset;
-                                }
-                                vector2fl rotated = relativeShotStartPos.rotated(combatUnit->angle_view);
-                                vector2fl final = vector2fl(combatUnit->getPos()) + rotated;
-                                boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, sf::Color::Red, 8));
-                                particles->addLineParticle(line);
+                                relativeShotStartPos = COMBATUNIT_SHOT_OFFSET;
                             }
+                            else
+                            {
+                                vector2fl reversedShotOffset(COMBATUNIT_SHOT_OFFSET);
+                                reversedShotOffset.y *= -1;
+                                relativeShotStartPos = reversedShotOffset;
+                            }
+                            vector2fl rotated = relativeShotStartPos.rotated(combatUnit->angle_view);
+                            vector2fl final = vector2fl(combatUnit->getPos()) + rotated;
+                            boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, sf::Color::Red, 8));
+                            particles->addLineParticle(line);
                         }
                     }
                 }

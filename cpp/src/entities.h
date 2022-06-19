@@ -196,7 +196,8 @@ public:
         AttackingSpecific
     } state;
 
-    optional<Target> maybeAttackingTarget;
+    optional<Target> maybeAttackObjective;
+    optional<EntityRef> maybeAttackTarget;
 
     uint16_t shootCooldown;
 
@@ -218,7 +219,7 @@ public:
 
     void cmdAttack(Target target);
     fixed32 calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
-    void tryShootAt(boost::shared_ptr<Unit> targetUnit);
+    bool tryShootAt(boost::shared_ptr<Unit> targetUnit);
     void shootAt(boost::shared_ptr<Unit> targetUnit);
 
     optional<EntityRef> getMaybeTargetUnit();
@@ -440,6 +441,8 @@ public:
     fixed32 getAggressionRange() const;
     void iterate();
 };
+
+boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);
 
 boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from);
 

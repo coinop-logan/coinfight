@@ -87,7 +87,6 @@ public:
 
     bool registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity);
     void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
-    boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(EntityRef);
 
     optional<uint8_t> playerAddressToMaybeId(Address address);
     Address playerIdToAddress(uint8_t playerId);
@@ -109,7 +108,6 @@ public:
 
 vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Entity>>);
 vector<EntityRef> entityPtrsToRefsOrThrow(vector<boost::shared_ptr<Unit>>);
-boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);
 
 bool gameStatesAreIdentical_triggerDebugIfNot(Game* game1, Game* game2);
 void triggerDebug();

@@ -256,7 +256,7 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
                 successfulCast = true;
 
                 debugAssert(turret1->state == turret2->state);
-                debugAssert(maybeTargetsAreEqual(turret1->maybeAttackingTarget, turret2->maybeAttackingTarget));
+                debugAssert(maybeTargetsAreEqual(turret1->maybeAttackObjective, turret2->maybeAttackObjective));
             }
 
             debugAssert(successfulCast);
@@ -287,7 +287,7 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
                 successfulCast = true;
 
                 debugAssert(fighter1->state == fighter2->state);
-                debugAssert(maybeTargetsAreEqual(fighter1->maybeAttackingTarget, fighter2->maybeAttackingTarget));
+                debugAssert(maybeTargetsAreEqual(fighter1->maybeAttackObjective, fighter2->maybeAttackObjective));
             }
 
             debugAssert(successfulCast);
@@ -1857,18 +1857,20 @@ Target consumeTarget(Netpack::Consumer* from)
 }
 
 CombatUnit::CombatUnit()
-    : state(NotAttacking), maybeAttackingTarget({}), shootCooldown(0), animateShot(None), lastShot(None)
+    : state(NotAttacking), maybeAttackObjective({}), shootCooldown(0), animateShot(None), lastShot(None)
 {}
 void CombatUnit::packCombatUnitBasics(Netpack::Builder* to)
 {
     to->packEnum(state);
-    to->packOptional(maybeAttackingTarget, packTarget);
+    to->packOptional(maybeAttackObjective, packTarget);
+    to->packOptional(maybeAttackTarget, packEntityRef);
     to->packUint16_t(shootCooldown);
 }
 CombatUnit::CombatUnit(Netpack::Consumer* from)
 {
     state = from->consumeEnum<State>();
-    maybeAttackingTarget = from->consumeOptional(consumeTarget);
+    maybeAttackObjective = from->consumeOptional(consumeTarget);
+    maybeAttackTarget = from->consumeOptional(consumeEntityRef);
     shootCooldown = from->consumeUint16_t();
 }
 
@@ -1877,23 +1879,20 @@ void CombatUnit::cmdAttack(Target target)
     if (auto ref = target.castToEntityRef())
     {
         state = AttackingSpecific;
-        if (MobileUnit* mobileUnitSidecast = dynamic_cast<MobileUnit*>(this))
-        {
-            mobileUnitSidecast->setMoveTarget(target, getShotRange());
-        }
+        maybeAttackObjective = target;
+        maybeAttackTarget = ref;
     }
     else if (auto point = target.castToPoint())
     {
-        if (MobileUnit* mobileUnitSidecast = dynamic_cast<MobileUnit*>(this))
+        if (dynamic_cast<MobileUnit*>(this))
         {
             state = AttackingGeneral;
-            maybeAttackingTarget = point;
-            mobileUnitSidecast->setMoveTarget(target, fixed32(0));
+            maybeAttackObjective = point;
         }
     }
 }
 
-void CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
+bool CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
 {
     vector2fp toTarget = (targetUnit->getPos() - this->getPos());
     angle_view = static_cast<float>(toTarget.getAngle());
@@ -1904,8 +1903,10 @@ void CombatUnit::tryShootAt(boost::shared_ptr<Unit> targetUnit)
             shootAt(targetUnit);
             animateShot = (lastShot != Left) ? Left : Right;
             lastShot = animateShot;
+            return true;
         }
     }
+    return false;
 }
 fixed32 CombatUnit::calcAttackPriority(boost::shared_ptr<Unit> foreignUnit)
 {
@@ -2005,121 +2006,130 @@ void CombatUnit::iterateCombatUnitBasics()
                 if (closestValidTarget)
                 {
                     state = AttackingGeneral;
-                    maybeAttackingTarget = Target(closestValidTarget->getRefOrThrow());
+                    maybeAttackObjective = {};
+                    maybeAttackTarget = closestValidTarget->getRefOrThrow();
                 }
             }
         }
         break;
         case AttackingGeneral:
         {
-            if (auto attackingTarget = maybeAttackingTarget)
+            // try to find an attack target, ultimately updating this->maybeAttackTarget
+            boost::shared_ptr<Unit> bestTarget;
+            fixed32 bestTargetPriority;
+            bool alreadyHadTarget = false;
+
+            if (auto attackTarget = maybeAttackTarget)
             {
-                // first make sure we're not going after some dead unit
-                if (!attackingTarget->isStillValid(*game))
+                if (auto targetUnit = boost::dynamic_pointer_cast<Unit,Entity>(maybeEntityRefToPtrOrNull(*game, *attackTarget)))
                 {
-                    state = NotAttacking;
-                    attackingTarget = {};
-                    break;
-                }
-
-                // if we're a mobile unit, make sure we're approaching the target
-                if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
-                {
-                    if (attackingTarget->type == Target::PointTarget)
-                    {
-                        mobileUnitSelf->setMoveTarget(*attackingTarget, fixed32(0));
-                    }
-                    else
-                    {
-                        mobileUnitSelf->setMoveTarget(*attackingTarget, getRange());
-                    }
-                }
-
-                // if the target is a point and we've arrived (or if we're a building so we can't move), go back to Idle
-                if (auto point = attackingTarget->castToPoint())
-                {
-                    bool isBuilding = (dynamic_cast<Building*>(this));
-                    if (isBuilding || (*point - this->getPos()).getFloorMagnitudeSquared() == 0)
-                    {
-                        state = NotAttacking;
-                        attackingTarget = {};
-                        break;
-                    }
-                }
-
-                // at this point we know:
-                    // the target is either a live unit or a position we haven't arrived at
-                    // we are moving toward the target or staying within range
-                
-                // we must also keep in mind that moveTarget may be different than attackingTarget
-                    // (the former changes more often, the latter is the Fighter's "higher order" command)
-                    // the moveTarget is what the Figher is attacking "right now"
-                
-                // we will search for good options for attack
-                boost::shared_ptr<Unit> bestTarget;
-                fixed32 bestTargetPriority;
-                bool alreadyHadTarget = false;
-                if (auto unit = boost::dynamic_pointer_cast<Unit,Entity>(attackingTarget->castToEntityPtr(*game)))
-                {
-                    bestTarget = unit;
-                    bestTargetPriority = this->calcAttackPriority(unit);
+                    bestTarget = targetUnit;
+                    bestTargetPriority = this->calcAttackPriority(targetUnit);
                     alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
                 }
+            }
 
-                auto entitiesInSight = game->entitiesWithinCircle(getPos(), getAggressionRange());
-                for (unsigned int i=0; i<entitiesInSight.size(); i++)
+            auto entitiesInSight = game->entitiesWithinCircle(getPos(), getAggressionRange());
+            for (unsigned int i=0; i<entitiesInSight.size(); i++)
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSight[i]))
                 {
-                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSight[i]))
+                    if (getAllianceType(this->ownerId, entitiesInSight[i]) == Foreign)
                     {
-                        if (getAllianceType(this->ownerId, entitiesInSight[i]) == Foreign)
+                        bool thisIsBetterTarget = false; // until proven otherwise
+
+                        fixed32 priority = this->calcAttackPriority(unit);
+
+                        // if there is not yet a bestTarget, or if the priority is higher
+                        if ((!bestTarget) || priority > bestTargetPriority)
                         {
-                            bool thisIsBetterTarget = false; // until proven otherwise
+                            thisIsBetterTarget = true;
+                        }
 
-                            fixed32 priority = this->calcAttackPriority(unit);
-
-                            // if there is not yet a bestTarget, or if the priority is higher
-                            if ((!bestTarget) || priority > bestTargetPriority)
-                            {
+                        // if the priority matches and we didn't already have a target before this frame...
+                        else if (priority == bestTargetPriority && !alreadyHadTarget)
+                        {
+                            // compare distances
+                            uint32_t currentDistanceFloorSquared = (this->getPos() - bestTarget->getPos()).getFloorMagnitudeSquared();
+                            uint32_t distanceFloorSquared = (this->getPos() - unit->getPos()).getFloorMagnitudeSquared();
+                            if (distanceFloorSquared < currentDistanceFloorSquared)
                                 thisIsBetterTarget = true;
-                            }
+                        }
 
-                            // if the priority matches and we didn't already have a target before this frame...
-                            else if (priority == bestTargetPriority && !alreadyHadTarget)
-                            {
-                                // compare distances
-                                uint32_t currentDistanceFloorSquared = (this->getPos() - bestTarget->getPos()).getFloorMagnitudeSquared();
-                                uint32_t distanceFloorSquared = (this->getPos() - unit->getPos()).getFloorMagnitudeSquared();
-                                if (distanceFloorSquared < currentDistanceFloorSquared)
-                                    thisIsBetterTarget = true;
-                            }
-
-                            if (thisIsBetterTarget)
-                            {
-                                bestTarget = unit;
-                                bestTargetPriority = priority;
-                            }
+                        if (thisIsBetterTarget)
+                        {
+                            bestTarget = unit;
+                            bestTargetPriority = priority;
                         }
                     }
                 }
+            }
 
-                if (bestTarget)
+            if (bestTarget)
+                maybeAttackTarget = bestTarget->getRefOrThrow();
+
+            // if we don't have either an objective or target, return to NotAttacking
+            if (!(maybeAttackObjective || maybeAttackTarget))
+            {
+                state = NotAttacking;
+                break;
+            }
+
+            bool didShoot = false;
+            if (maybeAttackTarget)
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*game, *maybeAttackTarget)))
                 {
-                    if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
-                    {
-                        mobileUnitSelf->setMoveTarget(Target(bestTarget), getShotRange());
-                    }
-                    tryShootAt(bestTarget);
+                    didShoot = tryShootAt(unit);
+                }
+                else
+                {
+                    cout << "CombatUnit has a maybeAttackTarget that's not a unit, or is dead or something?? :/ Clearing." << endl;
+                    maybeAttackTarget = {};
                 }
             }
-            else
+
+            if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
             {
-                cout << "state is attackingGeneral, but there is no attackingTarget..." << endl;
-                state = NotAttacking;
+                if (!didShoot)
+                {
+                    // determine approach target
+                    Target approachTarget(EntityRef(0));
+                    if (maybeAttackTarget)
+                    {
+                        approachTarget = Target(*maybeAttackTarget);
+                    }
+                    else if (maybeAttackObjective)
+                    {
+                        approachTarget = *maybeAttackObjective;
+                    }
+                    else {
+                        cout << "Logic error in CombatUnit::iterate: I should have an attackObjective or attackTarget but don't have either" << endl;
+                        break;
+                    }
+                    
+                    // approach the target
+                    if (auto point = approachTarget.castToPoint())
+                    {
+                        mobileUnitSelf->setMoveTarget(*point, fixed32(0));
+                        if ((*point - this->getPos()).getFloorMagnitudeSquared() == 0)
+                        {
+                            state = NotAttacking;
+                            maybeAttackObjective = {};
+                            maybeAttackTarget = {};
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        mobileUnitSelf->setMoveTarget(approachTarget, getShotRange());
+                    }
+                }
             }
         }
         break;
         case AttackingSpecific:
-            if (auto target = maybeAttackingTarget)
+            if (auto target = maybeAttackObjective)
             {
                 bool returnToIdle = false;
                 if (auto targetEntity = target->castToEntityPtr(*game)) // will return false if unit died (pointer will be empty)
