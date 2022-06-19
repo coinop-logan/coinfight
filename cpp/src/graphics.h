@@ -39,9 +39,10 @@ struct LineParticle
 {
     vector2fl from, to;
     sf::Color color;
+    float width;
     int lifetime, timeLeft;
     bool dead;
-    LineParticle(vector2fl from, vector2fl to, sf::Color color, int lifetime);
+    LineParticle(vector2fl from, vector2fl to, sf::Color color, float width, int lifetime);
     void iterate();
     void draw(sf::RenderWindow *window, CameraState camera);
 };

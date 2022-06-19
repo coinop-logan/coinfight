@@ -23,6 +23,34 @@ float radToDeg(float rad)
     return rad * (180 / M_PI);
 }
 
+class sfLine : public sf::Drawable
+{
+private:
+    sf::Vertex vertices[4];
+public:
+    sfLine(const sf::Vector2f& point1, const sf::Vector2f& point2, sf::Color color, float width)
+    {
+        sf::Vector2f direction = point2 - point1;
+        sf::Vector2f unitDirection = direction/std::sqrt(direction.x*direction.x+direction.y*direction.y);
+        sf::Vector2f unitPerpendicular(-unitDirection.y,unitDirection.x);
+
+        sf::Vector2f offset = (width/2.f)*unitPerpendicular;
+
+        vertices[0].position = point1 + offset;
+        vertices[1].position = point2 + offset;
+        vertices[2].position = point2 - offset;
+        vertices[3].position = point1 - offset;
+
+        for (int i=0; i<4; ++i)
+            vertices[i].color = color;
+    }
+
+    void draw(sf::RenderTarget &target, sf::RenderStates states) const
+    {
+        target.draw(vertices,4,sf::Quads);
+    }
+};
+
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
@@ -523,8 +551,8 @@ void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
     }
 }
 
-LineParticle::LineParticle(vector2fl from, vector2fl to, sf::Color color, int lifetime)
-    : from(from), to(to), color(color), lifetime(lifetime), timeLeft(lifetime), dead(false)
+LineParticle::LineParticle(vector2fl from, vector2fl to, sf::Color color, float width, int lifetime)
+    : from(from), to(to), color(color), width(width), lifetime(lifetime), timeLeft(lifetime), dead(false)
 {}
 void LineParticle::iterate()
 {
@@ -534,17 +562,14 @@ void LineParticle::iterate()
 }
 void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
 {
-    sf::VertexArray lines(sf::Lines, 2);
     vector2i drawFrom = gamePosToScreenPos(camera, vector2fp(from));
     vector2i drawTo = gamePosToScreenPos(camera, vector2fp(to));
-    lines[0].position = sf::Vector2f(drawFrom.x, drawFrom.y);
-    lines[1].position = sf::Vector2f(drawTo.x, drawTo.y);
 
     color.a = ((float)timeLeft / lifetime) * 255;
-    lines[0].color = color;
-    lines[1].color = color;
 
-    window->draw(lines);
+    sfLine line(sf::Vector2f(drawFrom.x, drawFrom.y), sf::Vector2f(drawTo.x, drawTo.y), color, width);
+
+    window->draw(line);
 }
 
 void ParticlesContainer::iterateParticles(const Game &game)
@@ -1097,7 +1122,24 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         }
                         vector2fl rotated = relativeShotStartPos.rotated(combatUnit->angle_view);
                         vector2fl final = vector2fl(combatUnit->getPos()) + rotated;
-                        boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, sf::Color::Red, 8));
+
+                        sf::Color color;
+                        float width;
+                        int lifetime;
+                        if (combatUnit->typechar() == TURRET_TYPECHAR)
+                        {
+                            color = sf::Color(200, 0, 200);
+                            width = 5;
+                            lifetime = 20;
+                        }
+                        else if (combatUnit->typechar() == FIGHTER_TYPECHAR)
+                        {
+                            color = sf::Color(255, 0, 0);
+                            width = 1;
+                            lifetime = 8;
+                        }
+
+                        boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, color, width, lifetime));
                         particles->addLineParticle(line);
                     }
                 }
