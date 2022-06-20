@@ -101,7 +101,7 @@ public:
 
 class Unit : public Entity
 {
-    uint16_t health;
+    uint16_t healthAssumingBuilt;
 public:
     uint8_t ownerId;
     Coins goldInvested;
@@ -123,10 +123,11 @@ public:
     bool isActive();
     void iterateUnitBasics();
     void takeHit(uint16_t damage);
-    uint16_t getHealth();
+    uint16_t getEffectiveHealth();
+    uint16_t getHealthAssumingBuilt();
 
 protected:
-    Unit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos);
+    Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos);
     void packEntityAndUnitBasics(Netpack::Builder* to);
     Unit(Netpack::Consumer*);
     Unit(); // this will throw if called. Needed for virtual inheritance later but should never be called.

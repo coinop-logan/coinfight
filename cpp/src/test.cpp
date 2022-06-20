@@ -27,21 +27,9 @@ void pr(C c) {
 
 int main()
 {
-    vch data;
-    Netpack::Builder b(&data);
-    b.enableDebugOutput();
+    fixed32 a(-0.65);
+    uint16_t b = 10;
+    uint16_t c = static_cast<uint16_t>(a * b);
 
-    b.packInt16_t(4);
-    b.packBool(true);
-    b.packStringWith16bitSize("ohai!");
-    b.prependWith64bitSize();
-
-    cout << endl << endl;
-
-    Netpack::Consumer c(data.begin());
-    c.enableDebugOutput();
-    c.consumeUint64_t();
-    c.consumeInt16_t();
-    c.consumeBool();
-    c.consumeStringWith16bitSize();
+    cout << c << endl;
 }

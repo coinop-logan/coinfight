@@ -224,7 +224,7 @@ bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, b
     if (auto unit1 = boost::dynamic_pointer_cast<Unit, Entity>(entity1))
         if (auto unit2 = boost::dynamic_pointer_cast<Unit, Entity>(entity2))
     {
-        debugAssert(unit1->getHealth() == unit2->getHealth());
+        debugAssert(unit1->getHealthAssumingBuilt() == unit2->getHealthAssumingBuilt());
         debugAssert(unit1->ownerId == unit2->ownerId);
         debugAssert(unit1->goldInvested.getInt() == unit2->goldInvested.getInt());
 
@@ -597,14 +597,14 @@ uint16_t Unit::getMaxHealth() const
 
 Unit::Unit() : Entity() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
-Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t health, vector2fp pos)
-    : Entity(pos), health(health), ownerId(ownerId), goldInvested(totalCost) {}
+Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos)
+    : Entity(pos), healthAssumingBuilt(healthAssumingBuilt), ownerId(ownerId), goldInvested(totalCost) {}
 void Unit::packEntityAndUnitBasics(Netpack::Builder* to)
 {
     packEntityBasics(to);
 
     to->packUint8_t(ownerId);
-    to->packUint16_t(health);
+    to->packUint16_t(healthAssumingBuilt);
     goldInvested.pack(to);
 }
 Unit::Unit(Netpack::Consumer* from)
@@ -613,7 +613,7 @@ Unit::Unit(Netpack::Consumer* from)
       angle_view(0)
 {
     ownerId = from->consumeUint8_t();
-    health = from->consumeUint16_t();
+    healthAssumingBuilt = from->consumeUint16_t();
     goldInvested = Coins(from);
 }
 
@@ -647,6 +647,20 @@ fixed32 Unit::getRange() const
 {
     throw runtime_error("getRange has not been defined for '" + getTypename() + "'");
 }
+uint16_t Unit::getEffectiveHealth()
+{
+    if (getBuilt() == 0) return 1;
+
+    // scales linearly from getMaxHealth() to 0 as unit builds
+    uint16_t healthDeduction = static_cast<uint16_t>(getMaxHealth() * (1-getBuiltRatio()));
+    if (healthDeduction >= healthAssumingBuilt)
+    {
+        cout << "LOGIC WARNING: Unit::getEffectiveHealth seems a bit wonky!" << endl;
+        return 1;
+    }
+
+    return healthAssumingBuilt - healthDeduction;
+}
 bool Unit::isIdle() {
     throw runtime_error("isIdle has not been defined for '" + getTypename() + "'");
 }
@@ -675,17 +689,20 @@ sf::Color Unit::getTeamColor()
 void Unit::iterateUnitBasics() {}
 void Unit::takeHit(uint16_t damage)
 {
-    if (damage >= health)
+    if (damage >= getEffectiveHealth())
     {
-        health = 0;
+        healthAssumingBuilt = 0;
         dead = true;
     }
     else
     {
-        health -= damage;
+        healthAssumingBuilt -= damage;
     }
 }
-uint16_t Unit::getHealth() { return health; }
+uint16_t Unit::getHealthAssumingBuilt()
+{
+    return healthAssumingBuilt;
+}
 
 
 
