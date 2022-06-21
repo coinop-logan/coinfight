@@ -238,7 +238,7 @@ enum GoldTransferState {
     Pulling
 };
 
-const coinsInt BEACON_BUILD_RATE = 10;
+const coinsInt BEACON_BUILD_RATE = 4;
 const uint16_t BEACON_HEALTH = 100;
 const fixed32 BEACON_RADIUS(10);
 
@@ -270,8 +270,8 @@ const coinsInt GATEWAY_COST = 4000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
-const coinsInt GATEWAY_SCUTTLE_RATE = 5;
-const coinsInt GATEWAY_BUILD_RATE = 8;
+const coinsInt GATEWAY_SCUTTLE_RATE = 2;
+const coinsInt GATEWAY_BUILD_RATE = 4;
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Gateway : public Building
@@ -313,7 +313,7 @@ const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
 const coinsInt PRIME_PICKUP_RATE = 2;
-const coinsInt PRIME_PUTDOWN_RATE = 5;
+const coinsInt PRIME_PUTDOWN_RATE = 4;
 const coinsInt PRIME_MAX_GOLD_HELD = 5000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 

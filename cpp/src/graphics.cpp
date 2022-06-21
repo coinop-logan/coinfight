@@ -826,11 +826,11 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, option
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
         {
-            displayAboveCoins = &unit->goldInvested;
-            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-            {
-                displayBelowCoins = &prime->heldGold;
-            }
+            // displayAboveCoins = &unit->goldInvested;
+            // if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            // {
+            //     displayBelowCoins = &prime->heldGold;
+            // }
         }
 
         vector2fp entityPos = game->entities[i]->getPos();
@@ -875,6 +875,59 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, option
             window->draw(belowText);
         }
     }
+}
+
+void drawUnitHealthBars(sf::RenderWindow* window, Game* game, UI ui, optional<uint8_t> maybePlayerId)
+{
+    for (unsigned int i=0; i<game->entities.size(); i++)
+    {
+        if (!game->entities[i])
+            continue;
+        
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+        {
+            sf::Color barColorFill, barColorOutline;
+            switch (getAllianceType(maybePlayerId, unit))
+            {
+                case Owned:
+                    barColorFill = sf::Color(0, 255, 0);
+                    barColorOutline = sf::Color(0, 100, 0);
+                    break;
+                case Foreign:
+                    barColorFill = sf::Color(255, 0, 0);
+                    barColorOutline = sf::Color(100, 0, 0);
+                    break;
+                case Neutral:
+                    barColorFill = sf::Color(0, 0, 255);
+                    barColorOutline = sf::Color(0, 0, 100);
+                    break;
+            }
+
+            vector2fp healthBarPos = unit->getPos() - vector2fp(fixed32(0), unit->getRadius() + 8);
+
+            float healthBarLength = 2 + unit->getMaxHealth() / HEALTH_BAR_HP_PER_PIXEL;
+
+            sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
+            healthBar.setOrigin(healthBar.getLocalBounds().width / 2, healthBar.getLocalBounds().height / 2);
+            healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, healthBarPos))));
+
+            healthBar.setOutlineColor(barColorOutline);
+            healthBar.setFillColor(sf::Color(100, 100, 100));
+            healthBar.setOutlineThickness(1);
+
+            window->draw(healthBar);
+
+            float healthRatio = (float)(unit->getEffectiveHealth()) / (float)(unit->getMaxHealth());
+            healthBar.setFillColor(barColorFill);
+            healthBar.setOutlineThickness(0);
+            healthBar.setSize(sf::Vector2f(healthRatio * healthBarLength, 6));
+
+            window->draw(healthBar);
+
+            // now test this
+        }
+    }
+
 }
 
 const int HOTKEY_BOX_WIDTH = 60;
@@ -1152,6 +1205,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
         if (!ui.cleanDrawEnabled)
         drawUnitDroppableValues(window, game, ui, maybePlayerId);
+        drawUnitHealthBars(window, game, ui, maybePlayerId);
 
         if (maybePlayerId)
         {
