@@ -239,7 +239,7 @@ enum GoldTransferState {
 };
 
 const coinsInt BEACON_BUILD_RATE = 4;
-const uint16_t BEACON_HEALTH = 100;
+// const uint16_t BEACON_HEALTH = 100;
 const fixed32 BEACON_RADIUS(10);
 
 class Beacon : public Building
@@ -314,7 +314,7 @@ const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSF
 const fixed32 PRIME_SIGHT_RANGE(200);
 const coinsInt PRIME_PICKUP_RATE = 2;
 const coinsInt PRIME_PUTDOWN_RATE = 4;
-const coinsInt PRIME_MAX_GOLD_HELD = 5000;
+const coinsInt PRIME_MAX_GOLD_HELD = 2000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit

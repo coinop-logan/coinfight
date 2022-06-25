@@ -976,10 +976,10 @@ fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
 string Beacon::getTypename() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
-uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
+uint16_t Beacon::getMaxHealth() const { return GATEWAY_HEALTH; }
 
 Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
-    : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
+    : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos)
     , state(state)
 {}
 void Beacon::pack(Netpack::Builder* to)
