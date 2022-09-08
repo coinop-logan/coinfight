@@ -16,7 +16,7 @@
 
 const vector2fl COMBATUNIT_SHOT_OFFSET(20, 10);
 
-const int HEALTH_BAR_HP_PER_PIXEL = 10;
+// const int HEALTH_BAR_HP_PER_PIXEL = 10;
 
 struct Particle
 {
