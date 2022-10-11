@@ -31,6 +31,8 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(from));
     case CMD_SCUTTLE_CHAR:
         return boost::shared_ptr<Cmd>(new ScuttleCmd(from));
+    case CMD_GIFT_CHAR:
+        return boost::shared_ptr<Cmd>(new GiftCmd(from));
     }
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
@@ -471,4 +473,33 @@ ScuttleCmd::ScuttleCmd(Netpack::Consumer* from)
     : UnitCmd(from)
 {
     targetUnit = consumeEntityRef(from);
+}
+
+uint8_t GiftCmd::getTypechar()
+{
+    return CMD_GIFT_CHAR;
+}
+string GiftCmd::getTypename()
+{
+    return "GiftCmd";
+}
+
+void GiftCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    unit->ownerId = this->newOwnerId;
+    // todo: is this all that's needed?
+}
+
+GiftCmd::GiftCmd(vector<EntityRef> units, uint8_t newOwnerId)
+    : UnitCmd(units), newOwnerId(newOwnerId)
+{}
+void GiftCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    to->packUint8_t(newOwnerId);
+}
+GiftCmd::GiftCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    newOwnerId = from->consumeUint8_t();
 }

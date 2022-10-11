@@ -597,6 +597,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                 case sf::Keyboard::H:
                     ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
                     break;
+                // case sf::Keyboard::P:
+                //     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GiftCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), 0)));
+                //     break;
                 default:
                     vector<boost::shared_ptr<Cmd>> cmds = ui->handlePossibleUnitInterfaceCmd(event.key.code);
                     cmdsToSend.insert(cmdsToSend.begin(), cmds.begin(), cmds.end());
