@@ -15,7 +15,9 @@ The game is still in early alpha, but here are some basic media pieces:
 
 If using Mac, make sure `brew` is installed.
 
-In the root directory of the project, run `./configure` to install a couple dependecies, then run `make client`. This should populate `bin/` with the `client` binary and a few resources.
+In the root directory of the project, run `./configure` to install a couple dependecies, then run `make client`.
+
+This should populate `bin/` with the `client` and `coinfight_local` binaries and a few resources. Running `./coinfight_local` is a good way to test that the game runs smoothly without connecting to a server.
 
 ## Windows
 
