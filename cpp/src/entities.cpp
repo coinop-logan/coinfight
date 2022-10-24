@@ -1638,11 +1638,11 @@ void Prime::iterate()
                     {
                         coinsToPullFrom = &goldpile->gold;
                     }
-                    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                    {
-                        if (gateway->ownerId == this->ownerId)
-                            coinsToPullFrom = &game->players[gateway->ownerId].credit;
-                    }
+                    // else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(e))
+                    // {
+                    //     if (gateway->ownerId == this->ownerId)
+                    //         coinsToPullFrom = &game->players[gateway->ownerId].credit;
+                    // }
                     if (coinsToPullFrom)
                     {
                         coinsInt pickedUp = (*coinsToPullFrom)->transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
@@ -1677,13 +1677,13 @@ void Prime::iterate()
                             coinsToPushTo = &unit->goldInvested;
                             stopOnTransferZero = true;
                         }
-                        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
-                        {
-                            if (gateway->ownerId == this->ownerId)
-                            {
-                                coinsToPushTo = &game->players[gateway->ownerId].credit;
-                            }
-                        }
+                        // else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                        // {
+                        //     if (gateway->ownerId == this->ownerId)
+                        //     {
+                        //         coinsToPushTo = &game->players[gateway->ownerId].credit;
+                        //     }
+                        // }
                         else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                         {
                             coinsToPushTo = &prime->heldGold;
