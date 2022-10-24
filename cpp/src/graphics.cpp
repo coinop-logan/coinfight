@@ -905,7 +905,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, UI ui, optional<ui
 
             vector2fp healthBarPos = unit->getPos() - vector2fp(fixed32(0), unit->getRadius() + 8);
 
-            float healthBarLength = 2 + unit->getMaxHealth() / HEALTH_BAR_HP_PER_PIXEL;
+            float healthBarLength = static_cast<float>(unit->getRadius()) * 2;
 
             sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
             healthBar.setOrigin(healthBar.getLocalBounds().width / 2, healthBar.getLocalBounds().height / 2);
