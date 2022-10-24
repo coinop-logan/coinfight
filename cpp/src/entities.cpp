@@ -1086,11 +1086,11 @@ coinsInt Gateway::getCost() const { return GATEWAY_COST; }
 uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
 
 bool Gateway::isIdle() {
-    return state == Idle;
+    return state == Idle_Stopped || state == Idle_WantsToSpend || state == Idle_WantsToCapture;
 }
 void Gateway::cmdStop()
 {
-    state = Idle;
+    state = Idle_Stopped;
     maybeTargetEntity = {};
 }
 
@@ -1200,7 +1200,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                     if ((this->getPos() - goldpile->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                     {
                         // too far away!
-                        state = Idle;
+                        state = Idle_WantsToCapture;
                         maybeTargetEntity = {};
                     }
                     else
@@ -1222,7 +1222,7 @@ fixed32 Gateway::buildQueueWeight()
 {
     if (!isActive())
         return fixed32(10);
-    else if (state == Idle)
+    else if (isIdle())
         return fixed32(0);
     else
         return fixed32(1);
@@ -1230,7 +1230,7 @@ fixed32 Gateway::buildQueueWeight()
 
 Gateway::Gateway(uint8_t ownerId, vector2fp pos)
     : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      state(Idle), inGameTransferState_view(NoGoldTransfer)
+      state(Idle_Stopped), inGameTransferState_view(NoGoldTransfer)
 {}
 void Gateway::pack(Netpack::Builder* to)
 {
@@ -1255,7 +1255,12 @@ void Gateway::iterate()
     inGameTransferState_view = NoGoldTransfer; // will possibly be updated in the following switch
     switch (state)
     {
-        case Idle:
+        case Idle_Stopped:
+        {
+            // nothing to do here for the moment. If the GW has been stopped by the player, be safe and do nothing.
+        }
+        break;
+        case Idle_WantsToSpend:
         {
             auto nearbyEntities = game->entitiesWithinCircle(this->getPos(), GATEWAY_RANGE);
 
@@ -1278,6 +1283,11 @@ void Gateway::iterate()
                     }
                 }
             }
+        }
+        break;
+        case Idle_WantsToCapture:
+        {
+            auto nearbyEntities = game->entitiesWithinCircle(this->getPos(), GATEWAY_RANGE);
 
             // search for gold piles near enough to capture
             for (unsigned int i=0; i<nearbyEntities.size(); i++)
@@ -1298,13 +1308,13 @@ void Gateway::iterate()
                 // stop if it's out of range
                 if ((depositingToEntityPtr->getPos() - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
                 {
-                    state = Idle;
+                    state = Idle_WantsToSpend;
                     maybeTargetEntity = {};
                 }
                 // stop if out of money
                 else if (game->players[this->ownerId].credit.getInt() == 0)
                 {
-                    state = Idle;
+                    state = Idle_WantsToSpend;
                     maybeTargetEntity = {};
                 }
                 else
@@ -1337,12 +1347,12 @@ void Gateway::iterate()
                         coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GATEWAY_BUILD_RATE, maybeCoinsToDepositTo);
                         if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
                         {
-                            state = Idle;
+                            state = Idle_WantsToSpend;
                             maybeTargetEntity = {};
                         }
                         if (amountDeposited == 0)
                         {
-                            state = Idle;
+                            state = Idle_WantsToSpend;
                             maybeTargetEntity = {};
                         }
                         if (amountDeposited > 0)
@@ -1365,14 +1375,14 @@ void Gateway::iterate()
                         if ((!(mobileUnit->getMaybeMoveTarget())) || *(mobileUnit->getMaybeMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
                         {
                             // unit is no longer on its way; revert to Idle state
-                            state = Idle;
+                            state = Idle_WantsToCapture;
                             maybeTargetEntity = {};
                         }
                     }
                     else
                     {
                         cout << "somehow a non-mobile unit ended up out of range for a scuttle cmd..." << endl;
-                        state = Idle;
+                        state = Idle_WantsToCapture;
                         maybeTargetEntity = {};
                     }
                 }
@@ -1394,14 +1404,14 @@ void Gateway::iterate()
                     }
                     else
                     {
-                        state = Idle;
+                        state = Idle_WantsToCapture;
                         maybeTargetEntity = {};
                     }
                 }
             }
             else
             {
-                state = Idle;
+                state = Idle_WantsToCapture;
             }
         }
         break;
