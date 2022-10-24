@@ -463,6 +463,22 @@ bool Entity::collidesWithPoint(vector2fp point)
 {
     return (pos - point).getRoughMagnitude() <= ENTITY_COLLIDE_RADIUS;
 }
+bool Entity::isWithinRangeOfGatewayOwnedBy(uint8_t targetOwnerId) {
+    Game *game = getGameOrThrow();
+
+    auto entities = game->entitiesWithinCircle(getPos(), GATEWAY_RANGE);
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entities[i]))
+        {
+            if (gateway->ownerId == targetOwnerId)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 void Entity::iterate()
 {
@@ -1226,24 +1242,38 @@ void Gateway::iterate()
     {
         case Idle:
         {
-            // search for units near enough to complete
-            vector<EntityRef> nearbyEntityRefs = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(this->getPos(), GATEWAY_RANGE);
+            auto nearbyEntities = game->entitiesWithinCircle(this->getPos(), GATEWAY_RANGE);
 
-            for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
+            // if there's gold in the bank,
+            if (game->players[this->ownerId].credit.getInt() > 0)
             {
-                boost::shared_ptr<Entity> entity = maybeEntityRefToPtrOrNull(*game, {nearbyEntityRefs[i]});
-
-                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                // search for units near enough to complete
+                for (unsigned int i=0; i<nearbyEntities.size(); i++)
                 {
-                    if (unit->ownerId == this->ownerId)
-                        if (unit->getBuiltRatio() < fixed32(1))
-                            if ((unit->getPos() - this->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
-                                {
-                                    state = DepositTo;
-                                    maybeTargetEntity = {unit->getRefOrThrow()};
-                                }
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(nearbyEntities[i]))
+                    {
+                        if (unit->ownerId == this->ownerId)
+                            if (unit->getBuiltRatio() < fixed32(1))
+                                if ((unit->getPos() - this->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
+                                    {
+                                        state = DepositTo;
+                                        maybeTargetEntity = {unit->getRefOrThrow()};
+                                        break;
+                                    }
+                    }
                 }
             }
+
+            // search for gold piles near enough to capture
+            for (unsigned int i=0; i<nearbyEntities.size(); i++)
+            {
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(nearbyEntities[i]))
+                {
+                    state = Scuttle;
+                    maybeTargetEntity = {goldpile->getRefOrThrow()};
+                }
+            }
+            
         }
         break;
         case DepositTo:
@@ -1252,6 +1282,12 @@ void Gateway::iterate()
             {
                 // stop if it's out of range
                 if ((depositingToEntityPtr->getPos() - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
+                {
+                    state = Idle;
+                    maybeTargetEntity = {};
+                }
+                // stop if out of money
+                else if (game->players[this->ownerId].credit.getInt() == 0)
                 {
                     state = Idle;
                     maybeTargetEntity = {};
@@ -1347,6 +1383,10 @@ void Gateway::iterate()
                         maybeTargetEntity = {};
                     }
                 }
+            }
+            else
+            {
+                state = Idle;
             }
         }
         break;
@@ -1486,8 +1526,8 @@ void Prime::iterate()
                 
                 // our job here is to switch these states when necessary...
 
-                // firstly, if heldGold is maxed, return gold to nearest gateway
-                if (getHeldGoldRatio() == fixed32(1))
+                // firstly, if heldGold is maxed and we're not already on a return trip, return gold to nearest gateway
+                if (getHeldGoldRatio() == fixed32(1) && state != PutdownGold)
                 {
                     setStateToReturnGoldOrResetBehavior();
                 }
@@ -1508,6 +1548,10 @@ void Prime::iterate()
                         {
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
                             {
+                                // First, ignore any goldPile already within range of a Gateway
+                                if (goldPile->isWithinRangeOfGatewayOwnedBy(this->ownerId))
+                                    continue;
+                                
                                 uint16_t distanceFloorSquared = (this->getPos() - goldPile->getPos()).getFloorMagnitudeSquared();
                                 if (!bestTarget || distanceFloorSquared < bestTargetDistanceFloorSquared)
                                 {
@@ -1585,19 +1629,16 @@ void Prime::iterate()
                             setMoveTarget(*gatherTargetPos, fixed32(0));
                             break;
                         }
-                        // as long as Gateawy (in moveTarget) is still valid, just continue til heldGold == 0
-                        bool stillMovingTowardGateway = false; // until proven otherwise
+                        // as long as dropoff point (in moveTarget) is still valid, just continue til heldGold == 0
+                        bool stillMovingTowardDropoff = false; // until proven otherwise
                         if (auto moveTarget = getMaybeMoveTarget())
                         {
-                            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(moveTarget->castToEntityPtr(*game)))
-                            {
-                                stillMovingTowardGateway = true;
-                            }
+                            stillMovingTowardDropoff = true;
                         }
 
-                        if (!stillMovingTowardGateway)
+                        if (!stillMovingTowardDropoff)
                         {
-                            // find another gateway
+                            // find another dropoff point
                             setStateToReturnGoldOrResetBehavior();
                         }
                     }
@@ -1638,11 +1679,6 @@ void Prime::iterate()
                     {
                         coinsToPullFrom = &goldpile->gold;
                     }
-                    // else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(e))
-                    // {
-                    //     if (gateway->ownerId == this->ownerId)
-                    //         coinsToPullFrom = &game->players[gateway->ownerId].credit;
-                    // }
                     if (coinsToPullFrom)
                     {
                         coinsInt pickedUp = (*coinsToPullFrom)->transferUpTo(PRIME_PICKUP_RATE, &(this->heldGold));
@@ -1659,6 +1695,31 @@ void Prime::iterate()
         if (auto target = getMaybeMoveTarget())
         if (optional<vector2fp> point = target->getPointUnlessTargetDeleted(*game))
         {
+            // special case if target is an active Gateway
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target->castToEntityPtr(*game)))
+            {
+                if (gateway->isActive() && (gateway->getPos() - this->getPos()).getRoughMagnitude() <= PRIME_TRANSFER_RANGE + GATEWAY_RANGE)
+                {
+                    auto entitiesNearGateway = game->entitiesWithinCircle(gateway->getPos(), GATEWAY_RANGE);
+                    bool goldPileFound = false;
+                    for (unsigned int i=0; i<entitiesNearGateway.size(); i++)
+                    {
+                        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesNearGateway[i]))
+                        {
+                            setMoveTarget(goldpile->getRefOrThrow(), PRIME_TRANSFER_RANGE);
+                            goldPileFound = true;
+                        }
+                    }
+
+                    if (!goldPileFound)
+                    {
+                        // create gold pile at (almost) max gateway range toward self
+                        vector2fp gwToPrime = (this->getPos() - gateway->getPos());
+                        vector2fp gwToNewGoldpile = gwToPrime.normalized() * GATEWAY_RANGE * fixed32(0.99);
+                        setMoveTarget(gateway->getPos() + gwToNewGoldpile, PRIME_TRANSFER_RANGE);
+                    }
+                }
+            }
             if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
             {
                 optional<Coins*> coinsToPushTo;
@@ -1677,13 +1738,6 @@ void Prime::iterate()
                             coinsToPushTo = &unit->goldInvested;
                             stopOnTransferZero = true;
                         }
-                        // else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
-                        // {
-                        //     if (gateway->ownerId == this->ownerId)
-                        //     {
-                        //         coinsToPushTo = &game->players[gateway->ownerId].credit;
-                        //     }
-                        // }
                         else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                         {
                             coinsToPushTo = &prime->heldGold;
@@ -1794,18 +1848,18 @@ void Prime::iterate()
     iterateMobileUnitBasics();
 }
 
+// find nearest gateway and deposit to any goldpile it has (creating one if needed)
 void Prime::setStateToReturnGoldOrResetBehavior()
 {
     Game *game = this->getGameOrThrow();
 
-    // find nearest gateway and bring gold to it
     boost::shared_ptr<Gateway> bestChoice;
     uint32_t bestChoiceDistanceFloorSquared;
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
         if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
         {
-            if (getAllianceType(this->ownerId, gateway) == Owned)
+            if (gateway->isActive() && getAllianceType(this->ownerId, gateway) == Owned)
             {
                 uint32_t distanceFloorSquared = (this->getPos() - gateway->getPos()).getFloorMagnitudeSquared();
                 if (!bestChoice || distanceFloorSquared < bestChoiceDistanceFloorSquared)
@@ -1819,8 +1873,21 @@ void Prime::setStateToReturnGoldOrResetBehavior()
 
     if (bestChoice)
     {
+        // search Gateway radius for existing GoldPile
+        auto entitiesNearGateway = game->entitiesWithinCircle(bestChoice->getPos(), GATEWAY_RANGE);
+        for (unsigned int i=0; i<entitiesNearGateway.size(); i++)
+        {
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesNearGateway[i]))
+            {
+                state = PutdownGold;
+                setMoveTarget(goldpile->getRefOrThrow(), PRIME_TRANSFER_RANGE);
+                return;
+            }
+        }
+
+        // if we didn't find one, set target to Gateway; Prime will search again when it gets close.
         state = PutdownGold;
-        setMoveTarget(bestChoice->getRefOrThrow(), PRIME_TRANSFER_RANGE);
+        setMoveTarget(bestChoice->getRefOrThrow(), GATEWAY_RANGE);
     }
     else
     {
