@@ -41,6 +41,30 @@ bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 
 
 
+sf::Keyboard::Key StopInterfaceCmd::getKey()
+{
+    return sf::Keyboard::S;
+}
+vector<boost::shared_ptr<Cmd>> StopInterfaceCmd::execute(UI *ui)
+{
+    if (ui->selectedUnits.size() > 0)
+    {
+        
+        return {boost::shared_ptr<StopCmd>(new StopCmd(entityPtrsToRefsOrThrow(ui->selectedUnits)))};
+    }
+    else
+    {
+        return noCmds;
+    }
+}
+bool StopInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
+}
+
+
+
+
 sf::Keyboard::Key DepositInterfaceCmd::getKey()
 {
     return sf::Keyboard::D;

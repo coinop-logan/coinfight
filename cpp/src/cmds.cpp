@@ -33,6 +33,8 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new ScuttleCmd(from));
     case CMD_GIFT_CHAR:
         return boost::shared_ptr<Cmd>(new GiftCmd(from));
+    case CMD_STOP_CHAR:
+        return boost::shared_ptr<Cmd>(new StopCmd(from));
     }
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
@@ -195,6 +197,29 @@ vector<boost::shared_ptr<Unit>> UnitCmd::getUnits(Game *game)
     }
     return units;
 }
+
+uint8_t StopCmd::getTypechar()
+{
+    return CMD_STOP_CHAR;
+}
+string StopCmd::getTypename()
+{
+    return "StopCmd";
+}
+
+void StopCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    unit->cmdStop();
+}
+
+StopCmd::StopCmd(vector<EntityRef> units)
+    : UnitCmd(units) {}
+void StopCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+}
+StopCmd::StopCmd(Netpack::Consumer* from)
+    : UnitCmd(from) {}
 
 uint8_t MoveCmd::getTypechar()
 {

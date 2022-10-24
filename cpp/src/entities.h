@@ -127,6 +127,8 @@ public:
     uint16_t getEffectiveHealth();
     uint16_t getHealthAssumingBuilt();
 
+    virtual void cmdStop();
+
 protected:
     Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos);
     void packEntityAndUnitBasics(Netpack::Builder* to);
@@ -180,6 +182,7 @@ public:
     bool mobileUnitIsIdle();
 
     void cmdMove(vector2fp target);
+    void mobileUnitStop();
 
 protected:
     MobileUnit(); // this will throw if called. Needed for virtual inheritance later but should never be called.
@@ -212,6 +215,7 @@ public:
     vector2fp lastShotTargetPos_view;
 
     bool combatUnitIsIdle();
+    void combatUnitStop();
 
     virtual uint32_t getShotRangeFloorsquared() const;
     virtual uint16_t getShotCooldown() const;
@@ -239,7 +243,7 @@ enum GoldTransferState {
     Pulling
 };
 
-const coinsInt BEACON_BUILD_RATE = 4;
+const coinsInt BEACON_BUILD_RATE = 20;
 // const uint16_t BEACON_HEALTH = 100;
 const fixed32 BEACON_RADIUS(10);
 
@@ -263,6 +267,7 @@ public:
     uint16_t getMaxHealth() const;
 
     bool isIdle() { return false; }
+    void cmdStop();
 
     void iterate();
 };
@@ -298,6 +303,7 @@ public:
     fixed32 buildQueueWeight();
 
     bool isIdle();
+    void cmdStop();
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
@@ -364,6 +370,7 @@ public:
     fixed32 getHeldGoldRatio();
 
     bool isIdle();
+    void cmdStop();
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
@@ -397,6 +404,7 @@ public:
     Fighter(Netpack::Consumer* from);
     
     bool isIdle();
+    void cmdStop();
 
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;
@@ -429,6 +437,7 @@ public:
     Turret(Netpack::Consumer* from);
 
     bool isIdle();
+    void cmdStop();
 
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;

@@ -21,6 +21,7 @@ const uint8_t CMD_RESUMEBUILDING_CHAR = 8;
 const uint8_t CMD_SPAWNBEACON_CHAR = 9;
 const uint8_t CMD_SCUTTLE_CHAR = 10;
 const uint8_t CMD_GIFT_CHAR = 11;
+const uint8_t CMD_STOP_CHAR = 12;
 
 struct Cmd
 {
@@ -81,6 +82,18 @@ struct UnitCmd : public Cmd
 
     UnitCmd(vector<EntityRef> entityRefs);
     UnitCmd(Netpack::Consumer* from);
+};
+
+struct StopCmd : public UnitCmd
+{
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    StopCmd(vector<EntityRef> unitRefs);
+    StopCmd(Netpack::Consumer* from);
 };
 
 struct MoveCmd : public UnitCmd

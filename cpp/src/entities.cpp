@@ -610,6 +610,10 @@ uint16_t Unit::getMaxHealth() const
 {
     throw runtime_error("getMaxHeatlh() has not been defined for " + getTypename() + ".\n");
 }
+void Unit::cmdStop()
+{
+    throw runtime_error("cmdStop() has not been defined for " + getTypename() + ".\n");
+}
 
 Unit::Unit() : Entity() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
@@ -853,6 +857,10 @@ void MobileUnit::clearMoveTarget()
 {
     maybeTargetInfo = {};
 }
+void MobileUnit::mobileUnitStop()
+{
+    clearMoveTarget();
+}
 bool MobileUnit::mobileUnitIsIdle()
 {
     if (auto targetInfo = maybeTargetInfo)
@@ -1045,6 +1053,8 @@ void Beacon::iterate()
     }
 }
 
+void Beacon::cmdStop() {}
+
 
 
 // ------------------------------------------------------------------------------
@@ -1077,6 +1087,11 @@ uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
 
 bool Gateway::isIdle() {
     return state == Idle;
+}
+void Gateway::cmdStop()
+{
+    state = Idle;
+    maybeTargetEntity = {};
 }
 
 void Gateway::cmdBuildUnit(uint8_t unitTypechar)
@@ -1504,6 +1519,13 @@ string Prime::getTypename() const { return "Prime"; }
 bool Prime::isIdle()
 {
     return (mobileUnitIsIdle() && (behavior == Basic && state == NotTransferring));
+}
+void Prime::cmdStop()
+{
+    mobileUnitStop();
+    behavior = Basic;
+    maybeGatherTargetPos = {};
+    state = NotTransferring;
 }
 
 void Prime::iterate()
@@ -2245,6 +2267,13 @@ void CombatUnit::iterateCombatUnitBasics()
     }
 }
 
+void CombatUnit::combatUnitStop()
+{
+    state = NotAttacking;
+    maybeAttackObjective = {};
+    maybeAttackTarget = {};
+}
+
 
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
@@ -2309,6 +2338,12 @@ bool Fighter::isIdle()
 {
     return (mobileUnitIsIdle() && combatUnitIsIdle());
 }
+void Fighter::cmdStop()
+{
+    mobileUnitStop();
+    combatUnitStop();
+}
+
 
 
 // ------------------------------------------------------------------------------
@@ -2368,6 +2403,10 @@ string Turret::getTypename() const { return "Fighter"; }
 bool Turret::isIdle()
 {
     return (combatUnitIsIdle());
+}
+void Turret::cmdStop()
+{
+    combatUnitStop();
 }
 
 
