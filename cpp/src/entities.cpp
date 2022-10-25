@@ -1746,6 +1746,8 @@ void Prime::iterate()
                     if (!goldPileFound)
                     {
                         // create gold pile at (almost) max gateway range toward self
+                        // note that this will happen even if Prime is inside Gateway range, putting the new gold pile farther from the GW..
+                        // a bit weird, but anything more elegant-looking is too complicated to implement atm
                         vector2fp gwToPrime = (this->getPos() - gateway->getPos());
                         vector2fp gwToNewGoldpile = gwToPrime.normalized() * GATEWAY_RANGE * fixed32(0.99);
                         setMoveTarget(gateway->getPos() + gwToNewGoldpile, PRIME_TRANSFER_RANGE);
