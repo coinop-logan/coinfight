@@ -271,6 +271,10 @@ vector2i::vector2i(const vector2i &c)
 	x = c.x;
 	y = c.y;
 }
+vector2i composeVector2i(float angle, int magnitude)
+{
+    return vector2i(magnitude * cos(angle), magnitude * sin(angle));
+}
 vector2i vector2i::operator=(const vector2i &c)
 {
 	x = c.x;

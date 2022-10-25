@@ -98,6 +98,7 @@ struct vector2i
     vector2fl normalized() const;
     vector2fl rotated(float angle) const;
 };
+vector2i composeVector2i(float angle, int magnitude);
 
 struct vector3f
 {

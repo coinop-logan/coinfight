@@ -332,6 +332,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                     vector2i moveVector = mouseMoveToVec(event.mouseMove) - ui->lastMousePos;
                     moveVector.y *= -1;
                     ui->camera.gamePos -= moveVector;
+                    if (ui->camera.gamePos.getMagnitude() > 4500)
+                    {
+                        ui->camera.gamePos = composeVector2i(ui->camera.gamePos.getAngle(), 4500);
+                    }
                 }
                 Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
                 ui->mouseoverEntity = target.castToEntityPtr(*game);
