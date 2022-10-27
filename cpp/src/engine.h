@@ -95,6 +95,7 @@ public:
 
     vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2fp centerPos, fixed32 radius);
     vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2fp centerPos, fixed32 halfWidth);
+    vector<boost::shared_ptr<Entity>> entitiesWithinRect(vector2fp corner1, vector2fp corner2);
     vector<boost::shared_ptr<Unit>> unitsCollidingWithCircle(vector2fp centerPos, fixed32 radius);
 
     void pack(Netpack::Builder*);

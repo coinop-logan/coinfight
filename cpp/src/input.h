@@ -48,6 +48,7 @@ struct UI
     int debugInt;
     bool cleanDrawEnabled;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
+    void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     void startEscapeToQuit();
     void cancelEscapeToQuit();

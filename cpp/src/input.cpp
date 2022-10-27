@@ -10,6 +10,10 @@ bool isShiftPressed()
 {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
 }
+bool isCtrlPressed()
+{
+    return sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
+}
 
 UI::UI()
     : spawnBeaconInterfaceCmdWithState(boost::shared_ptr<InterfaceCmd>(new SpawnBeaconInterfaceCmd))
@@ -68,6 +72,41 @@ void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
             }
         }
     }
+}
+
+void UI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
+{
+    vector2i halfScreenDimensions = screenDimensions / 2;
+    vector2fp corner1 = targetUnit->getPos() - vector2fp(halfScreenDimensions);
+    vector2fp corner2 = targetUnit->getPos() + vector2fp(halfScreenDimensions);
+
+    auto visibleEntities = game->entitiesWithinRect(corner1, corner2);
+    auto visibleUnits = filterForType<Unit, Entity>(visibleEntities);
+
+    vector<boost::shared_ptr<Unit>> ownedVisibleUnitsOfType;
+    // filter for units that have same owner and same type
+    copy_if(visibleUnits.begin(), visibleUnits.end(),
+        back_inserter(ownedVisibleUnitsOfType),
+        [targetUnit](boost::shared_ptr<Unit> unit)
+            {
+                return unit->ownerId == targetUnit->ownerId && unit->typechar() == targetUnit->typechar();
+            }
+    );
+
+    // we want to avoid duplicate entries - we must then copy the original, sort both lists, and merge.
+    // copy the selection
+    auto selectedUnitsCopy = this->selectedUnits;
+
+    // clear and reserve space for this->selectedUnits
+    this->selectedUnits.clear();
+    this->selectedUnits.reserve(selectedUnitsCopy.size() + visibleUnits.size());
+
+    // sort both collections
+    sort(selectedUnitsCopy.begin(), selectedUnitsCopy.end());
+    sort(ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end());
+
+    // merge via set_union
+    set_union(selectedUnitsCopy.begin(), selectedUnitsCopy.end(), ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end(), back_inserter(this->selectedUnits));
 }
 
 void UI::startEscapeToQuit()
@@ -364,7 +403,15 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                         {
                                             ui->selectedUnits.clear();
                                         }
-                                        ui->selectedUnits.push_back(clickedUnit);
+
+                                        if (isCtrlPressed())
+                                        {
+                                            ui->selectAllUnitsOfSimilarTypeOnScreen(game, clickedUnit);
+                                        }
+                                        else
+                                        {
+                                            ui->selectedUnits.push_back(clickedUnit);
+                                        }
                                     }
                                 }
                             }
@@ -388,9 +435,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             {
                                 ui->selectedUnits.clear();
                             }
-                            for (unsigned int i=0; i<game->entities.size(); i++)
+
+                            auto entitiesInSelectionBox = game->entitiesWithinRect(get<0>(corners), get<1>(corners));
+                            for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
                             {
-                                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSelectionBox[i]))
                                 {
                                     if (unit->ownerId == *playerId)
                                     {

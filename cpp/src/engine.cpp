@@ -293,7 +293,7 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, 
     vector<boost::shared_ptr<Entity>> entitiesToReturn;
     for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
     {
-        if (auto entity = this->entities[nearbyEntityRefs[i]])
+        if (auto entity = this->entities[nearbyEntityRefs[i]]) // checks for non-empty pointer
         {
             if ((fromPos - entity->getPos()).getFloorMagnitudeSquared() <= radiusFloorSquared)
             {
@@ -311,10 +311,37 @@ vector<boost::shared_ptr<Entity>> Game::entitiesWithinSquare(vector2fp centerPos
     vector<boost::shared_ptr<Entity>> entitiesToReturn;
     for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
     {
-        if (auto entity = this->entities[nearbyEntityRefs[i]])
+        if (auto entity = this->entities[nearbyEntityRefs[i]]) // checks for non-empty pointer
         {
             vector2fp entityPos = entity->getPos();
             if (abs(centerPos.x - entityPos.x) <= halfWidth && abs(centerPos.y - entityPos.y) <= halfWidth)
+            {
+                entitiesToReturn.push_back(entity);
+            }
+        }
+    }
+
+    return entitiesToReturn;
+}
+vector<boost::shared_ptr<Entity>> Game::entitiesWithinRect(vector2fp corner1, vector2fp corner2)
+{
+    fixed32 minX = min(corner1.x, corner2.x);
+    fixed32 maxX = max(corner1.x, corner2.x);
+    fixed32 minY = min(corner1.y, corner2.y);
+    fixed32 maxY = max(corner1.y, corner2.y);
+
+    vector2fp centerPos = (corner1 + corner2) / 2;
+    fixed32 halfWidth = max(maxX - minX, maxY - minY);
+
+    auto nearbyEntityRefs = searchGrid.nearbyEntitiesSloppyIncludingEmpty(centerPos, halfWidth);
+
+    vector<boost::shared_ptr<Entity>> entitiesToReturn;
+    for (unsigned int i=0; i<nearbyEntityRefs.size(); i++)
+    {
+        if (auto entity = this->entities[nearbyEntityRefs[i]]) // checks for non-empty pointer
+        {
+            vector2fp entityPos = entity->getPos();
+            if (entityPos.x >= minX && entityPos.x <= maxX && entityPos.y >= minY && entityPos.y <= maxY)
             {
                 entitiesToReturn.push_back(entity);
             }
