@@ -385,6 +385,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
         case sf::Event::MouseButtonReleased:
             if (event.mouseButton.button == sf::Mouse::Left)
             {
+                sf::Time sinceLastLClick = ui->lClickClock.getElapsedTime();
+                ui->lClickClock.restart();
+                bool isDoubleClick = (sinceLastLClick < sf::milliseconds(300));
+
                 if (auto playerId = maybePlayerId)
                 {
                     if (ui->maybeSelectionBoxStart)
@@ -404,7 +408,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                             ui->selectedUnits.clear();
                                         }
 
-                                        if (isCtrlPressed())
+                                        if (isCtrlPressed() || isDoubleClick)
                                         {
                                             ui->selectAllUnitsOfSimilarTypeOnScreen(game, clickedUnit);
                                         }

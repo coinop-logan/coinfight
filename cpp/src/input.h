@@ -25,6 +25,7 @@ struct InterfaceCmdWithState
 struct UI
 {
     UI();
+    sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;
     enum CmdState {
