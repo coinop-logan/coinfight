@@ -1127,39 +1127,45 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                     {
-                        if (prime->goldTransferState_view == Pulling)
+                        if (prime->isActive())
                         {
-                            if (auto primeTarget = prime->getMaybeMoveTarget())
+                            if (prime->goldTransferState_view == Pulling)
                             {
-                                if (optional<vector2fp> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
+                                if (auto primeTarget = prime->getMaybeMoveTarget())
                                 {
-                                    vector2fl targetPos(*maybeTargetPos);
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                                    if (optional<vector2fp> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
+                                    {
+                                        vector2fl targetPos(*maybeTargetPos);
+                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                                    }
                                 }
                             }
-                        }
-                        else if (prime->goldTransferState_view == Pushing)
-                        {
-                            if (auto primeTarget = prime->getMaybeMoveTarget())
+                            else if (prime->goldTransferState_view == Pushing)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
+                                if (auto primeTarget = prime->getMaybeMoveTarget())
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
+                                }
                             }
                         }
                     }
                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                     {
-                        if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
+                        if (gateway->isActive())
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                            if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                                }
                             }
-                        }
-                        if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
-                        {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
+                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
+                                }
                             }
                         }
                     }
