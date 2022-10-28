@@ -12,6 +12,9 @@ using namespace std;
 const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,255);
 const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
+const sf::Color BUILD_QUEUE_LINE_COLOR = sf::Color(100, 100, 255, 100);
+const sf::Color SCUTTLE_QUEUE_LINE_COLOR = sf::Color(255, 0, 0, 100);
+
 const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
 const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
@@ -1194,28 +1197,61 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (gateway->isActive())
                     {
-                        if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
+                        // draw queue lines
+                        sf::VertexArray lines(sf::Lines, gateway->buildTargetQueue.size() * 2 + gateway->scuttleTargetQueue.size() * 2);
+                        for (unsigned int i = 0; i<gateway->buildTargetQueue.size(); i++)
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                            if (auto entity = game->entities[gateway->buildTargetQueue[i]])
                             {
-                                if (game->frame % 3 == 0)
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
-                                }
-                                drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
+                                lines[i*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
+                                lines[i*2].color = BUILD_QUEUE_LINE_COLOR;
+                                lines[i*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
+                                lines[i*2 + 1].color = BUILD_QUEUE_LINE_COLOR;
                             }
                         }
-                        if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
+                        int offset = gateway->buildTargetQueue.size() * 2;
+                        for (unsigned int i = 0; i<gateway->scuttleTargetQueue.size(); i++)
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            if (auto entity = game->entities[gateway->scuttleTargetQueue[i]])
                             {
-                                if (game->frame % 3 == 0)
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
-                                }
-                                drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
+                                lines[offset + i*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
+                                lines[offset + i*2].color = SCUTTLE_QUEUE_LINE_COLOR;
+                                lines[offset + i*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
+                                lines[offset + i*2 + 1].color = SCUTTLE_QUEUE_LINE_COLOR;
+
                             }
                         }
+                        window->draw(lines);
+
+                        // draw active energy lines
+                        if (gateway->buildTargetQueue.size() > 0)
+                        {
+                            if(gateway->building_view)
+                            {
+                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                                {
+                                    if (game->frame % 3 == 0)
+                                    {
+                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                                    }
+                                    drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
+                                }
+                            }
+                        }
+                        if (gateway->scuttleTargetQueue.size() > 0)
+                        {
+                            if (gateway->scuttling_view)
+                            {
+                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                                {
+                                    if (game->frame % 3 == 0)
+                                    {
+                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
+                                    }
+                                    drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
+                                }
+                            }
+                        }  
                     }
                 }
                 
