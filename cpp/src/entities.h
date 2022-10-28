@@ -283,15 +283,11 @@ const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 class Gateway : public Building
 {
 public:
-    enum State {
-        Idle,
-        DepositTo,
-        Scuttle
-    } state;
+    vector<EntityRef> buildTargetQueue;
+    bool building_view;
+    vector<EntityRef> scuttleTargetQueue;
+    bool scuttling_view;
 
-    optional<EntityRef> maybeTargetEntity;
-
-    GoldTransferState inGameTransferState_view;
     void pack(Netpack::Builder* to);
 
     Gateway(uint8_t ownerId, vector2fp pos);

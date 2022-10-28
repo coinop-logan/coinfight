@@ -1148,25 +1148,18 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     }
                     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
                     {
-                        if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->maybeTargetEntity))
+                        if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
                         {
-                            switch (gateway->inGameTransferState_view)
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
                             {
-                                case NoGoldTransfer:
-                                {
-                                    // no particles needed
-                                }
-                                break;
-                                case Pushing:
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
-                                }
-                                break;
-                                case Pulling:
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
-                                }
-                                break;
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                            }
+                        }
+                        if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
+                        {
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
                             }
                         }
                     }
