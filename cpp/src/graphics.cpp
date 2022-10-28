@@ -16,6 +16,9 @@ const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
 const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 
+const float ENERGY_LINE_SEGMENT_LENGTH = 10;
+const float ENERGY_LINE_PERTURB_AMOUNT = 3;
+
 sf::Font mainFont;
 
 float radToDeg(float rad)
@@ -154,13 +157,43 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
                 lines[i*2+1].position = toSFVec(to);
                 lines[i*2].color = backgroundCirclesColor;
                 lines[i*2+1].color = backgroundSpokeEndColor;
-
-                sf::Transform transform;
             }
 
             window->draw(lines);
         }
     }
+}
+
+void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp fromGamePos, vector2fp toGamePos, sf::Color color)
+{
+    vector2fl from = gamePosToScreenPos(camera, fromGamePos);
+    vector2fl to = gamePosToScreenPos(camera, toGamePos);
+
+    vector2fl lineVec = (to - from);
+    float length = lineVec.getMagnitude();
+
+    // travel along length and draw segments with perturbed points
+
+    int numNonEndPoints = length / ENERGY_LINE_SEGMENT_LENGTH; // i.e. if length is 1 and ENERGY(..) is 1.2, this would be zero because the only points would be the end points.
+
+    sf::VertexArray lines(sf::LineStrip, numNonEndPoints + 2);
+
+    lines[0].position = toSFVec(from);
+    lines[0].color = color;
+    for (int i=0; i<numNonEndPoints; i++)
+    {
+        int vertexI = i + 1;
+        float relativeLinePosition = ((float)vertexI / (numNonEndPoints + 1));
+        vector2fl pointOnLine = from + (lineVec * relativeLinePosition);
+        vector2fl perturbed = pointOnLine + randomVectorWithMagnitude(ENERGY_LINE_PERTURB_AMOUNT);
+
+        lines[vertexI].position = toSFVec(perturbed);
+        lines[vertexI].color = color;
+    }
+    lines[numNonEndPoints + 1].position = toSFVec(to);
+    lines[numNonEndPoints + 1].color = color;
+
+    window->draw(lines);
 }
 
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
@@ -1122,54 +1155,70 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 vector2i drawPos = gamePosToScreenPos(ui.camera, vector2i(game->entities[i]->getPos()));
                 drawEntity(window, game->entities[i], drawPos);
 
-                // add some gold particles every now and then
-                if (game->frame % 3 == 0)
+                // add some effects for gold transfer and building/scuttling
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                 {
-                    if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
+                    if (prime->isActive())
                     {
-                        if (prime->isActive())
+                        if (prime->goldTransferState_view == Pulling)
                         {
-                            if (prime->goldTransferState_view == Pulling)
+                            if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
-                                if (auto primeTarget = prime->getMaybeMoveTarget())
+                                if (optional<vector2fp> targetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
-                                    if (optional<vector2fp> maybeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
+                                    if (game->frame % 3 == 0)
                                     {
-                                        vector2fl targetPos(*maybeTargetPos);
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(targetPos, Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(*targetPos), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
                                     }
-                                }
-                            }
-                            else if (prime->goldTransferState_view == Pushing)
-                            {
-                                if (auto primeTarget = prime->getMaybeMoveTarget())
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
+                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Red);
                                 }
                             }
                         }
-                    }
-                    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
-                    {
-                        if (gateway->isActive())
+                        else if (prime->goldTransferState_view == Pushing)
                         {
-                            if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
+                            if (auto primeTarget = prime->getMaybeMoveTarget())
                             {
-                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                                if (game->frame % 3 == 0)
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
                                 }
-                            }
-                            if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
-                            {
-                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                                if (auto primeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
+                                    drawEnergyLine(window, ui.camera, prime->getPos(), *primeTargetPos, sf::Color::Yellow);
                                 }
                             }
                         }
                     }
                 }
+                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
+                {
+                    if (gateway->isActive())
+                    {
+                        if (gateway->buildTargetQueue.size() > 0 && gateway->building_view)
+                        {
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                            {
+                                if (game->frame % 3 == 0)
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
+                                }
+                                drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
+                            }
+                        }
+                        if (gateway->scuttleTargetQueue.size() > 0 && gateway->scuttling_view)
+                        {
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            {
+                                if (game->frame % 3 == 0)
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
+                                }
+                                drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
+                            }
+                        }
+                    }
+                }
+                
 
                 // combatUnit shots
                 if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Entity>(game->entities[i]))
