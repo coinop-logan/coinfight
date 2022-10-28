@@ -1163,9 +1163,23 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (prime->isActive())
                     {
-                        if (prime->goldTransferState_view == Pulling)
+                        if (auto primeTarget = prime->getMaybeMoveTarget())
                         {
-                            if (auto primeTarget = prime->getMaybeMoveTarget())
+                            if (prime->goldTransferState_view == Pushing || prime->goldTransferState_view == BuildingSomething)
+                            {
+                                if (game->frame % 3 == 0)
+                                {
+                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
+                                }
+                            }
+                            if (prime->goldTransferState_view == BuildingSomething)
+                            {
+                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
+                                {
+                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Blue);
+                                }
+                            }
+                            if (prime->goldTransferState_view == Pulling || prime->goldTransferState_view == ScuttlingSomething)
                             {
                                 if (optional<vector2fp> targetPos = primeTarget->getPointUnlessTargetDeleted(*game))
                                 {
@@ -1173,21 +1187,13 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                                     {
                                         particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(*targetPos), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
                                     }
-                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Red);
                                 }
                             }
-                        }
-                        else if (prime->goldTransferState_view == Pushing)
-                        {
-                            if (auto primeTarget = prime->getMaybeMoveTarget())
+                            if (prime->goldTransferState_view == ScuttlingSomething)
                             {
-                                if (game->frame % 3 == 0)
+                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
                                 {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
-                                }
-                                if (auto primeTargetPos = primeTarget->getPointUnlessTargetDeleted(*game))
-                                {
-                                    drawEnergyLine(window, ui.camera, prime->getPos(), *primeTargetPos, sf::Color::Yellow);
+                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Red);
                                 }
                             }
                         }
@@ -1226,28 +1232,34 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         // draw active energy lines
                         if (gateway->buildTargetQueue.size() > 0)
                         {
-                            if(gateway->building_view)
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
                             {
-                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                                if (gateway->pushing_view)
                                 {
                                     if (game->frame % 3 == 0)
                                     {
                                         particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
                                     }
+                                }
+                                if(gateway->building_view)
+                                {
                                     drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
                                 }
                             }
                         }
                         if (gateway->scuttleTargetQueue.size() > 0)
                         {
-                            if (gateway->scuttling_view)
+                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
                             {
-                                if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                                if (gateway->pulling_view)
                                 {
                                     if (game->frame % 3 == 0)
                                     {
                                         particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
                                     }
+                                }
+                                if (gateway->scuttling_view)
+                                {
                                     drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
                                 }
                             }

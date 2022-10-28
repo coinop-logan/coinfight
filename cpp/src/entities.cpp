@@ -1284,7 +1284,7 @@ void Gateway::iterate()
 {
     Game *game = getGameOrThrow();
 
-    building_view = scuttling_view = false; // until proven otherwise
+    pushing_view = building_view = pulling_view = scuttling_view = false; // until proven otherwise
 
     // maybe there's something to scuttle
     if (scuttleTargetQueue.size() > 0)
@@ -1357,19 +1357,21 @@ void Gateway::iterate()
             if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
             {
                 // we have something to scuttle!
-                coinsInt amountScuttled(0);
+                coinsInt amountPulled(0);
                 if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
-                    amountScuttled = goldPile->gold.transferUpTo(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    amountPulled = goldPile->gold.transferUpTo(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    scuttling_view = true;
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    amountScuttled = unit->unbuild(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    amountPulled = unit->unbuild(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    scuttling_view = true;
                 }
 
-                if (amountScuttled > 0)
+                if (amountPulled > 0)
                 {
-                    scuttling_view = true;
+                    pulling_view = true;
                 }
                 else
                 {
@@ -1377,9 +1379,7 @@ void Gateway::iterate()
                     scuttleTargetQueue.erase(scuttleTargetQueue.begin());
                 }   
             }
-            
         }
-
     }
 
     // if we have money, maybe there's something to build?
@@ -1404,6 +1404,7 @@ void Gateway::iterate()
                         {
                             maybeCoinsToDepositTo = &unit->goldInvested;
                             maybeBuildingUnit = unit;
+                            building_view = true;
                         }
                         else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
                         {
@@ -1428,7 +1429,7 @@ void Gateway::iterate()
                         }
                         if (amountDeposited > 0)
                         {
-                            building_view = true;
+                            pushing_view = true;
                         }
                     }
                 }
@@ -1744,7 +1745,7 @@ void Prime::iterate()
                         if (pickedUp == 0)
                             state = NotTransferring;
                         else
-                            goldTransferState_view = Pulling;
+                            goldTransferState_view = ScuttlingSomething;
                     }
                 }
             }
@@ -1784,7 +1785,7 @@ void Prime::iterate()
             if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
             {
                 optional<Coins*> coinsToPushTo;
-                bool stopOnTransferZero = false;
+                bool buildingSomething = false;
                 if (auto entity = target->castToEntityPtr(*game))
                 {
                     if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -1797,7 +1798,7 @@ void Prime::iterate()
                         if (unit->getBuiltRatio() < fixed32(1))
                         {
                             coinsToPushTo = &unit->goldInvested;
-                            stopOnTransferZero = true;
+                            buildingSomething = true;
                         }
                         else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                         {
@@ -1838,13 +1839,13 @@ void Prime::iterate()
                 if (coinsToPushTo)
                 {
                     coinsInt amountPutDown = this->heldGold.transferUpTo(PRIME_PUTDOWN_RATE, (*coinsToPushTo));
-                    if (amountPutDown == 0 && stopOnTransferZero)
+                    if (amountPutDown == 0 && buildingSomething)
                     {
                         state = NotTransferring;
                     }
                     if (amountPutDown != 0)
                     {
-                        goldTransferState_view = Pushing;
+                        goldTransferState_view = buildingSomething ? BuildingSomething : Pushing;
                     }
                 }
                 else
@@ -1897,7 +1898,7 @@ void Prime::iterate()
                         coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
                         if (builtAmount > 0)
                         {
-                            goldTransferState_view = Pushing;
+                            goldTransferState_view = BuildingSomething;
                         }
                     }
                     else

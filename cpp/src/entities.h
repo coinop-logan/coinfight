@@ -240,7 +240,9 @@ protected:
 enum GoldTransferState {
     NoGoldTransfer,
     Pushing,
-    Pulling
+    Pulling,
+    BuildingSomething,
+    ScuttlingSomething
 };
 
 const coinsInt BEACON_BUILD_RATE = 20;
@@ -284,9 +286,8 @@ class Gateway : public Building
 {
 public:
     vector<EntityRef> buildTargetQueue;
-    bool building_view;
     vector<EntityRef> scuttleTargetQueue;
-    bool scuttling_view;
+    bool pushing_view, building_view, pulling_view, scuttling_view;
 
     void pack(Netpack::Builder* to);
 
