@@ -1755,12 +1755,10 @@ void Prime::iterate()
         if (optional<vector2fp> point = target->getPointUnlessTargetDeleted(*game))
         {
             // special case if target is an active Gateway
-            // boost::shared_ptr<Gateway> gatewayIfCreatingNewGoldPile; // later we'll use this to see if the goldpile should be added to GW's scuttle queue
             if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target->castToEntityPtr(*game)))
             {
                 if (gateway->isActive() && (gateway->getPos() - this->getPos()).getRoughMagnitude() <= PRIME_TRANSFER_RANGE + GATEWAY_RANGE)
                 {
-                    // auto entitiesNearGateway = game->entitiesWithinCircle(gateway->getPos(), GATEWAY_RANGE);
                     bool goldPileFound = false;
                     for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
                     {
@@ -1779,11 +1777,10 @@ void Prime::iterate()
                         vector2fp gwToPrime = (this->getPos() - gateway->getPos());
                         vector2fp gwToNewGoldpile = gwToPrime.normalized() * GATEWAY_RANGE * fixed32(0.99);
                         setMoveTarget(gateway->getPos() + gwToNewGoldpile, PRIME_TRANSFER_RANGE);
-
-                        // gatewayIfCreatingNewGoldPile = gateway;
                     }
                 }
             }
+            target = getMaybeMoveTarget();
             if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
             {
                 optional<Coins*> coinsToPushTo;
@@ -1949,11 +1946,10 @@ void Prime::setStateToReturnGoldOrResetBehavior()
 
     if (bestChoice)
     {
-        // search Gateway radius for existing GoldPile
-        auto entitiesNearGateway = game->entitiesWithinCircle(bestChoice->getPos(), GATEWAY_RANGE);
-        for (unsigned int i=0; i<entitiesNearGateway.size(); i++)
+        // search Gateway queue for existing goldpile
+        for (unsigned int i=0; i<bestChoice->scuttleTargetQueue.size(); i++)
         {
-            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesNearGateway[i]))
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[bestChoice->scuttleTargetQueue[i]]))
             {
                 state = PutdownGold;
                 setMoveTarget(goldpile->getRefOrThrow(), PRIME_TRANSFER_RANGE);
