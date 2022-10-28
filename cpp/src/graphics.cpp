@@ -946,33 +946,6 @@ void drawArrow(sf::RenderWindow* window, UI ui, vector2fp drawPos, bool pointing
     window->draw(arrowPoint);
 }
 
-void drawGatewayModes(sf::RenderWindow* window, Game* game, UI ui, optional<uint8_t> maybePlayerId)
-{
-    for (unsigned int i=0; i<game->entities.size(); i++)
-    {
-        if (!game->entities[i])
-            continue;
-        
-        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[i]))
-        {
-            if (getAllianceType(maybePlayerId, gateway) != Owned)
-                return;
-
-            vector2fp arrowPos = gateway->getPos() - vector2fp(gateway->getRadius() + 6, fixed32(-12));
-            
-            if (gateway->state == Gateway::Idle_WantsToSpend || gateway->state == Gateway::DepositTo)
-            {
-                drawArrow(window, ui, arrowPos, false, sf::Color(50, 50, 255));
-            }
-            else if (gateway->state == Gateway::Idle_WantsToCapture || gateway->state == Gateway::Scuttle)
-            {
-                drawArrow(window, ui, arrowPos, true, sf::Color(50, 50, 255));
-            }
-            // if in state Idle_Stopped, won't draw anything
-        }
-    }
-}
-
 const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
@@ -1250,7 +1223,6 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         {
             drawUnitDroppableValues(window, game, ui, maybePlayerId);
             drawUnitHealthBars(window, game, ui, maybePlayerId);
-            drawGatewayModes(window, game, ui, maybePlayerId);
         }
 
         if (maybePlayerId)

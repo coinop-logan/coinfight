@@ -284,9 +284,7 @@ class Gateway : public Building
 {
 public:
     enum State {
-        Idle_Stopped,
-        Idle_WantsToSpend,
-        Idle_WantsToCapture,
+        Idle,
         DepositTo,
         Scuttle
     } state;
