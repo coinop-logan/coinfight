@@ -1755,15 +1755,16 @@ void Prime::iterate()
         if (optional<vector2fp> point = target->getPointUnlessTargetDeleted(*game))
         {
             // special case if target is an active Gateway
+            // boost::shared_ptr<Gateway> gatewayIfCreatingNewGoldPile; // later we'll use this to see if the goldpile should be added to GW's scuttle queue
             if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target->castToEntityPtr(*game)))
             {
                 if (gateway->isActive() && (gateway->getPos() - this->getPos()).getRoughMagnitude() <= PRIME_TRANSFER_RANGE + GATEWAY_RANGE)
                 {
-                    auto entitiesNearGateway = game->entitiesWithinCircle(gateway->getPos(), GATEWAY_RANGE);
+                    // auto entitiesNearGateway = game->entitiesWithinCircle(gateway->getPos(), GATEWAY_RANGE);
                     bool goldPileFound = false;
-                    for (unsigned int i=0; i<entitiesNearGateway.size(); i++)
+                    for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
                     {
-                        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesNearGateway[i]))
+                        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[gateway->scuttleTargetQueue[i]]))
                         {
                             setMoveTarget(goldpile->getRefOrThrow(), PRIME_TRANSFER_RANGE);
                             goldPileFound = true;
@@ -1778,6 +1779,8 @@ void Prime::iterate()
                         vector2fp gwToPrime = (this->getPos() - gateway->getPos());
                         vector2fp gwToNewGoldpile = gwToPrime.normalized() * GATEWAY_RANGE * fixed32(0.99);
                         setMoveTarget(gateway->getPos() + gwToNewGoldpile, PRIME_TRANSFER_RANGE);
+
+                        // gatewayIfCreatingNewGoldPile = gateway;
                     }
                 }
             }
@@ -1821,6 +1824,18 @@ void Prime::iterate()
                     game->registerNewEntityIgnoringCollision(gp);
                     coinsToPushTo = &gp->gold;
                     setMoveTarget(Target(gp->getRefOrThrow()), PRIME_TRANSFER_RANGE);
+
+                    // if we're creating a new gold pile for a GW, add it to the GW's scuttle queue
+                    if (behavior == Gather)
+                    {
+                        // shit, need to somehow know the GW... could do another search at this point maybe?
+                        // maybe find all GWs in range, for that matter
+                        auto nearbyGateways = filterForType<Gateway,Entity>(game->entitiesWithinCircle(gp->getPos(), GATEWAY_RANGE));
+                        for (unsigned int i=0; i<nearbyGateways.size(); i++)
+                        {
+                            nearbyGateways[i]->scuttleTargetQueue.push_back(gp->getRefOrThrow());
+                        }
+                    }
                 }
 
                 if (coinsToPushTo)
