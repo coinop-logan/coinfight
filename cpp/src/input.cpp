@@ -77,8 +77,8 @@ void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 void UI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
 {
     vector2i halfScreenDimensions = screenDimensions / 2;
-    vector2fp corner1 = targetUnit->getPos() - vector2fp(halfScreenDimensions);
-    vector2fp corner2 = targetUnit->getPos() + vector2fp(halfScreenDimensions);
+    vector2fp corner1 = this->camera.gamePos - vector2fp(halfScreenDimensions);
+    vector2fp corner2 = this->camera.gamePos + vector2fp(halfScreenDimensions);
 
     auto visibleEntities = game->entitiesWithinRect(corner1, corner2);
     auto visibleUnits = filterForType<Unit, Entity>(visibleEntities);
