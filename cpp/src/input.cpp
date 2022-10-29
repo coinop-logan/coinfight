@@ -399,52 +399,43 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
     }
     else // selectedUnits are not Gateways
     {
-
-    }
-
-    cout << "makeRightClickCmd failed to figure something good out!" << endl;
-    return noCmd;
-}
-
-boost::shared_ptr<Cmd> oldMakeRightclickCmd(const Game &game, UI ui, int playerID, Target target)
-{
-    if (optional<vector2fp> point = target.castToPoint())
-    {
-        return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), *point));
-    }
-    else if (boost::shared_ptr<Entity> entity = target.castToEntityPtr(game))
-    {
-        if (getAllianceType(playerID, entity) == Foreign)
+        if (auto point = target.castToPoint())
         {
-            vector<boost::shared_ptr<Unit>> fighters = filterForTypeKeepContainer<Fighter, Unit>(ui.selectedUnits);
-            return boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(fighters), entity->getRefOrThrow()));
+            auto selectedMobileUnits = filterForTypeKeepContainer<MobileUnit, Unit>(ui.selectedUnits);
+            return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(selectedMobileUnits), *point));
         }
-        else
+        else if (boost::shared_ptr<Entity> entity = target.castToEntityPtr(game))
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            if (getAllianceType(playerID, entity) == Foreign)
             {
-                if (unit->getBuiltRatio() < fixed32(1))
-                {
-                    vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), unit->getRefOrThrow()));
-                }
-            }
-            if (entity->typechar() == GOLDPILE_TYPECHAR || entity->typechar() == GATEWAY_TYPECHAR)
-            {
-                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                auto selectedCombatUnits = filterForTypeKeepContainer<CombatUnit, Unit>(ui.selectedUnits);
+                return boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow()));
             }
             else
             {
-                // maybe in future can do a "follow" type action. Or attack if all enemies.
-                return boost::shared_ptr<Cmd>();
+                if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                {
+                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
+                    return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                }
+                else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                {
+                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
+                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                }
+                else
+                {
+                    cout << "Can't cast the entity to a unit or a GoldPile in makeRightClickCmd..." << endl;
+                    return noCmd;
+                }
             }
         }
+        else
+        {
+            cout << "Can't cast the target to an entity or a point in makeRightClickCmd..." << endl;
+            return noCmd;
+        }
     }
-
-    // couldn't cast target to a point or an entity...
-    cout << "issue casting target to a point or entity in makeRightClickCmd" << endl;
-    return boost::shared_ptr<Cmd>(); // return null cmd
 }
 
 boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar)
