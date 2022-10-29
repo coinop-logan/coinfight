@@ -55,6 +55,7 @@ struct UI
     void startEscapeToQuit();
     void cancelEscapeToQuit();
     void iterate();
+    void removeDuplicatesFromSelection();
 };
 vector2fp screenPosToGamePos(CameraState, vector2i);
 vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos);

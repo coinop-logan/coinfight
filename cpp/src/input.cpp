@@ -165,6 +165,21 @@ void UI::iterate()
     // }
 }
 
+void UI::removeDuplicatesFromSelection()
+{
+    for (unsigned int i=0; i<selectedUnits.size(); i++)
+    {
+        for (unsigned int j = i+1; j<selectedUnits.size(); j++)
+        {
+            if (selectedUnits[i]->getRefOrThrow() == selectedUnits[j]->getRefOrThrow())
+            {
+                selectedUnits.erase(selectedUnits.begin() + j);
+                j --;
+            }
+        }
+    }
+}
+
 vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
 {
     if (spawnBeaconInterfaceCmdWithState.eligible && spawnBeaconInterfaceCmdWithState.interfaceCmd->getKey() == key)
@@ -508,6 +523,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         ui->maybeSelectionBoxStart = {};
                     }
                 }
+
+                ui->removeDuplicatesFromSelection();
             }
             break;
         case sf::Event::MouseButtonPressed:
