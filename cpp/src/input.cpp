@@ -246,10 +246,8 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     {
         return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), *point));
     }
-    else if (optional<boost::shared_ptr<Entity>> entityPtrPtr = target.castToEntityPtr(game))
+    else if (boost::shared_ptr<Entity> entity = target.castToEntityPtr(game))
     {
-        boost::shared_ptr<Entity> entity = *entityPtrPtr;
-
         if (getAllianceType(playerID, entity) == Foreign)
         {
             vector<boost::shared_ptr<Unit>> fighters = filterForTypeKeepContainer<Fighter, Unit>(ui.selectedUnits);
