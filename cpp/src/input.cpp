@@ -440,7 +440,25 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                             }
                                             else
                                             {
-                                                ui->selectedUnits.push_back(clickedUnit);
+                                                bool removedFromSelection = false;
+                                                if (isShiftPressed())
+                                                {
+                                                    // if it's in the selection, remove it
+                                                    for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
+                                                    {
+                                                        if (ui->selectedUnits[i]->getRefOrThrow() == clickedUnit->getRefOrThrow())
+                                                        {
+                                                            ui->selectedUnits.erase(ui->selectedUnits.begin() + i);
+                                                            i --;
+                                                            removedFromSelection = true;
+                                                            // we don't break because there may be duplicates in the list at this point
+                                                        }
+                                                    }
+                                                }
+                                                if (!removedFromSelection)
+                                                {
+                                                    ui->selectedUnits.push_back(clickedUnit);
+                                                }
                                             }
                                         }
                                     }
