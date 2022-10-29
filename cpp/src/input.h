@@ -51,6 +51,7 @@ struct UI
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
+    bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others
     void startEscapeToQuit();
     void cancelEscapeToQuit();
     void iterate();

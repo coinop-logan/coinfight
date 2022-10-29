@@ -181,6 +181,17 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
     return {};
 }
 
+bool UI::selectionWouldStaySegregated(uint8_t typechar)
+{
+    if (selectedUnits.size() == 0) return true;
+
+    // we assume that we have not yet violated segregation (i.e. mixing gateways/others)
+    // so we can just check the first type
+
+    // the first selected unit's gatewayness should equal the argument's gatewayness
+    return ((selectedUnits[0]->typechar() == GATEWAY_TYPECHAR) == (typechar == GATEWAY_TYPECHAR));
+}
+
 vector2fp screenPosToGamePos(CameraState cameraState, vector2i screenPos)
 {
     vector2i screenPosFromCenter = screenPos - screenCenter;
@@ -406,13 +417,16 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                             ui->selectedUnits.clear();
                                         }
 
-                                        if (isCtrlPressed() || isDoubleClick)
+                                        if (ui->selectionWouldStaySegregated(clickedUnit->typechar()))
                                         {
-                                            ui->selectAllUnitsOfSimilarTypeOnScreen(game, clickedUnit);
-                                        }
-                                        else
-                                        {
-                                            ui->selectedUnits.push_back(clickedUnit);
+                                            if (isCtrlPressed() || isDoubleClick)
+                                            {
+                                                ui->selectAllUnitsOfSimilarTypeOnScreen(game, clickedUnit);
+                                            }
+                                            else
+                                            {
+                                                ui->selectedUnits.push_back(clickedUnit);
+                                            }
                                         }
                                     }
                                 }
@@ -439,15 +453,52 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             }
 
                             auto entitiesInSelectionBox = game->entitiesWithinRect(get<0>(corners), get<1>(corners));
+
+                            // we need to preserve selection segregation:
+                            // if selection is non-empty, just preserve existing segregation
+                            // if selection is empty, scan box for any non-GW units, and decide based on that
+                            bool filterForGateways;
+                            if (ui->selectedUnits.size() > 0)
+                            {
+                                filterForGateways = (ui->selectedUnits[0]->typechar() == GATEWAY_TYPECHAR);
+                            }
+                            else
+                            {
+                                // scan box for non-GW units
+                                bool foundNonGWUnit = false;
+                                for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
+                                {
+                                    if (entitiesInSelectionBox[i]->typechar() != GATEWAY_TYPECHAR)
+                                    {
+                                        foundNonGWUnit = true;
+                                        break;
+                                    }
+                                }
+
+                                if (foundNonGWUnit)
+                                {
+                                    filterForGateways = false;
+                                }
+                                else
+                                {
+                                    filterForGateways = true;
+                                }
+                            }
+
                             for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
                             {
                                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSelectionBox[i]))
                                 {
-                                    if (unit->ownerId == *playerId)
+                                    // finally, filter out units for segregation
+                                    if ((filterForGateways && unit->typechar() == GATEWAY_TYPECHAR)
+                                     || (!filterForGateways && unit->typechar() != GATEWAY_TYPECHAR))
                                     {
-                                        if (selectionRectGameCoords.contains(toSFVec(vector2i(unit->getPos()))))
+                                        if (unit->ownerId == *playerId)
                                         {
-                                            ui->selectedUnits.push_back(unit);
+                                            if (selectionRectGameCoords.contains(toSFVec(vector2i(unit->getPos()))))
+                                            {
+                                                ui->selectedUnits.push_back(unit);
+                                            }
                                         }
                                     }
                                 }
