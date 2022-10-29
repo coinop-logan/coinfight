@@ -42,7 +42,7 @@ public:
     void die();
 
     bool collidesWithPoint(vector2fp);
-    bool isWithinRangeOfGatewayOwnedBy(uint8_t);
+    bool isWithinRangeOfActiveGatewayOwnedBy(uint8_t);
 protected:
     Entity(); // this will throw if called. Needed for virtual inheritance later but should never be called.
     Entity(vector2fp pos);

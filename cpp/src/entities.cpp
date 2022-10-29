@@ -463,7 +463,7 @@ bool Entity::collidesWithPoint(vector2fp point)
 {
     return (pos - point).getRoughMagnitude() <= ENTITY_COLLIDE_RADIUS;
 }
-bool Entity::isWithinRangeOfGatewayOwnedBy(uint8_t targetOwnerId) {
+bool Entity::isWithinRangeOfActiveGatewayOwnedBy(uint8_t targetOwnerId) {
     Game *game = getGameOrThrow();
 
     auto entities = game->entitiesWithinCircle(getPos(), GATEWAY_RANGE);
@@ -471,7 +471,7 @@ bool Entity::isWithinRangeOfGatewayOwnedBy(uint8_t targetOwnerId) {
     {
         if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entities[i]))
         {
-            if (gateway->ownerId == targetOwnerId)
+            if (gateway->isActive() && gateway->ownerId == targetOwnerId)
             {
                 return true;
             }
@@ -1643,7 +1643,7 @@ void Prime::iterate()
                             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entitiesInSight[i]))
                             {
                                 // First, ignore any goldPile already within range of a Gateway
-                                if (goldPile->isWithinRangeOfGatewayOwnedBy(this->ownerId))
+                                if (goldPile->isWithinRangeOfActiveGatewayOwnedBy(this->ownerId))
                                     continue;
                                 
                                 uint16_t distanceFloorSquared = (this->getPos() - goldPile->getPos()).getFloorMagnitudeSquared();
