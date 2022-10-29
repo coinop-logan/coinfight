@@ -31,6 +31,8 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new SpawnBeaconCmd(from));
     case CMD_SCUTTLE_CHAR:
         return boost::shared_ptr<Cmd>(new ScuttleCmd(from));
+    case CMD_STOPSCUTTLE_CHAR:
+        return boost::shared_ptr<Cmd>(new StopScuttleCmd(from));
     case CMD_GIFT_CHAR:
         return boost::shared_ptr<Cmd>(new GiftCmd(from));
     case CMD_STOP_CHAR:
@@ -495,6 +497,45 @@ void ScuttleCmd::pack(Netpack::Builder* to)
     packEntityRef(to, targetUnit);
 }
 ScuttleCmd::ScuttleCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    targetUnit = consumeEntityRef(from);
+}
+
+uint8_t StopScuttleCmd::getTypechar()
+{
+    return CMD_STOPSCUTTLE_CHAR;
+}
+string StopScuttleCmd::getTypename()
+{
+    return "StopScuttleCmd";
+}
+
+void StopScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        // prime->cmdStopScuttle(targetUnit);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdStopScuttle(targetUnit);
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+StopScuttleCmd::StopScuttleCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+void StopScuttleCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    packEntityRef(to, targetUnit);
+}
+StopScuttleCmd::StopScuttleCmd(Netpack::Consumer* from)
     : UnitCmd(from)
 {
     targetUnit = consumeEntityRef(from);

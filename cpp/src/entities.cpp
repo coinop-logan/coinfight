@@ -1100,6 +1100,25 @@ void Gateway::cmdStop()
         scuttleTargetQueue.clear();
     }
 }
+void Gateway::removeFromQueues(EntityRef entityRef)
+{
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (buildTargetQueue[i] == entityRef)
+        {
+            buildTargetQueue.erase(buildTargetQueue.begin() + i);
+            i --;
+        }
+    }
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        if (scuttleTargetQueue[i] == entityRef)
+        {
+            buildTargetQueue.erase(buildTargetQueue.begin() + i);
+            i --;
+        }
+    }
+}
 
 void Gateway::cmdBuildUnit(uint8_t unitTypechar)
 {
@@ -1180,6 +1199,10 @@ void Gateway::cmdScuttle(EntityRef targetRef)
         {
             if (auto entity = maybeEntityRefToPtrOrNull(*getGameOrThrow(), targetRef))
             {
+                // first, make sure it's not already in either queue
+                // the main point of doing this is to make sure we don't end up both scuttling and building the unit at the same time
+                this->removeFromQueues(targetRef);
+
                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
                     if (getAllianceType(this->ownerId, unit) == Owned)
@@ -1218,6 +1241,17 @@ void Gateway::cmdScuttle(EntityRef targetRef)
                     cout << "Somehow I can't cast that Entity into a GoldPile or Unit" << endl;
                 }
             }
+        }
+    }
+}
+void Gateway::cmdStopScuttle(EntityRef targetRef)
+{
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        if (scuttleTargetQueue[i] == targetRef)
+        {
+            scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
+            i --;
         }
     }
 }

@@ -196,6 +196,21 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
     return {};
 }
 
+bool UI::selectionHasGateways()
+{
+    for (unsigned int i=0; i<selectedUnits.size(); i++)
+    {
+        if (auto unit = selectedUnits[i])
+        {
+            if (unit->typechar() == GATEWAY_TYPECHAR)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool UI::selectionWouldStaySegregated(uint8_t typechar)
 {
     if (selectedUnits.size() == 0) return true;
@@ -262,12 +277,137 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
         return Target(gamePos);
 }
 
-boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, Target target)
+boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, Target target)
 {
+    boost::shared_ptr<Cmd> noCmd;
     if (ui.selectedUnits.size() == 0)
     {
-        return boost::shared_ptr<Cmd>();
+        return noCmd;
     }
+    if (ui.selectionHasGateways())
+    {
+        if (auto point = target.castToPoint())
+        {
+            // in future, could set rally point
+            return noCmd;
+        }
+        else if (auto entity = target.castToEntityPtr(game))
+        {
+            if (getAllianceType(playerID, entity) == Foreign)
+            {
+                return noCmd;
+            }
+
+            // We have to handle a right click on an entity, with possibly multiple GWs selected.
+
+            // The first question is: is the entity already in any of the queues of the GWs?
+            // If so, store these as pointers to the first such gateway
+            boost::shared_ptr<Gateway> firstGatewayContainingEntityInBuildQueue;
+            boost::shared_ptr<Gateway> firstGatewayContainingEntityInScuttleQueue;
+
+            for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
+            {
+                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(ui.selectedUnits[i]))
+                {
+                    if (!firstGatewayContainingEntityInBuildQueue)
+                    {
+                        for (unsigned int j=0; j<gateway->buildTargetQueue.size(); j++)
+                        {
+                            if (entity->getRefOrThrow() == gateway->buildTargetQueue[j])
+                            {
+                                firstGatewayContainingEntityInBuildQueue = gateway;
+                            }
+                        }
+                    }
+                    if (!firstGatewayContainingEntityInScuttleQueue)
+                    {
+                        for (unsigned int j=0; j<gateway->scuttleTargetQueue.size(); j++)
+                        {
+                            if (entity->getRefOrThrow() == gateway->scuttleTargetQueue[j])
+                            {
+                                firstGatewayContainingEntityInScuttleQueue = gateway;
+                            }
+                        }
+                    }
+                }
+
+                if (firstGatewayContainingEntityInBuildQueue && firstGatewayContainingEntityInScuttleQueue)
+                    break;
+            }
+
+            bool isCompletedUnit;
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                isCompletedUnit = (unit->getBuiltRatio() == fixed32(1.0));
+            }
+            else
+            {
+                isCompletedUnit = false;
+            }
+
+            // We now have to determine a command based on answers to the following questions:
+              // Is the target already queued in scuttle and/or build queues; if so with which GWs?
+              // Is it a gold pile or a unit
+                // if it's a unit, is it built and active, or not less than fully built?
+            
+            // We're also targeting the UX of: right clicking on a target with a GW will cycle between "relationships" to the unit:
+            // no activity -> trying to build or deposit -> trying to capture or scuttle
+
+            // A simple case to tackle first is that the entity is not in either queue.
+            if (!firstGatewayContainingEntityInBuildQueue && !firstGatewayContainingEntityInScuttleQueue)
+            {
+                if (isCompletedUnit)
+                {
+                    return boost::shared_ptr<Cmd>(new ScuttleCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
+                }
+                else
+                {
+                    return boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
+                }
+            }
+
+            // In theory GWs in the selection could have different such relationships to the entity.
+            // Not sure how to handle this case at the moment, so for now we just ignore it.
+            else if (firstGatewayContainingEntityInBuildQueue && firstGatewayContainingEntityInScuttleQueue)
+            {
+                return noCmd;
+            }
+
+            else // logically, this means one but not both of the firstGateway(...) vars are set.
+            {
+                // We assume here that we aren't dealing with multiple gateways with this this relationship,
+                // and only deal with the one we know about
+                // Here we just "cycle" the relationship
+
+                // if it's being built, switch to scuttle
+                if (firstGatewayContainingEntityInBuildQueue) 
+                {
+                    return boost::shared_ptr<Cmd>(new ScuttleCmd({firstGatewayContainingEntityInBuildQueue->getRefOrThrow()}, entity->getRefOrThrow()));
+                }
+                // if it's being scuttled, stop scuttling
+                else if (firstGatewayContainingEntityInScuttleQueue)
+                {
+                    return boost::shared_ptr<Cmd>(new StopScuttleCmd({firstGatewayContainingEntityInScuttleQueue->getRefOrThrow()}, entity->getRefOrThrow()));
+                }
+            }
+        }
+        else
+        {
+            cout << "issue casting target to a point or entity in makeRightClickCmd" << endl;
+            return noCmd;
+        }
+    }
+    else // selectedUnits are not Gateways
+    {
+
+    }
+
+    cout << "makeRightClickCmd failed to figure something good out!" << endl;
+    return noCmd;
+}
+
+boost::shared_ptr<Cmd> oldMakeRightclickCmd(const Game &game, UI ui, int playerID, Target target)
+{
     if (optional<vector2fp> point = target.castToPoint())
     {
         return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), *point));
@@ -303,7 +443,7 @@ boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, int playerID, 
     }
 
     // couldn't cast target to a point or an entity...
-    cout << "issue casting target to a point or entity in makeRightclickCmd" << endl;
+    cout << "issue casting target to a point or entity in makeRightClickCmd" << endl;
     return boost::shared_ptr<Cmd>(); // return null cmd
 }
 
@@ -703,7 +843,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         if (ui->selectedUnits.size() > 0)
                         {
                             if (playerId)
-                                cmdsToSend.push_back(makeRightclickCmd(*game, *ui, *playerId, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                                cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
                         }
                     }
                     else

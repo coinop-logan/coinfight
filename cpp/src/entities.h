@@ -297,10 +297,12 @@ public:
     void cmdBuildUnit(uint8_t unitTypechar);
     void cmdDepositTo(Target target);
     void cmdScuttle(EntityRef targetRef);
+    void cmdStopScuttle(EntityRef targetRef);
     fixed32 buildQueueWeight();
 
     bool isIdle();
     void cmdStop();
+    void removeFromQueues(EntityRef);
 
     fixed32 getRadius() const;
     uint8_t typechar() const;
