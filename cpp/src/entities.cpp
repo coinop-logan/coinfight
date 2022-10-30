@@ -1934,61 +1934,73 @@ void Prime::iterate()
     case Build:
         if (auto target = getMaybeMoveTarget())
         {
-            if (optional<vector2fp> point = target->castToPoint())
+            if (auto targetPos = target->getPointUnlessTargetDeleted(*game))
             {
-                if ((*point - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                if ((*targetPos - getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
                 {
-                    // create unit if typechar checks out and change target to new unit
-                    boost::shared_ptr<Building> buildingToBuild;
-                    switch (gonnabuildTypechar)
+                    if (optional<vector2fp> point = target->castToPoint())
                     {
-                        case GATEWAY_TYPECHAR:
-                            buildingToBuild = boost::shared_ptr<Building>(new Gateway(this->ownerId, *point));
-                            break;
-                        case TURRET_TYPECHAR:
-                            buildingToBuild = boost::shared_ptr<Building>(new Turret(this->ownerId, *point));
-                            break;
-                    }
+                        // create unit if typechar checks out and change target to new unit
+                        boost::shared_ptr<Building> buildingToBuild;
+                        switch (gonnabuildTypechar)
+                        {
+                            case GATEWAY_TYPECHAR:
+                                buildingToBuild = boost::shared_ptr<Building>(new Gateway(this->ownerId, *point));
+                                break;
+                            case TURRET_TYPECHAR:
+                                buildingToBuild = boost::shared_ptr<Building>(new Turret(this->ownerId, *point));
+                                break;
+                        }
 
-                    if (buildingToBuild)
-                    {
-                        if (game->registerNewEntityIfNoCollision(buildingToBuild))
+                        if (buildingToBuild)
                         {
-                            setMoveTarget(Target(buildingToBuild), PRIME_TRANSFER_RANGE);
+                            if (game->registerNewEntityIfNoCollision(buildingToBuild))
+                            {
+                                setMoveTarget(Target(buildingToBuild), PRIME_TRANSFER_RANGE);
+                            }
+                        }
+                        else
+                        {
+                            cout << "Prime refuses to build for that typechar!" << endl;
+                            state = NotTransferring;
+                        }
+                    }
+                    else if (boost::shared_ptr<Entity> entity = target->castToEntityPtr(*game))
+                    {
+                        if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
+                        {
+                            if (building->getBuiltRatio() < fixed32(1))
+                            {
+                                coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
+                                if (builtAmount > 0)
+                                {
+                                    goldTransferState_view = BuildingSomething;
+                                }
+                            }
+                            else
+                            {
+                                state = NotTransferring;
+                            }
+                        }
+                        else
+                        {
+                            cout << "Prime trying to build a non-Building entity... What's going on???" << endl;
                         }
                     }
                     else
                     {
-                        cout << "Prime refuses to build for that typechar!" << endl;
-                        state = NotTransferring;
-                    }
-                }
-            }
-            else if (boost::shared_ptr<Entity> entity = target->castToEntityPtr(*game))
-            {
-                if (auto building = boost::dynamic_pointer_cast<Building, Entity>(entity))
-                {
-                    if (building->getBuiltRatio() < fixed32(1))
-                    {
-                        coinsInt builtAmount = building->build(PRIME_PUTDOWN_RATE, &this->heldGold);
-                        if (builtAmount > 0)
-                        {
-                            goldTransferState_view = BuildingSomething;
-                        }
-                    }
-                    else
-                    {
+                        cout << "Can't cast that Target to a position OR an entity..." << endl;
                         state = NotTransferring;
                     }
                 }
                 else
                 {
-                    cout << "Prime trying to build a non-Building entity... What's going on???" << endl;
+                    // target far away, do nothing yet
                 }
             }
             else
             {
-                cout << "Can't cast that Target to a position OR an entity..." << endl;
+                // target has been deleted; go back to default mode.
                 state = NotTransferring;
             }
         }
