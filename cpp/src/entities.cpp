@@ -1366,6 +1366,7 @@ void Gateway::iterate()
         for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
         {
             if (scuttleTargetQueue.size() == 0) break;
+
             if (auto entity = game->entities[scuttleTargetQueue[i]])
             {
                 // Is the unit out of range?
@@ -1436,7 +1437,19 @@ void Gateway::iterate()
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    amountPulled = unit->unbuild(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    bool pulledFromPrimeHeldGold = false;
+                    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                    {
+                        if (prime->heldGold.getInt() > 0)
+                        {
+                            amountPulled = prime->heldGold.transferUpTo(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                            pulledFromPrimeHeldGold = true;
+                        }
+                    }
+                    if (!pulledFromPrimeHeldGold)
+                    {
+                        amountPulled = unit->unbuild(GATEWAY_SCUTTLE_RATE, &game->players[this->ownerId].credit);
+                    }
                     scuttling_view = true;
                 }
 
