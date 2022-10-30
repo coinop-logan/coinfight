@@ -1508,7 +1508,7 @@ void Gateway::iterate()
 Prime::Prime(uint8_t ownerId, vector2fp pos)
     : Unit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer), gonnabuildTypechar(NULL_TYPECHAR)
+      behavior(Basic), maybeGatherTargetPos({}), state(NotTransferring), goldTransferState_view(NoGoldTransfer), gonnabuildTypechar(NULL_TYPECHAR), depositingToGateway(false)
 {}
 void Prime::pack(Netpack::Builder* to)
 {
@@ -1519,6 +1519,7 @@ void Prime::pack(Netpack::Builder* to)
     to->packEnum(behavior);
     to->packOptional(maybeGatherTargetPos, packVector2fp);
     to->packEnum(state);
+    to->packBool(depositingToGateway);
     packTypechar(to, gonnabuildTypechar);
 }
 Prime::Prime(Netpack::Consumer* from)
@@ -1530,6 +1531,7 @@ Prime::Prime(Netpack::Consumer* from)
     behavior = from->consumeEnum<Behavior>();
     maybeGatherTargetPos = from->consumeOptional(consumeVector2fp);
     state = from->consumeEnum<State>();
+    depositingToGateway = from->consumeBool();
     gonnabuildTypechar = consumeTypechar(from);
 }
 
@@ -1544,6 +1546,7 @@ void Prime::cmdPutdown(Target _target)
 {
     behavior = Basic;
     state = PutdownGold;
+    depositingToGateway = false; // may be set to true later, in iterate
 
     setMoveTarget(_target, PRIME_TRANSFER_RANGE);
 }
@@ -1812,6 +1815,7 @@ void Prime::iterate()
                         vector2fp gwToPrime = (this->getPos() - gateway->getPos());
                         vector2fp gwToNewGoldpile = gwToPrime.normalized() * GATEWAY_RANGE * fixed32(0.99);
                         setMoveTarget(gateway->getPos() + gwToNewGoldpile, PRIME_TRANSFER_RANGE);
+                        depositingToGateway = true;
                     }
                 }
             }
@@ -1858,7 +1862,7 @@ void Prime::iterate()
                     setMoveTarget(Target(gp->getRefOrThrow()), PRIME_TRANSFER_RANGE);
 
                     // if we're creating a new gold pile for a GW, add it to the GW's scuttle queue
-                    if (behavior == Gather)
+                    if (depositingToGateway)
                     {
                         // shit, need to somehow know the GW... could do another search at this point maybe?
                         // maybe find all GWs in range, for that matter
@@ -1995,6 +1999,7 @@ void Prime::setStateToReturnGoldOrResetBehavior()
         // if we didn't find one, set target to Gateway; Prime will search again when it gets close.
         state = PutdownGold;
         setMoveTarget(bestChoice->getRefOrThrow(), GATEWAY_RANGE);
+        depositingToGateway = true;
     }
     else
     {

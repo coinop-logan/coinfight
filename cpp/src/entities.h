@@ -346,6 +346,8 @@ public:
 
     GoldTransferState goldTransferState_view;
 
+    bool depositingToGateway;
+
     uint8_t gonnabuildTypechar;
 
     fixed32 getMaxSpeed() const;
