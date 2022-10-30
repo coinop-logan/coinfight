@@ -1473,6 +1473,29 @@ void Gateway::iterate()
         {
             if (auto entity = game->entities[buildTargetQueue[0]])
             {
+                // let's make sure no goldpiles are "blocking" any other finite jobs in the queue
+                if (auto firstGoldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                {
+                    // for now, hacky but simple: if there are any non-gold items in the queue, then move this gp to the end
+                    
+                    bool nonGoldpileFound = false;
+                    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+                    {
+                        if (game->entities[buildTargetQueue[i]]->typechar() != GOLDPILE_TYPECHAR)
+                        {
+                            nonGoldpileFound = true;
+                            break;
+                        }
+                    }
+                    
+                    if (nonGoldpileFound)
+                    {
+                        // would be better to use std::rotate, but for now:
+                        buildTargetQueue.push_back(buildTargetQueue[0]);
+                        buildTargetQueue.erase(buildTargetQueue.begin());
+                    }
+                }
+
                 // check range
                 if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
                 {
