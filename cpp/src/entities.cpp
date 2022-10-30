@@ -1256,7 +1256,7 @@ void Gateway::cmdStopScuttle(EntityRef targetRef)
     }
 }
 
-fixed32 Gateway::buildQueueWeight()
+coinsInt Gateway::buildQueueWeight()
 {
     Game *game = getGameOrThrow();
 
@@ -1277,9 +1277,9 @@ fixed32 Gateway::buildQueueWeight()
         }
     }
 
-    return fixed32(totalUnbuilt);
+    return totalUnbuilt;
 }
-fixed32 Gateway::scuttleQueueWeight()
+coinsInt Gateway::scuttleQueueWeight()
 {
     Game *game = getGameOrThrow();
 
@@ -1300,7 +1300,7 @@ fixed32 Gateway::scuttleQueueWeight()
         }
     }
 
-    return fixed32(totalLeftToScuttle);
+    return totalLeftToScuttle;
 }
 
 Gateway::Gateway(uint8_t ownerId, vector2fp pos)

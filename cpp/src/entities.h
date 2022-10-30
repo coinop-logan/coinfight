@@ -298,8 +298,8 @@ public:
     void cmdDepositTo(Target target);
     void cmdScuttle(EntityRef targetRef);
     void cmdStopScuttle(EntityRef targetRef);
-    fixed32 buildQueueWeight();
-    fixed32 scuttleQueueWeight();
+    coinsInt buildQueueWeight();
+    coinsInt scuttleQueueWeight();
 
     bool isIdle();
     void cmdStop();

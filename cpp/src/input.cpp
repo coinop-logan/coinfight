@@ -358,7 +358,30 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
             {
                 if (isCompletedUnit)
                 {
-                    return boost::shared_ptr<Cmd>(new ScuttleCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
+                    // We want to scuttle.
+                    // search through GWs to find the most appropriate one based on scuttle queue weight
+                    coinsInt bestChoiceScore(0);
+                    boost::shared_ptr<Gateway> bestChoice;
+                    for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
+                    {
+                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui.selectedUnits[i]))
+                        {
+                            coinsInt score = gateway->scuttleQueueWeight();
+                            if (!bestChoice || score < bestChoiceScore)
+                            {
+                                bestChoice = gateway;
+                                bestChoiceScore = score;
+                            }
+                        }
+                    }
+                    if (bestChoice)
+                    {
+                        return boost::shared_ptr<Cmd>(new ScuttleCmd({bestChoice->getRefOrThrow()}, entity->getRefOrThrow()));
+                    }
+                    else
+                    {
+                        cout << "logic error: are there gateways in this selection or not?" << endl;
+                    }
                 }
                 else
                 {
