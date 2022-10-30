@@ -420,8 +420,24 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                    return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                    if (unit->getBuiltRatio() < fixed32(1))
+                    {
+                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
+                        return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                    }
+                    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                    {
+                        auto primesInSelection = filterForType<Prime, Unit>(ui.selectedUnits);
+                        vector<EntityRef> eligiblePrimeRefs;
+                        for (unsigned int i=0; i<primesInSelection.size(); i++)
+                        {
+                            if (primesInSelection[i]->heldGold.getInt() > 0)
+                            {
+                                eligiblePrimeRefs.push_back(primesInSelection[i]->getRefOrThrow());
+                            }
+                        }
+                        return boost::shared_ptr<Cmd>(new PutdownCmd(eligiblePrimeRefs, Target(gateway)));
+                    }
                 }
                 else
                 {
