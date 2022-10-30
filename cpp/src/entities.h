@@ -299,6 +299,7 @@ public:
     void cmdScuttle(EntityRef targetRef);
     void cmdStopScuttle(EntityRef targetRef);
     fixed32 buildQueueWeight();
+    fixed32 scuttleQueueWeight();
 
     bool isIdle();
     void cmdStop();

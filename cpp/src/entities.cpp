@@ -1258,12 +1258,49 @@ void Gateway::cmdStopScuttle(EntityRef targetRef)
 
 fixed32 Gateway::buildQueueWeight()
 {
-    if (!isActive())
-        return fixed32(10);
-    else if (isIdle())
-        return fixed32(0);
-    else
-        return fixed32(1);
+    Game *game = getGameOrThrow();
+
+    coinsInt totalUnbuilt(0);
+
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (auto entity = game->entities[buildTargetQueue[i]])
+        {
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+            {
+                // since we put goldpiles behind everything regularly, we can count this as zero build queue weight
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                totalUnbuilt += unit->getCost() - unit->getBuilt();
+            }
+        }
+    }
+
+    return fixed32(totalUnbuilt);
+}
+fixed32 Gateway::scuttleQueueWeight()
+{
+    Game *game = getGameOrThrow();
+
+    coinsInt totalLeftToScuttle(0);
+
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        if (auto entity = game->entities[scuttleTargetQueue[i]])
+        {
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+            {
+                totalLeftToScuttle += goldpile->gold.getInt();
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                totalLeftToScuttle += unit->getBuilt();
+            }
+        }
+    }
+
+    return fixed32(totalLeftToScuttle);
 }
 
 Gateway::Gateway(uint8_t ownerId, vector2fp pos)
