@@ -301,8 +301,12 @@ string PutdownCmd::getTypename()
 
 void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
+    if (unit->getRefOrThrow() == target.castToEntityRef())
+        return;
+
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         prime->cmdPutdown(target);
+
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
         gateway->cmdDepositTo(target);
@@ -405,6 +409,9 @@ string AttackGatherCmd::getTypename()
 
 void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
+    if (unit->getRefOrThrow() == target.castToEntityRef())
+        return;
+
     if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(unit))
     {
         fighter->cmdAttack(target);
@@ -443,6 +450,9 @@ string ResumeBuildingCmd::getTypename()
 
 void ResumeBuildingCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
+    if (unit->getRefOrThrow() == targetUnit)
+        return;
+        
     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
     {
         prime->cmdResumeBuilding(targetUnit);
@@ -476,6 +486,9 @@ void ScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
+        if (prime->getRefOrThrow() == targetUnit)
+            return;
+        
         prime->cmdScuttle(targetUnit);
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
