@@ -1477,10 +1477,6 @@ void Gateway::iterate()
                             maybeBuildingUnit = unit;
                             building_view = true;
                         }
-                        else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
-                        {
-                            maybeCoinsToDepositTo = &game->players[gateway->ownerId].credit;
-                        }
                         else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                         {
                             maybeCoinsToDepositTo = &prime->heldGold;
@@ -1502,6 +1498,10 @@ void Gateway::iterate()
                         {
                             pushing_view = true;
                         }
+                    }
+                    else
+                    {
+                        buildTargetQueue.erase(buildTargetQueue.begin());
                     }
                 }
                 else // entity out of range, remove from list
