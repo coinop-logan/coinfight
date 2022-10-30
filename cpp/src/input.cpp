@@ -671,10 +671,13 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                 bool foundNonGWUnit = false;
                                 for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
                                 {
-                                    if (entitiesInSelectionBox[i]->typechar() != GATEWAY_TYPECHAR)
+                                    if (getAllianceType(maybePlayerId, entitiesInSelectionBox[i]) == Owned)
                                     {
-                                        foundNonGWUnit = true;
-                                        break;
+                                        if (entitiesInSelectionBox[i]->typechar() != GATEWAY_TYPECHAR)
+                                        {
+                                            foundNonGWUnit = true;
+                                            break;
+                                        }
                                     }
                                 }
 
