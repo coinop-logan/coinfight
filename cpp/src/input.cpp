@@ -381,6 +381,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                     else
                     {
                         cout << "logic error: are there gateways in this selection or not?" << endl;
+
                     }
                 }
                 else
@@ -475,6 +476,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
             return noCmd;
         }
     }
+    return noCmd;
 }
 
 boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar)
