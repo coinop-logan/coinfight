@@ -201,7 +201,7 @@ void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp from
 
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
 {
-    float width = ceil(sqrt(goldPile->gold.getInt() / 30.0)) + 1;
+    float width = ceil(sqrt(goldPile->gold.getInt() / 300.0)) + 1;
     float height = width * .4;
     if (width > 1)
     {

@@ -245,7 +245,7 @@ enum GoldTransferState {
     ScuttlingSomething
 };
 
-const coinsInt BEACON_BUILD_RATE = 20;
+const coinsInt BEACON_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
 // const uint16_t BEACON_HEALTH = 100;
 const fixed32 BEACON_RADIUS(10);
 
@@ -274,12 +274,12 @@ public:
     void iterate();
 };
 
-const coinsInt GATEWAY_COST = 4000;
+const coinsInt GATEWAY_COST = 40000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
-const coinsInt GATEWAY_SCUTTLE_RATE = 2;
-const coinsInt GATEWAY_BUILD_RATE = 4;
+const coinsInt GATEWAY_SCUTTLE_RATE = 20 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt GATEWAY_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Gateway : public Building
@@ -313,15 +313,15 @@ public:
     void iterate();
 };
 
-const coinsInt PRIME_COST = 500;
+const coinsInt PRIME_COST = 5000;
 const uint16_t PRIME_HEALTH = 100;
 const fixed32 PRIME_SPEED(2);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
-const coinsInt PRIME_PICKUP_RATE = 2;
-const coinsInt PRIME_PUTDOWN_RATE = 4;
-const coinsInt PRIME_MAX_GOLD_HELD = 200;
+const coinsInt PRIME_PICKUP_RATE = 20 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt PRIME_PUTDOWN_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt PRIME_MAX_GOLD_HELD = 20000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
@@ -383,7 +383,7 @@ public:
     vector<Coins*> getDroppableCoins();
 };
 
-const coinsInt FIGHTER_COST = 1500;
+const coinsInt FIGHTER_COST = 15000;
 const uint16_t FIGHTER_HEALTH = 300;
 const fixed32 FIGHTER_SPEED(3);
 const fixed32 FIGHTER_SHOT_RANGE(200);
@@ -422,7 +422,7 @@ public:
     void iterate();
 };
 
-const coinsInt TURRET_COST = 5000;
+const coinsInt TURRET_COST = 50000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(400);

@@ -33,7 +33,7 @@ const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
 const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
-const int CREDIT_PER_DOLLAR_EXPONENT = 3; // credit = dollar * 10^X
+const int CREDIT_PER_DOLLAR_EXPONENT = 4; // credit = dollar * 10^X
 const int WEI_PER_DOLLAR_EXPONENT = 18; // using xDai, so wei = dollar * 10^18
 
 const float PARTICLE_MAGNET_STRENGTH = 1;
@@ -42,5 +42,8 @@ const float PARTICLE_FRICTION_CONSTANT = 0.9;
 const int CURSOR_SIZE = 26;
 
 const fixed32 COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH(50);
+
+const bool HYPERSPEED = false;
+const int HYPERSPEED_TRANSFER_MULTIPLIER = (HYPERSPEED ? 10 : 1);
 
 #endif // CONFIG_H
