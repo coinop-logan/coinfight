@@ -19,6 +19,7 @@
 #include "input.h"
 #include "events.h"
 #include "packets.h"
+#include "tutorial.h"
 
 Game game;
 
@@ -80,6 +81,9 @@ int main(int argc, char *argv[])
 
     ui = UI();
     uint8_t currentPlayerId = 0;
+
+    Tutorial tutorial(&game, &ui);
+    tutorial.start(&game, &ui);
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
 
@@ -198,6 +202,12 @@ int main(int argc, char *argv[])
             if (ui.quitNow)
             {
                 window->close();
+            }
+
+            if (!tutorial.isFinished())
+            {
+                tutorial.update(&game, &ui);
+                cout << tutorial.isFinished() << endl;
             }
         }
     }
