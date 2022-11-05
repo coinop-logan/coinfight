@@ -1156,6 +1156,25 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
     );
 
     window->draw(text, transform);
+
+    transform.translate(sf::Vector2f(0, 10 + text.getLocalBounds().height));
+
+    float progress = tutorial.currentStep()->getProgress(game, &ui);
+    if (progress > 0)
+    {
+        float progressBarMaxWidth = text.getGlobalBounds().width;
+        float progressBarWidth = progress * progressBarMaxWidth;
+        sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
+        sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
+
+        progressBar.setFillColor(sf::Color(150, 150, 255));
+        maxProgressBar.setOutlineColor(sf::Color::White);
+        maxProgressBar.setOutlineThickness(1);
+        maxProgressBar.setFillColor(sf::Color::Transparent);
+
+        window->draw(progressBar, transform);
+        window->draw(maxProgressBar, transform);
+    }
 }
 
 coinsInt lastPlayerCredit = 0;
