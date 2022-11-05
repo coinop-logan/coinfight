@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <unistd.h>
 #include "config.h"
 #include "cmds.h"
 #include "engine.h"
@@ -27,50 +28,62 @@ UI ui;
 
 int main(int argc, char *argv[])
 {
-    unsigned int playerStartDollars;
-    if (argc-1 > 0)
-    {
-        playerStartDollars = stoi(argv[1]);
-    }
-    else
-    {
-        playerStartDollars = 10;
-    }
-    unsigned int honeypotStartingDollars;
-    if (argc-1 > 1)
-    {
-        honeypotStartingDollars = stoi(argv[2]);
-    }
-    else
-    {
-        honeypotStartingDollars = 50;
-    }
-    coinsInt honeypotStartingAmount = dollarsToCoinsIntND(honeypotStartingDollars);
-    coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
-
+    unsigned int playerStartDollars = 10;
+    unsigned int honeypotStartingDollars = 50;
     bool fullscreen = true;
     bool smallScreen = false;
-    if (argc-1 > 2)
+
+    bool startTutorial = true; // may be switched when processing arguments
+
+    int c;
+    while ((c = getopt(argc, argv, "s:g:w::")) != -1)
     {
-        if (string(argv[3]) == "nofullscreen")
+        switch (c)
         {
-            fullscreen = false;
-        }
-        else if (string(argv[3]) == "smallscreen")
-        {
-            fullscreen = false;
-            smallScreen = true;
+            case 's':
+                playerStartDollars = stoi(optarg);
+                startTutorial = false;
+                break;
+            case 'g':
+                honeypotStartingDollars = stoi(optarg);
+                startTutorial = false;
+                break;
+            case 'w':
+                fullscreen = false;
+                if (optarg && string(optarg) == "small")
+                {
+                    smallScreen = true;
+                }
+                else
+                {
+                    smallScreen = false;
+                }
+                break;
         }
     }
+
+    coinsInt honeypotStartingAmount = dollarsToCoinsIntND(honeypotStartingDollars);
+    coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
 
     game = Game();
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
+    if (startTutorial)
+    {
+        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), dollarsToCoinsIntND(4.5), true)));
+
+        boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
+        gp->gold.createMoreByFiat(dollarsToCoinsIntND(6));
+        game.registerNewEntityIgnoringCollision(gp);
+    }
+    else
+    {
+        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
+    }
 
     for (unsigned int i=0; i<firstEvents.size(); i++)
     {
@@ -82,8 +95,12 @@ int main(int argc, char *argv[])
     ui = UI();
     uint8_t currentPlayerId = 0;
 
-    Tutorial tutorial(&game, &ui);
-    tutorial.start(&game, &ui);
+    optional<Tutorial> tutorial;
+    if (startTutorial)
+    {
+        tutorial = {Tutorial(&game, &ui)};
+        tutorial->start(&game, &ui);
+    }
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
 
@@ -204,9 +221,9 @@ int main(int argc, char *argv[])
                 window->close();
             }
 
-            if (!tutorial.isFinished())
+            if (tutorial && !tutorial->isFinished())
             {
-                tutorial.update(&game, &ui);
+                tutorial->update(&game, &ui);
             }
         }
     }
