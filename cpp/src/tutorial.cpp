@@ -58,7 +58,8 @@ public:
         ss << "Hey there! This tutorial will explain the basics of Coinfight." << endl;
         ss << "You can hide this tutorial (or show it again) anytime by hitting F1." << endl;
         ss << endl;
-        ss << "Other than this playground/tutorial, Coinfight is always played in an arena against others." << endl;
+        ss << "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money." << endl;
+        ss << "For now, you have $4.50 of pretend money in your Coinfight wallet." << endl;
         ss << "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\"." << endl;
         ss << "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle." << endl;
 
@@ -169,17 +170,92 @@ public:
     {
         stringstream ss;
         ss << "Just waiting for that Gateway to spawn in..." << endl;
+        ss << "Note that this is spending money from your Coinfight wallet. All told it will cost $4." << endl;
         ss << endl;
-        ss << "In a real game, everyone only gets one usage of that Beacon." << endl;
+        ss << "In a real game, everyone only one Beacon--one chance to \"teleport in\" to anywhere on the map." << endl;
         ss << "Any additional Gateways will have to be built with resources on location." << endl;
 
         return ss.str();
     }
 };
 
- // just here for copy/pasting convenience
+class BuildFirstPrimeStep : public TutorialStep
+{
+public:
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        
+        ss << "Now that your Gateway is finished, you can build your first unit." << endl;
+        ss << "Select your Gateway and hit the 'Q' key." << endl;
+        ss << "This will build a Prime, the main worker/builder in Coinfight, for $0.50." << endl;
+
+        return ss.str();
+    }
+
+    BuildFirstPrimeStep(Game* game, UI* ui)
+        : TutorialStep("firstprime", game, ui)
+        {}
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isFinished(Game* game, UI* ui)
+    {
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                {
+                    if (unit->ownerId == 0 && unit->typechar() == PRIME_TYPECHAR && unit->getBuiltRatio() == fixed32(1))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                {
+                    if (unit->ownerId == 0 && unit->typechar() == PRIME_TYPECHAR)
+                    {
+                        return float(unit->getBuiltRatio());
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+};
+
+// just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
 {
+public:
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        
+        ss << "some text here!" << endl;
+
+        return ss.str();
+    }
+
     TutorialStepTemplate(Game* game, UI* ui)
         : TutorialStep("name", game, ui)
         {}
@@ -202,15 +278,6 @@ class TutorialStepTemplate : public TutorialStep
     {
         return {};
     }
-
-    string getText(Game* game, UI* ui)
-    {
-        stringstream ss;
-        
-        ss << "some text here!" << endl;
-
-        return ss.str();
-    }
 };
 
 Tutorial::Tutorial(Game* game, UI* ui)
@@ -218,6 +285,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnBeaconStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
 
 
     stepIter = 0;
