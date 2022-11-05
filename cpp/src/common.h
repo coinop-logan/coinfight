@@ -82,4 +82,6 @@ uint64_t constexpr ipow(uint32_t base, uint32_t exp)
     return result;
 }
 
+vector<string> splitLineIntoWords(string);
+
 #endif // COMMON_H

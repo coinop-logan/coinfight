@@ -18,7 +18,7 @@ public:
     virtual void ping(int num);
     virtual bool isFinished(Game* game, UI* ui);
     virtual optional<float> getProgress(Game* game, UI* ui);
-    virtual string getText(Game* game, UI* ui);
+    virtual tuple<vector<string>, vector<string>> getText(Game* game, UI* ui);
 };
 
 class Tutorial

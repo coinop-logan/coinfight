@@ -29,7 +29,7 @@ optional<float> TutorialStep::getProgress(Game* game, UI* ui)
 {
     return {};
 }
-string TutorialStep::getText(Game* game, UI* ui)
+tuple<vector<string>, vector<string>> TutorialStep::getText(Game* game, UI* ui)
 {
     throw runtime_error("getText() has not been defined for tutorial step '" + idName + "'.\n");
 }
@@ -37,6 +37,19 @@ string TutorialStep::getText(Game* game, UI* ui)
 class SpawnBeaconStep : public TutorialStep
 {
 public:
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {"Hey there! This tutorial will explain the basics of Coinfight.",
+             "You can hide this tutorial (or show it again) anytime by hitting F1.",
+             "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, pretend you've just deposited $4.50 into your account, and joined a game. This is what you'll see!",
+             "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\". Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle.",
+            },
+            {}
+        };
+    }
+
     SpawnBeaconStep(Game* game, UI* ui)
         : TutorialStep("beacon", game, ui)
     {}
@@ -51,25 +64,23 @@ public:
     {
         return (game->entities.size() > 1);
     }
-
-    string getText(Game* game, UI* ui)
-    {
-        stringstream ss;
-        ss << "Hey there! This tutorial will explain the basics of Coinfight." << endl;
-        ss << "You can hide this tutorial (or show it again) anytime by hitting F1." << endl;
-        ss << endl;
-        ss << "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money." << endl;
-        ss << "For now, pretend you've just deposited $4.50 into your account, and joined a game. This is what you'll see!" << endl;
-        ss << "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\"." << endl;
-        ss << "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle." << endl;
-
-        return ss.str();
-    }
 };
 
 class CameraStep : public TutorialStep
 {
 public:
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Nice! While that's spawning, you can move the camera around by dragging with the middle mouse button.",
+                "Go ahead, wiggle 'er around a bit!"
+            },
+            {}
+        };
+    }
+
     vector2i lastCameraPos;
     float totalDistanceMoved;
     CameraStep(Game* game, UI* ui):
@@ -100,20 +111,26 @@ public:
     {
         return totalDistanceMoved / REQUIRED_CAMERA_MOVE;
     }
-
-    string getText(Game* game, UI* ui)
-    {
-        stringstream ss;
-        ss << "Nice! While that's spawning, you can move the camera around by dragging with the middle mouse button." << endl;
-        ss << "Go ahead, wiggle 'er around a bit!";
-
-        return ss.str();
-    }
 };
 
 class SpawnFinishStep : public TutorialStep
 {
 public:
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Just waiting for that Gateway to spawn in...",
+                "Note that this is spending money from your Coinfight wallet. All told it will cost $4."
+            },
+            {
+                "In a real game, everyone has only one Beacon--one chance to \"teleport in\" a Gateway like this anywhere on the map.",
+                "Any additional Gateways will have to be built with units and resources on location."
+            }
+        };
+    }
+
     SpawnFinishStep(Game* game, UI* ui):
         TutorialStep("spawnfinish", game, ui)
     {}
@@ -165,32 +182,23 @@ public:
         }
         return 0;
     }
-
-    string getText(Game* game, UI* ui)
-    {
-        stringstream ss;
-        ss << "Just waiting for that Gateway to spawn in..." << endl;
-        ss << "Note that this is spending money from your Coinfight wallet. All told it will cost $4." << endl;
-        ss << endl;
-        ss << "In a real game, everyone only one Beacon--one chance to \"teleport in\" to anywhere on the map." << endl;
-        ss << "Any additional Gateways will have to be built with resources on location." << endl;
-
-        return ss.str();
-    }
 };
 
 class BuildFirstPrimeStep : public TutorialStep
 {
 public:
-    string getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
-        stringstream ss;
-        
-        ss << "Now that your Gateway is finished, you can build your first unit." << endl;
-        ss << "Select your Gateway and hit the 'Q' key." << endl;
-        ss << "This will build a Prime, the main worker/builder in Coinfight, for $0.50." << endl;
-
-        return ss.str();
+        return
+        {
+            {
+                "Now that your Gateway is finished, you can build your first unit.",
+                "Select your Gateway and hit the 'Q' key."
+            },
+            {
+                "This builds a Prime, the main worker/builder in Coinfight, for $0.50."
+            }
+        };
     }
 
     BuildFirstPrimeStep(Game* game, UI* ui)
@@ -246,15 +254,33 @@ public:
 class PickupGoldStep : public TutorialStep
 {
 public:
-    string getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
-        stringstream ss;
-        
-        ss << "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby." << endl;
-        ss << "Select your Prime and right-click on that gold pile to start picking it up." << endl;
-        ss << "Pick up at least $0.50 to continue." << endl;
+        vector<string> preBarText =
+        {
+            "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
+            "Select your Prime and right-click on that gold pile to start picking it up.",
+            "Pick up at least $0.50 to continue."
+        };
 
-        return ss.str();
+        vector<string> postBarText;
+        if (getProgress(game, ui) && *getProgress(game, ui) > 0)
+        {
+            postBarText =
+            {
+                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to capture."
+            };
+        }
+        else
+        {
+            postBarText = {};
+        }
+
+        return
+        {
+            preBarText,
+            postBarText
+        };
     }
 
     PickupGoldStep(Game* game, UI* ui)
@@ -302,13 +328,13 @@ public:
 class TutorialStepTemplate : public TutorialStep
 {
 public:
-    string getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         stringstream ss;
         
         ss << "some text here!" << endl;
 
-        return ss.str();
+        return {{},{}};
     }
 
     TutorialStepTemplate(Game* game, UI* ui)

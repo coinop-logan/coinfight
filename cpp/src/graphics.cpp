@@ -1144,29 +1144,59 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
-void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI ui)
+void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int width, sf::Transform* transform)
 {
-    sf::Text text(sf::String(tutorial.currentStep()->getText(game, &ui)), tutorialFont, 14);
+    vector<string> words = splitLineIntoWords(textBlock);
 
-    text.setFillColor(sf::Color(150, 150, 150));
+    string wrappedTextBlock("");
+    sf::Text renderedTextBlock(sf::String(""), tutorialFont, 13);
+    for (unsigned i=0; i<words.size(); i++)
+    {
+        auto word = words[i];
+        string oldWrappedTextBlock = wrappedTextBlock;
 
+        wrappedTextBlock += (i == 0 ? "" : " ") + word;
+        renderedTextBlock.setString(sf::String(wrappedTextBlock));
+        if (renderedTextBlock.getLocalBounds().width > width)
+        {
+            wrappedTextBlock = oldWrappedTextBlock + "\n" + word;
+            renderedTextBlock.setString(wrappedTextBlock);
+            if (renderedTextBlock.getLocalBounds().width > width)
+            {
+                // indicates the word itself is too big, or something else wierd
+                throw "Error text wrapping.\n";
+            }
+        }
+    }
+
+    window->draw(renderedTextBlock, *transform);
+
+    transform->translate(sf::Vector2f(0, 12 + renderedTextBlock.getLocalBounds().height));
+}
+
+void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI ui, int boxWidth)
+{
     sf::Transform transform;
     transform.translate(
         sf::Vector2f(
-            screenDimensions.x - text.getLocalBounds().width - 10,
+            screenDimensions.x - boxWidth - 10,
             10
         )
     );
 
-    window->draw(text, transform);
+    vector<string> preBarTextBlocks = get<0>(tutorial.currentStep()->getText(game, &ui));
+    vector<string> postBarTextBlocks = get<1>(tutorial.currentStep()->getText(game, &ui));
 
-    transform.translate(sf::Vector2f(0, 10 + text.getLocalBounds().height));
+    for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
+    {
+        wrapAndRenderText(window, preBarTextBlocks[i], boxWidth, &transform);
+    }
 
     if (auto progress = tutorial.currentStep()->getProgress(game, &ui))
     {
         float clampedProgress = max(0.f, min(1.f, *progress)); // clamp between 0 and 1
 
-        float progressBarMaxWidth = text.getGlobalBounds().width;
+        float progressBarMaxWidth = boxWidth;
         float progressBarWidth = clampedProgress * progressBarMaxWidth;
         sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
         sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
@@ -1178,6 +1208,13 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
 
         window->draw(progressBar, transform);
         window->draw(maxProgressBar, transform);
+
+        transform.translate(sf::Vector2f(0, 18));
+    }
+
+    for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
+    {
+        wrapAndRenderText(window, postBarTextBlocks[i], boxWidth, &transform);
     }
 }
 
@@ -1408,7 +1445,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     if (ui.showTutorial && tutorial && !tutorial->isFinished())
     {
-        displayTutorial(window, *tutorial, game, ui);
+        displayTutorial(window, *tutorial, game, ui, 500);
     }
 
     window->display();
