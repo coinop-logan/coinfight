@@ -27,12 +27,44 @@ bool TutorialStep::isFinished(Game* game, UI* ui)
 }
 optional<float> TutorialStep::getProgress(Game* game, UI* ui)
 {
-    throw runtime_error("progress() has not been defined for tutorial step '" + idName + "'.\n");
+    return {};
 }
 string TutorialStep::getText(Game* game, UI* ui)
 {
     throw runtime_error("getText() has not been defined for tutorial step '" + idName + "'.\n");
 }
+
+class SpawnBeaconStep : public TutorialStep
+{
+public:
+    SpawnBeaconStep(Game* game, UI* ui)
+        : TutorialStep("beacon", game, ui)
+    {}
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    bool isFinished(Game* game, UI* ui)
+    {
+        return (game->entities.size() > 1);
+    }
+
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        ss << "Hey there! This tutorial will explain the basics of Coinfight." << endl;
+        ss << "You can hide this tutorial (or show it again) anytime by pressing F1." << endl;
+        ss << endl;
+        ss << "Other than this playground/tutorial, Coinfight is always played in an arena against others." << endl;
+        ss << "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\"." << endl;
+        ss << "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle." << endl;
+
+        return ss.str();
+    }
+};
 
 class CameraStep : public TutorialStep
 {
@@ -70,13 +102,87 @@ public:
 
     string getText(Game* game, UI* ui)
     {
-        return "You can move the camera around by dragging with the middle mouse button.\nGo ahead, wiggle 'er around a bit!";
+        stringstream ss;
+        ss << "Nice! While that's spawning, you can move the camera around by dragging with the middle mouse button." << endl;
+        ss << "Go ahead, wiggle 'er around a bit!";
+
+        return ss.str();
+    }
+};
+
+class SpawnFinishStep : public TutorialStep
+{
+public:
+    SpawnFinishStep(Game* game, UI* ui):
+        TutorialStep("spawnfinish", game, ui)
+    {}
+
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isFinished(Game* game, UI* ui)
+    {
+        if (game->entities.size() < 3)
+        {
+            return false;
+        }
+        else
+        {
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        if (game->entities.size() < 2)
+        {
+            return 0;
+        }
+        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(game->entities[1]))
+        {
+            return float(beacon->getBuiltRatio());
+        }
+        else if (game->entities.size() > 2)
+        {
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[1]))
+            {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        ss << "Just waiting for that Gateway to spawn in..." << endl;
+        ss << endl;
+        ss << "In a real game, everyone only gets one usage of that Beacon." << endl;
+        ss << "Any additional Gateways will have to be built by Workers." << endl;
+
+        return ss.str();
     }
 };
 
 Tutorial::Tutorial(Game* game, UI* ui)
 {
+    steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnBeaconStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
+
 
     stepIter = 0;
 }
