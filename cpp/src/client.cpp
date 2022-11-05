@@ -369,28 +369,6 @@ int main(int argc, char *argv[])
             maybePlayerId = game.playerAddressToMaybeId(playerAddress);
         }
 
-        // check for game start cmd, and do some ux prep if we got one
-        // for (unsigned int i=0; i<fep.events.size(); i++)
-        // {
-        //     if (auto gse = boost::dynamic_pointer_cast<HoneypotAddedEvent, Event>(fep.events[i]))
-        //     {
-        //         if (playerIdOrNegativeOne >= 0)
-        //         {
-        //             // find owned unit and center on it
-        //             for (unsigned int i=0; i<game.entities.size(); i++)
-        //             {
-        //                 if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game.entities[i]))
-        //                 {
-        //                     if (unit->ownerId == playerIdOrNegativeOne)
-        //                     {
-        //                         ui.camera.gamePos = unit->getPos();
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
         // only display if we're not behind schedule
         now = chrono::system_clock::now();
         if (now <= nextFrameStart)
