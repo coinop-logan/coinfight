@@ -34,12 +34,12 @@ string TutorialStep::getText(Game* game, UI* ui)
     throw runtime_error("getText() has not been defined for tutorial step '" + idName + "'.\n");
 }
 
-class Step1 : public TutorialStep
+class CameraStep : public TutorialStep
 {
 public:
     vector2i lastCameraPos;
     float totalDistanceMoved;
-    Step1(Game* game, UI* ui):
+    CameraStep(Game* game, UI* ui):
         TutorialStep("camera", game, ui),
         lastCameraPos(ui->camera.gamePos),
         totalDistanceMoved(0)
@@ -76,7 +76,7 @@ public:
 
 Tutorial::Tutorial(Game* game, UI* ui)
 {
-    steps.push_back(boost::shared_ptr<TutorialStep>(new Step1(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
 
     stepIter = 0;
 }
