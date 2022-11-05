@@ -17,7 +17,7 @@ public:
     virtual void update(Game* game, UI* ui);
     virtual void ping(int num);
     virtual bool isFinished(Game* game, UI* ui);
-    virtual float getProgress(Game* game, UI* ui);
+    virtual optional<float> getProgress(Game* game, UI* ui);
     virtual string getText(Game* game, UI* ui);
 };
 

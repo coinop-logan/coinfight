@@ -25,7 +25,7 @@ bool TutorialStep::isFinished(Game* game, UI* ui)
 {
     throw runtime_error("isFinished() has not been defined for tutorial step '" + idName + "'.\n");
 }
-float TutorialStep::getProgress(Game* game, UI* ui)
+optional<float> TutorialStep::getProgress(Game* game, UI* ui)
 {
     throw runtime_error("progress() has not been defined for tutorial step '" + idName + "'.\n");
 }
@@ -63,7 +63,7 @@ public:
         return totalDistanceMoved >= REQUIRED_CAMERA_MOVE;
     }
 
-    float getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, UI* ui)
     {
         return totalDistanceMoved / REQUIRED_CAMERA_MOVE;
     }
