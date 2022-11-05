@@ -193,11 +193,10 @@ public:
         {
             {
                 "Now that your Gateway is finished, you can build your first unit.",
-                "Select your Gateway and hit the 'Q' key."
+                "Select your Gateway and hit the 'Q' key.",
+                "This will build a Prime, the main worker/builder in Coinfight, for $0.50."
             },
-            {
-                "This builds a Prime, the main worker/builder in Coinfight, for $0.50."
-            }
+            {}
         };
     }
 
@@ -256,30 +255,16 @@ class PickupGoldStep : public TutorialStep
 public:
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
-        vector<string> preBarText =
-        {
-            "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
-            "Select your Prime and right-click on that gold pile to start picking it up.",
-            "Pick up at least $0.50 to continue."
-        };
-
-        vector<string> postBarText;
-        if (getProgress(game, ui) && *getProgress(game, ui) > 0)
-        {
-            postBarText =
-            {
-                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to capture."
-            };
-        }
-        else
-        {
-            postBarText = {};
-        }
-
         return
         {
-            preBarText,
-            postBarText
+            {
+                "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
+                "Select your Prime and right-click on that gold pile to start picking it up.",
+                "Pick up at least $0.50 to continue."
+            },
+            {
+                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold, to either spend on units or withdraw as DAI."
+            }
         };
     }
 
@@ -321,6 +306,47 @@ public:
     optional<float> getProgress(Game* game, UI* ui)
     {
         return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.5));
+    }
+};
+
+class ReturnGoldStep : public TutorialStep
+{
+public:
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Great! To finish capturing that gold, it has to be brought to the Gateway. With your Prime selected, right click on the Gateway."
+            },
+            {
+                "The Prime is putting down gold within range of the Gateway, and the Gateway is pulling this gold out of the game, into your Coinfight wallet.",
+                "Only Gateways can mediate between your Coinfight wallet and gold/units on the map. This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs."
+            }
+        };
+    }
+
+    ReturnGoldStep(Game* game, UI* ui)
+        : TutorialStep("returngold", game, ui)
+        {}
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isFinished(Game* game, UI* ui)
+    {
+        return (game->players[0].credit.getInt() > dollarsToCoinsIntND(0.5));
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return (float(game->players[0].credit.getInt()) / dollarsToCoinsIntND(0.5));
     }
 };
 
@@ -370,6 +396,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
 
 
     stepIter = 0;
