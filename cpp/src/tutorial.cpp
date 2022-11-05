@@ -59,7 +59,7 @@ public:
         ss << "You can hide this tutorial (or show it again) anytime by hitting F1." << endl;
         ss << endl;
         ss << "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money." << endl;
-        ss << "For now, you have $4.50 of pretend money in your Coinfight wallet." << endl;
+        ss << "For now, pretend you've just deposited $4.50 into your account, and joined a game. This is what you'll see!" << endl;
         ss << "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\"." << endl;
         ss << "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle." << endl;
 
