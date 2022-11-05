@@ -1194,27 +1194,30 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
 
     if (auto progress = tutorial.currentStep()->getProgress(game, &ui))
     {
-        float clampedProgress = max(0.f, min(1.f, *progress)); // clamp between 0 and 1
+        if (*progress > 0)
+        {
+            float clampedProgress = max(0.f, min(1.f, *progress)); // clamp between 0 and 1
 
-        float progressBarMaxWidth = boxWidth;
-        float progressBarWidth = clampedProgress * progressBarMaxWidth;
-        sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
-        sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
+            float progressBarMaxWidth = boxWidth;
+            float progressBarWidth = clampedProgress * progressBarMaxWidth;
+            sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
+            sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
 
-        progressBar.setFillColor(sf::Color(150, 150, 255));
-        maxProgressBar.setOutlineColor(sf::Color::White);
-        maxProgressBar.setOutlineThickness(1);
-        maxProgressBar.setFillColor(sf::Color::Transparent);
+            progressBar.setFillColor(sf::Color(150, 150, 255));
+            maxProgressBar.setOutlineColor(sf::Color::White);
+            maxProgressBar.setOutlineThickness(1);
+            maxProgressBar.setFillColor(sf::Color::Transparent);
 
-        window->draw(progressBar, transform);
-        window->draw(maxProgressBar, transform);
+            window->draw(progressBar, transform);
+            window->draw(maxProgressBar, transform);
 
-        transform.translate(sf::Vector2f(0, 18));
-    }
+            transform.translate(sf::Vector2f(0, 18));
 
-    for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
-    {
-        wrapAndRenderText(window, postBarTextBlocks[i], boxWidth, &transform);
+            for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
+            {
+                wrapAndRenderText(window, postBarTextBlocks[i], boxWidth, &transform);
+            }
+        }
     }
 }
 
