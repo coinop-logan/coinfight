@@ -70,7 +70,7 @@ public:
 
     string getText(Game* game, UI* ui)
     {
-        return "You can move the camera around by dragging with the middle mouse button. Why don't you try it now?";
+        return "You can move the camera around by dragging with the middle mouse button\nWhy don't you try it now?";
     }
 };
 

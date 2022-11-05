@@ -6,6 +6,7 @@
 #include "graphics.h"
 #include "common.h"
 #include "config.h"
+#include "tutorial.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
-sf::Font mainFont;
+sf::Font mainFont, tutorialFont;
 
 float radToDeg(float rad)
 {
@@ -60,7 +61,9 @@ public:
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
-        throw runtime_error("Can't load font");
+        throw runtime_error("Can't load main font");
+    if (!tutorialFont.loadFromFile("NotoSansCJK-Regular.ttc"))
+        throw runtime_error("Can't load tutorial font");
 
     // choose a good videomode
     sf::VideoMode chosenMode;
@@ -1138,8 +1141,25 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
+void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI ui)
+{
+    sf::Text text(sf::String(tutorial.currentStep()->getText(game, &ui)), tutorialFont, 14);
+
+    text.setFillColor(sf::Color(150, 150, 150));
+
+    sf::Transform transform;
+    transform.translate(
+        sf::Vector2f(
+            screenDimensions.x - text.getLocalBounds().width - 10,
+            10
+        )
+    );
+
+    window->draw(text, transform);
+}
+
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, optional<Tutorial> tutorial)
 {
     if (ui.minimapEnabled)
     {
@@ -1361,6 +1381,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
 
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
+    }
+
+    if (tutorial && !tutorial->isFinished())
+    {
+        displayTutorial(window, *tutorial, game, ui);
     }
 
     window->display();
