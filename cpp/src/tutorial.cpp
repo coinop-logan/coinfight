@@ -171,7 +171,43 @@ public:
         ss << "Just waiting for that Gateway to spawn in..." << endl;
         ss << endl;
         ss << "In a real game, everyone only gets one usage of that Beacon." << endl;
-        ss << "Any additional Gateways will have to be built by Workers." << endl;
+        ss << "Any additional Gateways will have to be built with resources on location." << endl;
+
+        return ss.str();
+    }
+};
+
+ // just here for copy/pasting convenience
+class TutorialStepTemplate : public TutorialStep
+{
+    TutorialStepTemplate(Game* game, UI* ui)
+        : TutorialStep("name", game, ui)
+        {}
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isFinished(Game* game, UI* ui)
+    {
+        return false;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return {};
+    }
+
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        
+        ss << "some text here!" << endl;
 
         return ss.str();
     }
