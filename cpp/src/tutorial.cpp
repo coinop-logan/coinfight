@@ -243,6 +243,61 @@ public:
     }
 };
 
+class PickupGoldStep : public TutorialStep
+{
+public:
+    string getText(Game* game, UI* ui)
+    {
+        stringstream ss;
+        
+        ss << "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby." << endl;
+        ss << "Select your Prime and right-click on that gold pile to start picking it up." << endl;
+        ss << "Pick up at least $0.50 to continue." << endl;
+
+        return ss.str();
+    }
+
+    PickupGoldStep(Game* game, UI* ui)
+        : TutorialStep("pickupgold", game, ui)
+        {}
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    coinsInt getTotalGoldGathered(Game *game)
+    {
+        coinsInt total = 0;
+
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+                {
+                    total += prime->heldGold.getInt();
+                }
+            }
+        }
+
+        return total;
+    }
+    bool isFinished(Game* game, UI* ui)
+    {
+        return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.5));
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.5));
+    }
+};
+
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
 {
@@ -286,6 +341,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
 
 
     stepIter = 0;
