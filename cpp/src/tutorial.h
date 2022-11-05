@@ -24,7 +24,7 @@ public:
 class Tutorial
 {
     vector<boost::shared_ptr<TutorialStep>> steps;
-    int stepIter;
+    unsigned stepIter;
 public:
     Tutorial(Game* game, UI* ui);
     void start(Game* game, UI* ui);
