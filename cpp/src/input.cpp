@@ -38,6 +38,7 @@ UI::UI()
     countdownToQuitOrNeg1 = -1;
     escapeTextCountdownOrNeg1 = -1;
     cleanDrawEnabled = false;
+    showTutorial = true; // only matters for coinfight_local right now
 }
 
 void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
@@ -891,6 +892,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
         case sf::Event::KeyPressed:
             switch (event.key.code)
             {
+                case sf::Keyboard::F1:
+                    ui->showTutorial = !ui->showTutorial;
+                    break;
                 case sf::Keyboard::Tilde:
                     ui->debugInt ++;
                     break;

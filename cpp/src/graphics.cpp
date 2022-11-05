@@ -1403,7 +1403,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
     }
 
-    if (tutorial && !tutorial->isFinished())
+    if (ui.showTutorial && tutorial && !tutorial->isFinished())
     {
         displayTutorial(window, *tutorial, game, ui);
     }
