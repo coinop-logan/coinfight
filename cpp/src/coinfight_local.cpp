@@ -207,7 +207,6 @@ int main(int argc, char *argv[])
             if (!tutorial.isFinished())
             {
                 tutorial.update(&game, &ui);
-                cout << tutorial.isFinished() << endl;
             }
         }
     }
