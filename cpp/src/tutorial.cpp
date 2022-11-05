@@ -4,7 +4,7 @@
 
 using namespace std;
 
-const float REQUIRED_CAMERA_MOVE = 100;
+const float REQUIRED_CAMERA_MOVE = 1000;
 
 TutorialStep::TutorialStep(string idName, Game* game, UI* ui):
     idName(idName) {}
@@ -70,7 +70,7 @@ public:
 
     string getText(Game* game, UI* ui)
     {
-        return "You can move the camera around by dragging with the middle mouse button\nWhy don't you try it now?";
+        return "You can move the camera around by dragging with the middle mouse button.\nGo ahead, wiggle 'er around a bit!";
     }
 };
 
