@@ -492,12 +492,12 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
     sf::Transform hintsTransform;
     hintsTransform.translate(upperLeft);
     hintsTransform.translate(sf::Vector2f(120, 20));
-    for (unsigned int i=0; i<hints.size(); i++)
-    {
-        hints[i].setFillColor(sf::Color(150, 150, 150));
-        window->draw(hints[i], hintsTransform);
-        hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
-    }
+    // for (unsigned int i=0; i<hints.size(); i++)
+    // {
+    //     hints[i].setFillColor(sf::Color(150, 150, 150));
+    //     window->draw(hints[i], hintsTransform);
+    //     hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
+    // }
 
     int textSpacing = 10;
 
