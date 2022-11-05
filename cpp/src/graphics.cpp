@@ -1160,6 +1160,8 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
     transform.translate(sf::Vector2f(0, 10 + text.getLocalBounds().height));
 
     float progress = tutorial.currentStep()->getProgress(game, &ui);
+    progress = max(0.f, min(1.f, progress)); // clamp between 0 and 1
+    
     if (progress > 0)
     {
         float progressBarMaxWidth = text.getGlobalBounds().width;
