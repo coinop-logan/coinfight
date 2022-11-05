@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
         // only display if we're not behind schedule
         now = chrono::system_clock::now();
         if (now <= nextFrameStart)
-            display(window, &game, ui, &particles, maybePlayerId, {});
+            display(window, &game, ui, &particles, maybePlayerId, {}, true);
 
         if (game.frame % 200 == 0)
             cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;

@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
                     cout << "now controlling player " << currentPlayerId << endl;
                 }
 
-                display(window, &game, ui, &particles, currentPlayerId, tutorial);
+                display(window, &game, ui, &particles, currentPlayerId, tutorial, false);
             }
         }
         else {

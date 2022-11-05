@@ -482,22 +482,25 @@ void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entit
     window->draw(pixel);
 }
 
-void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft)
+void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool drawWalletHints)
 {
-    vector<sf::Text> hints
-        {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
-         sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
-        };
+    if (drawWalletHints)
+    {
+        vector<sf::Text> hints
+            {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
+            sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
+            };
 
-    sf::Transform hintsTransform;
-    hintsTransform.translate(upperLeft);
-    hintsTransform.translate(sf::Vector2f(120, 20));
-    // for (unsigned int i=0; i<hints.size(); i++)
-    // {
-    //     hints[i].setFillColor(sf::Color(150, 150, 150));
-    //     window->draw(hints[i], hintsTransform);
-    //     hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
-    // }
+        sf::Transform hintsTransform;
+        hintsTransform.translate(upperLeft);
+        hintsTransform.translate(sf::Vector2f(120, 20));
+        for (unsigned int i=0; i<hints.size(); i++)
+        {
+            hints[i].setFillColor(sf::Color(150, 150, 150));
+            window->draw(hints[i], hintsTransform);
+            hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
+        }
+    }
 
     int textSpacing = 10;
 
@@ -1179,7 +1182,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
 }
 
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, optional<Tutorial> tutorial)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, optional<Tutorial> tutorial, bool drawWalletHints)
 {
     if (ui.minimapEnabled)
     {
@@ -1371,7 +1374,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 playerCredit > lastPlayerCredit ?      sf::Color::Green :
                                                         sf::Color::Red
                 );
-            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20));
+            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
 
             lastPlayerCredit = playerCredit;
         }
