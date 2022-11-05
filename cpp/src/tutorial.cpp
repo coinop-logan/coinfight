@@ -330,11 +330,13 @@ class TutorialStepTemplate : public TutorialStep
 public:
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
-        stringstream ss;
-        
-        ss << "some text here!" << endl;
+        return
+        {
+            {
 
-        return {{},{}};
+            },
+            {}
+        };
     }
 
     TutorialStepTemplate(Game* game, UI* ui)
