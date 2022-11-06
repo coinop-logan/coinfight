@@ -269,7 +269,7 @@ public:
                 "Pick up at least $0.50 to continue."
             },
             {
-                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold, to either spend on units or withdraw as DAI."
+                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to spend on units, or eventually, withdraw as winnings in DAI."
             }
         };
     }
@@ -327,8 +327,7 @@ public:
             },
             {
                 "The Prime is putting down gold within range of the Gateway, and the Gateway is pulling this gold out of the game, into your Coinfight wallet.",
-                "Only Gateways can bring gold out of the game and into your Coinfight wallet (or vise versa). This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs.",
-                "At any point, the money in your Coinfight wallet is safe from capture by other players. Everything else (like the $4.50 you spent earlier on a Gateway and Prime) are at risk."
+                "Only Gateways can bring gold out of the game and into your Coinfight wallet (or vise versa). This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs."
             }
         };
     }
@@ -368,7 +367,7 @@ public:
         return
         {
             {
-                "Now that we have a bit more money again, queue up 4 more Primes (select Gateway, hit Q)."
+                "Now that we have a bit more money again, queue up 3 more Primes (select Gateway, hit Q)."
             },
             {}
         };
@@ -403,12 +402,98 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return numAdditionalPrimes(game) >= 4;
+        return numAdditionalPrimes(game) >= 3;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return numAdditionalPrimes(game) / 4.0;
+        return numAdditionalPrimes(game) / 3.0;
+    }
+};
+
+class GatherStep : public TutorialStep
+{
+public:
+    GatherStep(Game* game, UI* ui)
+        : TutorialStep("gather", false, game, ui)
+        {}
+        
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Now, you probably don't have enough money to build four more Primes, so you'll run out of money soon, and your Gateway will stop building.",
+                "Let's have the Primes automatically gather gold and bring it to the Gateway, by way of a \"gather\" command.",
+                "Left-click and drag to select ALL of your primes (even the ones that aren't done building). Then hit the 'A' key and click near the gold pile.",
+                "The unbuilt ones will execute the order once they're fully built.",
+                "Bring all the gold to your Gateway to continue."
+            },
+            {}
+        };
+    }
+
+    coinsInt uncapturedGoldAtStart;
+    
+    coinsInt countUncapturedGold(Game* game)
+    {
+        auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]);
+
+        coinsInt count = 0;
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (entity->getRefOrThrow() == gateway->getRefOrThrow())
+                    continue;
+
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                {
+                    // ignore if it's in the gateway's scuttle queue
+                    bool inQueue = false;
+                    for (unsigned int j=0; j<gateway->scuttleTargetQueue.size(); j++)
+                    {
+                        if (gateway->scuttleTargetQueue[j] == goldpile->getRefOrThrow())
+                        {
+                            inQueue = true;
+                            break;
+                        }
+                    }
+
+                    if (!inQueue)
+                    {
+                        count += goldpile->gold.getInt();
+                    }
+                }
+                else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+                {
+                    count += prime->heldGold.getInt();
+                }
+            }
+        }
+
+        return count;
+    }
+
+    void start(Game* game, UI* ui)
+    {
+        uncapturedGoldAtStart = countUncapturedGold(game);
+    }
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return countUncapturedGold(game) == 0;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return 1 - (float(countUncapturedGold(game)) / uncapturedGoldAtStart);
     }
 };
 
@@ -461,6 +546,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new MorePrimesStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
 
     stepIter = 0;
 }
