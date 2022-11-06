@@ -37,6 +37,10 @@ tuple<vector<string>, vector<string>> TutorialStep::getText(Game* game, UI* ui)
 class SpawnBeaconStep : public TutorialStep
 {
 public:
+    SpawnBeaconStep(Game* game, UI* ui)
+        : TutorialStep("beacon", false, game, ui)
+    {}
+
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -50,10 +54,6 @@ public:
             {}
         };
     }
-
-    SpawnBeaconStep(Game* game, UI* ui)
-        : TutorialStep("beacon", false, game, ui)
-    {}
     
     void start(Game* game, UI* ui)
     {}
@@ -70,6 +70,15 @@ public:
 class CameraStep : public TutorialStep
 {
 public:
+    vector2i lastCameraPos;
+    float totalDistanceMoved;
+
+    CameraStep(Game* game, UI* ui):
+        TutorialStep("camera", false, game, ui),
+        lastCameraPos(ui->camera.gamePos),
+        totalDistanceMoved(0)
+    {}
+
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -81,14 +90,6 @@ public:
             {}
         };
     }
-
-    vector2i lastCameraPos;
-    float totalDistanceMoved;
-    CameraStep(Game* game, UI* ui):
-        TutorialStep("camera", false, game, ui),
-        lastCameraPos(ui->camera.gamePos),
-        totalDistanceMoved(0)
-    {}
 
     void start(Game* game, UI* ui)
     {}
@@ -117,6 +118,10 @@ public:
 class SpawnFinishStep : public TutorialStep
 {
 public:
+    SpawnFinishStep(Game* game, UI* ui):
+        TutorialStep("spawnfinish", true, game, ui)
+    {}
+    
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -131,10 +136,6 @@ public:
             }
         };
     }
-
-    SpawnFinishStep(Game* game, UI* ui):
-        TutorialStep("spawnfinish", true, game, ui)
-    {}
 
     void start(Game* game, UI* ui)
     {}
@@ -188,6 +189,10 @@ public:
 class BuildFirstPrimeStep : public TutorialStep
 {
 public:
+    BuildFirstPrimeStep(Game* game, UI* ui)
+        : TutorialStep("firstprime", false, game, ui)
+        {}
+    
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -200,10 +205,6 @@ public:
             {}
         };
     }
-
-    BuildFirstPrimeStep(Game* game, UI* ui)
-        : TutorialStep("firstprime", false, game, ui)
-        {}
     
     void start(Game* game, UI* ui)
     {}
@@ -254,6 +255,10 @@ public:
 class PickupGoldStep : public TutorialStep
 {
 public:
+    PickupGoldStep(Game* game, UI* ui)
+        : TutorialStep("pickupgold", true, game, ui)
+        {}
+
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -268,10 +273,6 @@ public:
             }
         };
     }
-
-    PickupGoldStep(Game* game, UI* ui)
-        : TutorialStep("pickupgold", true, game, ui)
-        {}
     
     void start(Game* game, UI* ui)
     {}
@@ -313,6 +314,10 @@ public:
 class ReturnGoldStep : public TutorialStep
 {
 public:
+    ReturnGoldStep(Game* game, UI* ui)
+        : TutorialStep("returngold", true, game, ui)
+        {}
+
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -322,14 +327,11 @@ public:
             },
             {
                 "The Prime is putting down gold within range of the Gateway, and the Gateway is pulling this gold out of the game, into your Coinfight wallet.",
-                "Only Gateways can mediate between your Coinfight wallet and gold/units on the map. This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs."
+                "Only Gateways can bring gold out of the game and into your Coinfight wallet (or vise versa). This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs.",
+                "At any point, the money in your Coinfight wallet is safe from capture by other players. Everything else (like the $4.50 you spent earlier on a Gateway and Prime) are at risk."
             }
         };
     }
-
-    ReturnGoldStep(Game* game, UI* ui)
-        : TutorialStep("returngold", true, game, ui)
-        {}
     
     void start(Game* game, UI* ui)
     {}
@@ -351,10 +353,73 @@ public:
     }
 };
 
+class MorePrimesStep : public TutorialStep
+{
+public:
+    int entitiesListLengthAtStart;
+
+    MorePrimesStep(Game* game, UI* ui)
+        : TutorialStep("moreprimes", false, game, ui)
+    {
+    }
+    
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Now that we have a bit more money again, queue up 4 more Primes (select Gateway, hit Q)."
+            },
+            {}
+        };
+    }
+    
+    void start(Game* game, UI* ui)
+    {
+        entitiesListLengthAtStart = game->entities.size();
+    }
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    int numAdditionalPrimes(Game* game)
+    {
+        int count = 0;
+        for (unsigned int i = entitiesListLengthAtStart; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+                {
+                    count ++;
+                }
+            }
+        }
+        return count;
+    }
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return numAdditionalPrimes(game) >= 4;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return numAdditionalPrimes(game) / 4.0;
+    }
+};
+
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
 {
 public:
+    TutorialStepTemplate(Game* game, UI* ui)
+        : TutorialStep("name", false, game, ui)
+        {}
+        
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
     {
         return
@@ -365,10 +430,6 @@ public:
             {}
         };
     }
-
-    TutorialStepTemplate(Game* game, UI* ui)
-        : TutorialStep("name", false, game, ui)
-        {}
     
     void start(Game* game, UI* ui)
     {}
@@ -399,6 +460,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new MorePrimesStep(game, ui)));
 
     stepIter = 0;
 }
