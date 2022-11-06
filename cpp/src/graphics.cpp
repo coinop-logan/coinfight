@@ -1144,12 +1144,12 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
-void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int width, sf::Transform* transform)
+void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int fontSize, int width, sf::Transform* transform)
 {
     vector<string> words = splitLineIntoWords(textBlock);
 
     string wrappedTextBlock("");
-    sf::Text renderedTextBlock(sf::String(""), tutorialFont, 13);
+    sf::Text renderedTextBlock(sf::String(""), tutorialFont, fontSize);
     for (unsigned i=0; i<words.size(); i++)
     {
         auto word = words[i];
@@ -1171,10 +1171,10 @@ void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int width, sf
 
     window->draw(renderedTextBlock, *transform);
 
-    transform->translate(sf::Vector2f(0, 12 + renderedTextBlock.getLocalBounds().height));
+    transform->translate(sf::Vector2f(0, fontSize + renderedTextBlock.getLocalBounds().height));
 }
 
-void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI ui, int boxWidth)
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, UI ui, int boxWidth)
 {
     sf::Transform transform;
     transform.translate(
@@ -1184,15 +1184,15 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
         )
     );
 
-    vector<string> preBarTextBlocks = get<0>(tutorial.currentStep()->getText(game, &ui));
-    vector<string> postBarTextBlocks = get<1>(tutorial.currentStep()->getText(game, &ui));
+    vector<string> preBarTextBlocks = get<0>(tutorial->currentStep()->getText(game, &ui));
+    vector<string> postBarTextBlocks = get<1>(tutorial->currentStep()->getText(game, &ui));
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
-        wrapAndRenderText(window, preBarTextBlocks[i], boxWidth, &transform);
+        wrapAndRenderText(window, preBarTextBlocks[i], 13, boxWidth, &transform);
     }
 
-    if (auto progress = tutorial.currentStep()->getProgress(game, &ui))
+    if (auto progress = tutorial->currentStep()->getProgress(game, &ui))
     {
         if (*progress > 0)
         {
@@ -1215,14 +1215,19 @@ void displayTutorial(sf::RenderWindow *window, Tutorial tutorial, Game* game, UI
 
             for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
             {
-                wrapAndRenderText(window, postBarTextBlocks[i], boxWidth, &transform);
+                wrapAndRenderText(window, postBarTextBlocks[i], 13, boxWidth, &transform);
             }
         }
+    }
+    
+    if (tutorial->currentStep()->isReadyToFinish(game, &ui) && tutorial->currentStep()->waitForEnter)
+    {
+        wrapAndRenderText(window, "Press enter to continue", 16, boxWidth, &transform);
     }
 }
 
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, optional<Tutorial> tutorial, bool drawWalletHints)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial* tutorial, bool drawWalletHints)
 {
     if (ui.minimapEnabled)
     {
@@ -1448,7 +1453,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     if (ui.showTutorial && tutorial && !tutorial->isFinished())
     {
-        displayTutorial(window, *tutorial, game, ui, 500);
+        displayTutorial(window, tutorial, game, ui, 500);
     }
 
     window->display();

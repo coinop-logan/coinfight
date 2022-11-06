@@ -6,8 +6,8 @@ using namespace std;
 
 const float REQUIRED_CAMERA_MOVE = 1000;
 
-TutorialStep::TutorialStep(string idName, Game* game, UI* ui):
-    idName(idName) {}
+TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, UI* ui):
+    idName(idName), waitForEnter(waitForEnter) {}
 
 void TutorialStep::start(Game* game, UI* ui)
 {
@@ -21,9 +21,9 @@ void TutorialStep::ping(int num)
 {
     throw runtime_error("ping() has not been defined for tutorial step '" + idName + "'.\n");
 }
-bool TutorialStep::isFinished(Game* game, UI* ui)
+bool TutorialStep::isReadyToFinish(Game* game, UI* ui)
 {
-    throw runtime_error("isFinished() has not been defined for tutorial step '" + idName + "'.\n");
+    throw runtime_error("isReadyToFinish() has not been defined for tutorial step '" + idName + "'.\n");
 }
 optional<float> TutorialStep::getProgress(Game* game, UI* ui)
 {
@@ -44,14 +44,15 @@ public:
             {"Hey there! This tutorial will explain the basics of Coinfight.",
              "You can hide this tutorial (or show it again) anytime by hitting F1.",
              "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, pretend you've just deposited $4.50 into your account, and joined a game. This is what you'll see!",
-             "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\". Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle.",
+             "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\".",
+             "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle.",
             },
             {}
         };
     }
 
     SpawnBeaconStep(Game* game, UI* ui)
-        : TutorialStep("beacon", game, ui)
+        : TutorialStep("beacon", false, game, ui)
     {}
     
     void start(Game* game, UI* ui)
@@ -60,7 +61,7 @@ public:
     void update(Game* game, UI* ui)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         return (game->entities.size() > 1);
     }
@@ -84,7 +85,7 @@ public:
     vector2i lastCameraPos;
     float totalDistanceMoved;
     CameraStep(Game* game, UI* ui):
-        TutorialStep("camera", game, ui),
+        TutorialStep("camera", false, game, ui),
         lastCameraPos(ui->camera.gamePos),
         totalDistanceMoved(0)
     {}
@@ -102,7 +103,7 @@ public:
     void ping(int num)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         return totalDistanceMoved >= REQUIRED_CAMERA_MOVE;
     }
@@ -132,7 +133,7 @@ public:
     }
 
     SpawnFinishStep(Game* game, UI* ui):
-        TutorialStep("spawnfinish", game, ui)
+        TutorialStep("spawnfinish", true, game, ui)
     {}
 
     void start(Game* game, UI* ui)
@@ -144,7 +145,7 @@ public:
     void ping(int num)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         if (game->entities.size() < 3)
         {
@@ -175,7 +176,7 @@ public:
         }
         else if (game->entities.size() > 2)
         {
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[1]))
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]))
             {
                 return 1;
             }
@@ -201,7 +202,7 @@ public:
     }
 
     BuildFirstPrimeStep(Game* game, UI* ui)
-        : TutorialStep("firstprime", game, ui)
+        : TutorialStep("firstprime", false, game, ui)
         {}
     
     void start(Game* game, UI* ui)
@@ -213,7 +214,7 @@ public:
     void ping(int num)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         for (unsigned int i=0; i<game->entities.size(); i++)
         {
@@ -269,7 +270,7 @@ public:
     }
 
     PickupGoldStep(Game* game, UI* ui)
-        : TutorialStep("pickupgold", game, ui)
+        : TutorialStep("pickupgold", true, game, ui)
         {}
     
     void start(Game* game, UI* ui)
@@ -298,7 +299,7 @@ public:
 
         return total;
     }
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.5));
     }
@@ -327,7 +328,7 @@ public:
     }
 
     ReturnGoldStep(Game* game, UI* ui)
-        : TutorialStep("returngold", game, ui)
+        : TutorialStep("returngold", true, game, ui)
         {}
     
     void start(Game* game, UI* ui)
@@ -339,7 +340,7 @@ public:
     void ping(int num)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         return (game->players[0].credit.getInt() > dollarsToCoinsIntND(0.5));
     }
@@ -366,7 +367,7 @@ public:
     }
 
     TutorialStepTemplate(Game* game, UI* ui)
-        : TutorialStep("name", game, ui)
+        : TutorialStep("name", false, game, ui)
         {}
     
     void start(Game* game, UI* ui)
@@ -378,7 +379,7 @@ public:
     void ping(int num)
     {}
 
-    bool isFinished(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, UI* ui)
     {
         return false;
     }
@@ -390,6 +391,7 @@ public:
 };
 
 Tutorial::Tutorial(Game* game, UI* ui)
+    : game(game), ui(ui)
 {
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnBeaconStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
@@ -398,24 +400,27 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
 
-
     stepIter = 0;
 }
-void Tutorial::start(Game* game, UI* ui)
+void Tutorial::start()
 {
     stepIter = 0;
     steps[stepIter]->start(game, ui);
 }
-void Tutorial::update(Game* game, UI* ui)
+void Tutorial::stepForward()
+{
+    stepIter ++;
+    if (stepIter < steps.size())
+    {
+        currentStep()->start(game, ui);
+    }
+}
+void Tutorial::update()
 {
     currentStep()->update(game, ui);
-    if (currentStep()->isFinished(game, ui))
+    if (currentStep()->isReadyToFinish(game, ui) && !currentStep()->waitForEnter)
     {
-        stepIter ++;
-        if (stepIter < steps.size())
-        {
-            currentStep()->start(game, ui);
-        }
+        stepForward();
     }
 }
 void Tutorial::pingStep(string name, int num)
@@ -428,4 +433,11 @@ void Tutorial::pingStep(string name, int num)
 bool Tutorial::isFinished()
 {
     return (stepIter >= steps.size());
+}
+void Tutorial::enterPressed()
+{
+    if (currentStep()->isReadyToFinish(game, ui) && currentStep()->waitForEnter)
+    {
+        stepForward();
+    }
 }

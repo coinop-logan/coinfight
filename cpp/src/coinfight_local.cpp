@@ -95,11 +95,11 @@ int main(int argc, char *argv[])
     ui = UI();
     uint8_t currentPlayerId = 0;
 
-    optional<Tutorial> tutorial;
+    Tutorial* tutorial;
     if (startTutorial)
     {
-        tutorial = {Tutorial(&game, &ui)};
-        tutorial->start(&game, &ui);
+        tutorial = new Tutorial(&game, &ui);
+        tutorial->start();
     }
 
     vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 
                 // poll for cmds from input
                 // (also updates UI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window);
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window, tutorial);
                 pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
             if (tutorial && !tutorial->isFinished())
             {
-                tutorial->update(&game, &ui);
+                tutorial->update();
             }
         }
     }

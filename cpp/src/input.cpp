@@ -1,6 +1,7 @@
 #include "input.h"
 #include "config.h"
 #include "interface.h"
+#include "tutorial.h"
 
 extern Game game;
 extern UI ui;
@@ -544,7 +545,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
     return boost::shared_ptr<PrimeBuildCmd>();
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
 {
     bool spawnBeaconAvailable = maybePlayerId ?
         ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
@@ -894,6 +895,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
             {
                 case sf::Keyboard::F1:
                     ui->showTutorial = !ui->showTutorial;
+                    break;
+                case sf::Keyboard::Enter:
+                    tutorial->enterPressed();
                     break;
                 case sf::Keyboard::Tilde:
                     ui->debugInt ++;

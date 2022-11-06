@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 
         nextFrameStart += ONE_FRAME;
 
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window);
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
 
         for (unsigned int i=0; i < cmdsToSend.size(); i++)
         {
