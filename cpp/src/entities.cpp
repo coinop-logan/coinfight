@@ -618,7 +618,7 @@ void Unit::cmdStop()
 Unit::Unit() : Entity() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
 Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos)
-    : Entity(pos), healthAssumingBuilt(healthAssumingBuilt), ownerId(ownerId), goldInvested(totalCost) {}
+    : Entity(pos), healthAssumingBuilt(healthAssumingBuilt), ownerId(ownerId), goldInvested(totalCost), angle_view(0) {}
 void Unit::packEntityAndUnitBasics(Netpack::Builder* to)
 {
     packEntityBasics(to);
