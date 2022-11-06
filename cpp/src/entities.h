@@ -321,7 +321,7 @@ const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSF
 const fixed32 PRIME_SIGHT_RANGE(200);
 const coinsInt PRIME_PICKUP_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const coinsInt PRIME_PUTDOWN_RATE = 10 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt PRIME_MAX_GOLD_HELD = 10000;
+const coinsInt PRIME_MAX_GOLD_HELD = 5000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit

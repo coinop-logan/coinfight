@@ -8,6 +8,8 @@
 
 using namespace std;
 
+void setupTutorialScenario(Game* game);
+
 class TutorialStep
 {
 public:

@@ -67,28 +67,25 @@ int main(int argc, char *argv[])
 
     game = Game();
 
-    vector<boost::shared_ptr<Event>> firstEvents;
-
     if (startTutorial)
     {
-        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), dollarsToCoinsIntND(4.5), true)));
-
-        boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
-        gp->gold.createMoreByFiat(dollarsToCoinsIntND(6));
-        game.registerNewEntityIgnoringCollision(gp);
+        setupTutorialScenario(&game);
     }
     else
     {
-        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        vector<boost::shared_ptr<Event>> firstEvents;
+
         firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
         firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
         firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
+        
+        for (unsigned int i=0; i<firstEvents.size(); i++)
+        {
+            firstEvents[i]->execute(&game);
+        }
     }
 
-    for (unsigned int i=0; i<firstEvents.size(); i++)
-    {
-        firstEvents[i]->execute(&game);
-    }
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 

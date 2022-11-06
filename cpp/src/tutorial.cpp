@@ -4,7 +4,25 @@
 
 using namespace std;
 
-const float REQUIRED_CAMERA_MOVE = 1000;
+void setupTutorialScenario(Game* game)
+{
+    game->players.push_back(Player(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000")));
+    game->players.push_back(Player(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000")));
+
+    game->players[0].credit.createMoreByFiat(dollarsToCoinsIntND(4.5));
+
+    boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
+    gp->gold.createMoreByFiat(dollarsToCoinsIntND(3));
+    game->registerNewEntityIgnoringCollision(gp);
+
+    game->players[1].credit.createMoreByFiat(FIGHTER_COST);
+
+    vector2fp fighterPos(randomVectorWithMagnitude(1500));
+    boost::shared_ptr<Fighter> fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
+    fighter->completeBuildingInstantly(&game->players[1].credit);
+    fighter->takeHit(FIGHTER_HEALTH / 2);
+    game->registerNewEntityIgnoringCollision(fighter);
+}
 
 TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, UI* ui):
     idName(idName), waitForEnter(waitForEnter) {}
@@ -63,55 +81,7 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return (game->entities.size() > 1);
-    }
-};
-
-class CameraStep : public TutorialStep
-{
-public:
-    vector2i lastCameraPos;
-    float totalDistanceMoved;
-
-    CameraStep(Game* game, UI* ui):
-        TutorialStep("camera", false, game, ui),
-        lastCameraPos(ui->camera.gamePos),
-        totalDistanceMoved(0)
-    {}
-
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
-    {
-        return
-        {
-            {
-                "Nice! While that's spawning, you can move the camera around by dragging with the middle mouse button.",
-                "Go ahead, wiggle 'er around a bit!"
-            },
-            {}
-        };
-    }
-
-    void start(Game* game, UI* ui)
-    {}
-
-    void update(Game* game, UI* ui)
-    {
-        vector2i newCameraPos = ui->camera.gamePos;
-        totalDistanceMoved += (lastCameraPos - newCameraPos).getMagnitude();
-        lastCameraPos = newCameraPos;
-    }
-
-    void ping(int num)
-    {}
-
-    bool isReadyToFinish(Game* game, UI* ui)
-    {
-        return totalDistanceMoved >= REQUIRED_CAMERA_MOVE;
-    }
-
-    optional<float> getProgress(Game* game, UI* ui)
-    {
-        return totalDistanceMoved / REQUIRED_CAMERA_MOVE;
+        return (game->entities.size() > 2);
     }
 };
 
@@ -148,13 +118,13 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        if (game->entities.size() < 3)
+        if (game->entities.size() < 4)
         {
             return false;
         }
         else
         {
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]))
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]))
             {
                 return true;
             }
@@ -171,13 +141,13 @@ public:
         {
             return 0;
         }
-        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(game->entities[1]))
+        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(game->entities[2]))
         {
             return float(beacon->getBuiltRatio());
         }
         else if (game->entities.size() > 2)
         {
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]))
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]))
             {
                 return 1;
             }
@@ -256,7 +226,7 @@ class PickupGoldStep : public TutorialStep
 {
 public:
     PickupGoldStep(Game* game, UI* ui)
-        : TutorialStep("pickupgold", true, game, ui)
+        : TutorialStep("pickupgold", false, game, ui)
         {}
 
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -266,7 +236,7 @@ public:
             {
                 "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
                 "Select your Prime and right-click on that gold pile to start picking it up.",
-                "Pick up at least $0.50 to continue."
+                "Pick up at $0.50 from the gold pile to continue. This is the max capacity of Primes."
             },
             {
                 "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to spend on units, or eventually, withdraw as winnings in DAI."
@@ -423,7 +393,7 @@ public:
         return
         {
             {
-                "Now, you probably don't have enough money to build four more Primes, so you'll run out of money soon, and your Gateway will stop building.",
+                "Now, you probably don't have enough money to build all those Primes, so you'll run out of money soon, and your Gateway will stop building.",
                 "Let's have the Primes automatically gather gold and bring it to the Gateway, by way of a \"gather\" command.",
                 "Left-click and drag to select ALL of your primes (even the ones that aren't done building). Then hit the 'A' key and click near the gold pile.",
                 "The unbuilt ones will execute the order once they're fully built.",
@@ -437,7 +407,7 @@ public:
     
     coinsInt countUncapturedGold(Game* game)
     {
-        auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[2]);
+        auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]);
 
         coinsInt count = 0;
         for (unsigned int i=0; i<game->entities.size(); i++)
@@ -497,6 +467,111 @@ public:
     }
 };
 
+class BuildFighterStep : public TutorialStep
+{
+public:
+    BuildFighterStep(Game* game, UI* ui)
+        : TutorialStep("name", false, game, ui)
+        {}
+        
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Let's get into some combat! Queue up a Fighter by selecting your Gateway and hitting 'W'."
+            },
+            {}
+        };
+    }
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto entity = game->entities[i])
+            {
+                if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(entity))
+                {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return {};
+    }
+};
+
+class CameraStep : public TutorialStep
+{
+public:
+    boost::shared_ptr<Fighter> getWoundedFighter(Game* game)
+    {
+        auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[1]);
+        return fighter;
+    }
+
+    CameraStep(Game* game, UI* ui):
+        TutorialStep("camera", false, game, ui)
+    {}
+
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "While we're waiting on that Fighter to build, let's look around.",
+                "You can move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
+                "To continue, find the wounded foreign Fighter."
+            },
+            {}
+        };
+    }
+
+    float getDistanceToFighterWithMargin(Game *game, UI* ui)
+    {
+        float distance = (ui->camera.gamePos - getWoundedFighter(game)->getPos()).getMagnitude();
+        return max(0.f, distance - 200);
+    }
+
+    float startDistanceToFighter;
+
+    void start(Game* game, UI* ui)
+    {
+        startDistanceToFighter = getDistanceToFighterWithMargin(game, ui);
+    }
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return (getDistanceToFighterWithMargin(game, ui) == 0);
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return 1 - (getDistanceToFighterWithMargin(game, ui) / startDistanceToFighter);
+    }
+};
+
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
 {
@@ -540,13 +615,14 @@ Tutorial::Tutorial(Game* game, UI* ui)
     : game(game), ui(ui)
 {
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnBeaconStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new MorePrimesStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
 
     stepIter = 0;
 }
