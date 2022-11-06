@@ -626,6 +626,46 @@ public:
     }
 };
 
+class DropGoldExplainer : public TutorialStep
+{
+public:
+    DropGoldExplainer(Game* game, UI* ui)
+        : TutorialStep("dropgoldexplainer", true, game, ui)
+        {}
+        
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "As you can see, when the Fighter died, it dropped $1.50. You can come pick it up with your Primes if you want.",
+                "Upon death, units drop their investment cost as gold onto the map in the same way. As battles are waged, the battlefield will become littered with gold piles where units died. Opportunistic players might be able to make a profit simply by picking up the pieces of a larger battle between other players.",
+                "At the end of this tutorial, you'll learn how to recoup your investment in your army. Just a few more things to go over first!"
+            },
+            {}
+        };
+    }
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return true;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return {};
+    }
+};
+
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
 {
@@ -678,6 +718,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new AttackStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new DropGoldExplainer(game, ui)));
 
     stepIter = 0;
 }
