@@ -97,7 +97,6 @@ public:
         return
         {
             {
-                "Just waiting for that Gateway to spawn in...",
                 "Note that this is spending money from your Coinfight wallet. All told it will cost $4."
             },
             {
@@ -235,8 +234,7 @@ public:
         {
             {
                 "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
-                "Select your Prime and right-click on that gold pile to start picking it up.",
-                "Pick up at $0.50 from the gold pile to continue. This is the max capacity of Primes."
+                "Select your Prime and right-click on that gold pile to start picking it up. Your Prime has a max capacity of $0.50.",
             },
             {
                 "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to spend on units, or eventually, withdraw as winnings in DAI."
@@ -313,7 +311,7 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return (game->players[0].credit.getInt() > dollarsToCoinsIntND(0.5));
+        return (game->players[0].credit.getInt() >= dollarsToCoinsIntND(0.5));
     }
 
     optional<float> getProgress(Game* game, UI* ui)
@@ -496,7 +494,7 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        for (unsigned int i=0; i<game->entities.size(); i++)
+        for (unsigned int i=2; i<game->entities.size(); i++)
         {
             if (auto entity = game->entities[i])
             {
@@ -516,15 +514,22 @@ public:
     }
 };
 
+boost::shared_ptr<Fighter> getWoundedFighter(Game* game)
+{
+    if (auto entity = game->entities[1])
+    {
+        if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(entity))
+        {
+            return fighter;
+        }
+    }
+
+    return {};
+}
+
 class CameraStep : public TutorialStep
 {
 public:
-    boost::shared_ptr<Fighter> getWoundedFighter(Game* game)
-    {
-        auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[1]);
-        return fighter;
-    }
-
     CameraStep(Game* game, UI* ui):
         TutorialStep("camera", false, game, ui)
     {}
@@ -569,6 +574,55 @@ public:
     optional<float> getProgress(Game* game, UI* ui)
     {
         return 1 - (getDistanceToFighterWithMargin(game, ui) / startDistanceToFighter);
+    }
+};
+
+class AttackStep : public TutorialStep
+{
+public:
+    AttackStep(Game* game, UI* ui)
+        : TutorialStep("attack", false, game, ui)
+        {}
+        
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "There it is! Once your Fighter is done building, select your fighter and go kill it!",
+                "(You might not have enough for a Fighter if you built a lot of Primes. If so, you can scuttle your Primes and recover their cost by selecting the Gateway and right-clicking on a Prime.)",
+                "With any unit, right-clicking moves the unit, and right clicking on an enemy unit attacks it.",
+                "You can also hit 'A' and click on a location to issue an \"attack-to\" command. This will cause Fighters to move toward the target location and fight anything they encounter.",
+                "Now, go kill!"
+            },
+            {}
+        };
+    }
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        if (auto fighter = getWoundedFighter(game))
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return {};  
     }
 };
 
@@ -623,6 +677,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new AttackStep(game, ui)));
 
     stepIter = 0;
 }
