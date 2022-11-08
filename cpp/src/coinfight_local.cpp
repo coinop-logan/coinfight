@@ -28,15 +28,17 @@ UI ui;
 
 int main(int argc, char *argv[])
 {
+    // these are defaults which arguments may change
     unsigned int playerStartDollars = 10;
     unsigned int honeypotStartingDollars = 50;
     bool fullscreen = true;
     bool smallScreen = false;
+    bool checkNetpack = true;
 
     bool startTutorial = true; // may be switched when processing arguments
 
     int c;
-    while ((c = getopt(argc, argv, "s:g:w::")) != -1)
+    while ((c = getopt(argc, argv, "ns:g:w::")) != -1)
     {
         switch (c)
         {
@@ -58,6 +60,9 @@ int main(int argc, char *argv[])
                 {
                     smallScreen = false;
                 }
+                break;
+            case 'n':
+                checkNetpack = false;
                 break;
         }
     }
@@ -92,14 +97,14 @@ int main(int argc, char *argv[])
     ui = UI();
     uint8_t currentPlayerId = 0;
 
-    Tutorial* tutorial;
+    Tutorial* tutorial = NULL;
     if (startTutorial)
     {
         tutorial = new Tutorial(&game, &ui);
         tutorial->start();
     }
 
-    vector<boost::shared_ptr<Cmd>> pendingCmdsToSend;
+    vector<boost::shared_ptr<Cmd>> pendingCmds;
 
     ParticlesContainer particles;
 
@@ -119,7 +124,7 @@ int main(int argc, char *argv[])
                 // poll for cmds from input
                 // (also updates UI)
                 vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window, tutorial);
-                pendingCmdsToSend.insert(pendingCmdsToSend.begin(), newCmds.begin(), newCmds.end());
+                pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
                 uint8_t newPlayerId = ui.debugInt % game.players.size();
@@ -135,82 +140,113 @@ int main(int argc, char *argv[])
         else {
             nextFrameStart += ONE_FRAME;
 
-            // gonna pack queued cmds up and clear list
-            vector<vch*> packages;
-            for (unsigned int i=0; i < pendingCmdsToSend.size(); i++)
+            // depending on if we're testing netpack code or not, we have two different approaches.
+            if (!checkNetpack)
             {
-                if (!pendingCmdsToSend[i])
-                    cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
-                else
+                // simply execute all pending cmds
+                for (unsigned int i=0; i < pendingCmds.size(); i++)
                 {
-                    packages.push_back(new vch);
-                    clearVchAndBuildCmdPacket(packages.back(), pendingCmdsToSend[i]);
+                    if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(pendingCmds[i]))
+                    {
+                        unitCmd->executeAsPlayer(&game, game.playerIdToAddress(currentPlayerId));
+                    }
+                    else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(pendingCmds[i]))
+                    {
+                        spawnBeaconCmd->executeAsPlayer(&game, game.playerIdToAddress(currentPlayerId));
+                    }
+                    else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(pendingCmds[i]))
+                    {
+                        // ignore. Server processes withdrawals and creates an event.
+                    }
+                    else
+                    {
+                        cout << "Woah, I don't know how to handle that cmd!" << endl;
+                    }
                 }
-            }
-            pendingCmdsToSend.clear();
+                pendingCmds.clear();
 
-            // now unpack them like the server does
-            vector<boost::shared_ptr<AuthdCmd>> authdCmds;
-            for (unsigned int i=0; i<packages.size(); i++)
+                //iterate game
+                game.iterate();
+            }
+            else
             {
-                Netpack::Consumer source(packages[i]->begin() + 2); // we're looking past the size specifier, because in this case we already know...
+                // gonna pack queued cmds up and clear list
+                vector<vch*> packages;
+                for (unsigned int i=0; i < pendingCmds.size(); i++)
+                {
+                    if (!pendingCmds[i])
+                        cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+                    else
+                    {
+                        packages.push_back(new vch);
+                        clearVchAndBuildCmdPacket(packages.back(), pendingCmds[i]);
+                    }
+                }
+                pendingCmds.clear();
 
-                boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
-                boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
+                // now unpack them like the server does
+                vector<boost::shared_ptr<AuthdCmd>> authdCmds;
+                for (unsigned int i=0; i<packages.size(); i++)
+                {
+                    Netpack::Consumer source(packages[i]->begin() + 2); // we're looking past the size specifier, because in this case we already know...
 
-                authdCmds.push_back(authdCmd);
+                    boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
+                    boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
 
-                delete packages[i];
+                    authdCmds.push_back(authdCmd);
+
+                    delete packages[i];
+                }
+
+                // now execute all authd cmds
+                for (unsigned int i=0; i<authdCmds.size(); i++)
+                {
+                    auto cmd = authdCmds[i]->cmd;
+                    if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
+                    {
+                        unitCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
+                    }
+                    else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
+                    {
+                        spawnBeaconCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
+                    }
+                    else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
+                    {
+                        // ignore. Server processes withdrawals and creates an event.
+                    }
+                    else
+                    {
+                        cout << "Woah, I don't know how to handle that cmd!" << endl;
+                    }
+                }
+
+                // iterate, but sandwiched between some packing tests
+                // cout << "PACKING GAME PRE-ITERATE" << endl;
+                vch packData1;
+                Netpack::Builder b(&packData1);
+                // b.enableDebugOutput();
+                game.pack(&b);
+
+                // cout << "UNPACKING GAME" << endl;
+                Netpack::Consumer c(packData1.begin());
+                // c.enableDebugOutput();
+                Game oldGameFromUnpack(&c);
+
+                game.iterate();
+
+                // cout << "PACKING GAME POST-ITERATE" << endl;
+                vch packData2;
+                b = Netpack::Builder(&packData2);
+                // b.enableDebugOutput();
+                game.pack(&b);
+
+                // cout << "UNPACKING GAME" << endl;
+                c = Netpack::Consumer(packData2.begin());
+                // c.enableDebugOutput();
+                Game newUnpackedGame(&c);
+
+                assert(gameStatesAreIdentical_triggerDebugIfNot(&game, &newUnpackedGame));
             }
-
-            // now execute all authd cmds
-            for (unsigned int i=0; i<authdCmds.size(); i++)
-            {
-                auto cmd = authdCmds[i]->cmd;
-                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
-                {
-                    unitCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
-                }
-                else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
-                {
-                    spawnBeaconCmd->executeAsPlayer(&game, authdCmds[i]->playerAddress);
-                }
-                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
-                {
-                    // ignore. Server processes withdrawals and creates an event.
-                }
-                else
-                {
-                    cout << "Woah, I don't know how to handle that cmd!" << endl;
-                }
-            }
-
-            // iterate, but sandwiched between some packing tests
-            // cout << "PACKING GAME PRE-ITERATE" << endl;
-            vch packData1;
-            Netpack::Builder b(&packData1);
-            // b.enableDebugOutput();
-            game.pack(&b);
-
-            // cout << "UNPACKING GAME" << endl;
-            Netpack::Consumer c(packData1.begin());
-            // c.enableDebugOutput();
-            Game oldGameFromUnpack(&c);
-
-            game.iterate();
-
-            // cout << "PACKING GAME POST-ITERATE" << endl;
-            vch packData2;
-            b = Netpack::Builder(&packData2);
-            // b.enableDebugOutput();
-            game.pack(&b);
-
-            // cout << "UNPACKING GAME" << endl;
-            c = Netpack::Consumer(packData2.begin());
-            // c.enableDebugOutput();
-            Game newUnpackedGame(&c);
-
-            assert(gameStatesAreIdentical_triggerDebugIfNot(&game, &newUnpackedGame));
 
             ui.iterate();
             if (ui.quitNow)
