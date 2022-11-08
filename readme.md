@@ -7,7 +7,7 @@ The game is still in early alpha, but here are some basic media pieces:
 * [Introducing Coinfight](https://medium.com/@coinop.logan/introducing-coinfight-db55c3f918ed) - 10 min read
 * [v0.1.6 showcase/demo](https://youtu.be/QRzH7jZX7B4) - 4 min video
 
-~~I'm making frequent updates, and hope to run a public round of the game sometine in 2022.~~ Ran out of money, gotta refill the tank! Hope to return to this soon.
+Currently working on generating hype and rapid feature iteration from user feedback. [Join the Discord](https://discord.gg/hdhCbCqf5m) if you want to try out the game!
 
 # Client Build Instructions
 
