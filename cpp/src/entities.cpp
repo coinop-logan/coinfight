@@ -1963,6 +1963,24 @@ void Prime::tryTransferAndMaybeMoveOn()
                 }
             }
         }
+        if (heldGold.getInt() == 0)
+        {
+            // if we're here, the Prime just emptied itself. If we're not in range of the fetchTarget, start moving there.
+            if (fetchTarget)
+            {
+                if (auto fetchTargetPoint = fetchTarget->getPointUnlessTargetDeleted(*game))
+                {
+                    if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                    {
+                        setMoveTarget(*fetchTarget, PRIME_TRANSFER_RANGE);
+                    }
+                }
+                else
+                {
+                    cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                }
+            }
+        }
     }
 }
 
