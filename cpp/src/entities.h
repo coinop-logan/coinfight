@@ -342,7 +342,8 @@ public:
     vector<Target> scavengeTargetQueue;
     optional<EntityRef> fundsSource;
 
-    GoldTransferState goldTransferState_view;
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
 
     void pack(Netpack::Builder* to);
 

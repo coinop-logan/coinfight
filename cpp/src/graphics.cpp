@@ -1249,40 +1249,26 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 // add some effects for gold transfer and building/scuttling
                 if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                 {
-                    if (prime->isActive())
+                    if (prime->isActive() && game->frame % 3 == 0)
                     {
-                        if (auto primeTarget = prime->getMaybeMoveTarget())
+                        if (auto flowFromEntity = get<0>(prime->goldFlowFrom_view))
                         {
-                            if (prime->goldTransferState_view == Pushing || prime->goldTransferState_view == BuildingSomething)
+                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+
+                            bool scuttling = get<1>(prime->goldFlowFrom_view);
+                            if (scuttling)
                             {
-                                if (game->frame % 3 == 0)
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
-                                }
+                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), prime->getPos(), sf::Color::Red);
                             }
-                            if (prime->goldTransferState_view == BuildingSomething)
+                        }
+                        if (auto flowToEntity = get<0>(prime->goldFlowTo_view)) 
+                        {
+                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
+
+                            bool building = get<1>(prime->goldFlowTo_view);
+                            if (building)
                             {
-                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
-                                {
-                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Blue);
-                                }
-                            }
-                            if (prime->goldTransferState_view == Pulling || prime->goldTransferState_view == ScuttlingSomething)
-                            {
-                                if (optional<vector2fp> targetPos = primeTarget->getPointUnlessTargetDeleted(*game))
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(*targetPos), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
-                                    }
-                                }
-                            }
-                            if (prime->goldTransferState_view == ScuttlingSomething)
-                            {
-                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
-                                {
-                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Red);
-                                }
+                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), prime->getPos(), sf::Color::Blue);
                             }
                         }
                     }

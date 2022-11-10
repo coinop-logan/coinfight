@@ -1589,7 +1589,7 @@ string Prime::getTypename() const { return "Prime"; }
 Prime::Prime(uint8_t ownerId, vector2fp pos)
     : Unit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
       heldGold(PRIME_MAX_GOLD_HELD),
-      goldTransferState_view(NoGoldTransfer)
+      goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
 {}
 void Prime::pack(Netpack::Builder* to)
 {
@@ -1861,7 +1861,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                         if (amountPulled > 0)
                         {
-                            goldTransferState_view = scuttling ? ScuttlingSomething : Pulling;
+                            goldFlowFrom_view = {entity, scuttling};
                         }
                     }
                 }
@@ -1946,7 +1946,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                     if (amountPushed > 0)
                     {
-                        goldTransferState_view = building ? BuildingSomething : Pushing;
+                        goldFlowTo_view = {entity, building};
                     }
                 }
                 else
@@ -1981,14 +1981,16 @@ void Prime::tryTransferAndMaybeMoveOn()
                 }
             }
         }
-    }
+    }// until proven otherwise
 }
 
 void Prime::iterate()
 {
     validateTargets();
 
-    goldTransferState_view = NoGoldTransfer; // until proven otherwise
+    // until proven otherwise
+    goldFlowFrom_view = {{}, false};
+    goldFlowTo_view = {{}, false};
 
     Game *game = getGameOrThrow();
 
