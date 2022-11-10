@@ -77,6 +77,7 @@ struct UnitCmd : public Cmd
     vector<boost::shared_ptr<Unit>> getUnits(Game *game);
 
     void executeAsPlayer(Game *, Address userAddress);
+    virtual void prepForUnitExecution(Game *, uint8_t);
     virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
 
     void packUnitCmdBasics(Netpack::Builder* to);
@@ -125,18 +126,22 @@ struct PickupCmd : public UnitCmd
     PickupCmd(Netpack::Consumer* from);
 };
 
-struct PutdownCmd : public UnitCmd
+struct DepositCmd : public UnitCmd
 {
     Target target;
+
+    // Not meant for network transport
+    boost::shared_ptr<Entity> entityToDepositTo;
 
     uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
+    void prepForUnitExecution(Game*, uint8_t ownerId);
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    PutdownCmd(vector<EntityRef>, Target);
-    PutdownCmd(Netpack::Consumer* from);
+    DepositCmd(vector<EntityRef>, Target);
+    DepositCmd(Netpack::Consumer* from);
 };
 
 struct GatewayBuildCmd : public UnitCmd
@@ -158,10 +163,14 @@ struct PrimeBuildCmd : public UnitCmd
     uint8_t buildTypechar;
     vector2fp buildPos;
 
+    // Not meant for network transport
+    boost::shared_ptr<Unit> unitToBuild;
+
     uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
+    void prepForUnitExecution(Game*, uint8_t ownerId);
     void executeOnUnit(boost::shared_ptr<Unit>);
 
     PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos);

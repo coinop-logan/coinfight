@@ -16,7 +16,7 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
     case CMD_PICKUP_CHAR:
         return boost::shared_ptr<Cmd>(new PickupCmd(from));
     case CMD_PUTDOWN_CHAR:
-        return boost::shared_ptr<Cmd>(new PutdownCmd(from));
+        return boost::shared_ptr<Cmd>(new DepositCmd(from));
     case CMD_GATEWAYBUILD_CHAR:
         return boost::shared_ptr<Cmd>(new GatewayBuildCmd(from));
     case CMD_WITHDRAW_CHAR:
@@ -169,6 +169,8 @@ void UnitCmd::executeAsPlayer(Game *game, Address playerAddress)
     
     uint8_t playerId = *maybePlayerId;
 
+    prepForUnitExecution(game, playerId);
+
     vector<boost::shared_ptr<Unit>> units = getUnits(game);
     for (unsigned int i = 0; i < units.size(); i++)
     {
@@ -178,6 +180,8 @@ void UnitCmd::executeAsPlayer(Game *game, Address playerAddress)
         }
     }
 }
+void UnitCmd::prepForUnitExecution(Game* game, uint8_t playerId)
+{}
 void UnitCmd::executeOnUnit(boost::shared_ptr<Unit> u)
 {
     throw runtime_error("executeOnUnit is not defined for the command '" + getTypename() + "'");
@@ -290,41 +294,60 @@ PickupCmd::PickupCmd(Netpack::Consumer* from)
     goldRef = consumeEntityRef(from);
 }
 
-uint8_t PutdownCmd::getTypechar()
+uint8_t DepositCmd::getTypechar()
 {
     return CMD_PUTDOWN_CHAR;
 }
-string PutdownCmd::getTypename()
+string DepositCmd::getTypename()
 {
-    return "PutdownCmd";
+    return "DepositCmd";
 }
 
-void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+void DepositCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
 {
-    if (unit->getRefOrThrow() == target.castToEntityRef())
+    if (auto entity = target.castToEntityPtr(*game))
+    {
+        entityToDepositTo = entity;
+    }
+    else if (auto point = target.castToPoint())
+    {
+        entityToDepositTo = boost::shared_ptr<GoldPile>(new GoldPile(*point));
+
+        if (! game->registerNewEntityIfNoCollision(entityToDepositTo))
+        {
+            entityToDepositTo.reset();
+        }
+    }
+}
+void DepositCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (!entityToDepositTo)
+        return;
+    
+    if (unit->getRefOrThrow() == entityToDepositTo->getRefOrThrow())
         return;
 
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdDeposit(target);
+        prime->cmdDeposit(entityToDepositTo->getRefOrThrow());
     }
 
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
-        gateway->cmdDepositTo(target);
+        gateway->cmdDepositTo(entityToDepositTo->getRefOrThrow());
     }
     else
         cout << "That's not a prime!!" << endl;
 }
 
-PutdownCmd::PutdownCmd(vector<EntityRef> units, Target target)
+DepositCmd::DepositCmd(vector<EntityRef> units, Target target)
     : UnitCmd(units), target(target) {}
-void PutdownCmd::pack(Netpack::Builder* to)
+void DepositCmd::pack(Netpack::Builder* to)
 {
     packUnitCmdBasics(to);
     target.pack(to);
 }
-PutdownCmd::PutdownCmd(Netpack::Consumer* from)
+DepositCmd::DepositCmd(Netpack::Consumer* from)
     : UnitCmd(from), target((EntityRef)0)
 {
     target = Target(from);
@@ -373,11 +396,37 @@ string PrimeBuildCmd::getTypename()
     return "PrimeBuildCmd";
 }
 
+void PrimeBuildCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
+{
+    switch (buildTypechar)
+    {
+        case GATEWAY_TYPECHAR:
+            unitToBuild = boost::shared_ptr<Gateway>(new Gateway(ownerId, buildPos));
+            break;
+        case TURRET_TYPECHAR:
+            unitToBuild = boost::shared_ptr<Turret>(new Turret(ownerId, buildPos));
+            break;
+        default:
+            cout << "Prime doesn't know how to build that unit..." << endl;
+            break;
+    }
+    if (unitToBuild)
+    {
+        if (! game->registerNewEntityIfNoCollision(unitToBuild))
+        {
+            unitToBuild.reset();
+        }
+    }
+
+}
 void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
+    if (!unitToBuild)
+        return;
+    
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        // prime->cmdBuild(buildTypechar, buildPos);
+        prime->cmdDeposit(unitToBuild->getRefOrThrow());
     }
     else
     {

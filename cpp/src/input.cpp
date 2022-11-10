@@ -388,7 +388,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                 }
                 else
                 {
-                    return boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
+                    return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
                 }
             }
 
@@ -462,7 +462,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                                 eligiblePrimeRefs.push_back(primesInSelection[i]->getRefOrThrow());
                             }
                         }
-                        return boost::shared_ptr<Cmd>(new PutdownCmd(eligiblePrimeRefs, Target(gateway)));
+                        return boost::shared_ptr<Cmd>(new DepositCmd(eligiblePrimeRefs, Target(gateway)));
                     }
                 }
                 else
@@ -753,7 +753,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
 
                             if (primesAndGateways.size() > 0)
                             {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(primesAndGateways), target)));
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesAndGateways), target)));
                                 ui->cmdState = UI::Default;
                             }
                         }

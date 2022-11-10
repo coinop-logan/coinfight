@@ -297,7 +297,7 @@ public:
     Gateway(Netpack::Consumer* from);
 
     void cmdBuildUnit(uint8_t unitTypechar);
-    void cmdDepositTo(Target target);
+    void cmdDepositTo(EntityRef entityRef);
     void cmdScuttle(EntityRef targetRef);
     void cmdStopScuttle(EntityRef targetRef);
     coinsInt buildQueueWeight();
@@ -349,7 +349,7 @@ public:
     Prime(uint8_t ownerId, vector2fp pos);
     Prime(Netpack::Consumer* from);
 
-    void cmdDeposit(Target);
+    void cmdDeposit(EntityRef);
     void cmdFetch(Target);
     void cmdStop();
     void onMoveCmd(vector2fp moveTo);

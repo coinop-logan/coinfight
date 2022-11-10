@@ -590,8 +590,8 @@ uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypename() const { return "GoldPile"; }
 void GoldPile::iterate()
 {
-    if (gold.getInt() == 0)
-        die();
+    // if (gold.getInt() == 0)
+    //     die();
 }
 
 
@@ -1171,33 +1171,12 @@ void Gateway::cmdBuildUnit(uint8_t unitTypechar)
         }
     }
 }
-void Gateway::cmdDepositTo(Target target)
+void Gateway::cmdDepositTo(EntityRef entityRef)
 {
     if (buildTargetQueue.size() >= 255)
         return;
     
-    if (this->isActive())
-    {
-        // if target is a point, check range and create goldPile
-        if (auto point = target.castToPoint())
-        {
-            if ((*point - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
-            {
-                return;
-            }
-            boost::shared_ptr<GoldPile> goldpile(new GoldPile(*point));
-            getGameOrThrow()->registerNewEntityIgnoringCollision(goldpile);
-            buildTargetQueue.push_back(goldpile->getRefOrThrow());
-        }
-        else if (auto entityRef = target.castToEntityRef())
-        {
-            buildTargetQueue.push_back(*entityRef);
-        }
-        else
-        {
-            cout << "Gateway can't cast that Target to a point or entity during cmdDepositTo" << endl;
-        }
-    }
+    buildTargetQueue.push_back(entityRef);
 }
 void Gateway::cmdScuttle(EntityRef targetRef)
 {
@@ -1663,35 +1642,30 @@ void Prime::cancelAnyDepositsTo(Target target)
     }
 }
 
-void Prime::cmdDeposit(Target _target)
+void Prime::cmdDeposit(EntityRef entityRef)
 {
-    cancelAnyFetchesFrom(_target);
+    cancelAnyFetchesFrom(Target(entityRef));
 
-    if (auto point = _target.castToPoint())
-    {
-        this->fundsDest = _target;
-        setMoveTarget(_target, PRIME_TRANSFER_RANGE);
-    }
-    else if (auto entity = _target.castToEntityPtr(*getGameOrThrow()))
+    if (auto entity = getGameOrThrow()->entities[entityRef])
     {
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
         {
-            this->fundsDest = _target;
-            setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            this->fundsDest = Target(entityRef);
+            setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
                 this->buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
-                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
             }
             else
             {
                 if (unit->typechar() == GATEWAY_TYPECHAR || unit->typechar() == PRIME_TYPECHAR)
                 {
-                    this->fundsDest = _target;
-                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                    this->fundsDest = Target(entityRef);
+                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
                 }
                 else
                 {
@@ -1699,6 +1673,10 @@ void Prime::cmdDeposit(Target _target)
                 }
             }
         }
+    }
+    else
+    {
+        // unit has died.
     }
 }
 
