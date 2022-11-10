@@ -1883,10 +1883,12 @@ void Prime::tryTransferAndMaybeMoveOn()
         {
             cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
         }
+    }
 
+    if (fetchTarget && getMaybeMoveTarget() == fetchTarget)
+    {
         if (heldGold.getSpaceLeft() == 0)
         {
-            // if we're here, the Prime just filled up. If we're not in range of the depositTarget, start moving there.
             if (depositTarget)
             {
                 if (auto depositTargetPoint = depositTarget->getPointUnlessTargetDeleted(*game))
@@ -1962,10 +1964,13 @@ void Prime::tryTransferAndMaybeMoveOn()
                     }
                 }
             }
-        }
+        }   
+    }
+
+    if (depositTarget && getMaybeMoveTarget() == depositTarget)
+    {
         if (heldGold.getInt() == 0)
         {
-            // if we're here, the Prime just emptied itself. If we're not in range of the fetchTarget, start moving there.
             if (fetchTarget)
             {
                 if (auto fetchTargetPoint = fetchTarget->getPointUnlessTargetDeleted(*game))
@@ -1981,7 +1986,7 @@ void Prime::tryTransferAndMaybeMoveOn()
                 }
             }
         }
-    }// until proven otherwise
+    }
 }
 
 void Prime::iterate()
