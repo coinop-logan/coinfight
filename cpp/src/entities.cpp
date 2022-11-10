@@ -1627,8 +1627,46 @@ Prime::Prime(Netpack::Consumer* from)
     heldGold = Coins(from);
 }
 
+void Prime::cancelAnyFetchesFrom(Target target)
+{
+    if (fundsSource == target.castToEntityRef())
+    {
+        fundsSource = {};
+    }
+    for (unsigned int i=0; i<scavengeTargetQueue.size(); i++)
+    {
+        if (scavengeTargetQueue[i] == target)
+        {
+            scavengeTargetQueue.erase(scavengeTargetQueue.begin() + i);
+            i --;
+            continue;
+        }
+    }
+}
+void Prime::cancelAnyDepositsTo(Target target)
+{
+    if (fundsDest && *fundsDest == target)
+    {
+        fundsDest = {};
+    }
+    if (auto entityRef = target.castToEntityRef())
+    {
+        for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+        {
+            if (buildTargetQueue[i] == entityRef)
+            {
+                buildTargetQueue.erase(buildTargetQueue.begin() + i);
+                i --;
+                continue;
+            }
+        }
+    }
+}
+
 void Prime::cmdDeposit(Target _target)
 {
+    cancelAnyFetchesFrom(_target);
+
     if (auto point = _target.castToPoint())
     {
         this->fundsDest = _target;
@@ -1645,7 +1683,7 @@ void Prime::cmdDeposit(Target _target)
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                this->buildTargetQueue.push_back(unit->getRefOrThrow());
+                this->buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
                 setMoveTarget(_target, PRIME_TRANSFER_RANGE);
             }
             else
@@ -1666,15 +1704,19 @@ void Prime::cmdDeposit(Target _target)
 
 void Prime::cmdFetch(Target _target)
 {
+    cancelAnyDepositsTo(_target);
+
     if (auto point = _target.castToPoint())
     {
-        this->scavengeTargetQueue.push_back(_target);
+        this->scavengeTargetQueue.insert(this->scavengeTargetQueue.begin(), _target);
+        setMoveTarget(_target, PRIME_TRANSFER_RANGE);
     }
     else if (auto entity = _target.castToEntityPtr(*getGameOrThrow()))
     {
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
         {
-            this->scavengeTargetQueue.push_back(_target);
+            this->scavengeTargetQueue.insert(this->scavengeTargetQueue.begin(), _target);
+            setMoveTarget(_target, PRIME_TRANSFER_RANGE);
         }
     }
 }

@@ -355,6 +355,8 @@ public:
     void onMoveCmd(vector2fp moveTo);
     bool isIdle();
 
+    void cancelAnyFetchesFrom(Target);
+    void cancelAnyDepositsTo(Target);
     void validateTargets();
     optional<Target> getMaybeFetchTarget();
     optional<Target> getMaybeDepositTarget();
