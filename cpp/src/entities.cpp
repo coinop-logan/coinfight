@@ -1926,7 +1926,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                     if (amountPushed > 0)
                     {
-                        goldTransferState_view = building ? BuildingSomething : Pulling;
+                        goldTransferState_view = building ? BuildingSomething : Pushing;
                     }
                 }
                 else
@@ -1956,10 +1956,6 @@ void Prime::iterate()
 
     optional<Target> fetchTarget = getMaybeFetchTarget();
     optional<Target> depositTarget = getMaybeDepositTarget();
-    if (depositTarget)
-    {
-        int i=0;
-    }
 
     // We have three main sources of state, with which to implement higher-level logic (through reading and modifying):
     //   fetchTarget (optional)
