@@ -1691,10 +1691,14 @@ void Prime::cmdFetch(Target _target)
     }
     else if (auto entity = _target.castToEntityPtr(*getGameOrThrow()))
     {
-        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+        if (entity->typechar() == GOLDPILE_TYPECHAR)
         {
             this->scavengeTargetQueue.insert(this->scavengeTargetQueue.begin(), _target);
             setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+        }
+        else if (entity->typechar() == GATEWAY_TYPECHAR || entity->typechar() == PRIME_TYPECHAR)
+        {
+            this->fundsSource = entity->getRefOrThrow();
         }
     }
 }
@@ -1724,30 +1728,34 @@ void Prime::onMoveCmd(vector2fp moveTo)
     fundsSource = {};
 }
 
-optional<Target> Prime::getMaybeFetchTarget()
+optional<tuple<Target, bool>> Prime::getMaybeFetchTarget() // boolean indicates whether we want to scuttle
 {
     if (scavengeTargetQueue.size() > 0)
     {
-        return scavengeTargetQueue[0];
+        return {{scavengeTargetQueue[0], true}};
     }
     else if (fundsSource)
     {
-        return Target(*fundsSource);
+        return {{Target(*fundsSource), false}};
     }
     else
     {
         return {};
     }
 }
-optional<Target> Prime::getMaybeDepositTarget()
+optional<tuple<Target, bool>> Prime::getMaybeDepositTarget() // boolean indicates whether we want to build
 {
     if (buildTargetQueue.size() > 0)
     {
-        return Target(buildTargetQueue[0]);
+        return {{Target(buildTargetQueue[0]), true}};
+    }
+    else if (fundsDest)
+    {
+        return {{*fundsDest, false}};
     }
     else
     {
-        return fundsDest;
+        return {};
     }
 }
 
@@ -1819,170 +1827,182 @@ void Prime::tryTransferAndMaybeMoveOn()
     Game* game = getGameOrThrow();
 
     // Transfer (possibly to and from, both at once), and handle removing targets or switching moveTarget
-    optional<Target> fetchTarget = getMaybeFetchTarget();
-    optional<Target> depositTarget = getMaybeDepositTarget();
+    auto maybeFetchTargetInfo = getMaybeFetchTarget();
+    auto maybeDepositTargetInfo = getMaybeDepositTarget();
 
     // First, pull from the fetchTarget if possible
-    if (fetchTarget && heldGold.getSpaceLeft() > 0)
+    if (maybeFetchTargetInfo)
     {
-        if (auto fetchTargetPoint = fetchTarget->getPointUnlessTargetDeleted(*game))
-        {
-            if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
-            {
-                if (auto entity = fetchTarget->castToEntityPtr(*game))
-                {
-                    // make sure we're still allowed to do this
-                    if (getAllianceType(this->ownerId, entity) != Foreign)
-                    {
-                        coinsInt amountPulled(0);
-                        bool scuttling = false;
+        Target fetchTarget = get<0>(*maybeFetchTargetInfo);
+        bool tryingToScuttle = get<1>(*maybeFetchTargetInfo);
 
-                        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+        if (heldGold.getSpaceLeft() > 0)
+        {
+            if (auto fetchTargetPoint = fetchTarget.getPointUnlessTargetDeleted(*game))
+            {
+                if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                {
+                    if (auto entity = fetchTarget.castToEntityPtr(*game))
+                    {
+                        // make sure we're still allowed to do this
+                        if (getAllianceType(this->ownerId, entity) != Foreign)
                         {
-                            amountPulled = goldpile->gold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
-                        }
-                        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                        {
-                            bool pulledFromPrimeHeldGold = false;
-                            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                            coinsInt amountPulled(0);
+                            bool scuttling = false;
+
+                            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                             {
-                                if (prime->heldGold.getInt() > 0)
+                                amountPulled = goldpile->gold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
+                            }
+                            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                            {
+                                bool pulledFromPrimeHeldGold = false;
+                                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                                 {
-                                    amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
-                                    pulledFromPrimeHeldGold = true;
+                                    if (prime->heldGold.getInt() > 0)
+                                    {
+                                        amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
+                                        pulledFromPrimeHeldGold = true;
+                                    }
+                                }
+                                if (!pulledFromPrimeHeldGold && tryingToScuttle)
+                                {
+                                    amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &this->heldGold);
+                                    scuttling = true;
                                 }
                             }
-                            if (!pulledFromPrimeHeldGold)
+
+                            if (amountPulled > 0)
                             {
-                                amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &this->heldGold);
-                                scuttling = true;
+                                goldFlowFrom_view = {entity, scuttling};
                             }
                         }
-
-                        if (amountPulled > 0)
-                        {
-                            goldFlowFrom_view = {entity, scuttling};
-                        }
-                    }
-                }
-                else
-                {
-                    // we've arrived at the fetch target point. Remove it from the list.
-                    if (scavengeTargetQueue.size() > 0 && *fetchTarget == scavengeTargetQueue[0])
-                    {
-                        scavengeTargetQueue.erase(scavengeTargetQueue.begin());
                     }
                     else
                     {
-                        cout << "Warning: logic error related to Prime scavenge queue." << endl;
+                        // we've arrived at the fetch target point. Remove it from the list.
+                        if (scavengeTargetQueue.size() > 0 && fetchTarget == scavengeTargetQueue[0])
+                        {
+                            scavengeTargetQueue.erase(scavengeTargetQueue.begin());
+                        }
+                        else
+                        {
+                            cout << "Warning: logic error related to Prime scavenge queue." << endl;
+                        }
                     }
                 }
             }
-        }
-        else
-        {
-            cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
-        }
-    }
-
-    if (fetchTarget && getMaybeMoveTarget() == fetchTarget)
-    {
-        if (heldGold.getSpaceLeft() == 0)
-        {
-            if (depositTarget)
+            else
             {
-                if (auto depositTargetPoint = depositTarget->getPointUnlessTargetDeleted(*game))
+                cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+            }
+        }
+
+        if (getMaybeMoveTarget() == fetchTarget)
+        {
+            if (heldGold.getSpaceLeft() == 0)
+            {
+                if (maybeDepositTargetInfo)
                 {
-                    if ((this->getPos() - *depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                    if (auto depositTargetPoint = get<0>(*maybeDepositTargetInfo).getPointUnlessTargetDeleted(*game))
                     {
-                        setMoveTarget(*depositTarget, PRIME_TRANSFER_RANGE);
+                        if ((this->getPos() - *depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                        {
+                            setMoveTarget(get<0>(*maybeDepositTargetInfo), PRIME_TRANSFER_RANGE);
+                        }
                     }
-                }
-                else
-                {
-                    cout << "Logic error. Can't cast depositTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                    else
+                    {
+                        cout << "Logic error. Can't cast depositTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                    }
                 }
             }
         }
     }
 
     // Now deposit to something if we can
-    if (depositTarget && heldGold.getInt() > 0)
+    if (maybeDepositTargetInfo)
     {
-        if (auto depositTargetPoint = depositTarget->getPointUnlessTargetDeleted(*game))
-        {
-            if ((this->getPos() - *depositTargetPoint).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
-            {
-                if (auto entity = depositTarget->castToEntityPtr(*game))
-                {
-                    coinsInt amountPushed(0);
-                    bool building = false;
+        Target depositTarget = get<0>(*maybeDepositTargetInfo);
+        // bool tryingToBuild = get<1>(*maybeDepositTargetInfo);
 
-                    if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+        if (heldGold.getInt() > 0)
+        {
+            if (auto depositTargetPoint = depositTarget.getPointUnlessTargetDeleted(*game))
+            {
+                if ((this->getPos() - *depositTargetPoint).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                {
+                    if (auto entity = depositTarget.castToEntityPtr(*game))
                     {
-                        amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &goldpile->gold);
-                    }
-                    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                    {
-                        if (unit->getBuiltRatio() < fixed32(1))
+                        coinsInt amountPushed(0);
+                        bool building = false;
+
+                        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                         {
-                            amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
-                            building = true;
+                            amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &goldpile->gold);
                         }
-                        else
+                        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                         {
-                            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                            if (unit->getBuiltRatio() < fixed32(1))
                             {
-                                // TODO
-                            }
-                            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-                            {
-                                amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &prime->heldGold);
+                                amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
+                                building = true;
                             }
                             else
                             {
-                                cout << "Warning: somehow a Prime is trying to deposit to a built unit other than a GW or Prime." << endl;
+                                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                                {
+                                    // TODO
+                                }
+                                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                                {
+                                    amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &prime->heldGold);
+                                }
+                                else
+                                {
+                                    cout << "Warning: somehow a Prime is trying to deposit to a built unit other than a GW or Prime." << endl;
+                                }
                             }
                         }
-                    }
 
-                    if (amountPushed > 0)
-                    {
-                        goldFlowTo_view = {entity, building};
-                    }
-                }
-                else
-                {
-                    // we've arrived at the deposit target point. Remove it from the list.
-                    if (buildTargetQueue.size() > 0 && depositTarget->castToEntityRef() == buildTargetQueue[0])
-                    {
-                        buildTargetQueue.erase(buildTargetQueue.begin());
+                        if (amountPushed > 0)
+                        {
+                            goldFlowTo_view = {entity, building};
+                        }
                     }
                     else
                     {
-                        cout << "Warning: logic error related to Prime build queue." << endl;
+                        // we've arrived at the deposit target point. Remove it from the list.
+                        if (buildTargetQueue.size() > 0 && depositTarget.castToEntityRef() == buildTargetQueue[0])
+                        {
+                            buildTargetQueue.erase(buildTargetQueue.begin());
+                        }
+                        else
+                        {
+                            cout << "Warning: logic error related to Prime build queue." << endl;
+                        }
                     }
                 }
-            }
-        }   
-    }
+            }   
+        }
 
-    if (depositTarget && getMaybeMoveTarget() == depositTarget)
-    {
-        if (heldGold.getInt() == 0)
+        if (getMaybeMoveTarget() == depositTarget)
         {
-            if (fetchTarget)
+            if (heldGold.getInt() == 0)
             {
-                if (auto fetchTargetPoint = fetchTarget->getPointUnlessTargetDeleted(*game))
+                if (maybeFetchTargetInfo)
                 {
-                    if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                    if (auto fetchTargetPoint = get<0>(*maybeFetchTargetInfo).getPointUnlessTargetDeleted(*game))
                     {
-                        setMoveTarget(*fetchTarget, PRIME_TRANSFER_RANGE);
+                        if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                        {
+                            setMoveTarget(get<0>(*maybeFetchTargetInfo), PRIME_TRANSFER_RANGE);
+                        }
                     }
-                }
-                else
-                {
-                    cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                    else
+                    {
+                        cout << "Logic error. Can't cast fetchTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                    }
                 }
             }
         }
@@ -1999,8 +2019,16 @@ void Prime::iterate()
 
     Game *game = getGameOrThrow();
 
-    optional<Target> fetchTarget = getMaybeFetchTarget();
-    optional<Target> depositTarget = getMaybeDepositTarget();
+    optional<Target> fetchTarget;
+    if (auto maybeFetchTarget = getMaybeFetchTarget())
+    {
+        fetchTarget = get<0>(*maybeFetchTarget);
+    }
+    optional<Target> depositTarget;
+    if (auto maybeDepositTarget = getMaybeDepositTarget())
+    {
+        depositTarget = get<0>(*maybeDepositTarget);
+    }
 
     // We have three main sources of state, with which to implement higher-level logic (through reading and modifying):
     //   fetchTarget (optional)

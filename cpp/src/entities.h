@@ -359,8 +359,8 @@ public:
     void cancelAnyFetchesFrom(Target);
     void cancelAnyDepositsTo(Target);
     void validateTargets();
-    optional<Target> getMaybeFetchTarget();
-    optional<Target> getMaybeDepositTarget();
+    optional<tuple<Target, bool>> getMaybeFetchTarget();
+    optional<tuple<Target, bool>> getMaybeDepositTarget();
     void tryTransferAndMaybeMoveOn();
     void iterate();
 
