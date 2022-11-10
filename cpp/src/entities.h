@@ -6,6 +6,8 @@
 
 const fixed32 MAX_UNIT_RADIUS(30);
 
+const coinsInt GOLD_TRANSFER_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
+
 class Game;
 
 struct RegInfo {
@@ -76,6 +78,8 @@ public:
     Target(EntityRef);
     Target(boost::shared_ptr<Entity>);
     Target(Netpack::Consumer* from);
+
+    bool operator==(const Target& other) const;
 
     bool isStillValid(const Game&);
     optional<vector2fp> getPointUnlessTargetDeleted(const Game&);
@@ -278,8 +282,6 @@ const coinsInt GATEWAY_COST = 40000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
-const coinsInt GATEWAY_SCUTTLE_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt GATEWAY_BUILD_RATE = 10 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Gateway : public Building
@@ -319,67 +321,47 @@ const fixed32 PRIME_SPEED(2);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
-const coinsInt PRIME_PICKUP_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt PRIME_PUTDOWN_RATE = 10 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const coinsInt PRIME_MAX_GOLD_HELD = 5000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
 {
 public:
-    Coins heldGold;
-
-    enum Behavior
-    {
-        Basic,
-        Gather
-    } behavior;
-
-    optional<vector2fp> maybeGatherTargetPos;
-
-    enum State
-    {
-        NotTransferring,
-        PickupGold,
-        PutdownGold,
-        Build
-    } state;
-
-    GoldTransferState goldTransferState_view;
-
-    bool depositingToGateway;
-
-    uint8_t gonnabuildTypechar;
-
+    fixed32 getRadius() const;
+    uint8_t typechar() const;
+    string getTypename() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
     fixed32 getMaxSpeed() const;
     fixed32 getRange() const;
-    void onMoveCmd(vector2fp moveTo);
+
+    Coins heldGold;
+
+    vector<EntityRef> buildTargetQueue;
+    optional<Target> fundsDest;
+    vector<Target> scavengeTargetQueue;
+    optional<EntityRef> fundsSource;
+
+    GoldTransferState goldTransferState_view;
 
     void pack(Netpack::Builder* to);
 
     Prime(uint8_t ownerId, vector2fp pos);
     Prime(Netpack::Consumer* from);
 
-    void cmdPickup(Target);
-    void cmdPutdown(Target);
-    void cmdBuild(uint8_t buildTypechar, vector2fp buildPos);
-    void cmdResumeBuilding(EntityRef targetUnit);
-    void cmdGather(vector2fp targetPos);
-    void cmdScuttle(EntityRef targetUnit);
+    void cmdDeposit(Target);
+    void cmdFetch(Target);
+    void cmdStop();
+    void onMoveCmd(vector2fp moveTo);
+    bool isIdle();
 
-    void setStateToReturnGoldOrResetBehavior();
+    void validateTargets();
+    optional<Target> getMaybeFetchTarget();
+    optional<Target> getMaybeDepositTarget();
+    void tryTransferAndMaybeMoveOn();
+    void iterate();
 
     fixed32 getHeldGoldRatio();
-
-    bool isIdle();
-    void cmdStop();
-
-    fixed32 getRadius() const;
-    uint8_t typechar() const;
-    string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
-    void iterate();
     vector<Coins*> getDroppableCoins();
 };
 

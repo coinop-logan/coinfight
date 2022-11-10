@@ -527,7 +527,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
             }
 
             // if prime is already building something, not a great choice
-            if (selectedPrimes[i]->state == Prime::Build)
+            if (selectedPrimes[i]->buildTargetQueue.size() != 0)
                 continue;
 
             float distanceSquared = (primePos - buildPos).getMagnitudeSquared();

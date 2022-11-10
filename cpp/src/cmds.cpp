@@ -269,7 +269,7 @@ void PickupCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (boost::shared_ptr<Prime> prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdPickup(goldRef);
+        // prime->cmdPickup(goldRef);
     }
     else
     {
@@ -305,7 +305,9 @@ void PutdownCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         return;
 
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-        prime->cmdPutdown(target);
+    {
+        prime->cmdDeposit(target);
+    }
 
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
@@ -375,7 +377,7 @@ void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdBuild(buildTypechar, buildPos);
+        // prime->cmdBuild(buildTypechar, buildPos);
     }
     else
     {
@@ -420,7 +422,7 @@ void AttackGatherCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     {
         if (auto targetPoint = target.getPointUnlessTargetDeleted(*prime->getGameOrThrow()))
         {
-            prime->cmdGather(*targetPoint);
+            // prime->cmdGather(*targetPoint);
         }
     }
 }
@@ -455,7 +457,7 @@ void ResumeBuildingCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         
     if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
     {
-        prime->cmdResumeBuilding(targetUnit);
+        // prime->cmdResumeBuilding(targetUnit);
     }
 }
 
@@ -489,7 +491,7 @@ void ScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
         if (prime->getRefOrThrow() == targetUnit)
             return;
         
-        prime->cmdScuttle(targetUnit);
+        prime->cmdFetch(targetUnit);
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
