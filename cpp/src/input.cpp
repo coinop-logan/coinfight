@@ -820,6 +820,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                         auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
 
                                         cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow())));
+                                        ui->cmdState = UI::Default;
                                     }
                                 }
                             }
