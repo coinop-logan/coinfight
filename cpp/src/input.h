@@ -33,10 +33,10 @@ struct UI
     enum CmdState {
         Default,
         SpawnBeacon,
+        AttackAbsorb,
         Deposit,
-        Build,
-        Scuttle,
-        AttackGather
+        Fetch,
+        Build
     } cmdState;
     bool minimapEnabled;
     vector2i lastMousePos;

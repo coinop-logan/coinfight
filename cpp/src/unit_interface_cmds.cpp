@@ -41,6 +41,24 @@ bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 
 
 
+sf::Keyboard::Key AttackAbsorbInterfaceCmd::getKey()
+{
+    return sf::Keyboard::A;
+}
+vector<boost::shared_ptr<Cmd>> AttackAbsorbInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::AttackAbsorb;
+
+    return noCmds;
+}
+bool AttackAbsorbInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR);
+}
+
+
+
+
 sf::Keyboard::Key StopInterfaceCmd::getKey()
 {
     return sf::Keyboard::S;
@@ -75,6 +93,24 @@ vector<boost::shared_ptr<Cmd>> DepositInterfaceCmd::execute(UI *ui)
     return noCmds;
 }
 bool DepositInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+{
+    return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
+}
+
+
+
+
+sf::Keyboard::Key FetchInterfaceCmd::getKey()
+{
+    return sf::Keyboard::F;
+}
+vector<boost::shared_ptr<Cmd>> FetchInterfaceCmd::execute(UI *ui)
+{
+    ui->cmdState = UI::Fetch;
+
+    return noCmds;
+}
+bool FetchInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }
@@ -153,40 +189,4 @@ vector<boost::shared_ptr<Cmd>> PrimeBuildTurretInterfaceCmd::execute(UI *ui)
 bool PrimeBuildTurretInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR);
-}
-
-
-
-
-sf::Keyboard::Key ScuttleInterfaceCmd::getKey()
-{
-    return sf::Keyboard::F;
-}
-vector<boost::shared_ptr<Cmd>> ScuttleInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::Scuttle;
-
-    return noCmds;
-}
-bool ScuttleInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
-{
-    return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
-}
-
-
-
-
-sf::Keyboard::Key AttackGatherInterfaceCmd::getKey()
-{
-    return sf::Keyboard::A;
-}
-vector<boost::shared_ptr<Cmd>> AttackGatherInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::AttackGather;
-
-    return noCmds;
-}
-bool AttackGatherInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
-{
-    return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR);
 }

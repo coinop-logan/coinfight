@@ -10,19 +10,16 @@
 
 using namespace std;
 
-const uint8_t CMD_MOVE_CHAR = 1;
-const uint8_t CMD_PICKUP_CHAR = 2;
-const uint8_t CMD_PUTDOWN_CHAR = 3;
-const uint8_t CMD_GATEWAYBUILD_CHAR = 4;
-const uint8_t CMD_WITHDRAW_CHAR = 5;
-const uint8_t CMD_ATTACK_CHAR = 6;
-const uint8_t CMD_PRIMEBUILD_CHAR = 7;
-const uint8_t CMD_RESUMEBUILDING_CHAR = 8;
-const uint8_t CMD_SPAWNBEACON_CHAR = 9;
-const uint8_t CMD_SCUTTLE_CHAR = 10;
-const uint8_t CMD_STOPSCUTTLE_CHAR = 11;
-const uint8_t CMD_GIFT_CHAR = 12;
-const uint8_t CMD_STOP_CHAR = 13;
+const uint8_t CMD_SPAWNBEACON_CHAR = 1;
+const uint8_t CMD_WITHDRAW_CHAR = 2;
+const uint8_t CMD_MOVE_CHAR = 3;
+const uint8_t CMD_ATTACKABSORB_CHAR = 4;
+const uint8_t CMD_STOP_CHAR = 5;
+const uint8_t CMD_FETCH_CHAR = 6;
+const uint8_t CMD_DEPOSIT_CHAR = 7;
+const uint8_t CMD_GATEWAYBUILD_CHAR = 8;
+const uint8_t CMD_PRIMEBUILD_CHAR = 9;
+const uint8_t CMD_GIFT_CHAR = 10;
 
 struct Cmd
 {
@@ -86,18 +83,6 @@ struct UnitCmd : public Cmd
     UnitCmd(Netpack::Consumer* from);
 };
 
-struct StopCmd : public UnitCmd
-{
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    StopCmd(vector<EntityRef> unitRefs);
-    StopCmd(Netpack::Consumer* from);
-};
-
 struct MoveCmd : public UnitCmd
 {
     vector2fp pos;
@@ -112,9 +97,21 @@ struct MoveCmd : public UnitCmd
     MoveCmd(Netpack::Consumer* from);
 };
 
-struct PickupCmd : public UnitCmd
+struct StopCmd : public UnitCmd
 {
-    EntityRef goldRef;
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    StopCmd(vector<EntityRef> unitRefs);
+    StopCmd(Netpack::Consumer* from);
+};
+
+struct FetchCmd : public UnitCmd
+{
+    Target target;
 
     uint8_t getTypechar();
     string getTypename();
@@ -122,8 +119,8 @@ struct PickupCmd : public UnitCmd
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    PickupCmd(vector<EntityRef>, EntityRef);
-    PickupCmd(Netpack::Consumer* from);
+    FetchCmd(vector<EntityRef>, Target);
+    FetchCmd(Netpack::Consumer* from);
 };
 
 struct DepositCmd : public UnitCmd
@@ -177,7 +174,7 @@ struct PrimeBuildCmd : public UnitCmd
     PrimeBuildCmd(Netpack::Consumer* from);
 };
 
-struct AttackGatherCmd : public UnitCmd
+struct AttackAbsorbCmd : public UnitCmd
 {
     Target target;
 
@@ -187,50 +184,8 @@ struct AttackGatherCmd : public UnitCmd
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    AttackGatherCmd(vector<EntityRef>, Target);
-    AttackGatherCmd(Netpack::Consumer* from);
-};
-
-struct ResumeBuildingCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    ResumeBuildingCmd(vector<EntityRef>, EntityRef);
-    ResumeBuildingCmd(Netpack::Consumer* from);
-};
-
-struct ScuttleCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    ScuttleCmd(vector<EntityRef>, EntityRef);
-    ScuttleCmd(Netpack::Consumer* from);
-};
-
-struct StopScuttleCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    StopScuttleCmd(vector<EntityRef>, EntityRef);
-    StopScuttleCmd(Netpack::Consumer* from);
+    AttackAbsorbCmd(vector<EntityRef>, Target);
+    AttackAbsorbCmd(Netpack::Consumer* from);
 };
 
 struct GiftCmd : public UnitCmd

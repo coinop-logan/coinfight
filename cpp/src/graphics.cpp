@@ -792,6 +792,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
             case UI::SpawnBeacon:
                 drawTargetCursor(window, mousePos, sf::Color::Yellow);
                 break;
+            case UI::AttackAbsorb:
+                if (ui.mouseoverEntity)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                }
+                else
+                {
+                    drawTargetCursor(window, mousePos, sf::Color::Red);
+                }
+                break;
             case UI::Deposit:
                 if (ui.mouseoverEntity)
                 {
@@ -802,10 +812,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawTargetCursor(window, mousePos, sf::Color::Blue);
                 }
                 break;
-            case UI::Build:
-                drawGhostBuilding(window, ui, mousePos);
-                break;
-            case UI::Scuttle:
+            case UI::Fetch:
                 if (ui.mouseoverEntity)
                 {
                     if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -822,15 +829,8 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
                 }
                 break;
-            case UI::AttackGather:
-                if (ui.mouseoverEntity)
-                {
-                    drawBracketsCursor(window, mousePos, sf::Color::Red);
-                }
-                else
-                {
-                    drawTargetCursor(window, mousePos, sf::Color::Red);
-                }
+            case UI::Build:
+                drawGhostBuilding(window, ui, mousePos);
                 break;
         }
     }
@@ -1043,10 +1043,10 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
         {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
         {sf::Keyboard::R, 'R', {"Build", "Turret"}},
-        {sf::Keyboard::A, 'A', {"Attack/", "Gather"}},
+        {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}},
         {sf::Keyboard::S, 'S', {"Stop"}},
         {sf::Keyboard::D, 'D', {"Deposit"}},
-        {sf::Keyboard::F, 'F', {"Scuttle"}}
+        {sf::Keyboard::F, 'F', {"Fetch"}}
     };
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
