@@ -1365,14 +1365,14 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 int numLines = prime->buildTargetQueue.size() + prime->scavengeTargetQueue.size();
                 if (prime->fundsSource && game->entities[*prime->fundsSource])
                     numLines ++;
-                if (prime->fundsDest && prime->fundsDest->getPointUnlessTargetDeleted(*game))
+                if (prime->fundsDest)
                     numLines ++;
 
                 sf::VertexArray lines(sf::Lines, numLines * 2);
                 unsigned int j = 0;
                 for (; j<prime->buildTargetQueue.size(); j++)
                 {
-                    if (auto entity = game->entities[prime->buildTargetQueue[j]])
+                    if (auto entity = prime->buildTargetQueue[j])
                     {
                         lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
                         lines[j*2].color = BUILD_QUEUE_LINE_COLOR;
@@ -1400,11 +1400,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
                     j ++;
                 }
-                if (prime->fundsDest && prime->fundsDest->getPointUnlessTargetDeleted(*game))
+                if (prime->fundsDest)
                 {
                     lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
                     lines[j*2].color = FUNDS_DEST_LINE_COLOR;
-                    lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, *prime->fundsDest->getPointUnlessTargetDeleted(*game))));
+                    lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->fundsDest->getPos())));
                     lines[j*2 + 1].color = FUNDS_DEST_LINE_COLOR;
 
                     j ++;

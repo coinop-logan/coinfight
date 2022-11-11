@@ -353,13 +353,13 @@ public:
     Coins heldGold;
 
     optional<EntityRef> fundsSource;
-    optional<Target> fundsDest;
+    boost::shared_ptr<Entity> fundsDest;
 
     vector<Target> scavengeTargetQueue;
-    vector<EntityRef> buildTargetQueue;
+    vector<boost::shared_ptr<Entity>> buildTargetQueue;
 
     optional<tuple<Target, bool>> getMaybeFetchTarget();
-    optional<tuple<Target, bool>> getMaybeDepositTarget();
+    optional<tuple<boost::shared_ptr<Entity>, bool>> getMaybeDepositTarget();
 
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
     tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;

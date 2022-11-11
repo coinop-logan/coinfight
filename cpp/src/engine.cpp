@@ -474,28 +474,42 @@ void Game::iterate()
     }
 
     // clean up units that are ded
+    // also clear goldpiles that are zeroed and which are not referenced except in the main list
     for (unsigned int i=0; i<entities.size(); i++)
     {
-        if (entities[i] && entities[i]->dead)
+        if (entities[i])
         {
-            // create new GoldPile to hold all droppable coins
-            boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
-
-            vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
-            for (unsigned int j=0; j<droppableCoins.size(); j++)
+            if (entities[i]->dead)
             {
-                if (droppableCoins[j]->getInt() > 0)
+                // create new GoldPile to hold all droppable coins
+                boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
+
+                vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
+                for (unsigned int j=0; j<droppableCoins.size(); j++)
                 {
-                    droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
+                    if (droppableCoins[j]->getInt() > 0)
+                    {
+                        droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
+                    }
+                }
+
+                // but only add it if there was more than 0 gold added
+                if (goldPile->gold.getInt() > 0)
+                {
+                    registerNewEntityIgnoringCollision(goldPile);
+                }
+                entities[i].reset();
+            }
+            else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
+            {
+                // if nothing is referencing the goldpile, there should only be two uses of the shared pointer:
+                // in the entities list, and in this new goldpile variable just declared
+                // if so, and if it has zero gold, remove it
+                if (goldpile.use_count() <= 2 && goldpile->gold.getInt() == 0)
+                {
+                    entities[i].reset();
                 }
             }
-
-            // but only add it if there was more than 0 gold added
-            if (goldPile->gold.getInt() > 0)
-            {
-                registerNewEntityIgnoringCollision(goldPile);
-            }
-            entities[i].reset();
         }
     }
 

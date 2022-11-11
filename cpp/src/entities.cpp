@@ -590,8 +590,7 @@ uint8_t GoldPile::typechar() const { return GOLDPILE_TYPECHAR; }
 string GoldPile::getTypename() const { return "GoldPile"; }
 void GoldPile::iterate()
 {
-    // if (gold.getInt() == 0)
-    //     die();
+    
 }
 
 
@@ -1744,15 +1743,15 @@ void Prime::cancelAnyFetchesFrom(Target target)
 }
 void Prime::cancelAnyDepositsTo(Target target)
 {
-    if (fundsDest && *fundsDest == target)
-    {
-        fundsDest = {};
-    }
     if (auto entityRef = target.castToEntityRef())
     {
+        if (fundsDest && fundsDest->getRefOrThrow() == entityRef)
+        {
+            fundsDest = {};
+        }
         for (unsigned int i=0; i<buildTargetQueue.size(); i++)
         {
-            if (buildTargetQueue[i] == entityRef)
+            if (buildTargetQueue[i]->getRefOrThrow() == entityRef)
             {
                 buildTargetQueue.erase(buildTargetQueue.begin() + i);
                 i --;
@@ -1770,21 +1769,21 @@ void Prime::cmdDeposit(EntityRef entityRef)
     {
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
         {
-            this->fundsDest = Target(entityRef);
+            this->fundsDest = goldpile;
             setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                this->buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
+                this->buildTargetQueue.insert(buildTargetQueue.begin(), unit);
                 setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
             }
             else
             {
                 if (unit->typechar() == GATEWAY_TYPECHAR || unit->typechar() == PRIME_TYPECHAR)
                 {
-                    this->fundsDest = Target(entityRef);
+                    this->fundsDest = unit;
                     setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
                 }
                 else
@@ -1863,15 +1862,15 @@ optional<tuple<Target, bool>> Prime::getMaybeFetchTarget() // boolean indicates 
         return {};
     }
 }
-optional<tuple<Target, bool>> Prime::getMaybeDepositTarget() // boolean indicates whether we want to build
+optional<tuple<boost::shared_ptr<Entity>, bool>> Prime::getMaybeDepositTarget() // boolean indicates whether we want to build
 {
     if (buildTargetQueue.size() > 0)
     {
-        return {{Target(buildTargetQueue[0]), true}};
+        return {{buildTargetQueue[0], true}};
     }
     else if (fundsDest)
     {
-        return {{*fundsDest, false}};
+        return {{fundsDest, false}};
     }
     else
     {
@@ -1892,20 +1891,16 @@ void Prime::validateTargets()
             fundsSource = {};
         }
     }
-    if (fundsDest)
+    if (fundsDest && fundsDest->dead)
     {
-        if (! fundsDest->getPointUnlessTargetDeleted(*getGameOrThrow()))
-        {
-            // entity died. Clear it
-            fundsDest = {};
-        }
+        fundsDest = {};
     }
 
     for (unsigned int i=0; i<buildTargetQueue.size(); i++)
     {
-        if (auto entity = game->entities[buildTargetQueue[i]])
+        if (! buildTargetQueue[i]->dead)
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(buildTargetQueue[i]))
             {
                 if (unit->getBuiltRatio() == fixed32(1))
                 {
@@ -2035,16 +2030,10 @@ void Prime::tryTransferAndMaybeMoveOn()
             {
                 if (maybeDepositTargetInfo)
                 {
-                    if (auto depositTargetPoint = get<0>(*maybeDepositTargetInfo).getPointUnlessTargetDeleted(*game))
+                    auto depositTargetPoint = get<0>(*maybeDepositTargetInfo)->getPos();
+                    if ((this->getPos() - depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
                     {
-                        if ((this->getPos() - *depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
-                        {
-                            setMoveTarget(get<0>(*maybeDepositTargetInfo), PRIME_TRANSFER_RANGE);
-                        }
-                    }
-                    else
-                    {
-                        cout << "Logic error. Can't cast depositTarget to point, but this should have been validated earlier in Prime::iterate..." << endl;
+                        setMoveTarget(get<0>(*maybeDepositTargetInfo), PRIME_TRANSFER_RANGE);
                     }
                 }
             }
@@ -2103,15 +2092,7 @@ void Prime::tryTransferAndMaybeMoveOn()
                     }
                     else
                     {
-                        // we've arrived at the deposit target point. Remove it from the list.
-                        if (buildTargetQueue.size() > 0 && depositTarget.castToEntityRef() == buildTargetQueue[0])
-                        {
-                            buildTargetQueue.erase(buildTargetQueue.begin());
-                        }
-                        else
-                        {
-                            cout << "Warning: logic error related to Prime build queue." << endl;
-                        }
+                        cout << "Warning: logic error related to Prime build queue." << endl;
                     }
                 }
             }   
