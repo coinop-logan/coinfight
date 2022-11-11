@@ -510,39 +510,40 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
 
 boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos)
 {
-    auto selectedPrimes = filterForType<Prime, Unit>(selectedUnits);
-    if (selectedPrimes.size() > 0)
-    {
-        boost::shared_ptr<Prime> bestChoice;
-        float bestDistanceSquared;
-        for (unsigned int i=0; i<selectedPrimes.size(); i++)
-        {
-            vector2fl primePos(selectedPrimes[i]->getPos());
+    auto selectedPrimes = filterForTypeKeepContainer<Prime, Unit>(selectedUnits);
+    return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(entityPtrsToRefsOrThrow(selectedPrimes), buildUnitTypechar, vector2fp(buildPos)));
+    // if (selectedPrimes.size() > 0)
+    // {
+    //     boost::shared_ptr<Prime> bestChoice;
+    //     float bestDistanceSquared;
+    //     for (unsigned int i=0; i<selectedPrimes.size(); i++)
+    //     {
+    //         vector2fl primePos(selectedPrimes[i]->getPos());
 
-            if (!bestChoice)
-            {
-                bestChoice = selectedPrimes[i];
-                bestDistanceSquared = (primePos - buildPos).getMagnitudeSquared();
-                continue;
-            }
+    //         if (!bestChoice)
+    //         {
+    //             bestChoice = selectedPrimes[i];
+    //             bestDistanceSquared = (primePos - buildPos).getMagnitudeSquared();
+    //             continue;
+    //         }
 
-            // if prime is already building something, not a great choice
-            if (selectedPrimes[i]->buildTargetQueue.size() != 0)
-                continue;
+    //         // if prime is already building something, not a great choice
+    //         if (selectedPrimes[i]->buildTargetQueue.size() != 0)
+    //             continue;
 
-            float distanceSquared = (primePos - buildPos).getMagnitudeSquared();
-            if (distanceSquared < bestDistanceSquared)
-            {
-                bestChoice = selectedPrimes[i];
-                bestDistanceSquared = distanceSquared;
-            }
-        }
+    //         float distanceSquared = (primePos - buildPos).getMagnitudeSquared();
+    //         if (distanceSquared < bestDistanceSquared)
+    //         {
+    //             bestChoice = selectedPrimes[i];
+    //             bestDistanceSquared = distanceSquared;
+    //         }
+    //     }
 
-        vector<EntityRef> onlyOnePrime;
-        onlyOnePrime.push_back(bestChoice->getRefOrThrow());
-        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, vector2fp(buildPos)));
-    }
-    return boost::shared_ptr<PrimeBuildCmd>();
+    //     vector<EntityRef> onlyOnePrime;
+    //     onlyOnePrime.push_back(bestChoice->getRefOrThrow());
+    //     return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, vector2fp(buildPos)));
+    // }
+    // return boost::shared_ptr<PrimeBuildCmd>();
 }
 
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
