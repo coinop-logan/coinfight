@@ -774,86 +774,55 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         {
                             if (auto targetEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
                             {
-                            if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
-                            {
-                            if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
-                            {
-                                vector2fl targetEntityPos(targetEntity->getPos());
-
-                                vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
-                                vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
-                                // auto gatewaysAndPrimes = gatewaysInSelection;
-                                // gatewaysAndPrimes.insert(gatewaysAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
-
-                                if (gatewaysInSelection.size() + primesInSelection.size() > 0)
+                                if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                                 {
-                                    boost::shared_ptr<Unit> bestChoice;
-
-                                    float bestGatewayDistanceSquared;
-                                    for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
+                                    if (ui->selectionHasGateways())
                                     {
-                                        vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
+                                        vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
 
-                                        if (!bestChoice)
+                                        boost::shared_ptr<Gateway> bestChoice;
+
+                                        float bestGatewayDistanceSquared;
+                                        for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
                                         {
-                                            bestChoice = gatewaysInSelection[i];
-                                            bestGatewayDistanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
-                                        }
-                                        else
-                                        {
-                                            float distanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
-                                            if (distanceSquared < bestGatewayDistanceSquared)
-                                            {
-                                                bestChoice = gatewaysInSelection[i];
-                                                bestGatewayDistanceSquared = distanceSquared;
-                                            }
-                                        }
-                                    }
-                                    // if we still don't have a best choice, look through Primes
-                                    if (!bestChoice)
-                                    {
-                                        float bestPrimeDistanceSquared;
-                                        for (unsigned int i=0; i<primesInSelection.size(); i++)
-                                        {
-                                            vector2fl primePos(primesInSelection[i]->getPos());
+                                            vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
 
                                             if (!bestChoice)
                                             {
-                                                bestChoice = primesInSelection[i];
-                                                bestPrimeDistanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
+                                                bestChoice = gatewaysInSelection[i];
+                                                bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
                                             }
                                             else
                                             {
-                                                float distanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
-                                                if (distanceSquared < bestPrimeDistanceSquared)
+                                                float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                                if (distanceSquared < bestGatewayDistanceSquared)
                                                 {
-                                                    bestChoice = primesInSelection[i];
-                                                    bestPrimeDistanceSquared = distanceSquared;
+                                                    bestChoice = gatewaysInSelection[i];
+                                                    bestGatewayDistanceSquared = distanceSquared;
                                                 }
                                             }
                                         }
-                                    }
 
-                                    if (!bestChoice)
-                                    {
-                                        // we should have had a best choice by now...
-                                        cout << "Can't find a bestChoice for the ScuttleCmd" << endl;
+                                        if (!bestChoice)
+                                        {
+                                            // we should have had a best choice by now...
+                                            cout << "Can't find a bestChoice for the ScuttleCmd" << endl;
+                                        }
+                                        else
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
+                                            ui->cmdState = UI::Default;
+                                        }
                                     }
                                     else
                                     {
-                                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
-                                        {
-                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({gateway->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                            ui->cmdState = UI::Default;
-                                        }
-                                        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
-                                        {
-                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({prime->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                            ui->cmdState = UI::Default;
-                                        }
+                                        // selection does not have Gateways. Issue cmd to all Primes.
+                                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow())));
                                     }
                                 }
-                            }}}
+                            }
                         }
                         break;
                         case UI::AttackGather:
