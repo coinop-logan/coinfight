@@ -284,14 +284,27 @@ const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
+class Prime;
+
 class Gateway : public Building
 {
 public:
     vector<EntityRef> buildTargetQueue;
     vector<EntityRef> scuttleTargetQueue;
-    bool pushing_view, building_view, pulling_view, scuttling_view;
+
+    optional<EntityRef> maybeDepositingPrime;
+    optional<EntityRef> maybeWithdrawingPrime;
+    
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
 
     void pack(Netpack::Builder* to);
+
+    fixed32 getRadius() const;
+    uint8_t typechar() const;
+    string getTypename() const;
+    coinsInt getCost() const;
+    uint16_t getMaxHealth() const;
 
     Gateway(uint8_t ownerId, vector2fp pos);
     Gateway(Netpack::Consumer* from);
@@ -307,11 +320,13 @@ public:
     void cmdStop();
     void removeFromQueues(EntityRef);
 
-    fixed32 getRadius() const;
-    uint8_t typechar() const;
-    string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
+    optional<tuple<EntityRef, bool>> getMaybeAbsorbTarget();
+    optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
+
+    bool requestDepositFromPrime(Prime*);
+    bool requestWithdrawFromPrime(Prime*);
+
+    void validateTargets();
     void iterate();
 };
 
@@ -356,11 +371,12 @@ public:
     void onMoveCmd(vector2fp moveTo);
     bool isIdle();
 
+    optional<tuple<Target, bool>> getMaybeFetchTarget();
+    optional<tuple<Target, bool>> getMaybeDepositTarget();
+
     void cancelAnyFetchesFrom(Target);
     void cancelAnyDepositsTo(Target);
     void validateTargets();
-    optional<tuple<Target, bool>> getMaybeFetchTarget();
-    optional<tuple<Target, bool>> getMaybeDepositTarget();
     void tryTransferAndMaybeMoveOn();
     void iterate();
 

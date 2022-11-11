@@ -1141,6 +1141,84 @@ void Gateway::removeFromQueues(EntityRef entityRef)
     }
 }
 
+optional<tuple<EntityRef, bool>> Gateway::getMaybeAbsorbTarget()
+{
+    if (maybeDepositingPrime)
+    {
+        return {{*maybeDepositingPrime, false}};
+    }
+    else if (scuttleTargetQueue.size() > 0)
+    {
+        return {{scuttleTargetQueue[0], true}};
+    }
+    else
+    {
+        return {};
+    }
+}
+optional<tuple<EntityRef, bool>> Gateway::getMaybeDepositTarget()
+{
+    if (maybeWithdrawingPrime)
+    {
+        return {{*maybeWithdrawingPrime, false}};
+    }
+    else if (buildTargetQueue.size() > 0)
+    {
+        return {{buildTargetQueue[0], true}};
+    }
+    else
+    {
+        return {};
+    }
+}
+
+bool Gateway::requestDepositFromPrime(Prime* prime)
+{
+    if (maybeDepositingPrime)
+    {
+        if (prime->getRefOrThrow() == *maybeDepositingPrime)
+        {
+            return true;
+        }
+        else return false;
+    }
+    else
+    {
+        if (prime->heldGold.getInt() > 0)
+        {
+            maybeDepositingPrime = prime->getRefOrThrow();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+bool Gateway::requestWithdrawFromPrime(Prime* prime)
+{
+    if (maybeWithdrawingPrime)
+    {
+        if (prime->getRefOrThrow() == *maybeWithdrawingPrime)
+        {
+            return true;
+        }
+        else return false;
+    }
+    else
+    {
+        if (prime->heldGold.getSpaceLeft() > 0)
+        {
+            maybeWithdrawingPrime = prime->getRefOrThrow();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
 void Gateway::cmdBuildUnit(uint8_t unitTypechar)
 {
     if (buildTargetQueue.size() >= 255)
@@ -1305,250 +1383,292 @@ coinsInt Gateway::scuttleQueueWeight()
 
 Gateway::Gateway(uint8_t ownerId, vector2fp pos)
     : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
-      building_view(false), scuttling_view(false)
+      goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
 {}
 void Gateway::pack(Netpack::Builder* to)
 {
     packEntityAndUnitBasics(to);
     packBuildingBasics(to);
 
-    if (buildTargetQueue.size() > 255)
-        cout << "WARNING! buildTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    // if (buildTargetQueue.size() > 255)
+    //     cout << "WARNING! buildTargetQueue.size() is greater than 255; pack will fail!" << endl;
     
-    to->packUint8_t(buildTargetQueue.size());
-    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
-    {
-        packEntityRef(to, buildTargetQueue[i]);
-    }
+    // to->packUint8_t(buildTargetQueue.size());
+    // for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    // {
+    //     packEntityRef(to, buildTargetQueue[i]);
+    // }
 
-    if (scuttleTargetQueue.size() > 255)
-        cout << "WARNING! scuttleTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    // if (scuttleTargetQueue.size() > 255)
+    //     cout << "WARNING! scuttleTargetQueue.size() is greater than 255; pack will fail!" << endl;
     
-    to->packUint8_t(scuttleTargetQueue.size());
-    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
-    {
-        packEntityRef(to, scuttleTargetQueue[i]);
-    }
+    // to->packUint8_t(scuttleTargetQueue.size());
+    // for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    // {
+    //     packEntityRef(to, scuttleTargetQueue[i]);
+    // }
 }
 Gateway::Gateway(Netpack::Consumer* from)
     : Unit(from)
     , Building(from)
 {
-    auto buildTargetQueueSize = from->consumeUint8_t();
-    buildTargetQueue.reserve(buildTargetQueueSize);
-    for (unsigned int i=0; i<buildTargetQueueSize; i++)
-    {
-        EntityRef ref = consumeEntityRef(from);
-        buildTargetQueue.push_back(ref);
-    }
+    // auto buildTargetQueueSize = from->consumeUint8_t();
+    // buildTargetQueue.reserve(buildTargetQueueSize);
+    // for (unsigned int i=0; i<buildTargetQueueSize; i++)
+    // {
+    //     EntityRef ref = consumeEntityRef(from);
+    //     buildTargetQueue.push_back(ref);
+    // }
 
-    auto scuttleTargetQueueSize = from->consumeUint8_t();
-    scuttleTargetQueue.reserve(scuttleTargetQueueSize);
-    for (unsigned int i=0; i<scuttleTargetQueueSize; i++)
-    {
-        EntityRef ref = consumeEntityRef(from);
-        scuttleTargetQueue.push_back(ref);
-    }
+    // auto scuttleTargetQueueSize = from->consumeUint8_t();
+    // scuttleTargetQueue.reserve(scuttleTargetQueueSize);
+    // for (unsigned int i=0; i<scuttleTargetQueueSize; i++)
+    // {
+    //     EntityRef ref = consumeEntityRef(from);
+    //     scuttleTargetQueue.push_back(ref);
+    // }
 }
 
-void Gateway::iterate()
+void Gateway::validateTargets()
 {
-    Game *game = getGameOrThrow();
+    Game* game = getGameOrThrow();
 
-    pushing_view = building_view = pulling_view = scuttling_view = false; // until proven otherwise
-
-    // maybe there's something to scuttle
-    if (scuttleTargetQueue.size() > 0)
+    if (maybeDepositingPrime)
     {
-        // first let's iterate through and remove out of range units IF they're not both mobile and moving to the GW
-        // we'll also ensure the first in-range entity is at the head of the queue
-        bool foundInRangeUnit = false;
-        for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[*maybeDepositingPrime]))
         {
-            if (scuttleTargetQueue.size() == 0) break;
-
-            if (auto entity = game->entities[scuttleTargetQueue[i]])
+            if (prime->heldGold.getInt() == 0)
             {
-                // Is the unit out of range?
-                if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
+                maybeDepositingPrime = {};
+            }
+        }
+        else
+        {
+            maybeDepositingPrime = {};
+        }
+    }
+    if (maybeWithdrawingPrime)
+    {
+        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[*maybeWithdrawingPrime]))
+        {
+            if (prime->heldGold.getSpaceLeft() == 0)
+            {
+                maybeWithdrawingPrime = {};
+            }
+        }
+        else
+        {
+            maybeWithdrawingPrime = {};
+        }
+    }
+
+    // Let's iterate through and remove out of range units IF they're not both mobile and moving to the GW
+    // we'll also ensure the first in-range entity is at the head of the queue
+    bool foundInRangeUnit = false;
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        if (scuttleTargetQueue.size() == 0) break;
+
+        if (auto entity = game->entities[scuttleTargetQueue[i]])
+        {
+            // Is the unit out of range?
+            if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
+            {
+                // is it a mobile unit?
+                if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
                 {
-                    // is it a mobile unit?
-                    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
-                    {
-                        // if it's not on its way, boot from list
-                        if ((!(mobileUnit->getMaybeMoveTarget())) || *(mobileUnit->getMaybeMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
-                        {
-                            scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
-                            i --;
-                            continue;
-                        }
-                    }
-                    else // not a mobile unit and out of range; boot from list and continue
+                    // if it's not on its way, boot from list
+                    if ((!(mobileUnit->getMaybeMoveTarget())) || *(mobileUnit->getMaybeMoveTarget()->castToEntityRef()) != this->getRefOrThrow())
                     {
                         scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
                         i --;
                         continue;
                     }
                 }
-                else // entity is in range. If this is the first such one we've found, make sure it's at the head of the queue.
+                else // not a mobile unit and out of range; boot from list and continue
                 {
-                    if (!foundInRangeUnit)
-                    { // we only want to do this once
-                        foundInRangeUnit = true;
-
-                        if (i != 0)
-                        {
-                            // entity is not at front, so let's fix this with an erase and insert
-                            // (note: std::rotate would be more efficient here, but for simplicity for now...)
-
-                            EntityRef refToMove = scuttleTargetQueue[i];
-                            scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
-                            scuttleTargetQueue.insert(scuttleTargetQueue.begin(), refToMove);
-                        }
-                    }
+                    scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
+                    i --;
+                    continue;
                 }
             }
-            else // entity was null; remove from list
+            else // entity is in range. If this is the first such one we've found, make sure it's at the head of the queue.
             {
-                scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
-                i --;
+                if (!foundInRangeUnit)
+                { // we only want to do this once
+                    foundInRangeUnit = true;
+
+                    if (i != 0)
+                    {
+                        // entity is not at front, so let's fix this with an erase and insert
+                        // (note: std::rotate would be more efficient here, but for simplicity for now...)
+
+                        EntityRef refToMove = scuttleTargetQueue[i];
+                        scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
+                        scuttleTargetQueue.insert(scuttleTargetQueue.begin(), refToMove);
+                    }
+                }
             }
         }
-
-        // okay, we now know that
-        //   - all entities in the queue are either in range or moving toward the GW
-        //   - all entities in the queue are non-null
-        //   - if any entities are in-range, the first one is at the head of the queue
-        
-        // make sure we still have something in the queue
-        if (scuttleTargetQueue.size() > 0)
+        else // entity was null; remove from list
         {
-            auto entity = game->entities[scuttleTargetQueue[0]];
+            scuttleTargetQueue.erase(scuttleTargetQueue.begin() + i);
+            i --;
+        }
+    }
 
-            // check it's in range
-            if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
+    // let's make sure no goldpiles are "blocking" any other finite jobs in the queue
+    if (buildTargetQueue.size() > 0)
+    {
+        if (auto firstGoldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[buildTargetQueue[0]]))
+        {
+            // for now, hacky but simple: if there are any non-gold items in the queue, then move this gp to the end
+            bool nonGoldpileFound = false;
+            for (unsigned int i=0; i<buildTargetQueue.size(); i++)
             {
-                // we have something to scuttle!
-                coinsInt amountPulled(0);
-                if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                if (game->entities[buildTargetQueue[i]]->typechar() != GOLDPILE_TYPECHAR)
                 {
-                    amountPulled = goldPile->gold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
-                    scuttling_view = true;
+                    nonGoldpileFound = true;
+                    break;
                 }
-                else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                {
-                    bool pulledFromPrimeHeldGold = false;
-                    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-                    {
-                        if (prime->heldGold.getInt() > 0)
-                        {
-                            amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
-                            pulledFromPrimeHeldGold = true;
-                        }
-                    }
-                    if (!pulledFromPrimeHeldGold)
-                    {
-                        amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
-                    }
-                    scuttling_view = true;
-                }
-
-                if (amountPulled > 0)
-                {
-                    pulling_view = true;
-                }
-                else
-                {
-                    // can't scuttle no more, remove from queue
-                    scuttleTargetQueue.erase(scuttleTargetQueue.begin());
-                }   
+            }
+            
+            if (nonGoldpileFound)
+            {
+                // would be better to use std::rotate, but for now:
+                buildTargetQueue.push_back(buildTargetQueue[0]);
+                buildTargetQueue.erase(buildTargetQueue.begin());
             }
         }
     }
 
-    // if we have money, maybe there's something to build?
-    if (game->players[this->ownerId].credit.getInt() > 0)
+    // okay, we now know that
+    //   - all entities in the queue are either in range or moving toward the GW
+    //   - all entities in the queue are non-null
+    //   - if any entities are in-range, the first one is at the head of the queue
+    //   - if a goldpile is at the head of the list, and there are non-gold-piles, we've moved the head gold pile to the end
+}
+
+void Gateway::iterate()
+{
+    validateTargets();
+
+    // until proven otherwise
+    goldFlowFrom_view = {{}, false};
+    goldFlowTo_view = {{}, false};
+
+    Game *game = getGameOrThrow();
+
+    auto maybeAbsorbTargetInfo = getMaybeAbsorbTarget();
+    auto maybeDepositTargetInfo = getMaybeDepositTarget();
+
+    // maybe there's something to scuttle
+    if (maybeAbsorbTargetInfo)
     {
-        if (buildTargetQueue.size() > 0)
+        EntityRef absorbTarget = get<0>(*maybeAbsorbTargetInfo);
+        bool tryingToScuttle = get<1>(*maybeAbsorbTargetInfo);
+
+        auto entity = game->entities[absorbTarget];
+
+        // check it's in range
+        if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
         {
-            if (auto entity = game->entities[buildTargetQueue[0]])
+            // we have something to scuttle!
+            coinsInt amountPulled(0);
+            bool scuttling = false;
+
+            if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
             {
-                // let's make sure no goldpiles are "blocking" any other finite jobs in the queue
-                if (auto firstGoldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                amountPulled = goldPile->gold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                bool pulledFromPrimeHeldGold = false;
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                 {
-                    // for now, hacky but simple: if there are any non-gold items in the queue, then move this gp to the end
-                    
-                    bool nonGoldpileFound = false;
-                    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+                    if (prime->heldGold.getInt() > 0)
                     {
-                        if (game->entities[buildTargetQueue[i]]->typechar() != GOLDPILE_TYPECHAR)
-                        {
-                            nonGoldpileFound = true;
-                            break;
-                        }
+                        amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+                        pulledFromPrimeHeldGold = true;
                     }
-                    
-                    if (nonGoldpileFound)
+                }
+                if (!pulledFromPrimeHeldGold && tryingToScuttle)
+                {
+                    amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+                    scuttling = true;
+                }
+            }
+
+            if (amountPulled > 0)
+            {
+                goldFlowFrom_view = {entity, scuttling};
+            }
+            else
+            {
+                // can't scuttle no more, remove from queue
+                scuttleTargetQueue.erase(scuttleTargetQueue.begin());
+            }   
+        }
+    }
+
+    // if we have money, maybe there's something to build?
+    if (game->players[this->ownerId].credit.getInt() > 0 && maybeDepositTargetInfo)
+    {
+        EntityRef depositTarget = get<0>(*maybeDepositTargetInfo);
+
+        if (auto entity = game->entities[depositTarget])
+        {
+            // check range
+            if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
+            {
+                Coins* maybeCoinsToDepositTo = NULL;
+                boost::shared_ptr<Unit> maybeBuildingUnit;
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+                {
+                    maybeCoinsToDepositTo = &goldpile->gold;
+                }
+                else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                {
+                    if (unit->getBuiltRatio() < fixed32(1))
                     {
-                        // would be better to use std::rotate, but for now:
-                        buildTargetQueue.push_back(buildTargetQueue[0]);
-                        buildTargetQueue.erase(buildTargetQueue.begin());
+                        maybeCoinsToDepositTo = &unit->goldInvested;
+                        maybeBuildingUnit = unit;
+                    }
+                    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                    {
+                        maybeCoinsToDepositTo = &prime->heldGold;
                     }
                 }
 
-                // check range
-                if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)
+                if (maybeCoinsToDepositTo)
                 {
-                    Coins* maybeCoinsToDepositTo = NULL;
-                    boost::shared_ptr<Unit> maybeBuildingUnit;
-                    if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
-                    {
-                        maybeCoinsToDepositTo = &goldpile->gold;
-                    }
-                    else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                    {
-                        if (unit->getBuiltRatio() < fixed32(1))
-                        {
-                            maybeCoinsToDepositTo = &unit->goldInvested;
-                            maybeBuildingUnit = unit;
-                            building_view = true;
-                        }
-                        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-                        {
-                            maybeCoinsToDepositTo = &prime->heldGold;
-                        }
-                    }
-
-                    if (maybeCoinsToDepositTo)
-                    {
-                        coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GOLD_TRANSFER_RATE, maybeCoinsToDepositTo);
-                        if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
-                        {
-                            buildTargetQueue.erase(buildTargetQueue.begin());
-                        }
-                        if (amountDeposited == 0)
-                        {
-                            buildTargetQueue.erase(buildTargetQueue.begin());
-                        }
-                        if (amountDeposited > 0)
-                        {
-                            pushing_view = true;
-                        }
-                    }
-                    else
+                    coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GOLD_TRANSFER_RATE, maybeCoinsToDepositTo);
+                    if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
                     {
                         buildTargetQueue.erase(buildTargetQueue.begin());
                     }
+                    if (amountDeposited == 0)
+                    {
+                        buildTargetQueue.erase(buildTargetQueue.begin());
+                    }
+                    if (amountDeposited > 0)
+                    {
+                        goldFlowTo_view = {entity, (bool(maybeBuildingUnit))};
+                    }
                 }
-                else // entity out of range, remove from list
+                else
                 {
                     buildTargetQueue.erase(buildTargetQueue.begin());
                 }
             }
-            else // entity was dead or null or something; remove from list
+            else // entity out of range, remove from list
             {
                 buildTargetQueue.erase(buildTargetQueue.begin());
             }
+        }
+        else // entity was dead or null or something; remove from list
+        {
+            buildTargetQueue.erase(buildTargetQueue.begin());
         }
     }
 }
@@ -1856,16 +1976,27 @@ void Prime::tryTransferAndMaybeMoveOn()
                             }
                             else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                             {
-                                bool pulledFromPrimeHeldGold = false;
+                                bool pullingFromPrimeOrGateway = false;
                                 if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                                 {
                                     if (prime->heldGold.getInt() > 0)
                                     {
                                         amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
-                                        pulledFromPrimeHeldGold = true;
+                                        pullingFromPrimeOrGateway = true;
                                     }
                                 }
-                                if (!pulledFromPrimeHeldGold && tryingToScuttle)
+                                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+                                {
+                                    if (!tryingToScuttle)
+                                    {
+                                        if (gateway->requestWithdrawFromPrime(this))
+                                        {
+                                            pullingFromPrimeOrGateway = true;
+                                        }
+                                    }
+                                }
+
+                                if (!pullingFromPrimeOrGateway && tryingToScuttle)
                                 {
                                     amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &this->heldGold);
                                     scuttling = true;
@@ -1952,9 +2083,9 @@ void Prime::tryTransferAndMaybeMoveOn()
                             {
                                 if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
                                 {
-                                    // TODO
+                                    gateway->requestDepositFromPrime(this);
                                 }
-                                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                                else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                                 {
                                     amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &prime->heldGold);
                                 }

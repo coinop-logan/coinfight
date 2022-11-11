@@ -1249,11 +1249,14 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 // add some effects for gold transfer and building/scuttling
                 if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
                 {
-                    if (prime->isActive() && game->frame % 3 == 0)
+                    if (prime->isActive())
                     {
                         if (auto flowFromEntity = get<0>(prime->goldFlowFrom_view))
                         {
-                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                            if (game->frame % 3 == 0)
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                            }
 
                             bool scuttling = get<1>(prime->goldFlowFrom_view);
                             if (scuttling)
@@ -1263,7 +1266,10 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         }
                         if (auto flowToEntity = get<0>(prime->goldFlowTo_view)) 
                         {
-                            particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
+                            if (game->frame % 3 == 0)
+                            {
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
+                            }
 
                             bool building = get<1>(prime->goldFlowTo_view);
                             if (building)
@@ -1304,40 +1310,32 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         window->draw(lines);
 
                         // draw active energy lines
-                        if (gateway->buildTargetQueue.size() > 0)
+                        if (auto flowFromEntity = get<0>(gateway->goldFlowFrom_view))
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                            if (game->frame % 3 == 0)
                             {
-                                if (gateway->pushing_view)
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
-                                    }
-                                }
-                                if(gateway->building_view)
-                                {
-                                    drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(gateway->getRefOrThrow()), sf::Color::Yellow)));
+                            }
+
+                            bool scuttling = get<1>(gateway->goldFlowFrom_view);
+                            if (scuttling)
+                            {
+                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), gateway->getPos(), sf::Color::Red);
                             }
                         }
-                        if (gateway->scuttleTargetQueue.size() > 0)
+                        if (auto flowToEntity = get<0>(gateway->goldFlowTo_view)) 
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            if (game->frame % 3 == 0)
                             {
-                                if (gateway->pulling_view)
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
-                                    }
-                                }
-                                if (gateway->scuttling_view)
-                                {
-                                    drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
                             }
-                        }  
+
+                            bool building = get<1>(gateway->goldFlowTo_view);
+                            if (building)
+                            {
+                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), gateway->getPos(), sf::Color::Blue);
+                            }
+                        }
                     }
                 }
                 
