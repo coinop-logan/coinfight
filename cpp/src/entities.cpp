@@ -1878,6 +1878,29 @@ optional<tuple<boost::shared_ptr<Entity>, bool>> Prime::getMaybeDepositTarget() 
     }
 }
 
+bool Prime::isInScavengeTargetQueue(Target target)
+{
+    for (unsigned int i=0; i<scavengeTargetQueue.size(); i++)
+    {
+        if (target == scavengeTargetQueue[i])
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool Prime::isInBuildTargetQueue(EntityRef entityRef)
+{
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (entityRef == buildTargetQueue[i]->getRefOrThrow())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Prime::validateTargets()
 {
     Game* game = getGameOrThrow();
@@ -2104,11 +2127,16 @@ void Prime::tryTransferAndMaybeMoveOn()
             {
                 if (maybeFetchTargetInfo)
                 {
-                    if (auto fetchTargetPoint = get<0>(*maybeFetchTargetInfo).getPointUnlessTargetDeleted(*game))
+                    auto fetchTarget = get<0>(*maybeFetchTargetInfo);
+                    if (auto fetchTargetPoint = fetchTarget.getPointUnlessTargetDeleted(*game))
                     {
-                        if ((this->getPos() - *fetchTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                        fixed32 targetRange = fetchTarget.type == Target::PointTarget ?
+                            fixed32(0) :
+                            PRIME_TRANSFER_RANGE ;
+                        if ((this->getPos() - *fetchTargetPoint).getRoughMagnitude() > targetRange)
                         {
-                            setMoveTarget(get<0>(*maybeFetchTargetInfo), PRIME_TRANSFER_RANGE);
+                                
+                            setMoveTarget(get<0>(*maybeFetchTargetInfo), targetRange);
                         }
                     }
                     else
@@ -2151,7 +2179,25 @@ void Prime::iterate()
 
     if (!mobileUnitIsIdle())
     {
-        // if we're still moving somewhere, there's nothing for us to do.
+        // if we're still moving somewhere, there's nothing for us to do
+        // ... unless we're doing a "fetch to"
+        if (fetchTarget && fetchTarget->type == Target::PointTarget && getMaybeMoveTarget() && fetchTarget->castToPoint() == getMaybeMoveTarget()->castToPoint())
+        {
+            auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
+            auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
+
+            for (unsigned int i=0; i<goldpilesInSight.size(); i++)
+            {
+                auto goldpile = goldpilesInSight[i];
+                
+                if (!(isInBuildTargetQueue(goldpile->getRefOrThrow()) || isInScavengeTargetQueue(goldpile->getRefOrThrow())))
+                {
+                    Target gpTarget = Target(goldpile->getRefOrThrow());
+                    scavengeTargetQueue.insert(scavengeTargetQueue.begin(), gpTarget);
+                    setMoveTarget(gpTarget, PRIME_TRANSFER_RANGE);
+                }
+            }
+        }
     }
     // thus in the below branches, mobileUnitIsIdle() == true, meaning we aren't moving toward anything
     else if (!(fetchTarget || depositTarget))

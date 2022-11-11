@@ -358,6 +358,9 @@ public:
     vector<Target> scavengeTargetQueue;
     vector<boost::shared_ptr<Entity>> buildTargetQueue;
 
+    bool isInScavengeTargetQueue(Target);
+    bool isInBuildTargetQueue(EntityRef);
+
     optional<tuple<Target, bool>> getMaybeFetchTarget();
     optional<tuple<boost::shared_ptr<Entity>, bool>> getMaybeDepositTarget();
 
