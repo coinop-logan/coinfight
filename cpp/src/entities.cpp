@@ -1614,6 +1614,7 @@ void Gateway::iterate()
     if (game->players[this->ownerId].credit.getInt() > 0 && maybeDepositTargetInfo)
     {
         EntityRef depositTarget = get<0>(*maybeDepositTargetInfo);
+        bool fromQueue = get<1>(*maybeDepositTargetInfo);
 
         if (auto entity = game->entities[depositTarget])
         {
@@ -1657,17 +1658,38 @@ void Gateway::iterate()
                 }
                 else
                 {
-                    buildTargetQueue.erase(buildTargetQueue.begin());
+                    if (fromQueue)
+                    {
+                        buildTargetQueue.erase(buildTargetQueue.begin());
+                    }
+                    else
+                    {
+                        maybeDepositingPrime = {};
+                    }
                 }
             }
             else // entity out of range, remove from list
             {
-                buildTargetQueue.erase(buildTargetQueue.begin());
+                if (fromQueue)
+                {
+                    buildTargetQueue.erase(buildTargetQueue.begin());
+                }
+                else
+                {
+                    maybeDepositingPrime = {};
+                }
             }
         }
         else // entity was dead or null or something; remove from list
         {
-            buildTargetQueue.erase(buildTargetQueue.begin());
+            if (fromQueue)
+            {
+                buildTargetQueue.erase(buildTargetQueue.begin());
+            }
+            else
+            {
+                maybeDepositingPrime = {};
+            }
         }
     }
 }
