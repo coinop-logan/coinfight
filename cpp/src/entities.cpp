@@ -208,117 +208,114 @@ bool maybeMoveTargetInfosAreEqual(optional<MoveTargetInfo> mt1, optional<MoveTar
 
 bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, boost::shared_ptr<Entity> entity2)
 {
-    triggerDebug(); return false;
-    // if (!entity1 && !entity2)
-    // {
-    //     // both null, good!
-    //     return true;
-    // }
-    // if (!entity1 && entity2)
-    // {
-    //     triggerDebug();
-    //     return false;
-    // }
-    // if (entity1 && !entity2)
-    // {
-    //     triggerDebug();
-    //     return false;
-    // }
+    if (!entity1 && !entity2)
+    {
+        // both null, good!
+        return true;
+    }
+    else if (bool(entity1) != bool(entity2))
+    {
+        triggerDebug();
+        return false;
+    }
 
-    // // we now know they're both non-null
+    // we now know they're both non-null
 
-    // debugAssert(entity1->getPos() == entity2->getPos());
-    // debugAssert(entity1->dead == entity2->dead);
-    // // don't need to test regInfo directly
-    // debugAssert(entity1->getSearchGridCellOrThrow() == entity2->getSearchGridCellOrThrow());
-    // debugAssert(entity1->typechar() == entity2->typechar());
+    debugAssert(entity1->getPos() == entity2->getPos());
+    debugAssert(entity1->dead == entity2->dead);
+    // don't need to test regInfo directly
+    debugAssert(entity1->getSearchGridCellOrThrow() == entity2->getSearchGridCellOrThrow());
+    debugAssert(entity1->typechar() == entity2->typechar());
 
-    // bool successfulCast = false; // until proven otherwise
-    // if (auto goldpile1 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity1))
-    //     if (auto goldpile2 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity2))
-    // {
-    //     successfulCast = true;
-    //     debugAssert(goldpile1->gold.getInt() == goldpile2->gold.getInt());
-    // }
+    bool successfulCast = false; // until proven otherwise
 
-    // if (auto unit1 = boost::dynamic_pointer_cast<Unit, Entity>(entity1))
-    //     if (auto unit2 = boost::dynamic_pointer_cast<Unit, Entity>(entity2))
-    // {
-    //     debugAssert(unit1->getHealthAssumingBuilt() == unit2->getHealthAssumingBuilt());
-    //     debugAssert(unit1->ownerId == unit2->ownerId);
-    //     debugAssert(unit1->goldInvested.getInt() == unit2->goldInvested.getInt());
+    if (auto goldpile1 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity1))
+        if (auto goldpile2 = boost::dynamic_pointer_cast<GoldPile, Entity>(entity2))
+    {
+        successfulCast = true;
+        
+        debugAssert(goldpile1->gold.getInt() == goldpile2->gold.getInt());
 
-    //     if (auto building1 = boost::dynamic_pointer_cast<Building, Unit>(unit1))
-    //         if (auto building2 = boost::dynamic_pointer_cast<Building, Unit>(unit2))
-    //     {
-    //         // no building-specific state to check
+        debugAssert(successfulCast);
+    }
 
-    //         if (auto beacon1 = boost::dynamic_pointer_cast<Beacon, Building>(building1))
-    //             if (auto beacon2 = boost::dynamic_pointer_cast<Beacon, Building>(building2))
-    //         {
-    //             successfulCast = true;
+    if (auto unit1 = boost::dynamic_pointer_cast<Unit, Entity>(entity1))
+        if (auto unit2 = boost::dynamic_pointer_cast<Unit, Entity>(entity2))
+    {
+        debugAssert(unit1->getHealthAssumingBuilt() == unit2->getHealthAssumingBuilt());
+        debugAssert(unit1->ownerId == unit2->ownerId);
+        debugAssert(unit1->goldInvested.getInt() == unit2->goldInvested.getInt());
 
-    //             debugAssert(beacon1->state == beacon2->state);
-    //         }
+        if (auto building1 = boost::dynamic_pointer_cast<Building, Unit>(unit1))
+            if (auto building2 = boost::dynamic_pointer_cast<Building, Unit>(unit2))
+        {} // no building-specific state to check
 
-    //         if (auto gateway1 = boost::dynamic_pointer_cast<Gateway, Building>(building1))
-    //             if (auto gateway2 = boost::dynamic_pointer_cast<Gateway, Building>(building2))
-    //         {
-    //             successfulCast = true;
+        if (auto mobileUnit1 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit1))
+            if (auto mobileUnit2 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit2))
+        {
+            debugAssert(maybeMoveTargetInfosAreEqual(mobileUnit1->getMaybeMoveTargetInfo(), mobileUnit2->getMaybeMoveTargetInfo()));
+            debugAssert(mobileUnit1->getDesiredVelocity() == mobileUnit2->getDesiredVelocity());
+            debugAssert(mobileUnit1->getLastVelocity() == mobileUnit2->getLastVelocity());
+        }
 
-    //             debugAssert(gateway1->buildTargetQueue == gateway2->buildTargetQueue);
-    //             debugAssert(gateway1->scuttleTargetQueue == gateway2->scuttleTargetQueue);
-    //         }
+        if (auto combatUnit1 = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit1))
+            if (auto combatUnit2 = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit2))
+        {
+            debugAssert(combatUnit1->state == combatUnit2->state);
+            debugAssert(combatUnit1->maybeAttackObjective == combatUnit2->maybeAttackObjective);
+            debugAssert(combatUnit1->maybeAttackTarget == combatUnit2->maybeAttackTarget);
+            debugAssert(combatUnit1->shootCooldown == combatUnit2->shootCooldown);
+        }
 
-    //         if (auto turret1 = boost::dynamic_pointer_cast<Turret, Building>(building1))
-    //             if (auto turret2 = boost::dynamic_pointer_cast<Turret, Building>(building2))
-    //         {
-    //             successfulCast = true;
+        if (auto beacon1 = boost::dynamic_pointer_cast<Beacon, Unit>(unit1))
+            if (auto beacon2 = boost::dynamic_pointer_cast<Beacon, Unit>(unit2))
+        {
+            successfulCast = true;
 
-    //             debugAssert(turret1->state == turret2->state);
-    //             debugAssert(maybeTargetsAreEqual(turret1->maybeAttackObjective, turret2->maybeAttackObjective));
-    //         }
+            debugAssert(beacon1->state == beacon2->state);
+        }
 
-    //         debugAssert(successfulCast);
-    //     }
+        if (auto gateway1 = boost::dynamic_pointer_cast<Gateway, Unit>(unit1))
+            if (auto gateway2 = boost::dynamic_pointer_cast<Gateway, Unit>(unit2))
+        {
+            successfulCast = true;
 
-    //     if (auto mobileUnit1 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit1))
-    //         if (auto mobileUnit2 = boost::dynamic_pointer_cast<MobileUnit, Unit>(unit2))
-    //     {
-    //         debugAssert(maybeMoveTargetInfosAreEqual(mobileUnit1->getMaybeMoveTargetInfo(), mobileUnit2->getMaybeMoveTargetInfo()));
-    //         debugAssert(mobileUnit1->getDesiredVelocity() == mobileUnit2->getDesiredVelocity());
-    //         debugAssert(mobileUnit1->getLastVelocity() == mobileUnit2->getLastVelocity());
+            debugAssert(gateway1->maybeDepositingPrime == gateway2->maybeDepositingPrime);
+            debugAssert(gateway1->maybeWithdrawingPrime == gateway2->maybeWithdrawingPrime);
+            debugAssert(gateway1->buildTargetQueue == gateway2->buildTargetQueue);
+            debugAssert(gateway1->scuttleTargetQueue == gateway2->scuttleTargetQueue);
+        }
 
-    //         if (auto prime1 = boost::dynamic_pointer_cast<Prime, MobileUnit>(mobileUnit1))
-    //             if (auto prime2 = boost::dynamic_pointer_cast<Prime, MobileUnit>(mobileUnit2))
-    //         {
-    //             successfulCast = true;
+        if (auto prime1 = boost::dynamic_pointer_cast<Prime, Unit>(unit1))
+            if (auto prime2 = boost::dynamic_pointer_cast<Prime, Unit>(unit2))
+        {
+            successfulCast = true;
 
-    //             debugAssert(prime1->heldGold.getInt() == prime2->heldGold.getInt());
-    //             debugAssert(prime1->behavior == prime2->behavior);
-    //             debugAssert(prime1->maybeGatherTargetPos == prime2->maybeGatherTargetPos);
-    //             debugAssert(prime1->state == prime2->state);
-    //             debugAssert(prime1->gonnabuildTypechar == prime2->gonnabuildTypechar);
-    //         }
+            debugAssert(prime1->heldGold.getInt() == prime2->heldGold.getInt());
+            debugAssert(prime1->fundsSource == prime2->fundsSource);
+            debugAssert(prime1->fundsDest == prime2->fundsDest);
+            debugAssert(prime1->scavengeTargetQueue == prime2->scavengeTargetQueue);
+            debugAssert(prime1->buildTargetQueue == prime2->buildTargetQueue);
+        }
 
-    //         if (auto fighter1 = boost::dynamic_pointer_cast<Fighter, MobileUnit>(mobileUnit1))
-    //             if (auto fighter2 = boost::dynamic_pointer_cast<Fighter, MobileUnit>(mobileUnit2))
-    //         {
-    //             successfulCast = true;
+        if (auto fighter1 = boost::dynamic_pointer_cast<Fighter, Unit>(unit1))
+            if (auto fighter2 = boost::dynamic_pointer_cast<Fighter, Unit>(unit2))
+        {
+            successfulCast = true;
+        }
 
-    //             debugAssert(fighter1->state == fighter2->state);
-    //             debugAssert(maybeTargetsAreEqual(fighter1->maybeAttackObjective, fighter2->maybeAttackObjective));
-    //         }
+        if (auto turret1 = boost::dynamic_pointer_cast<Turret, Unit>(unit1))
+            if (auto turret2 = boost::dynamic_pointer_cast<Turret, Unit>(unit2))
+        {
+            successfulCast = true;
+        }
 
-    //         debugAssert(successfulCast);
-    //     }
+        debugAssert(successfulCast);
+    }
 
-    //     debugAssert(successfulCast);
-    // }
-
-    // return debugAssert(successfulCast);
-    // // this repetition of debugAssert may seem redundant,
-    // // but this way, breakpoints trigger in a more informative position
+    return debugAssert(successfulCast);
+    // this repetition of debugAssert may seem redundant,
+    // but this way, breakpoints trigger in a more informative position
 }
 
 
@@ -1404,43 +1401,47 @@ void Gateway::pack(Netpack::Builder* to)
     packEntityAndUnitBasics(to);
     packBuildingBasics(to);
 
-    // if (buildTargetQueue.size() > 255)
-    //     cout << "WARNING! buildTargetQueue.size() is greater than 255; pack will fail!" << endl;
-    
-    // to->packUint8_t(buildTargetQueue.size());
-    // for (unsigned int i=0; i<buildTargetQueue.size(); i++)
-    // {
-    //     packEntityRef(to, buildTargetQueue[i]);
-    // }
+    to->packOptional<EntityRef>(maybeDepositingPrime, packEntityRef);
+    to->packOptional<EntityRef>(maybeWithdrawingPrime, packEntityRef);
 
-    // if (scuttleTargetQueue.size() > 255)
-    //     cout << "WARNING! scuttleTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    if (buildTargetQueue.size() > 255)
+        cout << "WARNING! Gateway's buildTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    if (scuttleTargetQueue.size() > 255)
+        cout << "WARNING! Gateway's scuttleTargetQueue.size() is greater than 255; pack will fail!" << endl;
     
-    // to->packUint8_t(scuttleTargetQueue.size());
-    // for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
-    // {
-    //     packEntityRef(to, scuttleTargetQueue[i]);
-    // }
+    to->packUint8_t(buildTargetQueue.size());
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        packEntityRef(to, buildTargetQueue[i]);
+    }
+    to->packUint8_t(scuttleTargetQueue.size());
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        packEntityRef(to, scuttleTargetQueue[i]);
+    }
 }
 Gateway::Gateway(Netpack::Consumer* from)
     : Unit(from)
     , Building(from)
 {
-    // auto buildTargetQueueSize = from->consumeUint8_t();
-    // buildTargetQueue.reserve(buildTargetQueueSize);
-    // for (unsigned int i=0; i<buildTargetQueueSize; i++)
-    // {
-    //     EntityRef ref = consumeEntityRef(from);
-    //     buildTargetQueue.push_back(ref);
-    // }
+    maybeDepositingPrime = from->consumeOptional<EntityRef>(consumeEntityRef);
+    maybeWithdrawingPrime = from->consumeOptional<EntityRef>(consumeEntityRef);
 
-    // auto scuttleTargetQueueSize = from->consumeUint8_t();
-    // scuttleTargetQueue.reserve(scuttleTargetQueueSize);
-    // for (unsigned int i=0; i<scuttleTargetQueueSize; i++)
-    // {
-    //     EntityRef ref = consumeEntityRef(from);
-    //     scuttleTargetQueue.push_back(ref);
-    // }
+    auto buildTargetQueueSize = from->consumeUint8_t();
+    buildTargetQueue.reserve(buildTargetQueueSize);
+    for (unsigned int i=0; i<buildTargetQueueSize; i++)
+    {
+        EntityRef ref = consumeEntityRef(from);
+        buildTargetQueue.push_back(ref);
+    }
+
+    auto scuttleTargetQueueSize = from->consumeUint8_t();
+    scuttleTargetQueue.reserve(scuttleTargetQueueSize);
+    for (unsigned int i=0; i<scuttleTargetQueueSize; i++)
+    {
+        EntityRef ref = consumeEntityRef(from);
+        scuttleTargetQueue.push_back(ref);
+    }
 }
 
 void Gateway::validateTargets()
@@ -1761,6 +1762,25 @@ void Prime::pack(Netpack::Builder* to)
     packMobileUnitBasics(to);
 
     heldGold.pack(to);
+
+    to->packOptional<EntityRef>(fundsSource, packEntityRef);
+    to->packOptional<EntityRef>(fundsDest, packEntityRef);
+
+    if (buildTargetQueue.size() > 255)
+        cout << "WARNING! Prime's buildTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    if (scavengeTargetQueue.size() > 255)
+        cout << "WARNING! Prime's scuttleTargetQueue.size() is greater than 255; pack will fail!" << endl;
+    
+    to->packUint8_t(scavengeTargetQueue.size());
+    for (unsigned int i=0; i<scavengeTargetQueue.size(); i++)
+    {
+        scavengeTargetQueue[i].pack(to);
+    }
+    to->packUint8_t(buildTargetQueue.size());
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        packEntityRef(to, buildTargetQueue[i]);
+    }
 }
 Prime::Prime(Netpack::Consumer* from)
     : Unit(from)
@@ -1768,6 +1788,25 @@ Prime::Prime(Netpack::Consumer* from)
     heldGold(PRIME_MAX_GOLD_HELD)
 {
     heldGold = Coins(from);
+
+    fundsSource = from->consumeOptional<EntityRef>(consumeEntityRef);
+    fundsDest = from->consumeOptional<EntityRef>(consumeEntityRef);
+
+    auto scavengeTargetQueueSize = from->consumeUint8_t();
+    scavengeTargetQueue.reserve(scavengeTargetQueueSize);
+    for (unsigned int i=0; i<scavengeTargetQueueSize; i++)
+    {
+        Target target(from);
+        scavengeTargetQueue.push_back(target);
+    }
+
+    auto buildTargetQueueSize = from->consumeUint8_t();
+    buildTargetQueue.reserve(buildTargetQueueSize);
+    for (unsigned int i=0; i<buildTargetQueueSize; i++)
+    {
+        EntityRef ref = consumeEntityRef(from);
+        buildTargetQueue.push_back(ref);
+    }
 }
 
 void Prime::cancelAnyFetchesFrom(Target target)
@@ -1776,7 +1815,7 @@ void Prime::cancelAnyFetchesFrom(Target target)
     {
         gateway->cancelAnyWithdrawRequestFromPrime(this);
     }
-    if (fundsSource == target.castToEntityRef())
+    if (fundsSource && fundsSource == target.castToEntityRef())
     {
         fundsSource = {};
     }
@@ -1798,13 +1837,13 @@ void Prime::cancelAnyDepositsTo(Target target)
     }
     if (auto entityRef = target.castToEntityRef())
     {
-        if (fundsDest && fundsDest->getRefOrThrow() == entityRef)
+        if (fundsDest && *fundsDest == entityRef)
         {
             fundsDest = {};
         }
         for (unsigned int i=0; i<buildTargetQueue.size(); i++)
         {
-            if (buildTargetQueue[i]->getRefOrThrow() == entityRef)
+            if (buildTargetQueue[i] == entityRef)
             {
                 buildTargetQueue.erase(buildTargetQueue.begin() + i);
                 i --;
@@ -1822,21 +1861,24 @@ void Prime::cmdDeposit(EntityRef entityRef)
     {
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
         {
-            this->fundsDest = goldpile;
+            this->fundsDest = goldpile->getRefOrThrow();
             setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                this->buildTargetQueue.insert(buildTargetQueue.begin(), unit);
-                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                if (buildTargetQueue.size() < 255)
+                {
+                    buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
+                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                }
             }
             else
             {
                 if (unit->typechar() == GATEWAY_TYPECHAR || unit->typechar() == PRIME_TYPECHAR)
                 {
-                    this->fundsDest = unit;
+                    this->fundsDest = unit->getRefOrThrow();
                     setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
                 }
                 else
@@ -1858,15 +1900,21 @@ void Prime::cmdFetch(Target _target)
 
     if (auto point = _target.castToPoint())
     {
-        this->scavengeTargetQueue.insert(this->scavengeTargetQueue.begin(), _target);
-        setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+        if (scavengeTargetQueue.size() < 255)
+        {
+            scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
+            setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+        }
     }
     else if (auto entity = _target.castToEntityPtr(*getGameOrThrow()))
     {
         if (entity->typechar() == GOLDPILE_TYPECHAR)
         {
-            this->scavengeTargetQueue.insert(this->scavengeTargetQueue.begin(), _target);
-            setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            if (scavengeTargetQueue.size() < 255)
+            {
+                scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
+                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            }
         }
         else if (entity->typechar() == GATEWAY_TYPECHAR || entity->typechar() == PRIME_TYPECHAR)
         {
@@ -1915,7 +1963,7 @@ optional<tuple<Target, bool>> Prime::getMaybeFetchTarget() // boolean indicates 
         return {};
     }
 }
-optional<tuple<boost::shared_ptr<Entity>, bool>> Prime::getMaybeDepositTarget() // boolean indicates whether we want to build
+optional<tuple<EntityRef, bool>> Prime::getMaybeDepositTarget() // boolean indicates whether we want to build
 {
     if (buildTargetQueue.size() > 0)
     {
@@ -1923,7 +1971,7 @@ optional<tuple<boost::shared_ptr<Entity>, bool>> Prime::getMaybeDepositTarget() 
     }
     else if (fundsDest)
     {
-        return {{fundsDest, false}};
+        return {{*fundsDest, false}};
     }
     else
     {
@@ -1946,7 +1994,7 @@ bool Prime::isInBuildTargetQueue(EntityRef entityRef)
 {
     for (unsigned int i=0; i<buildTargetQueue.size(); i++)
     {
-        if (entityRef == buildTargetQueue[i]->getRefOrThrow())
+        if (entityRef == buildTargetQueue[i])
         {
             return true;
         }
@@ -1959,24 +2007,23 @@ void Prime::validateTargets()
     Game* game = getGameOrThrow();
     // Remove invalid targets, as well as build orders that are completed
 
-    if (fundsSource)
+    if (fundsSource && ! game->entities[*fundsSource])
     {
-        if (! game->entities[*fundsSource])
-        {
-            // entity died. Clear it
-            fundsSource = {};
-        }
+        // entity died. Clear it
+        fundsSource = {};
     }
-    if (fundsDest && fundsDest->dead)
+    
+    if (fundsDest && ! game->entities[*fundsDest])
     {
+        // entity died. Clear it
         fundsDest = {};
     }
 
     for (unsigned int i=0; i<buildTargetQueue.size(); i++)
     {
-        if (! buildTargetQueue[i]->dead)
+        if (auto entity = game->entities[buildTargetQueue[i]])
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(buildTargetQueue[i]))
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
                 if (unit->getBuiltRatio() == fixed32(1))
                 {
@@ -2106,10 +2153,13 @@ void Prime::tryTransferAndMaybeMoveOn()
             {
                 if (maybeDepositTargetInfo)
                 {
-                    auto depositTargetPoint = get<0>(*maybeDepositTargetInfo)->getPos();
-                    if ((this->getPos() - depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                    if (auto entity = game->entities[get<0>(*maybeDepositTargetInfo)])
                     {
-                        setMoveTarget(get<0>(*maybeDepositTargetInfo), PRIME_TRANSFER_RANGE);
+                        auto depositTargetPoint = entity->getPos();
+                        if ((this->getPos() - depositTargetPoint).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+                        {
+                            setMoveTarget(Target(entity->getRefOrThrow()), PRIME_TRANSFER_RANGE);
+                        }
                     }
                 }
             }
@@ -2247,6 +2297,10 @@ void Prime::iterate()
                 {
                     Target gpTarget = Target(goldpile->getRefOrThrow());
                     scavengeTargetQueue.insert(scavengeTargetQueue.begin(), gpTarget);
+                    if (scavengeTargetQueue.size() > 255)
+                    {
+                        scavengeTargetQueue.pop_back();
+                    }
                     setMoveTarget(gpTarget, PRIME_TRANSFER_RANGE);
                 }
             }

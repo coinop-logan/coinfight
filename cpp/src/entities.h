@@ -91,17 +91,20 @@ public:
 class GoldPile : public Entity
 {
 public:
-    Coins gold;
-    vector<Coins*> getDroppableCoins();
-    void pack(Netpack::Builder* to);
-    GoldPile(vector2fp);
-    GoldPile(Netpack::Consumer*);
-    sf::Color getTeamOrPrimaryColor();
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
+
+    Coins gold;
+
+    GoldPile(vector2fp);
+    void pack(Netpack::Builder* to);
+    GoldPile(Netpack::Consumer*);
+
     void iterate();
+
+    sf::Color getTeamOrPrimaryColor();
+    vector<Coins*> getDroppableCoins();
 };
 
 class Unit : public Entity
@@ -110,12 +113,14 @@ class Unit : public Entity
 public:
     uint8_t ownerId;
     Coins goldInvested;
+
+    float angle_view;
+
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
     virtual fixed32 getRange() const;
     virtual bool isIdle();
-    float angle_view;
 
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
@@ -242,14 +247,6 @@ protected:
     void iterateCombatUnitBasics();
 };
 
-enum GoldTransferState {
-    NoGoldTransfer,
-    Pushing,
-    Pulling,
-    BuildingSomething,
-    ScuttlingSomething
-};
-
 const coinsInt BEACON_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
 // const uint16_t BEACON_HEALTH = 100;
 const fixed32 BEACON_RADIUS(10);
@@ -355,16 +352,16 @@ public:
     Coins heldGold;
 
     optional<EntityRef> fundsSource;
-    boost::shared_ptr<Entity> fundsDest;
+    optional<EntityRef> fundsDest;
 
     vector<Target> scavengeTargetQueue;
-    vector<boost::shared_ptr<Entity>> buildTargetQueue;
+    vector<EntityRef> buildTargetQueue;
 
     bool isInScavengeTargetQueue(Target);
     bool isInBuildTargetQueue(EntityRef);
 
     optional<tuple<Target, bool>> getMaybeFetchTarget();
-    optional<tuple<boost::shared_ptr<Entity>, bool>> getMaybeDepositTarget();
+    optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
 
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
     tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;

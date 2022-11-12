@@ -31,6 +31,10 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new PrimeBuildCmd(from));
     case CMD_GIFT_CHAR:
         return boost::shared_ptr<Cmd>(new GiftCmd(from));
+    case CMD_GATEWAYSCUTTLE_CHAR:
+        return boost::shared_ptr<Cmd>(new GatewayScuttleCmd(from));
+    case CMD_STOPSCUTTLE_CHAR:
+        return boost::shared_ptr<Cmd>(new StopScuttleCmd(from));
     }
     throw runtime_error("Trying to unpack an unrecognized cmd");
 }
