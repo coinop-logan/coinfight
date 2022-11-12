@@ -2214,27 +2214,58 @@ void Prime::tryTransferAndMaybeMoveOn()
                     {
                         coinsInt amountPushed(0);
                         bool building = false;
+                        boost::shared_ptr<Entity> entityPushedTo;
 
                         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                         {
                             amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &goldpile->gold);
+                            entityPushedTo = goldpile;
                         }
                         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                         {
                             if (unit->getBuiltRatio() < fixed32(1))
                             {
                                 amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
+                                entityPushedTo = unit;
                                 building = true;
                             }
                             else
                             {
                                 if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
                                 {
-                                    gateway->requestDepositFromPrime(this);
+                                    bool success = gateway->requestDepositFromPrime(this);
+                                    if (!success)
+                                    {
+                                        // If we can't directly deposit, create a new gold pile and add it to the Gateway's scuttle queue.
+                                        // but first, check for an existing one close enough by, so we don't clutter the area with tiny gold piles.
+                                        boost::shared_ptr<GoldPile> gpToDepositTo;
+                                        for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
+                                        {
+                                            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[gateway->scuttleTargetQueue[i]]))
+                                            {
+                                                if ((goldpile->getPos() - this->getPos()).getFloorMagnitudeSquared() < PRIME_TRANSFER_RANGE_FLOORSQUARED * 1.1)
+                                                {
+                                                    gpToDepositTo = goldpile;
+                                                }
+                                            }
+                                        }
+
+                                        if (!gpToDepositTo)
+                                        {
+                                            vector2fp gpPos = (gateway->getPos() + this->getPos()) / 2;
+                                            gpToDepositTo = boost::shared_ptr<GoldPile>(new GoldPile(gpPos));
+                                            game->registerNewEntityIgnoringCollision(gpToDepositTo);
+                                            gateway->scuttleTargetQueue.push_back(gpToDepositTo->getRefOrThrow());
+                                        }
+
+                                        amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &gpToDepositTo->gold);
+                                        entityPushedTo = gpToDepositTo;
+                                    }
                                 }
                                 else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                                 {
                                     amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &prime->heldGold);
+                                    entityPushedTo = prime;
                                 }
                                 else
                                 {
@@ -2245,7 +2276,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                         if (amountPushed > 0)
                         {
-                            goldFlowTo_view = {entity, building};
+                            goldFlowTo_view = {entityPushedTo, building};
                         }
                     }
                     else
