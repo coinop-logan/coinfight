@@ -1137,6 +1137,29 @@ void Gateway::removeFromQueues(EntityRef entityRef)
     }
 }
 
+bool Gateway::isInBuildTargetQueue(EntityRef entityRef)
+{
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (entityRef == buildTargetQueue[i])
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool Gateway::isInScuttleTargetQueue(EntityRef entityRef)
+{
+    for (unsigned int i=0; i<scuttleTargetQueue.size(); i++)
+    {
+        if (entityRef == scuttleTargetQueue[i])
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 optional<tuple<EntityRef, bool>> Gateway::getMaybeAbsorbTarget()
 {
     if (maybeDepositingPrime)
@@ -2056,6 +2079,15 @@ void Prime::validateTargets()
             scavengeTargetQueue.erase(scavengeTargetQueue.begin() + i);
             i --;
             continue;
+        }
+        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(scavengeTargetQueue[i].castToEntityPtr(*game)))
+        {
+            if (goldpile->gold.getInt() == 0)
+            {
+                scavengeTargetQueue.erase(scavengeTargetQueue.begin() + i);
+                i --;
+                continue;
+            }
         }
     }
 }

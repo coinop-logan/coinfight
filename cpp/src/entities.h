@@ -298,6 +298,9 @@ public:
 
     vector<EntityRef> buildTargetQueue;
     vector<EntityRef> scuttleTargetQueue;
+
+    bool isInBuildTargetQueue(EntityRef);
+    bool isInScuttleTargetQueue(EntityRef);
     
     optional<tuple<EntityRef, bool>> getMaybeAbsorbTarget();
     optional<tuple<EntityRef, bool>> getMaybeDepositTarget();

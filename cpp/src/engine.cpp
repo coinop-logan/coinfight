@@ -474,7 +474,10 @@ void Game::iterate()
     }
 
     // clean up units that are ded
-    // also clear goldpiles that are zeroed and which are not referenced except in the main list
+    // also take note of GWs, Primes, and zeroed goldpiles for purposes of the next loop
+    vector<EntityRef> goldpilesToMaybeDelete;
+    vector<boost::shared_ptr<Unit>> gatewaysAndPrimes;
+
     for (unsigned int i=0; i<entities.size(); i++)
     {
         if (entities[i])
@@ -500,16 +503,63 @@ void Game::iterate()
                 }
                 entities[i].reset();
             }
-            else if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
+            else
             {
-                // if nothing is referencing the goldpile, there should only be two uses of the shared pointer:
-                // in the entities list, and in this new goldpile variable just declared
-                // if so, and if it has zero gold, remove it
-                if (goldpile.use_count() <= 2 && goldpile->gold.getInt() == 0)
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
                 {
-                    entities[i].reset();
+                    if (goldpile->gold.getInt() == 0)
+                    {
+                        goldpilesToMaybeDelete.push_back(goldpile->getRefOrThrow());
+                    }
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entities[i]))
+                {
+                    gatewaysAndPrimes.push_back(gateway);
+                }
+                else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entities[i]))
+                {
+                    gatewaysAndPrimes.push_back(prime);
                 }
             }
+        }
+    }
+
+    // Now we just remove all goldpiles with 0 gold, if they are not referenced by a Prime or GW
+    for (unsigned int i=0; i<goldpilesToMaybeDelete.size(); i++)
+    {
+        auto goldpileRef = goldpilesToMaybeDelete[i];
+
+        bool referenceFound;
+        for (unsigned int j=0; j<gatewaysAndPrimes.size(); j++)
+        {
+            if (auto gatewayOrPrime = gatewaysAndPrimes[j])
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(gatewayOrPrime))
+                {
+                    referenceFound =
+                    (    (prime->fundsDest && *prime->fundsDest == goldpileRef)
+                      || (prime->fundsSource && *prime->fundsSource == goldpileRef)
+                      || (prime->isInBuildTargetQueue(goldpileRef))
+                      || (prime->isInScavengeTargetQueue(Target(goldpileRef)))
+                    );
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(gatewayOrPrime))
+                {
+                    referenceFound =
+                    (    (gateway->isInBuildTargetQueue(goldpileRef))
+                      || (gateway->isInScuttleTargetQueue(goldpileRef))
+                    );
+                }
+            }
+
+            if (referenceFound)
+                break;
+        }
+
+        if (!referenceFound)
+        {
+            // no reference found, so we delete it from the entities list.
+            entities[goldpileRef].reset();
         }
     }
 
