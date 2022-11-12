@@ -526,3 +526,85 @@ GiftCmd::GiftCmd(Netpack::Consumer* from)
 {
     newOwnerId = from->consumeUint8_t();
 }
+
+
+uint8_t GatewayScuttleCmd::getTypechar()
+{
+    return CMD_GATEWAYSCUTTLE_CHAR;
+}
+string GatewayScuttleCmd::getTypename()
+{
+    return "GatewayScuttleCmd";
+}
+
+void GatewayScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        if (prime->getRefOrThrow() == targetUnit)
+            return;
+        
+        prime->cmdFetch(targetUnit);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdScuttle(targetUnit);
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+GatewayScuttleCmd::GatewayScuttleCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+void GatewayScuttleCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    packEntityRef(to, targetUnit);
+}
+GatewayScuttleCmd::GatewayScuttleCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    targetUnit = consumeEntityRef(from);
+}
+
+uint8_t StopScuttleCmd::getTypechar()
+{
+    return CMD_STOPSCUTTLE_CHAR;
+}
+string StopScuttleCmd::getTypename()
+{
+    return "StopScuttleCmd";
+}
+
+void StopScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        // prime->cmdStopScuttle(targetUnit);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdStopScuttle(targetUnit);
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+StopScuttleCmd::StopScuttleCmd(vector<EntityRef> units, EntityRef targetUnit)
+    : UnitCmd(units), targetUnit(targetUnit)
+{}
+void StopScuttleCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    packEntityRef(to, targetUnit);
+}
+StopScuttleCmd::StopScuttleCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    targetUnit = consumeEntityRef(from);
+}

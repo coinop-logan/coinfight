@@ -20,6 +20,8 @@ const uint8_t CMD_DEPOSIT_CHAR = 7;
 const uint8_t CMD_GATEWAYBUILD_CHAR = 8;
 const uint8_t CMD_PRIMEBUILD_CHAR = 9;
 const uint8_t CMD_GIFT_CHAR = 10;
+const uint8_t CMD_GATEWAYSCUTTLE_CHAR = 11;
+const uint8_t CMD_STOPSCUTTLE_CHAR = 12;
 
 struct Cmd
 {
@@ -200,6 +202,34 @@ struct GiftCmd : public UnitCmd
 
     GiftCmd(vector<EntityRef>, uint8_t);
     GiftCmd(Netpack::Consumer* from);
+};
+
+struct GatewayScuttleCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    GatewayScuttleCmd(vector<EntityRef>, EntityRef);
+    GatewayScuttleCmd(Netpack::Consumer* from);
+};
+
+struct StopScuttleCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    StopScuttleCmd(vector<EntityRef>, EntityRef);
+    StopScuttleCmd(Netpack::Consumer* from);
 };
 
 #endif // CMDS_H
