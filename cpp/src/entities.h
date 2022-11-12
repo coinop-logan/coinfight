@@ -320,6 +320,8 @@ public:
 
     bool requestDepositFromPrime(Prime*);
     bool requestWithdrawFromPrime(Prime*);
+    void cancelAnyDepositRequestFromPrime(Prime*);
+    void cancelAnyWithdrawRequestFromPrime(Prime*);
 
     void removeFromQueues(EntityRef);
     void validateTargets();

@@ -1218,6 +1218,21 @@ bool Gateway::requestWithdrawFromPrime(Prime* prime)
     }
 }
 
+void Gateway::cancelAnyDepositRequestFromPrime(Prime* prime)
+{
+    if (maybeDepositingPrime && *maybeDepositingPrime == prime->getRefOrThrow())
+    {
+        maybeDepositingPrime = {};
+    }
+}
+void Gateway::cancelAnyWithdrawRequestFromPrime(Prime* prime)
+{
+    if (maybeWithdrawingPrime && *maybeWithdrawingPrime == prime->getRefOrThrow())
+    {
+        maybeWithdrawingPrime = {};
+    }
+}
+
 void Gateway::cmdBuildUnit(uint8_t unitTypechar)
 {
     if (buildTargetQueue.size() >= 255)
@@ -1436,6 +1451,10 @@ void Gateway::validateTargets()
     {
         if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[*maybeDepositingPrime]))
         {
+            if ((prime->getPos() - this->getPos()).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+            {
+                maybeDepositingPrime = {};
+            }
             if (prime->heldGold.getInt() == 0)
             {
                 maybeDepositingPrime = {};
@@ -1450,6 +1469,10 @@ void Gateway::validateTargets()
     {
         if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[*maybeWithdrawingPrime]))
         {
+            if ((prime->getPos() - this->getPos()).getFloorMagnitudeSquared() > PRIME_TRANSFER_RANGE_FLOORSQUARED)
+            {
+                maybeWithdrawingPrime = {};
+            }
             if (prime->heldGold.getSpaceLeft() == 0)
             {
                 maybeWithdrawingPrime = {};
@@ -1749,6 +1772,10 @@ Prime::Prime(Netpack::Consumer* from)
 
 void Prime::cancelAnyFetchesFrom(Target target)
 {
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target.castToEntityPtr(*getGameOrThrow())))
+    {
+        gateway->cancelAnyWithdrawRequestFromPrime(this);
+    }
     if (fundsSource == target.castToEntityRef())
     {
         fundsSource = {};
@@ -1765,6 +1792,10 @@ void Prime::cancelAnyFetchesFrom(Target target)
 }
 void Prime::cancelAnyDepositsTo(Target target)
 {
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target.castToEntityPtr(*getGameOrThrow())))
+    {
+        gateway->cancelAnyDepositRequestFromPrime(this);
+    }
     if (auto entityRef = target.castToEntityRef())
     {
         if (fundsDest && fundsDest->getRefOrThrow() == entityRef)
