@@ -759,15 +759,26 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         {
                             Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
 
-                            vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
-                            vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                            auto fightersAndPrimes = fightersInSelection;
-                            fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
-
-                            if (fightersAndPrimes.size() > 0)
+                            if (ui->selectionHasGateways())
                             {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target)));
-                                ui->cmdState = UI::Default;
+                                if (auto entity = target.castToEntityPtr(*game))
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow())));
+                                    ui->cmdState = UI::Default;
+                                }
+                            }
+                            else
+                            {
+                                vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
+                                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                auto fightersAndPrimes = fightersInSelection;
+                                fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+
+                                if (fightersAndPrimes.size() > 0)
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target)));
+                                    ui->cmdState = UI::Default;
+                                }
                             }
                         }
                         break;

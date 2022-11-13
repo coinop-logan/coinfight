@@ -53,7 +53,7 @@ vector<boost::shared_ptr<Cmd>> AttackAbsorbInterfaceCmd::execute(UI *ui)
 }
 bool AttackAbsorbInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
-    return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR);
+    return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }
 
 
