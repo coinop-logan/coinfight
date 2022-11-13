@@ -1804,6 +1804,8 @@ void Prime::pack(Netpack::Builder* to)
     {
         packEntityRef(to, buildTargetQueue[i]);
     }
+
+    to->packOptional<EntityRef>(fetchToImmediateTarget, packEntityRef);
 }
 Prime::Prime(Netpack::Consumer* from)
     : Unit(from)
@@ -1830,6 +1832,8 @@ Prime::Prime(Netpack::Consumer* from)
         EntityRef ref = consumeEntityRef(from);
         buildTargetQueue.push_back(ref);
     }
+
+    fetchToImmediateTarget = from->consumeOptional<EntityRef>(consumeEntityRef);
 }
 
 void Prime::cancelAnyFetchesFrom(Target target)
@@ -2000,6 +2004,22 @@ void Prime::onMoveCmd(vector2fp moveTo)
     fundsSource = {};
 }
 
+optional<tuple<Target, bool>> Prime::getMaybeImmediateFetchTarget() // accounts for the possibility of a "fetch to" with an already-found GP
+{
+    if (scavengeTargetQueue.size() >= 1 && scavengeTargetQueue[0].type == Target::PointTarget && fetchToImmediateTarget)
+    {
+        if (auto entity = getGameOrThrow()->entities[*fetchToImmediateTarget])
+        {
+            if (getMaybeMoveTarget() == Target(entity))
+            {
+                return {{Target(entity), true}};
+            }
+        }
+    }
+    
+
+    return getMaybeFetchTarget();
+}
 optional<tuple<Target, bool>> Prime::getMaybeFetchTarget() // boolean indicates whether we want to scuttle
 {
     if (scavengeTargetQueue.size() > 0)
@@ -2126,7 +2146,7 @@ void Prime::tryTransferAndMaybeMoveOn()
     Game* game = getGameOrThrow();
 
     // Transfer (possibly to and from, both at once), and handle removing targets or switching moveTarget
-    auto maybeFetchTargetInfo = getMaybeFetchTarget();
+    auto maybeFetchTargetInfo = getMaybeImmediateFetchTarget();
     auto maybeDepositTargetInfo = getMaybeDepositTarget();
 
     // First, pull from the fetchTarget if possible
@@ -2355,7 +2375,7 @@ void Prime::iterate()
     Game *game = getGameOrThrow();
 
     optional<Target> fetchTarget;
-    if (auto maybeFetchTarget = getMaybeFetchTarget())
+    if (auto maybeFetchTarget = getMaybeImmediateFetchTarget())
     {
         fetchTarget = get<0>(*maybeFetchTarget);
     }
@@ -2374,26 +2394,38 @@ void Prime::iterate()
 
     if (!mobileUnitIsIdle())
     {
-        // if we're still moving somewhere, there's nothing for us to do
-        // ... unless we're doing a "fetch to"
+        // If we're moving somewhere, the only logic to implement is the "fetch to" behavior,
+        // where the Prime should find new GPs to pick up on its way to the point
+
         if (fetchTarget && fetchTarget->type == Target::PointTarget && getMaybeMoveTarget() && fetchTarget->castToPoint() == getMaybeMoveTarget()->castToPoint())
         {
-            auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
-            auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
+            // bool haveValidFetchToImmediateTarget = false;
+            // if (fetchToImmediateTarget)
+            // {
+            //     if (auto entity = game->entities[*fetchToImmediateTarget])
+            //     {
+            //         haveValidFetchToImmediateTarget = true;
+            //         if ((entity->getPos() - this->getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
+            //         {
+            //             tryTransferAndMaybeMoveOn();
+            //         }
+            //     }
+            // }
 
-            for (unsigned int i=0; i<goldpilesInSight.size(); i++)
+            // if (!haveValidFetchToImmediateTarget)
             {
-                auto goldpile = goldpilesInSight[i];
-                
-                if (!(isInBuildTargetQueue(goldpile->getRefOrThrow()) || isInScavengeTargetQueue(goldpile->getRefOrThrow())))
+                auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
+                auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
+
+                for (unsigned int i=0; i<goldpilesInSight.size(); i++)
                 {
-                    Target gpTarget = Target(goldpile->getRefOrThrow());
-                    scavengeTargetQueue.insert(scavengeTargetQueue.begin(), gpTarget);
-                    if (scavengeTargetQueue.size() > 255)
+                    auto goldpile = goldpilesInSight[i];
+                    
+                    if (!(isInBuildTargetQueue(goldpile->getRefOrThrow())))
                     {
-                        scavengeTargetQueue.pop_back();
+                        fetchToImmediateTarget = {goldpile->getRefOrThrow()};
+                        setMoveTarget(Target(goldpile), PRIME_TRANSFER_RANGE);
                     }
-                    setMoveTarget(gpTarget, PRIME_TRANSFER_RANGE);
                 }
             }
         }

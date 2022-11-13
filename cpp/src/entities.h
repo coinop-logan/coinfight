@@ -360,10 +360,13 @@ public:
     vector<Target> scavengeTargetQueue;
     vector<EntityRef> buildTargetQueue;
 
+    optional<EntityRef> fetchToImmediateTarget;
+
     bool isInScavengeTargetQueue(Target);
     bool isInBuildTargetQueue(EntityRef);
 
     optional<tuple<Target, bool>> getMaybeFetchTarget();
+    optional<tuple<Target, bool>> getMaybeImmediateFetchTarget();
     optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
 
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
