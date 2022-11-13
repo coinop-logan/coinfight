@@ -795,41 +795,41 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                 {
                                     if (ui->selectionHasGateways())
                                     {
-                                    //     vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
+                                        vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
 
-                                    //     boost::shared_ptr<Gateway> bestChoice;
+                                        boost::shared_ptr<Gateway> bestChoice;
 
-                                    //     float bestGatewayDistanceSquared;
-                                    //     for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
-                                    //     {
-                                    //         vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
+                                        float bestGatewayDistanceSquared;
+                                        for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
+                                        {
+                                            vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
 
-                                    //         if (!bestChoice)
-                                    //         {
-                                    //             bestChoice = gatewaysInSelection[i];
-                                    //             bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
-                                    //         }
-                                    //         else
-                                    //         {
-                                    //             float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
-                                    //             if (distanceSquared < bestGatewayDistanceSquared)
-                                    //             {
-                                    //                 bestChoice = gatewaysInSelection[i];
-                                    //                 bestGatewayDistanceSquared = distanceSquared;
-                                    //             }
-                                    //         }
-                                    //     }
+                                            if (!bestChoice)
+                                            {
+                                                bestChoice = gatewaysInSelection[i];
+                                                bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                            }
+                                            else
+                                            {
+                                                float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                                if (distanceSquared < bestGatewayDistanceSquared)
+                                                {
+                                                    bestChoice = gatewaysInSelection[i];
+                                                    bestGatewayDistanceSquared = distanceSquared;
+                                                }
+                                            }
+                                        }
 
-                                    //     if (!bestChoice)
-                                    //     {
-                                    //         // we should have had a best choice by now...
-                                    //         cout << "Can't find a bestChoice for the GatewayScuttleCmd" << endl;
-                                    //     }
-                                    //     else
-                                    //     {
-                                    //         cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                    //         ui->cmdState = UI::Default;
-                                    //     }
+                                        if (!bestChoice)
+                                        {
+                                            // we should have had a best choice by now...
+                                            cout << "Can't find a bestChoice for the GatewayScuttleCmd" << endl;
+                                        }
+                                        else
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
+                                            ui->cmdState = UI::Default;
+                                        }
                                     }
                                     else
                                     {
