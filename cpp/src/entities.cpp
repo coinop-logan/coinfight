@@ -1885,7 +1885,10 @@ void Prime::cmdDeposit(EntityRef entityRef)
         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
         {
             this->fundsDest = goldpile->getRefOrThrow();
-            setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+            if (heldGold.getInt() > 0)
+            {
+                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+            }
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
@@ -1894,7 +1897,10 @@ void Prime::cmdDeposit(EntityRef entityRef)
                 if (buildTargetQueue.size() < 255)
                 {
                     buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
-                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                    if (heldGold.getInt() > 0)
+                    {
+                        setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                    }
                 }
             }
             else
@@ -1902,7 +1908,10 @@ void Prime::cmdDeposit(EntityRef entityRef)
                 if (unit->typechar() == GATEWAY_TYPECHAR || unit->typechar() == PRIME_TYPECHAR)
                 {
                     this->fundsDest = unit->getRefOrThrow();
-                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                    if (heldGold.getInt() > 0)
+                    {
+                        setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                    }
                 }
                 else
                 {
