@@ -43,7 +43,7 @@ const int CURSOR_SIZE = 26;
 
 const fixed32 COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH(50);
 
-const bool HYPERSPEED = false;
+const bool HYPERSPEED = true;
 const int HYPERSPEED_TRANSFER_MULTIPLIER = (HYPERSPEED ? 10 : 1);
 
 #endif // CONFIG_H

@@ -7,6 +7,7 @@
 #include "common.h"
 #include "config.h"
 #include "tutorial.h"
+#include "graphics_helpers.h"
 
 using namespace std;
 
@@ -1359,85 +1360,78 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
         for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
         {
+            GH::DashedLineGroup dashedLines(10);
             if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(ui.selectedUnits[i]))
             {
                 // draw queue lines
-                int numLines = prime->buildTargetQueue.size() + prime->scavengeTargetQueue.size();
-                if (prime->fundsSource && game->entities[*prime->fundsSource])
-                    numLines ++;
-                if (prime->fundsDest)
-                    numLines ++;
 
-                sf::VertexArray lines(sf::Lines, numLines * 2);
-                unsigned int j = 0;
-                for (; j<prime->buildTargetQueue.size(); j++)
+                for (unsigned int j=0; j<prime->buildTargetQueue.size(); j++)
                 {
                     if (auto entity = game->entities[prime->buildTargetQueue[j]])
                     {
-                        lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
-                        lines[j*2].color = BUILD_QUEUE_LINE_COLOR;
-                        lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
-                        lines[j*2 + 1].color = BUILD_QUEUE_LINE_COLOR;
+                        dashedLines.pushLine(
+                            gamePosToScreenPos(ui.camera, prime->getPos()),
+                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            BUILD_QUEUE_LINE_COLOR
+                        );
                     }
                 }
-                for (; j<prime->buildTargetQueue.size() + prime->scavengeTargetQueue.size(); j++)
+                for (unsigned int j=0; j<prime->scavengeTargetQueue.size(); j++)
                 {
-                    unsigned int j2 = j - prime->buildTargetQueue.size();
-                    if (auto point = prime->scavengeTargetQueue[j2].getPointUnlessTargetDeleted(*game))
+                    if (auto point = prime->scavengeTargetQueue[j].getPointUnlessTargetDeleted(*game))
                     {
-                        lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
-                        lines[j*2].color = SCAVENGE_QUEUE_LINE_COLOR;
-                        lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, *point)));
-                        lines[j*2 + 1].color = SCAVENGE_QUEUE_LINE_COLOR;
+                        dashedLines.pushLine(
+                            gamePosToScreenPos(ui.camera, prime->getPos()),
+                            gamePosToScreenPos(ui.camera, *point),
+                            SCAVENGE_QUEUE_LINE_COLOR
+                        );
                     }
                 }
                 if (prime->fundsSource && game->entities[*prime->fundsSource])
                 {
-                    lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
-                    lines[j*2].color = FUNDS_SOURCE_LINE_COLOR;
-                    lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos())));
-                    lines[j*2 + 1].color = FUNDS_SOURCE_LINE_COLOR;
-
-                    j ++;
+                    dashedLines.pushLine(
+                        gamePosToScreenPos(ui.camera, prime->getPos()),
+                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos()),
+                        BUILD_QUEUE_LINE_COLOR
+                    );
                 }
                 if (prime->fundsDest && game->entities[*prime->fundsDest])
                 {
-                    lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, prime->getPos())));
-                    lines[j*2].color = FUNDS_DEST_LINE_COLOR;
-                    lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos())));
-                    lines[j*2 + 1].color = FUNDS_DEST_LINE_COLOR;
-
-                    j ++;
+                    dashedLines.pushLine(
+                        gamePosToScreenPos(ui.camera, prime->getPos()),
+                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos()),
+                        FUNDS_DEST_LINE_COLOR
+                    );
                 }
-                window->draw(lines);
             }
             if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui.selectedUnits[i]))
             {
                 // draw queue lines
-                sf::VertexArray lines(sf::Lines, gateway->buildTargetQueue.size() * 2 + gateway->scuttleTargetQueue.size() * 2);
                 for (unsigned int j = 0; j<gateway->buildTargetQueue.size(); j++)
                 {
                     if (auto entity = game->entities[gateway->buildTargetQueue[j]])
                     {
-                        lines[j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
-                        lines[j*2].color = BUILD_QUEUE_LINE_COLOR;
-                        lines[j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
-                        lines[j*2 + 1].color = BUILD_QUEUE_LINE_COLOR;
+                        dashedLines.pushLine(
+                            gamePosToScreenPos(ui.camera, gateway->getPos()),
+                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            BUILD_QUEUE_LINE_COLOR
+                        );
                     }
                 }
-                int offset = gateway->buildTargetQueue.size() * 2;
                 for (unsigned int j = 0; j<gateway->scuttleTargetQueue.size(); j++)
                 {
                     if (auto entity = game->entities[gateway->scuttleTargetQueue[j]])
                     {
-                        lines[offset + j*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
-                        lines[offset + j*2].color = SCAVENGE_QUEUE_LINE_COLOR;
-                        lines[offset + j*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
-                        lines[offset + j*2 + 1].color = SCAVENGE_QUEUE_LINE_COLOR;
+                        dashedLines.pushLine(
+                            gamePosToScreenPos(ui.camera, gateway->getPos()),
+                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            SCAVENGE_QUEUE_LINE_COLOR
+                        );
                     }
                 }
-                window->draw(lines);
             }
+
+            dashedLines.render(window);
 
             drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
         }
