@@ -258,9 +258,13 @@ void AttackAbsorbCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
     {
-        if (auto targetPoint = target.getPointUnlessTargetDeleted(*prime->getGameOrThrow()))
+        if (auto targetPoint = target.castToPoint())
         {
             prime->cmdFetch(target);
+        }
+        else if (auto entity = target.castToEntityPtr(*prime->getGameOrThrow()))
+        {
+            prime->cmdScuttle(entity);
         }
     }
 }

@@ -1926,7 +1926,10 @@ void Prime::cmdFetch(Target _target)
         if (scavengeTargetQueue.size() < 255)
         {
             scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-            setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            if (heldGold.getSpaceLeft() > 0)
+            {
+                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            }
         }
     }
     else if (auto entity = _target.castToEntityPtr(*getGameOrThrow()))
@@ -1936,12 +1939,29 @@ void Prime::cmdFetch(Target _target)
             if (scavengeTargetQueue.size() < 255)
             {
                 scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                if (heldGold.getSpaceLeft() > 0)
+                {
+                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                }
             }
         }
         else if (entity->typechar() == GATEWAY_TYPECHAR || entity->typechar() == PRIME_TYPECHAR)
         {
             this->fundsSource = entity->getRefOrThrow();
+        }
+    }
+}
+
+void Prime::cmdScuttle(boost::shared_ptr<Entity> entity)
+{
+    cancelAnyDepositsTo(Target(entity));
+
+    if (scavengeTargetQueue.size() < 255)
+    {
+        scavengeTargetQueue.insert(scavengeTargetQueue.begin(), Target(entity));
+        if (heldGold.getSpaceLeft() > 0)
+        {
+            setMoveTarget(Target(entity), PRIME_TRANSFER_RANGE);
         }
     }
 }

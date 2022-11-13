@@ -376,6 +376,7 @@ public:
     void cmdDeposit(EntityRef);
     void cmdFetch(Target);
     void cmdStop();
+    void cmdScuttle(boost::shared_ptr<Entity>);
     void onMoveCmd(vector2fp moveTo);
 
     void cancelAnyFetchesFrom(Target);
