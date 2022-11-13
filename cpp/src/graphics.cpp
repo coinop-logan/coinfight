@@ -1360,7 +1360,9 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
         for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
         {
-            GH::DashedLineGroup dashedLines(10);
+            float dashOffsetAbs = float(game->frame % 40) / 40;
+            GH::DashedLineGroup dashedLinesOutflow(10, dashOffsetAbs);
+            GH::DashedLineGroup dashedLinesInflow(10, -dashOffsetAbs);
             if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(ui.selectedUnits[i]))
             {
                 // draw queue lines
@@ -1369,7 +1371,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto entity = game->entities[prime->buildTargetQueue[j]])
                     {
-                        dashedLines.pushLine(
+                        dashedLinesOutflow.pushLine(
                             gamePosToScreenPos(ui.camera, prime->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
                             BUILD_QUEUE_LINE_COLOR
@@ -1380,7 +1382,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto point = prime->scavengeTargetQueue[j].getPointUnlessTargetDeleted(*game))
                     {
-                        dashedLines.pushLine(
+                        dashedLinesInflow.pushLine(
                             gamePosToScreenPos(ui.camera, prime->getPos()),
                             gamePosToScreenPos(ui.camera, *point),
                             SCAVENGE_QUEUE_LINE_COLOR
@@ -1389,7 +1391,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
                 if (prime->fundsSource && game->entities[*prime->fundsSource])
                 {
-                    dashedLines.pushLine(
+                    dashedLinesInflow.pushLine(
                         gamePosToScreenPos(ui.camera, prime->getPos()),
                         gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos()),
                         BUILD_QUEUE_LINE_COLOR
@@ -1397,7 +1399,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
                 if (prime->fundsDest && game->entities[*prime->fundsDest])
                 {
-                    dashedLines.pushLine(
+                    dashedLinesOutflow.pushLine(
                         gamePosToScreenPos(ui.camera, prime->getPos()),
                         gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos()),
                         FUNDS_DEST_LINE_COLOR
@@ -1411,7 +1413,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto entity = game->entities[gateway->buildTargetQueue[j]])
                     {
-                        dashedLines.pushLine(
+                        dashedLinesOutflow.pushLine(
                             gamePosToScreenPos(ui.camera, gateway->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
                             BUILD_QUEUE_LINE_COLOR
@@ -1422,7 +1424,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (auto entity = game->entities[gateway->scuttleTargetQueue[j]])
                     {
-                        dashedLines.pushLine(
+                        dashedLinesInflow.pushLine(
                             gamePosToScreenPos(ui.camera, gateway->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
                             SCAVENGE_QUEUE_LINE_COLOR
@@ -1431,7 +1433,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 }
             }
 
-            dashedLines.render(window);
+            dashedLinesOutflow.render(window);
+            dashedLinesInflow.render(window);
 
             drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
         }

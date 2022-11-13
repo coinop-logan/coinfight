@@ -5,27 +5,44 @@
 
 using namespace std;
 
-GH::DashedLineGroup::DashedLineGroup(float dashLength)
+GH::DashedLineGroup::DashedLineGroup(float dashLength, float offset)
+    : dashLength(dashLength), offset(offset)
 {
-    _dashedLines.clear();
-    _dashLength = dashLength;
+    dashedLines.clear();
+    dashLength = dashLength;
 }
 void GH::DashedLineGroup::pushLine(vector2fl p1, vector2fl p2, sf::Color color)
 {
-    _dashedLines.push_back(Line(p1, p2, color));
+    dashedLines.push_back(Line(p1, p2, color));
 }
 void GH::DashedLineGroup::render(sf::RenderWindow* window)
 {
     vector<Line> allDashes;
-    for (unsigned int i=0; i<_dashedLines.size(); i++)
+    for (unsigned int i=0; i<dashedLines.size(); i++)
     {
-        Line dashedLine = _dashedLines[i];
+        Line dashedLine = dashedLines[i];
         vector2fl p2p = dashedLine.p2 - dashedLine.p1;
-        float oneDashPortion = _dashLength / p2p.getMagnitude();
+        float oneDashPortion = dashLength / p2p.getMagnitude();
+        float xStart = (oneDashPortion * 2) * offset;
+
         bool endLoop = false;
-        for (float x=0; x < 1; x += oneDashPortion * 2)
+        for (float x=xStart; x < 1; x += oneDashPortion * 2)
         {
-            vector2fl dashStart = dashedLine.p1 + (p2p * x);
+            
+            vector2fl dashStart;
+            // In case of a negative offset
+            if (x < 0)
+            {
+                if (x + oneDashPortion < 0)
+                    continue;
+
+                dashStart = dashedLine.p1;
+            }
+            else
+            {
+                dashStart = dashedLine.p1 + (p2p * x);
+            }
+                
             vector2fl dashEnd;
             if (x + oneDashPortion >= 1)
             {

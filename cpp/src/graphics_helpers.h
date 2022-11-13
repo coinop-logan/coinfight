@@ -35,10 +35,10 @@ public:
 };
 
 class DashedLineGroup {
-    vector<Line> _dashedLines;
-    float _dashLength;
+    vector<Line> dashedLines;
+    float dashLength, offset;
 public:
-    DashedLineGroup(float dashLength);
+    DashedLineGroup(float dashLength, float offset);
     void pushLine(vector2fl from, vector2fl to, sf::Color color);
     void render(sf::RenderWindow* window);
 };
