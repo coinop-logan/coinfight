@@ -1898,12 +1898,28 @@ void Prime::cmdDeposit(EntityRef entityRef)
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                if (buildTargetQueue.size() < 255)
+                // if it's already in the build queue, just move it up
+                bool moved = false;
+                for (unsigned int i=0; i<buildTargetQueue.size(); i++)
                 {
-                    buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
-                    if (heldGold.getInt() > 0)
+                    if (buildTargetQueue[i] == entityRef)
                     {
-                        setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                        buildTargetQueue.erase(buildTargetQueue.begin() + i);
+                        buildTargetQueue.insert(buildTargetQueue.begin(), entityRef);
+                        moved = true;
+                        break;
+                    }
+                }
+
+                if (!moved)
+                {
+                    if (buildTargetQueue.size() < 255)
+                    {
+                        buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
+                        if (heldGold.getInt() > 0)
+                        {
+                            setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                        }
                     }
                 }
             }
