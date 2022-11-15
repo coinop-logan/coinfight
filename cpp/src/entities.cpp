@@ -2399,8 +2399,10 @@ void Prime::iterate()
 
         if (fetchTarget && fetchTarget->type == Target::PointTarget && getMaybeMoveTarget() && fetchTarget->castToPoint() == getMaybeMoveTarget()->castToPoint())
         {
-            auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
-            auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
+            auto goldpilesInSight = filterForType<GoldPile, Entity>(game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE));
+
+            // We also get a list of "nearby" Gateways that may already have this GP queued.
+            auto gatewaysToCheck = filterForType<Gateway, Entity>(game->entitiesWithinSquare(this->getPos(), (PRIME_SIGHT_RANGE + GATEWAY_RANGE)));
 
             for (unsigned int i=0; i<goldpilesInSight.size(); i++)
             {
@@ -2408,8 +2410,24 @@ void Prime::iterate()
                 
                 if (!(isInBuildTargetQueue(goldpile->getRefOrThrow())))
                 {
-                    fetchToImmediateTarget = {goldpile->getRefOrThrow()};
-                    setMoveTarget(Target(goldpile), PRIME_TRANSFER_RANGE);
+                    // make sure it's also not in any nearby Gateways' queues.
+                    // This sort of begs for an optimized solution, but you know what they say about premature optimization...
+                    bool inGatewayQueue = false;
+                    for (unsigned int j=0; j<gatewaysToCheck.size(); j++)
+                    {
+                        auto gateway = gatewaysToCheck[j];
+                        if (gateway->isInBuildTargetQueue(goldpile->getRefOrThrow()) || gateway->isInScuttleTargetQueue(goldpile->getRefOrThrow()))
+                        {
+                            inGatewayQueue = true;
+                            break;
+                        }
+                    }
+
+                    if (!inGatewayQueue)
+                    {
+                        fetchToImmediateTarget = {goldpile->getRefOrThrow()};
+                        setMoveTarget(Target(goldpile), PRIME_TRANSFER_RANGE);
+                    }
                 }
             }
         }
