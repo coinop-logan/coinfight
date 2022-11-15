@@ -800,7 +800,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         break;
                         case UI::Fetch:
                         {
-                            if (auto targetEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
+                            Target clickTarget = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                            if (auto targetEntity = clickTarget.castToEntityPtr(*game))
                             {
                                 if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
                                 {
@@ -846,10 +847,22 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                     {
                                         // selection does not have Gateways. Issue cmd to all Primes.
                                         auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow())));
-                                        ui->cmdState = UI::Default;
+                                        if (primesInSelection.size() > 0)
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow())));
+                                            ui->cmdState = UI::Default;
+                                        }
                                     }
+                                }
+                            }
+                            else if (auto targetPoint = clickTarget.castToPoint())
+                            {
+                                // selection does not have Gateways. Issue cmd to all Primes.
+                                auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                if (primesInSelection.size() > 0)
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), clickTarget)));
+                                    ui->cmdState = UI::Default;
                                 }
                             }
                         }

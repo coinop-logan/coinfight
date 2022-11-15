@@ -827,7 +827,14 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                 }
                 else
                 {
-                    drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                    if (filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits).size() > 0)
+                    {
+                        drawTargetCursor(window, mousePos, sf::Color::Yellow);
+                    }
+                    else
+                    {
+                        drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                    }
                 }
                 break;
             case UI::Build:
