@@ -2095,6 +2095,18 @@ void Prime::validateTargets()
     Game* game = getGameOrThrow();
     // Remove invalid targets, as well as build orders that are completed
 
+    // Clear fetchToImmediateTarget if it's a zeroed goldpile
+    if (fetchToImmediateTarget)
+    {
+        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[*fetchToImmediateTarget]))
+        {
+            if (goldpile->gold.getInt() == 0)
+            {
+                fetchToImmediateTarget = {};
+            }
+        }
+    }
+
     if (fundsSource && ! game->entities[*fundsSource])
     {
         // entity died. Clear it
@@ -2423,6 +2435,10 @@ void Prime::iterate()
             for (unsigned int i=0; i<goldpilesInSight.size(); i++)
             {
                 auto goldpile = goldpilesInSight[i];
+
+                // ignore if goldpile has zero gold
+                if (goldpile->gold.getInt() == 0)
+                    continue;
                 
                 if (!(isInBuildTargetQueue(goldpile->getRefOrThrow())))
                 {
