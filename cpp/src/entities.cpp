@@ -2399,33 +2399,17 @@ void Prime::iterate()
 
         if (fetchTarget && fetchTarget->type == Target::PointTarget && getMaybeMoveTarget() && fetchTarget->castToPoint() == getMaybeMoveTarget()->castToPoint())
         {
-            // bool haveValidFetchToImmediateTarget = false;
-            // if (fetchToImmediateTarget)
-            // {
-            //     if (auto entity = game->entities[*fetchToImmediateTarget])
-            //     {
-            //         haveValidFetchToImmediateTarget = true;
-            //         if ((entity->getPos() - this->getPos()).getFloorMagnitudeSquared() <= PRIME_TRANSFER_RANGE_FLOORSQUARED)
-            //         {
-            //             tryTransferAndMaybeMoveOn();
-            //         }
-            //     }
-            // }
+            auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
+            auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
 
-            // if (!haveValidFetchToImmediateTarget)
+            for (unsigned int i=0; i<goldpilesInSight.size(); i++)
             {
-                auto entitiesInSight = game->entitiesWithinCircle(this->getPos(), PRIME_SIGHT_RANGE);
-                auto goldpilesInSight = filterForType<GoldPile, Entity>(entitiesInSight);
-
-                for (unsigned int i=0; i<goldpilesInSight.size(); i++)
+                auto goldpile = goldpilesInSight[i];
+                
+                if (!(isInBuildTargetQueue(goldpile->getRefOrThrow())))
                 {
-                    auto goldpile = goldpilesInSight[i];
-                    
-                    if (!(isInBuildTargetQueue(goldpile->getRefOrThrow())))
-                    {
-                        fetchToImmediateTarget = {goldpile->getRefOrThrow()};
-                        setMoveTarget(Target(goldpile), PRIME_TRANSFER_RANGE);
-                    }
+                    fetchToImmediateTarget = {goldpile->getRefOrThrow()};
+                    setMoveTarget(Target(goldpile), PRIME_TRANSFER_RANGE);
                 }
             }
         }
