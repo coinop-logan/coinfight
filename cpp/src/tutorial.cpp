@@ -159,7 +159,7 @@ class BuildFirstPrimeStep : public TutorialStep
 {
 public:
     BuildFirstPrimeStep(Game* game, UI* ui)
-        : TutorialStep("firstprime", false, game, ui)
+        : TutorialStep("firstprime", true, game, ui)
         {}
     
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -171,7 +171,10 @@ public:
                 "Select your Gateway and hit the 'Q' key.",
                 "This will build a Prime, the main worker/builder in Coinfight, for $0.50."
             },
-            {}
+            {
+                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield upon death.",
+                "Near the end of this tutorial, you'll learn how to recover the full cost of any units that have survived."
+            }
         };
     }
     
