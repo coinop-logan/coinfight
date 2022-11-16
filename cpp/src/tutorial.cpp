@@ -341,7 +341,7 @@ public:
         {
             {
                 "Here's some more fake tutorial money!",
-                "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed (NOT YET IMPLEMEMNTED), it'll be added to the end of the queue.",
+                "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed, it'll be added to the end of the queue.",
                 "You can also hit F and click a location, to add a \"fetch to\" job: the Prime will approach the location and pick up any gold it finds on the way.",
                 "Gather enough gold to make three more Primes.",
             },
