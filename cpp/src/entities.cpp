@@ -2155,6 +2155,19 @@ void Prime::validateTargets()
         }
     }
 
+    // Clear first scuttle target if it's a point and we've reached it
+    if (scavengeTargetQueue.size() > 0 && scavengeTargetQueue[0].type == Target::PointTarget)
+    {
+        if (auto moveTarget = getMaybeMoveTarget())
+        {
+            // if this is the move target and mobileUnitIsIdle(), we've arrived
+            if (moveTarget == scavengeTargetQueue[0].castToPoint() && mobileUnitIsIdle())
+            {
+                scavengeTargetQueue.erase(scavengeTargetQueue.begin());
+            }
+        }
+    }
+
     if (fundsSource && ! game->entities[*fundsSource])
     {
         // entity died. Clear it
