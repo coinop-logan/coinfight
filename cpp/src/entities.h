@@ -185,6 +185,7 @@ public:
     vector2fp getDesiredVelocity() const;
     vector2fp getLastVelocity() const;
     virtual void onMoveCmd(vector2fp moveTo);
+    virtual void onMoveFinished(Target target);
 
     optional<Target> getMaybeMoveTarget();
     optional<MoveTargetInfo> getMaybeMoveTargetInfo();
@@ -381,6 +382,7 @@ public:
     void cmdScuttle(boost::shared_ptr<Entity>, bool asap);
     void cmdStop();
     void onMoveCmd(vector2fp moveTo);
+    void onMoveFinished(Target target);
 
     void cancelAnyFetchesFrom(Target);
     void cancelAnyDepositsTo(Target);
@@ -425,6 +427,7 @@ public:
     
     void cmdStop();
     void onMoveCmd(vector2fp moveTo);
+    void onMoveFinished(Target target);
 
     void iterate();
 

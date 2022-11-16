@@ -856,6 +856,10 @@ void MobileUnit::onMoveCmd(vector2fp moveTo)
 {
     throw runtime_error("onMoveCmd() has not been defined for '" + getTypename() + "'");
 }
+void MobileUnit::onMoveFinished(Target target)
+{
+    throw runtime_error("onMoveFinished() has not been defined for '" + getTypename() + "'");
+}
 
 void MobileUnit::setMoveTarget(Target _target, fixed32 newRange)
 {
@@ -972,6 +976,7 @@ void MobileUnit::iterateMobileUnitBasics()
             if (satisfied)
             {
                 clearMoveTarget();
+                onMoveFinished(targetInfo->target);
             }
             else
             {
@@ -979,7 +984,10 @@ void MobileUnit::iterateMobileUnitBasics()
             }
         }
         else
+        {
             clearMoveTarget();
+            onMoveFinished(targetInfo->target);
+        }
     }
     iterateUnitBasics();
 }
@@ -1984,7 +1992,7 @@ void Prime::cmdFetch(Target _target, bool asap)
                 scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
                 if (heldGold.getSpaceLeft() > 0)
                 {
-                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                    setMoveTarget(_target, fixed32(0));
                 }
             }
             else
@@ -2066,6 +2074,16 @@ bool Prime::isIdle()
 void Prime::onMoveCmd(vector2fp moveTo)
 {
     this->fetchToImmediateTarget = {};
+}
+void Prime::onMoveFinished(Target target)
+{
+    if (scavengeTargetQueue.size() > 0)
+    {
+        if (target.type == Target::PointTarget && target == scavengeTargetQueue[0])
+        {
+            scavengeTargetQueue.erase(scavengeTargetQueue.begin());
+        }
+    }
 }
 
 optional<tuple<Target, bool>> Prime::getMaybeImmediateFetchTarget() // accounts for the possibility of a "fetch to" with an already-found GP
@@ -2155,18 +2173,22 @@ void Prime::validateTargets()
         }
     }
 
-    // Clear first scuttle target if it's a point and we've reached it
-    if (scavengeTargetQueue.size() > 0 && scavengeTargetQueue[0].type == Target::PointTarget)
-    {
-        if (auto moveTarget = getMaybeMoveTarget())
-        {
-            // if this is the move target and mobileUnitIsIdle(), we've arrived
-            if (moveTarget == scavengeTargetQueue[0].castToPoint() && mobileUnitIsIdle())
-            {
-                scavengeTargetQueue.erase(scavengeTargetQueue.begin());
-            }
-        }
-    }
+    // // Clear first scuttle target if it's a point and we've reached it
+    // if (scavengeTargetQueue.size() > 0 && scavengeTargetQueue[0].type == Target::PointTarget)
+    // {
+    //     if (!getMaybeMoveTarget()) // will be {} if the unit has stopped moving
+    //     {
+            
+    //     }
+    //     if (auto moveTarget = getMaybeMoveTarget())
+    //     {
+    //         // if this is the move target and mobileUnitIsIdle(), we've arrived
+    //         if (moveTarget == scavengeTargetQueue[0].castToPoint() && mobileUnitIsIdle())
+    //         {
+    //             scavengeTargetQueue.erase(scavengeTargetQueue.begin());
+    //         }
+    //     }
+    // }
 
     if (fundsSource && ! game->entities[*fundsSource])
     {
@@ -2584,7 +2606,8 @@ void Prime::iterate()
 
                     if (distanceLeftToFetchTarget < distanceLeftToDepositTarget)
                     {
-                        setMoveTarget(*fetchTarget, PRIME_TRANSFER_RANGE);
+                        auto moveRange = (fetchTarget->type == Target::PointTarget ? fixed32(0) : PRIME_TRANSFER_RANGE);
+                        setMoveTarget(*fetchTarget, moveRange);
                     }
                     else
                     {
@@ -2599,7 +2622,8 @@ void Prime::iterate()
             {
                 if (heldGold.getSpaceLeft() > 0)
                 {
-                    setMoveTarget(*fetchTarget, PRIME_TRANSFER_RANGE);
+                    auto moveRange = (fetchTarget->type == Target::PointTarget ? fixed32(0) : PRIME_TRANSFER_RANGE);
+                    setMoveTarget(*fetchTarget, moveRange);
                 }
             }
             else // depositTarget
@@ -3013,6 +3037,7 @@ void Fighter::onMoveCmd(vector2fp moveTo)
 {
     state = NotAttacking;
 }
+void Fighter::onMoveFinished(Target target) {}
 
 uint32_t Fighter::getShotRangeFloorsquared() const { return FIGHTER_SHOT_RANGE_FLOORSQUARED; }
 uint16_t Fighter::getShotCooldown() const { return FIGHTER_SHOT_COOLDOWN; }
