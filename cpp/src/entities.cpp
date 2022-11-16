@@ -1563,6 +1563,19 @@ void Gateway::validateTargets()
         }
     }
 
+    // check for out-of-range targets in the buildqueue
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (auto entity = game->entities[buildTargetQueue[i]])
+        {
+            if ((entity->getPos() - this->getPos()).getFloorMagnitudeSquared() > GATEWAY_RANGE_FLOORSQUARED)
+            {
+                buildTargetQueue.erase(buildTargetQueue.begin() + i);
+                i --;
+            }
+        }
+    }
+
     // let's make sure no goldpiles are "blocking" any other finite jobs in the queue
     if (buildTargetQueue.size() > 0)
     {
@@ -1587,12 +1600,6 @@ void Gateway::validateTargets()
             }
         }
     }
-
-    // okay, we now know that
-    //   - all entities in the queue are either in range or moving toward the GW
-    //   - all entities in the queue are non-null
-    //   - if any entities are in-range, the first one is at the head of the queue
-    //   - if a goldpile is at the head of the list, and there are non-gold-piles, we've moved the head gold pile to the end
 }
 
 void Gateway::iterate()
