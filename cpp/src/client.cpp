@@ -31,7 +31,7 @@ Game game;
 
 UI ui;
 
-vector<FrameEventsPacket> receivedFrameCmdsPackets;
+vector<FrameEventsPacket> receivedFrameEventsPackets;
 vector<Game> receivedResyncs;
 
 class ConnectionHandler
@@ -156,7 +156,7 @@ public:
         {
             Netpack::Consumer data(receivedBytes.begin());
 
-            receivedFrameCmdsPackets.push_back(FrameEventsPacket(&data));
+            receivedFrameEventsPackets.push_back(FrameEventsPacket(&data));
 
             clearVchAndReceiveNextPacket();
         }
@@ -293,10 +293,14 @@ int main(int argc, char *argv[])
         io_service.poll();
 
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
-        if (now < nextFrameStart || receivedFrameCmdsPackets.size() == 0)
+        if (now < nextFrameStart || receivedFrameEventsPackets.size() == 0)
             continue;
 
-        nextFrameStart += ONE_FRAME;
+        // we want to speed up iteration a bit if we're behind in processing packets.
+        auto nextFrameDelay = (receivedFrameEventsPackets.size() > LAG_THRESHOLD_IN_FRAMES) ?
+            ONE_FRAME / 2
+            : ONE_FRAME;
+        nextFrameStart += nextFrameDelay;
 
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
 
@@ -322,8 +326,8 @@ int main(int argc, char *argv[])
             receivedResyncs.erase(receivedResyncs.begin());
         }
 
-        FrameEventsPacket fep = receivedFrameCmdsPackets[0];
-        receivedFrameCmdsPackets.erase(receivedFrameCmdsPackets.begin());
+        FrameEventsPacket fep = receivedFrameEventsPackets[0];
+        receivedFrameEventsPackets.erase(receivedFrameEventsPackets.begin());
 
         assert(fep.frame == game.frame);
 
@@ -374,7 +378,7 @@ int main(int argc, char *argv[])
             display(window, &game, ui, &particles, maybePlayerId, {}, true);
 
         if (game.frame % 200 == 0)
-            cout << "num ncps " << receivedFrameCmdsPackets.size() << endl;
+            cout << "num ncps " << receivedFrameEventsPackets.size() << endl;
     }
     delete window;
 
