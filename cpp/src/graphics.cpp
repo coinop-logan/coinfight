@@ -1373,26 +1373,33 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
             {
                 // draw queue lines
 
+                optional<vector2fp> lastToPoint;
                 for (unsigned int j=0; j<prime->buildTargetQueue.size(); j++)
                 {
                     if (auto entity = game->entities[prime->buildTargetQueue[j]])
                     {
+                        auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
+                        auto toPoint = entity->getPos();
                         dashedLinesOutflow.pushLine(
-                            gamePosToScreenPos(ui.camera, prime->getPos()),
-                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            gamePosToScreenPos(ui.camera, fromPoint),
+                            gamePosToScreenPos(ui.camera, toPoint),
                             BUILD_JOB_LINE_COLOR
                         );
+                        lastToPoint = toPoint;
                     }
                 }
+                lastToPoint = {};
                 for (unsigned int j=0; j<prime->scavengeTargetQueue.size(); j++)
                 {
                     if (auto point = prime->scavengeTargetQueue[j].getPointUnlessTargetDeleted(*game))
                     {
-                        dashedLinesInflow.pushLine(
-                            gamePosToScreenPos(ui.camera, prime->getPos()),
+                        auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
+                        dashedLinesOutflow.pushLine(
+                            gamePosToScreenPos(ui.camera, fromPoint),
                             gamePosToScreenPos(ui.camera, *point),
                             SCUTTLE_JOB_LINE_COLOR
                         );
+                        lastToPoint = point;
                     }
                 }
                 if (prime->fundsSource && game->entities[*prime->fundsSource])
