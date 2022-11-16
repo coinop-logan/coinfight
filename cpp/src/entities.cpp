@@ -2003,6 +2003,7 @@ void Prime::cmdStop()
     fundsDest = {};
     scavengeTargetQueue.clear();
     fundsSource = {};
+    this->fetchToImmediateTarget = {};
 }
 
 bool Prime::isIdle()
@@ -2014,10 +2015,7 @@ bool Prime::isIdle()
 
 void Prime::onMoveCmd(vector2fp moveTo)
 {
-    buildTargetQueue.clear();
-    fundsDest = {};
-    scavengeTargetQueue.clear();
-    fundsSource = {};
+    this->fetchToImmediateTarget = {};
 }
 
 optional<tuple<Target, bool>> Prime::getMaybeImmediateFetchTarget() // accounts for the possibility of a "fetch to" with an already-found GP
