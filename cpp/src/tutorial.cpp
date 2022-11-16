@@ -11,9 +11,9 @@ void setupTutorialScenario(Game* game)
 
     game->players[0].credit.createMoreByFiat(dollarsToCoinsIntND(4.5));
 
-    boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
-    gp->gold.createMoreByFiat(dollarsToCoinsIntND(3));
-    game->registerNewEntityIgnoringCollision(gp);
+    boost::shared_ptr<GoldPile> gp1 = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
+    gp1->gold.createMoreByFiat(dollarsToCoinsIntND(1));
+    game->registerNewEntityIgnoringCollision(gp1);
 
     game->players[1].credit.createMoreByFiat(FIGHTER_COST);
 
@@ -97,11 +97,11 @@ public:
         return
         {
             {
-                "Note that this is spending money from your Coinfight wallet. All told it will cost $4."
+                "Note that this is spending money from your Coinfight wallet. All told, the Gateway takes a $4 investment."
             },
             {
                 "In a real game, everyone has only one Beacon--one chance to \"teleport in\" a Gateway like this anywhere on the map.",
-                "Any additional Gateways will have to be built with units and resources on location."
+                "Any additional Gateways will have to be built with units and gold on location."
             }
         };
     }
@@ -172,8 +172,8 @@ public:
                 "This will build a Prime, the main worker/builder in Coinfight, for $0.50."
             },
             {
-                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield upon death.",
-                "Near the end of this tutorial, you'll learn how to recover the full cost of any units that have survived."
+                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die.",
+                "But if they survive, you'll be able to get it back - plus any additional gold you were able to nab!  >:-)"
             }
         };
     }
@@ -240,7 +240,7 @@ public:
                 "Select your Prime and right-click on that gold pile to start picking it up. Your Prime has a max capacity of $0.50.",
             },
             {
-                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to spend on units, or eventually, withdraw as winnings in DAI."
+                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to either spend on your army or take out of the game as DAI."
             }
         };
     }
@@ -297,8 +297,8 @@ public:
                 "Great! To finish capturing that gold, it has to be brought to the Gateway. With your Prime selected, right click on the Gateway."
             },
             {
-                "The Prime is putting down gold within range of the Gateway, and the Gateway is pulling this gold out of the game, into your Coinfight wallet.",
-                "Only Gateways can bring gold out of the game and into your Coinfight wallet (or vise versa). This means that if all your Gateways are lost, all the money you invested in your army will be stranded! So protect your Gateways at all costs."
+                "You're now funneling the credit out of the game and into your wallet, via your Gateway.",
+                "Only Gateways can do this - bring gold from the game into your Coinfight wallet, or vise versa. This means that if all your Gateways are lost, all the money you invested in your army will be stranded! If you've also lost all your Primes, you'll have no way to address this. So protect your Gateways at all costs!"
             }
         };
     }
@@ -323,14 +323,15 @@ public:
     }
 };
 
-class MorePrimesStep : public TutorialStep
+class MoreJobsStep : public TutorialStep
 {
 public:
-    int entitiesListLengthAtStart;
+    int numGPsCreated;
 
-    MorePrimesStep(Game* game, UI* ui)
-        : TutorialStep("moreprimes", false, game, ui)
+    MoreJobsStep(Game* game, UI* ui)
+        : TutorialStep("morejobs", true, game, ui)
     {
+        numGPsCreated = 0;
     }
     
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -338,47 +339,71 @@ public:
         return
         {
             {
-                "Now that we have a bit more money again, queue up 3 more Primes (select Gateway, hit Q)."
+                "Here's some more fake tutorial money!",
+                "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed (NOT YET IMPLEMEMNTED), it'll be added to the end of the queue.",
+                "You can also hit F and click a location, to add a \"fetch to\" job: the Prime will approach the location and pick up any gold it finds on the way.",
+                "Gather enough gold to make three more Primes.",
             },
-            {}
+            {
+                "Primes will continue working until they run out of sources of gold (loot and Gateways) or ways to store/invest it (build jobs, Gateways, or gold piles).",
+                "Moving the Prime will only briefly interrupt this work--to stop it completely and clear its job queue, hit S.",
+                "A final note: while right-clicking usually does the right thing, the keys D (Deposit) and F (Fetch) can be more specific."
+            }
         };
     }
     
     void start(Game* game, UI* ui)
     {
-        entitiesListLengthAtStart = game->entities.size();
     }
 
     void update(Game* game, UI* ui)
-    {}
-
-    void ping(int num)
-    {}
-
-    int numAdditionalPrimes(Game* game)
     {
-        int count = 0;
-        for (unsigned int i = entitiesListLengthAtStart; i<game->entities.size(); i++)
+        if (game->frame % 10 == 0 && numGPsCreated < 10)
+        {
+            bool gpCreated = false;
+            while (!gpCreated)
+            {
+                vector2fp pos = vector2fp(randomVectorWithMagnitudeRange(200, 400));
+                float gold = ((((double)rand() / RAND_MAX) * 7.5) + 0.5);
+                boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(pos));
+                gp->gold.createMoreByFiat(dollarsToCoinsIntND(gold));
+
+                if (game->registerNewEntityIfNoCollision(gp))
+                {
+                    gpCreated = true;
+                }
+            }
+            numGPsCreated ++;
+        }
+    }
+
+    float primeBuildProgress(Game* game)
+    {
+        float count = 0;
+        for (unsigned int i = 0; i<game->entities.size(); i++)
         {
             if (auto entity = game->entities[i])
             {
                 if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
                 {
-                    count ++;
+                    count += float(prime->getBuiltRatio());
                 }
             }
         }
         return count;
     }
 
+    void ping(int num)
+    {}
+
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return numAdditionalPrimes(game) >= 3;
+        return primeBuildProgress(game) >= 4;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return numAdditionalPrimes(game) / 3.0;
+        return (primeBuildProgress(game) - 1) / 3.0;
     }
 };
 
@@ -716,7 +741,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new MorePrimesStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new MoreJobsStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
