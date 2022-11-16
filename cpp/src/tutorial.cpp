@@ -228,7 +228,7 @@ class PickupGoldStep : public TutorialStep
 {
 public:
     PickupGoldStep(Game* game, UI* ui)
-        : TutorialStep("pickupgold", false, game, ui)
+        : TutorialStep("pickupgold", true, game, ui)
         {}
 
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -273,12 +273,12 @@ public:
     }
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.5));
+        return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.2));
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.5));
+        return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.2));
     }
 };
 
@@ -298,7 +298,8 @@ public:
             },
             {
                 "You're now funneling the credit out of the game and into your wallet, via your Gateway.",
-                "Only Gateways can do this - bring gold from the game into your Coinfight wallet, or vise versa. This means that if all your Gateways are lost, all the money you invested in your army will be stranded! If you've also lost all your Primes, you'll have no way to address this. So protect your Gateways at all costs!"
+                "Only Gateways can do this - bring gold from the game into your Coinfight wallet, or vise versa. This means that if all your Gateways are lost, all the money you invested in your army will be stranded!",
+                "If you've also lost all your Primes, you'll have no way to address this. So protect your Gateways at all costs!"
             }
         };
     }
@@ -404,6 +405,47 @@ public:
     optional<float> getProgress(Game* game, UI* ui)
     {
         return (primeBuildProgress(game) - 1) / 3.0;
+    }
+};
+
+class ThatsAllForNowFolksStep : public TutorialStep
+{
+public:
+    ThatsAllForNowFolksStep(Game* game, UI* ui)
+        : TutorialStep("thatsall", false, game, ui)
+        {}
+        
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "~ the end ~",
+                "The rest of the tutorial is still in progress. For now, take a look at the keys on the lower left: the top row (QWER keys) build units via Gateways or buildings with Primes, and the bottom row is for unit commands, most of which you've learned.",
+                "The only big remaining mechanic is that of \"asborbing\", or refunding, your units. By hitting A, your Prime will deconstruct buildings or units on the spot. The Gateway can do this too, and will bring the credit directly back into your wallet, just like when you brought it gold earlier.",
+                "When you want to full exit the game, Gateways can sacrafice themselves by targetting themselves with this command."
+            },
+            {}
+        };
+    }
+    
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {}
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return false;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return {};
     }
 };
 
@@ -742,6 +784,7 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new MoreJobsStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new ThatsAllForNowFolksStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
