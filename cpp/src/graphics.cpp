@@ -14,10 +14,9 @@ using namespace std;
 const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,255);
 const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
-const sf::Color BUILD_QUEUE_LINE_COLOR = sf::Color(100, 100, 255, 100);
-const sf::Color SCAVENGE_QUEUE_LINE_COLOR = sf::Color(255, 0, 0, 100);
-const sf::Color FUNDS_SOURCE_LINE_COLOR = sf::Color(255, 255, 0, 100);
-const sf::Color FUNDS_DEST_LINE_COLOR = sf::Color(0, 255, 0, 100);
+const sf::Color FUNDS_LINE_COLOR = sf::Color(255, 255, 0, 100);
+const sf::Color BUILD_JOB_LINE_COLOR = sf::Color(100, 100, 255, 100);
+const sf::Color SCUTTLE_JOB_LINE_COLOR = sf::Color(255, 100, 100, 100);
 
 const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
@@ -1381,7 +1380,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         dashedLinesOutflow.pushLine(
                             gamePosToScreenPos(ui.camera, prime->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
-                            BUILD_QUEUE_LINE_COLOR
+                            BUILD_JOB_LINE_COLOR
                         );
                     }
                 }
@@ -1392,7 +1391,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         dashedLinesInflow.pushLine(
                             gamePosToScreenPos(ui.camera, prime->getPos()),
                             gamePosToScreenPos(ui.camera, *point),
-                            SCAVENGE_QUEUE_LINE_COLOR
+                            SCUTTLE_JOB_LINE_COLOR
                         );
                     }
                 }
@@ -1401,7 +1400,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     dashedLinesInflow.pushLine(
                         gamePosToScreenPos(ui.camera, prime->getPos()),
                         gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos()),
-                        BUILD_QUEUE_LINE_COLOR
+                        FUNDS_LINE_COLOR
                     );
                 }
                 if (prime->fundsDest && game->entities[*prime->fundsDest])
@@ -1409,7 +1408,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     dashedLinesOutflow.pushLine(
                         gamePosToScreenPos(ui.camera, prime->getPos()),
                         gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos()),
-                        FUNDS_DEST_LINE_COLOR
+                        FUNDS_LINE_COLOR
                     );
                 }
             }
@@ -1423,7 +1422,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         dashedLinesOutflow.pushLine(
                             gamePosToScreenPos(ui.camera, gateway->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
-                            BUILD_QUEUE_LINE_COLOR
+                            BUILD_JOB_LINE_COLOR
                         );
                     }
                 }
@@ -1434,7 +1433,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                         dashedLinesInflow.pushLine(
                             gamePosToScreenPos(ui.camera, gateway->getPos()),
                             gamePosToScreenPos(ui.camera, entity->getPos()),
-                            SCAVENGE_QUEUE_LINE_COLOR
+                            SCUTTLE_JOB_LINE_COLOR
                         );
                     }
                 }
