@@ -1,6 +1,7 @@
 #include "input.h"
 #include "config.h"
 #include "interface.h"
+#include "tutorial.h"
 
 extern Game game;
 extern UI ui;
@@ -25,19 +26,20 @@ UI::UI()
     maybeSelectionBoxStart = {};
     unitInterfaceCmdsWithState = vector<InterfaceCmdWithState>
     {
+        boost::shared_ptr<InterfaceCmd>(new AttackAbsorbInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new StopInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new DepositInterfaceCmd()),
+        boost::shared_ptr<InterfaceCmd>(new FetchInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
         boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new ScuttleInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new AttackGatherInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new StopInterfaceCmd())
+        boost::shared_ptr<InterfaceCmd>(new PrimeBuildTurretInterfaceCmd())
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
     escapeTextCountdownOrNeg1 = -1;
     cleanDrawEnabled = false;
+    showTutorial = true; // only matters for coinfight_local right now
 }
 
 void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
@@ -284,6 +286,9 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
     {
         return noCmd;
     }
+
+    bool asap = !isShiftPressed();
+
     if (ui.selectionHasGateways())
     {
         if (auto point = target.castToPoint())
@@ -345,10 +350,10 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                 isCompletedUnit = false;
             }
 
-            // We now have to determine a command based on answers to the following questions:
-              // Is the target already queued in scuttle and/or build queues; if so with which GWs?
-              // Is it a gold pile or a unit
-                // if it's a unit, is it built and active, or not less than fully built?
+            // We now have to determine a command based on the following info:
+              // Whether the target already queued in scuttle and/or build queues; if so which one
+              // Whether it's a gold pile or a unit
+                // if it's a unit, whether it's built and active, or not less than fully built
             
             // We're also targeting the UX of: right clicking on a target with a GW will cycle between "relationships" to the unit:
             // no activity -> trying to build or deposit -> trying to capture or scuttle
@@ -376,7 +381,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                     }
                     if (bestChoice)
                     {
-                        return boost::shared_ptr<Cmd>(new ScuttleCmd({bestChoice->getRefOrThrow()}, entity->getRefOrThrow()));
+                        return boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, entity->getRefOrThrow()));
                     }
                     else
                     {
@@ -386,7 +391,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                 }
                 else
                 {
-                    return boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow()));
+                    return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow(), asap));
                 }
             }
 
@@ -406,7 +411,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
                 // if it's being built, switch to scuttle
                 if (firstGatewayContainingEntityInBuildQueue) 
                 {
-                    return boost::shared_ptr<Cmd>(new ScuttleCmd({firstGatewayContainingEntityInBuildQueue->getRefOrThrow()}, entity->getRefOrThrow()));
+                    return boost::shared_ptr<Cmd>(new FetchCmd({firstGatewayContainingEntityInBuildQueue->getRefOrThrow()}, entity->getRefOrThrow(), asap));
                 }
                 // if it's being scuttled, stop scuttling
                 else if (firstGatewayContainingEntityInScuttleQueue)
@@ -433,34 +438,46 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, 
             if (getAllianceType(playerID, entity) == Foreign)
             {
                 auto selectedCombatUnits = filterForTypeKeepContainer<CombatUnit, Unit>(ui.selectedUnits);
-                return boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow()));
+                return boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow(), asap));
             }
             else
             {
                 if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
                     auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                    return boost::shared_ptr<Cmd>(new PickupCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                    return boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow(), asap));
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
                     if (unit->getBuiltRatio() < fixed32(1))
                     {
                         auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
-                        return boost::shared_ptr<Cmd>(new ResumeBuildingCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow()));
+                        return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow(), asap));
                     }
                     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
                     {
                         auto primesInSelection = filterForType<Prime, Unit>(ui.selectedUnits);
-                        vector<EntityRef> eligiblePrimeRefs;
+
+                        bool foundPrimeWithGold = false;
+                        vector<EntityRef> primeRefs;
+
                         for (unsigned int i=0; i<primesInSelection.size(); i++)
                         {
                             if (primesInSelection[i]->heldGold.getInt() > 0)
                             {
-                                eligiblePrimeRefs.push_back(primesInSelection[i]->getRefOrThrow());
+                                foundPrimeWithGold = true;
                             }
+                            primeRefs.push_back(primesInSelection[i]->getRefOrThrow());
                         }
-                        return boost::shared_ptr<Cmd>(new PutdownCmd(eligiblePrimeRefs, Target(gateway)));
+
+                        if (foundPrimeWithGold)
+                        {
+                            return boost::shared_ptr<Cmd>(new DepositCmd(primeRefs, Target(gateway), asap));
+                        }
+                        else
+                        {
+                            return boost::shared_ptr<Cmd>(new FetchCmd(primeRefs, Target(gateway), asap));
+                        }
                     }
                 }
                 else
@@ -506,44 +523,20 @@ boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selec
     return boost::shared_ptr<GatewayBuildCmd>();
 }
 
-boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos)
+boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos, bool asap)
 {
-    auto selectedPrimes = filterForType<Prime, Unit>(selectedUnits);
+    auto selectedPrimes = filterForTypeKeepContainer<Prime, Unit>(selectedUnits);
     if (selectedPrimes.size() > 0)
     {
-        boost::shared_ptr<Prime> bestChoice;
-        float bestDistanceSquared;
-        for (unsigned int i=0; i<selectedPrimes.size(); i++)
-        {
-            vector2fl primePos(selectedPrimes[i]->getPos());
-
-            if (!bestChoice)
-            {
-                bestChoice = selectedPrimes[i];
-                bestDistanceSquared = (primePos - buildPos).getMagnitudeSquared();
-                continue;
-            }
-
-            // if prime is already building something, not a great choice
-            if (selectedPrimes[i]->state == Prime::Build)
-                continue;
-
-            float distanceSquared = (primePos - buildPos).getMagnitudeSquared();
-            if (distanceSquared < bestDistanceSquared)
-            {
-                bestChoice = selectedPrimes[i];
-                bestDistanceSquared = distanceSquared;
-            }
-        }
-
-        vector<EntityRef> onlyOnePrime;
-        onlyOnePrime.push_back(bestChoice->getRefOrThrow());
-        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(onlyOnePrime, buildUnitTypechar, vector2fp(buildPos)));
+        return boost::shared_ptr<PrimeBuildCmd>(new PrimeBuildCmd(entityPtrsToRefsOrThrow(selectedPrimes), buildUnitTypechar, vector2fp(buildPos), asap));
     }
-    return boost::shared_ptr<PrimeBuildCmd>();
+    else
+    {
+        return boost::shared_ptr<Cmd>();
+    }
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
 {
     bool spawnBeaconAvailable = maybePlayerId ?
         ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
@@ -723,6 +716,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
         case sf::Event::MouseButtonPressed:
             if (auto playerId = maybePlayerId)
             {
+                bool asap = !isShiftPressed();
+
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     switch (ui->cmdState)
@@ -737,7 +732,43 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             vector2fp spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
 
                             cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
-                            ui->cmdState = UI::Default;
+                            if (!isShiftPressed())
+                            {
+                                ui->cmdState = UI::Default;
+                            }
+                        }
+                        break;
+                        case UI::AttackAbsorb:
+                        {
+                            Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+
+                            if (ui->selectionHasGateways())
+                            {
+                                if (auto entity = target.castToEntityPtr(*game))
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow())));
+                                    if (!isShiftPressed())
+                                    {
+                                        ui->cmdState = UI::Default;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
+                                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                auto fightersAndPrimes = fightersInSelection;
+                                fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+
+                                if (fightersAndPrimes.size() > 0)
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
+                                    if (!isShiftPressed())
+                                    {
+                                        ui->cmdState = UI::Default;
+                                    }
+                                }
+                            }
                         }
                         break;
                         case UI::Deposit:
@@ -751,8 +782,83 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
 
                             if (primesAndGateways.size() > 0)
                             {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new PutdownCmd(entityPtrsToRefsOrThrow(primesAndGateways), target)));
-                                ui->cmdState = UI::Default;
+                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesAndGateways), target, asap)));
+                                if (!isShiftPressed())
+                                {
+                                    ui->cmdState = UI::Default;
+                                }
+                            }
+                        }
+                        break;
+                        case UI::Fetch:
+                        {
+                            Target clickTarget = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                            if (auto targetEntity = clickTarget.castToEntityPtr(*game))
+                            {
+                                if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
+                                {
+                                    if (ui->selectionHasGateways())
+                                    {
+                                        vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
+
+                                        boost::shared_ptr<Gateway> bestChoice;
+
+                                        float bestGatewayDistanceSquared;
+                                        for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
+                                        {
+                                            vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
+
+                                            if (!bestChoice)
+                                            {
+                                                bestChoice = gatewaysInSelection[i];
+                                                bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                            }
+                                            else
+                                            {
+                                                float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                                if (distanceSquared < bestGatewayDistanceSquared)
+                                                {
+                                                    bestChoice = gatewaysInSelection[i];
+                                                    bestGatewayDistanceSquared = distanceSquared;
+                                                }
+                                            }
+                                        }
+
+                                        if (!bestChoice)
+                                        {
+                                            // we should have had a best choice by now...
+                                            cout << "Can't find a bestChoice for the GatewayScuttleCmd" << endl;
+                                        }
+                                        else
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
+                                            if (!isShiftPressed())
+                                            {
+                                                ui->cmdState = UI::Default;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // selection does not have Gateways. Issue cmd to all Primes.
+                                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                        if (primesInSelection.size() > 0)
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow(), asap)));
+                                            ui->cmdState = UI::Default;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (auto targetPoint = clickTarget.castToPoint())
+                            {
+                                // selection does not have Gateways. Issue cmd to all Primes.
+                                auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                if (primesInSelection.size() > 0)
+                                {
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), clickTarget, asap)));
+                                    ui->cmdState = UI::Default;
+                                }
                             }
                         }
                         break;
@@ -760,111 +866,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                         {
                             vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                             vector2fl buildPos(screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton)));
-                            cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos));
+                            cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
                             if (!isShiftPressed())
                             {
-                                ui->cmdState = UI::Default;
-                            }
-                        }
-                        break;
-                        case UI::Scuttle:
-                        {
-                            if (auto targetEntity = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton)).castToEntityPtr(*game))
-                            {
-                            if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
-                            {
-                            if (boost::dynamic_pointer_cast<Unit, Entity>(targetEntity) || targetEntity->typechar() == GOLDPILE_TYPECHAR)
-                            {
-                                vector2fl targetEntityPos(targetEntity->getPos());
-
-                                vector<boost::shared_ptr<Prime>> primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
-                                vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
-                                // auto gatewaysAndPrimes = gatewaysInSelection;
-                                // gatewaysAndPrimes.insert(gatewaysAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
-
-                                if (gatewaysInSelection.size() + primesInSelection.size() > 0)
-                                {
-                                    boost::shared_ptr<Unit> bestChoice;
-
-                                    float bestGatewayDistanceSquared;
-                                    for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
-                                    {
-                                        vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
-
-                                        if (!bestChoice)
-                                        {
-                                            bestChoice = gatewaysInSelection[i];
-                                            bestGatewayDistanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
-                                        }
-                                        else
-                                        {
-                                            float distanceSquared = (gatewayPos - targetEntityPos).getMagnitudeSquared();
-                                            if (distanceSquared < bestGatewayDistanceSquared)
-                                            {
-                                                bestChoice = gatewaysInSelection[i];
-                                                bestGatewayDistanceSquared = distanceSquared;
-                                            }
-                                        }
-                                    }
-                                    // if we still don't have a best choice, look through Primes
-                                    if (!bestChoice)
-                                    {
-                                        float bestPrimeDistanceSquared;
-                                        for (unsigned int i=0; i<primesInSelection.size(); i++)
-                                        {
-                                            vector2fl primePos(primesInSelection[i]->getPos());
-
-                                            if (!bestChoice)
-                                            {
-                                                bestChoice = primesInSelection[i];
-                                                bestPrimeDistanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
-                                            }
-                                            else
-                                            {
-                                                float distanceSquared = (primePos - targetEntityPos).getMagnitudeSquared();
-                                                if (distanceSquared < bestPrimeDistanceSquared)
-                                                {
-                                                    bestChoice = primesInSelection[i];
-                                                    bestPrimeDistanceSquared = distanceSquared;
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (!bestChoice)
-                                    {
-                                        // we should have had a best choice by now...
-                                        cout << "Can't find a bestChoice for the ScuttleCmd" << endl;
-                                    }
-                                    else
-                                    {
-                                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(bestChoice))
-                                        {
-                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({gateway->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                            ui->cmdState = UI::Default;
-                                        }
-                                        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(bestChoice))
-                                        {
-                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new ScuttleCmd({prime->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                            ui->cmdState = UI::Default;
-                                        }
-                                    }
-                                }
-                            }}}
-                        }
-                        break;
-                        case UI::AttackGather:
-                        {
-                            Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
-
-                            vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
-                            vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                            auto fightersAndPrimes = fightersInSelection;
-                            fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
-
-                            if (fightersAndPrimes.size() > 0)
-                            {
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackGatherCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target)));
                                 ui->cmdState = UI::Default;
                             }
                         }
@@ -891,6 +895,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
         case sf::Event::KeyPressed:
             switch (event.key.code)
             {
+                case sf::Keyboard::F1:
+                    ui->showTutorial = !ui->showTutorial;
+                    break;
+                case sf::Keyboard::Enter:
+                    tutorial->enterPressed();
+                    break;
                 case sf::Keyboard::Tilde:
                     ui->debugInt ++;
                     break;

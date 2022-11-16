@@ -10,19 +10,18 @@
 
 using namespace std;
 
-const uint8_t CMD_MOVE_CHAR = 1;
-const uint8_t CMD_PICKUP_CHAR = 2;
-const uint8_t CMD_PUTDOWN_CHAR = 3;
-const uint8_t CMD_GATEWAYBUILD_CHAR = 4;
-const uint8_t CMD_WITHDRAW_CHAR = 5;
-const uint8_t CMD_ATTACK_CHAR = 6;
-const uint8_t CMD_PRIMEBUILD_CHAR = 7;
-const uint8_t CMD_RESUMEBUILDING_CHAR = 8;
-const uint8_t CMD_SPAWNBEACON_CHAR = 9;
-const uint8_t CMD_SCUTTLE_CHAR = 10;
-const uint8_t CMD_STOPSCUTTLE_CHAR = 11;
-const uint8_t CMD_GIFT_CHAR = 12;
-const uint8_t CMD_STOP_CHAR = 13;
+const uint8_t CMD_SPAWNBEACON_CHAR = 1;
+const uint8_t CMD_WITHDRAW_CHAR = 2;
+const uint8_t CMD_MOVE_CHAR = 3;
+const uint8_t CMD_ATTACKABSORB_CHAR = 4;
+const uint8_t CMD_STOP_CHAR = 5;
+const uint8_t CMD_FETCH_CHAR = 6;
+const uint8_t CMD_DEPOSIT_CHAR = 7;
+const uint8_t CMD_GATEWAYBUILD_CHAR = 8;
+const uint8_t CMD_PRIMEBUILD_CHAR = 9;
+const uint8_t CMD_GIFT_CHAR = 10;
+const uint8_t CMD_GATEWAYSCUTTLE_CHAR = 11;
+const uint8_t CMD_STOPSCUTTLE_CHAR = 12;
 
 struct Cmd
 {
@@ -77,24 +76,13 @@ struct UnitCmd : public Cmd
     vector<boost::shared_ptr<Unit>> getUnits(Game *game);
 
     void executeAsPlayer(Game *, Address userAddress);
+    virtual void prepForUnitExecution(Game *, uint8_t);
     virtual void executeOnUnit(boost::shared_ptr<Unit> unit);
 
     void packUnitCmdBasics(Netpack::Builder* to);
 
     UnitCmd(vector<EntityRef> entityRefs);
     UnitCmd(Netpack::Consumer* from);
-};
-
-struct StopCmd : public UnitCmd
-{
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    StopCmd(vector<EntityRef> unitRefs);
-    StopCmd(Netpack::Consumer* from);
 };
 
 struct MoveCmd : public UnitCmd
@@ -111,32 +99,65 @@ struct MoveCmd : public UnitCmd
     MoveCmd(Netpack::Consumer* from);
 };
 
-struct PickupCmd : public UnitCmd
-{
-    EntityRef goldRef;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    PickupCmd(vector<EntityRef>, EntityRef);
-    PickupCmd(Netpack::Consumer* from);
-};
-
-struct PutdownCmd : public UnitCmd
+struct AttackAbsorbCmd : public UnitCmd
 {
     Target target;
+    bool asap;
 
+    uint8_t getTypechar();
+    string getTypename();
+
+    AttackAbsorbCmd(vector<EntityRef>, Target, bool);
+    void pack(Netpack::Builder* to);
+    AttackAbsorbCmd(Netpack::Consumer* from);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+};
+
+struct StopCmd : public UnitCmd
+{
     uint8_t getTypechar();
     string getTypename();
     void pack(Netpack::Builder* to);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 
-    PutdownCmd(vector<EntityRef>, Target);
-    PutdownCmd(Netpack::Consumer* from);
+    StopCmd(vector<EntityRef> unitRefs);
+    StopCmd(Netpack::Consumer* from);
+};
+
+struct DepositCmd : public UnitCmd
+{
+    Target target;
+    bool asap;
+
+    // Not meant for network transport
+    boost::shared_ptr<Entity> entityToDepositTo;
+
+    uint8_t getTypechar();
+    string getTypename();
+
+    DepositCmd(vector<EntityRef>, Target, bool);
+    void pack(Netpack::Builder* to);
+    DepositCmd(Netpack::Consumer* from);
+
+    void prepForUnitExecution(Game*, uint8_t ownerId);
+    void executeOnUnit(boost::shared_ptr<Unit>);
+};
+
+struct FetchCmd : public UnitCmd
+{
+    Target target;
+    bool asap;
+
+    uint8_t getTypechar();
+    string getTypename();
+
+    FetchCmd(vector<EntityRef>, Target, bool);
+    void pack(Netpack::Builder* to);
+    FetchCmd(Netpack::Consumer* from);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
 };
 
 struct GatewayBuildCmd : public UnitCmd
@@ -157,71 +178,20 @@ struct PrimeBuildCmd : public UnitCmd
 {
     uint8_t buildTypechar;
     vector2fp buildPos;
+    bool asap;
+
+    // Not meant for network transport
+    boost::shared_ptr<Unit> unitToBuild;
 
     uint8_t getTypechar();
     string getTypename();
+
+    PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos, bool asap);
     void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos);
     PrimeBuildCmd(Netpack::Consumer* from);
-};
 
-struct AttackGatherCmd : public UnitCmd
-{
-    Target target;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
+    void prepForUnitExecution(Game*, uint8_t ownerId);
     void executeOnUnit(boost::shared_ptr<Unit>);
-
-    AttackGatherCmd(vector<EntityRef>, Target);
-    AttackGatherCmd(Netpack::Consumer* from);
-};
-
-struct ResumeBuildingCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    ResumeBuildingCmd(vector<EntityRef>, EntityRef);
-    ResumeBuildingCmd(Netpack::Consumer* from);
-};
-
-struct ScuttleCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    ScuttleCmd(vector<EntityRef>, EntityRef);
-    ScuttleCmd(Netpack::Consumer* from);
-};
-
-struct StopScuttleCmd : public UnitCmd
-{
-    EntityRef targetUnit;
-
-    uint8_t getTypechar();
-    string getTypename();
-    void pack(Netpack::Builder* to);
-
-    void executeOnUnit(boost::shared_ptr<Unit>);
-
-    StopScuttleCmd(vector<EntityRef>, EntityRef);
-    StopScuttleCmd(Netpack::Consumer* from);
 };
 
 struct GiftCmd : public UnitCmd
@@ -236,6 +206,34 @@ struct GiftCmd : public UnitCmd
 
     GiftCmd(vector<EntityRef>, uint8_t);
     GiftCmd(Netpack::Consumer* from);
+};
+
+struct GatewayScuttleCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    GatewayScuttleCmd(vector<EntityRef>, EntityRef);
+    GatewayScuttleCmd(Netpack::Consumer* from);
+};
+
+struct StopScuttleCmd : public UnitCmd
+{
+    EntityRef targetUnit;
+
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+
+    StopScuttleCmd(vector<EntityRef>, EntityRef);
+    StopScuttleCmd(Netpack::Consumer* from);
 };
 
 #endif // CMDS_H

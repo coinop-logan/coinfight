@@ -6,6 +6,8 @@
 
 const fixed32 MAX_UNIT_RADIUS(30);
 
+const coinsInt GOLD_TRANSFER_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
+
 class Game;
 
 struct RegInfo {
@@ -77,6 +79,8 @@ public:
     Target(boost::shared_ptr<Entity>);
     Target(Netpack::Consumer* from);
 
+    bool operator==(const Target& other) const;
+
     bool isStillValid(const Game&);
     optional<vector2fp> getPointUnlessTargetDeleted(const Game&);
     optional<EntityRef> castToEntityRef();
@@ -87,17 +91,20 @@ public:
 class GoldPile : public Entity
 {
 public:
-    Coins gold;
-    vector<Coins*> getDroppableCoins();
-    void pack(Netpack::Builder* to);
-    GoldPile(vector2fp);
-    GoldPile(Netpack::Consumer*);
-    sf::Color getTeamOrPrimaryColor();
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
+
+    Coins gold;
+
+    GoldPile(vector2fp);
+    void pack(Netpack::Builder* to);
+    GoldPile(Netpack::Consumer*);
+
     void iterate();
+
+    sf::Color getTeamOrPrimaryColor();
+    vector<Coins*> getDroppableCoins();
 };
 
 class Unit : public Entity
@@ -106,12 +113,14 @@ class Unit : public Entity
 public:
     uint8_t ownerId;
     Coins goldInvested;
+
+    float angle_view;
+
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
     virtual fixed32 getRange() const;
     virtual bool isIdle();
-    float angle_view;
 
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
@@ -176,6 +185,7 @@ public:
     vector2fp getDesiredVelocity() const;
     vector2fp getLastVelocity() const;
     virtual void onMoveCmd(vector2fp moveTo);
+    virtual void onMoveFinished(Target target);
 
     optional<Target> getMaybeMoveTarget();
     optional<MoveTargetInfo> getMaybeMoveTargetInfo();
@@ -194,6 +204,12 @@ protected:
 class CombatUnit : public virtual Unit
 {
 public:
+    virtual uint32_t getShotRangeFloorsquared() const;
+    virtual uint16_t getShotCooldown() const;
+    virtual uint16_t getShotDamage() const;
+    virtual fixed32 getShotRange() const;
+    virtual fixed32 getAggressionRange() const;
+
     enum State
     {
         NotAttacking,
@@ -214,35 +230,22 @@ public:
     } animateShot_view, lastShot_view;
     vector2fp lastShotTargetPos_view;
 
-    bool combatUnitIsIdle();
-    void combatUnitStop();
-
-    virtual uint32_t getShotRangeFloorsquared() const;
-    virtual uint16_t getShotCooldown() const;
-    virtual uint16_t getShotDamage() const;
-    virtual fixed32 getShotRange() const;
-
-    virtual fixed32 getAggressionRange() const;
-
-    void cmdAttack(Target target);
     fixed32 calcAttackPriority(boost::shared_ptr<Unit> foreignUnit);
-    bool tryShootAt(boost::shared_ptr<Unit> targetUnit);
+
+    void combatUnitStop();
     void shootAt(boost::shared_ptr<Unit> targetUnit);
+    bool tryShootAt(boost::shared_ptr<Unit> targetUnit);
+    void cmdAttack(Target target);
 
     optional<EntityRef> getMaybeTargetUnit();
+
+    bool combatUnitIsIdle();
 protected:
     CombatUnit();
-    CombatUnit(Netpack::Consumer* from);
     void packCombatUnitBasics(Netpack::Builder*);
-    void iterateCombatUnitBasics();
-};
+    CombatUnit(Netpack::Consumer* from);
 
-enum GoldTransferState {
-    NoGoldTransfer,
-    Pushing,
-    Pulling,
-    BuildingSomething,
-    ScuttlingSomething
+    void iterateCombatUnitBasics();
 };
 
 const coinsInt BEACON_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
@@ -252,65 +255,82 @@ const fixed32 BEACON_RADIUS(10);
 class Beacon : public Building
 {
 public:
-    enum State {
-        Spawning,
-        Despawning
-    } state;
-
-    void pack(Netpack::Builder* to);
-
-    Beacon(uint8_t ownerId, vector2fp pos, State state);
-    Beacon(Netpack::Consumer* from);
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
 
-    bool isIdle() { return false; }
+    enum State {
+        Spawning,
+        Despawning
+    } state;
+
+    Beacon(uint8_t ownerId, vector2fp pos, State state);
+    void pack(Netpack::Builder* to);
+    Beacon(Netpack::Consumer* from);
+
     void cmdStop();
 
     void iterate();
+
+    bool isIdle() { return false; }
 };
 
 const coinsInt GATEWAY_COST = 40000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
-const coinsInt GATEWAY_SCUTTLE_RATE = 20 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt GATEWAY_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
+
+class Prime;
 
 class Gateway : public Building
 {
 public:
-    vector<EntityRef> buildTargetQueue;
-    vector<EntityRef> scuttleTargetQueue;
-    bool pushing_view, building_view, pulling_view, scuttling_view;
-
-    void pack(Netpack::Builder* to);
-
-    Gateway(uint8_t ownerId, vector2fp pos);
-    Gateway(Netpack::Consumer* from);
-
-    void cmdBuildUnit(uint8_t unitTypechar);
-    void cmdDepositTo(Target target);
-    void cmdScuttle(EntityRef targetRef);
-    void cmdStopScuttle(EntityRef targetRef);
-    coinsInt buildQueueWeight();
-    coinsInt scuttleQueueWeight();
-
-    bool isIdle();
-    void cmdStop();
-    void removeFromQueues(EntityRef);
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
+
+    optional<EntityRef> maybeDepositingPrime;
+    optional<EntityRef> maybeWithdrawingPrime;
+
+    vector<EntityRef> buildTargetQueue;
+    vector<EntityRef> scuttleTargetQueue;
+
+    bool isInBuildTargetQueue(EntityRef);
+    bool isInScuttleTargetQueue(EntityRef);
+    
+    optional<tuple<EntityRef, bool>> getMaybeAbsorbTarget();
+    optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
+
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
+
+    Gateway(uint8_t ownerId, vector2fp pos);
+    void pack(Netpack::Builder* to);
+    Gateway(Netpack::Consumer* from);
+
+    void cmdBuildUnit(uint8_t unitTypechar);
+    void cmdDepositTo(EntityRef entityRef);
+    void cmdScuttle(EntityRef targetRef);
+    void cmdStopScuttle(EntityRef targetRef);
+    void cmdStop();
+
+    bool requestDepositFromPrime(Prime*);
+    bool requestWithdrawFromPrime(Prime*);
+    void cancelAnyDepositRequestFromPrime(Prime*);
+    void cancelAnyWithdrawRequestFromPrime(Prime*);
+
+    void removeFromQueues(EntityRef);
+    void validateTargets();
     void iterate();
+
+    bool isIdle();
+    coinsInt buildQueueWeight();
+    coinsInt scuttleQueueWeight();
 };
 
 const coinsInt PRIME_COST = 5000;
@@ -319,67 +339,59 @@ const fixed32 PRIME_SPEED(2);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
-const coinsInt PRIME_PICKUP_RATE = 20 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt PRIME_PUTDOWN_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const coinsInt PRIME_MAX_GOLD_HELD = 20000;
+const coinsInt PRIME_MAX_GOLD_HELD = 5000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit
 {
 public:
-    Coins heldGold;
-
-    enum Behavior
-    {
-        Basic,
-        Gather
-    } behavior;
-
-    optional<vector2fp> maybeGatherTargetPos;
-
-    enum State
-    {
-        NotTransferring,
-        PickupGold,
-        PutdownGold,
-        Build
-    } state;
-
-    GoldTransferState goldTransferState_view;
-
-    bool depositingToGateway;
-
-    uint8_t gonnabuildTypechar;
-
-    fixed32 getMaxSpeed() const;
-    fixed32 getRange() const;
-    void onMoveCmd(vector2fp moveTo);
-
-    void pack(Netpack::Builder* to);
-
-    Prime(uint8_t ownerId, vector2fp pos);
-    Prime(Netpack::Consumer* from);
-
-    void cmdPickup(Target);
-    void cmdPutdown(Target);
-    void cmdBuild(uint8_t buildTypechar, vector2fp buildPos);
-    void cmdResumeBuilding(EntityRef targetUnit);
-    void cmdGather(vector2fp targetPos);
-    void cmdScuttle(EntityRef targetUnit);
-
-    void setStateToReturnGoldOrResetBehavior();
-
-    fixed32 getHeldGoldRatio();
-
-    bool isIdle();
-    void cmdStop();
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
+    fixed32 getMaxSpeed() const;
+    fixed32 getRange() const;
+
+    Coins heldGold;
+
+    optional<EntityRef> fundsSource;
+    optional<EntityRef> fundsDest;
+
+    vector<Target> scavengeTargetQueue;
+    vector<EntityRef> buildTargetQueue;
+
+    optional<EntityRef> fetchToImmediateTarget;
+
+    bool isInScavengeTargetQueue(Target);
+    bool isInBuildTargetQueue(EntityRef);
+
+    optional<tuple<Target, bool>> getMaybeFetchTarget();
+    optional<tuple<Target, bool>> getMaybeImmediateFetchTarget();
+    optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
+
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
+    tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
+
+    Prime(uint8_t ownerId, vector2fp pos);
+    void pack(Netpack::Builder* to);
+    Prime(Netpack::Consumer* from);
+
+    void cmdDeposit(EntityRef, bool asap);
+    void cmdFetch(Target, bool asap);
+    void cmdScuttle(boost::shared_ptr<Entity>, bool asap);
+    void cmdStop();
+    void onMoveCmd(vector2fp moveTo);
+    void onMoveFinished(Target target);
+
+    void cancelAnyFetchesFrom(Target);
+    void cancelAnyDepositsTo(Target);
+    void validateTargets();
+    void tryTransferAndMaybeMoveOn();
     void iterate();
+
+    bool isIdle();
+    fixed32 getHeldGoldRatio();
     vector<Coins*> getDroppableCoins();
 };
 
@@ -398,28 +410,28 @@ class Fighter : public MobileUnit, public CombatUnit
 public:
     fixed32 getMaxSpeed() const;
     fixed32 getRange() const;
-    void onMoveCmd(vector2fp moveTo);
-
-    void pack(Netpack::Builder* to);
-
-    Fighter(uint8_t ownerId, vector2fp pos);
-    Fighter(Netpack::Consumer* from);
-    
-    bool isIdle();
-    void cmdStop();
-
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;
     uint16_t getShotDamage() const;
     fixed32 getShotRange() const;
-
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
     fixed32 getAggressionRange() const;
+
+    Fighter(uint8_t ownerId, vector2fp pos);
+    void pack(Netpack::Builder* to);
+    Fighter(Netpack::Consumer* from);
+    
+    void cmdStop();
+    void onMoveCmd(vector2fp moveTo);
+    void onMoveFinished(Target target);
+
     void iterate();
+
+    bool isIdle();
 };
 
 const coinsInt TURRET_COST = 50000;
@@ -433,19 +445,10 @@ const uint8_t TURRET_SHOT_DAMAGE = 100;
 class Turret : public Building, public CombatUnit
 {
 public:
-    void pack(Netpack::Builder* to);
-
-    Turret(uint8_t ownerId, vector2fp pos);
-    Turret(Netpack::Consumer* from);
-
-    bool isIdle();
-    void cmdStop();
-
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;
     uint16_t getShotDamage() const;
     fixed32 getShotRange() const;
-
     fixed32 getRange() const;
     fixed32 getRadius() const;
     uint8_t typechar() const;
@@ -453,7 +456,16 @@ public:
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
     fixed32 getAggressionRange() const;
+
+    Turret(uint8_t ownerId, vector2fp pos);
+    void pack(Netpack::Builder* to);
+    Turret(Netpack::Consumer* from);
+
+    void cmdStop();
+
     void iterate();
+
+    bool isIdle();
 };
 
 boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);

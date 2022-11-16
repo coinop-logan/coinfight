@@ -31,6 +31,8 @@ const uint8_t TURRET_TYPECHAR = 6;
 
 const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
+const int LAG_THRESHOLD_IN_FRAMES = 10;
+
 const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
 const int CREDIT_PER_DOLLAR_EXPONENT = 4; // credit = dollar * 10^X

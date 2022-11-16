@@ -29,6 +29,12 @@ struct UnitInterfaceCmd : public InterfaceCmd
     virtual bool isUnitEligible(boost::shared_ptr<Unit> unit);
 };
 
+struct AttackAbsorbInterfaceCmd : public UnitInterfaceCmd
+{
+    sf::Keyboard::Key getKey();
+    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
+    bool isUnitEligible(boost::shared_ptr<Unit> unit);
+};
 struct StopInterfaceCmd : public UnitInterfaceCmd
 {
     sf::Keyboard::Key getKey();
@@ -36,6 +42,12 @@ struct StopInterfaceCmd : public UnitInterfaceCmd
     bool isUnitEligible(boost::shared_ptr<Unit> unit);
 };
 struct DepositInterfaceCmd : public UnitInterfaceCmd
+{
+    sf::Keyboard::Key getKey();
+    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
+    bool isUnitEligible(boost::shared_ptr<Unit> unit);
+};
+struct FetchInterfaceCmd : public UnitInterfaceCmd
 {
     sf::Keyboard::Key getKey();
     vector<boost::shared_ptr<Cmd>> execute(UI *ui);
@@ -60,18 +72,6 @@ struct PrimeBuildGatewayInterfaceCmd : public UnitInterfaceCmd
     bool isUnitEligible(boost::shared_ptr<Unit> unit);
 };
 struct PrimeBuildTurretInterfaceCmd : public UnitInterfaceCmd
-{
-    sf::Keyboard::Key getKey();
-    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
-    bool isUnitEligible(boost::shared_ptr<Unit> unit);
-};
-struct ScuttleInterfaceCmd : public UnitInterfaceCmd
-{
-    sf::Keyboard::Key getKey();
-    vector<boost::shared_ptr<Cmd>> execute(UI *ui);
-    bool isUnitEligible(boost::shared_ptr<Unit> unit);
-};
-struct AttackGatherInterfaceCmd : public UnitInterfaceCmd
 {
     sf::Keyboard::Key getKey();
     vector<boost::shared_ptr<Cmd>> execute(UI *ui);

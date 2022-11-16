@@ -6,14 +6,17 @@
 #include "graphics.h"
 #include "common.h"
 #include "config.h"
+#include "tutorial.h"
+#include "graphics_helpers.h"
 
 using namespace std;
 
 const sf::Color GATEWAY_MAIN_COLOR = sf::Color(100,100,255);
 const sf::Color GATEWAY_INNEROUTLINE_COLOR = sf::Color(0,0,255);
 
-const sf::Color BUILD_QUEUE_LINE_COLOR = sf::Color(100, 100, 255, 100);
-const sf::Color SCUTTLE_QUEUE_LINE_COLOR = sf::Color(255, 0, 0, 100);
+const sf::Color FUNDS_LINE_COLOR = sf::Color(255, 255, 0, 100);
+const sf::Color BUILD_JOB_LINE_COLOR = sf::Color(100, 100, 255, 100);
+const sf::Color SCUTTLE_JOB_LINE_COLOR = sf::Color(255, 100, 100, 100);
 
 const sf::Color FIGHTER_BARREL_COLOR = sf::Color::Red;
 
@@ -22,7 +25,7 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
-sf::Font mainFont;
+sf::Font mainFont, tutorialFont;
 
 float radToDeg(float rad)
 {
@@ -60,7 +63,9 @@ public:
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     if (!mainFont.loadFromFile("Andale_Mono.ttf"))
-        throw runtime_error("Can't load font");
+        throw runtime_error("Can't load main font");
+    if (!tutorialFont.loadFromFile("NotoSansCJK-Regular.ttc"))
+        throw runtime_error("Can't load tutorial font");
 
     // choose a good videomode
     sf::VideoMode chosenMode;
@@ -479,21 +484,24 @@ void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entit
     window->draw(pixel);
 }
 
-void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft)
+void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool drawWalletHints)
 {
-    vector<sf::Text> hints
-        {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
-         sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
-        };
-
-    sf::Transform hintsTransform;
-    hintsTransform.translate(upperLeft);
-    hintsTransform.translate(sf::Vector2f(120, 20));
-    for (unsigned int i=0; i<hints.size(); i++)
+    if (drawWalletHints)
     {
-        hints[i].setFillColor(sf::Color(150, 150, 150));
-        window->draw(hints[i], hintsTransform);
-        hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
+        vector<sf::Text> hints
+            {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
+            sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
+            };
+
+        sf::Transform hintsTransform;
+        hintsTransform.translate(upperLeft);
+        hintsTransform.translate(sf::Vector2f(120, 20));
+        for (unsigned int i=0; i<hints.size(); i++)
+        {
+            hints[i].setFillColor(sf::Color(150, 150, 150));
+            window->draw(hints[i], hintsTransform);
+            hintsTransform.translate(sf::Vector2f(0, hints[i].getLocalBounds().height + 7));
+        }
     }
 
     int textSpacing = 10;
@@ -784,6 +792,16 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
             case UI::SpawnBeacon:
                 drawTargetCursor(window, mousePos, sf::Color::Yellow);
                 break;
+            case UI::AttackAbsorb:
+                if (ui.mouseoverEntity)
+                {
+                    drawBracketsCursor(window, mousePos, sf::Color::Red);
+                }
+                else
+                {
+                    drawTargetCursor(window, mousePos, sf::Color::Red);
+                }
+                break;
             case UI::Deposit:
                 if (ui.mouseoverEntity)
                 {
@@ -794,10 +812,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawTargetCursor(window, mousePos, sf::Color::Blue);
                 }
                 break;
-            case UI::Build:
-                drawGhostBuilding(window, ui, mousePos);
-                break;
-            case UI::Scuttle:
+            case UI::Fetch:
                 if (ui.mouseoverEntity)
                 {
                     if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -811,18 +826,18 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                 }
                 else
                 {
-                    drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                    if (filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits).size() > 0)
+                    {
+                        drawTargetCursor(window, mousePos, sf::Color::Yellow);
+                    }
+                    else
+                    {
+                        drawBracketsCursor(window, mousePos, sf::Color(100, 100, 100));
+                    }
                 }
                 break;
-            case UI::AttackGather:
-                if (ui.mouseoverEntity)
-                {
-                    drawBracketsCursor(window, mousePos, sf::Color::Red);
-                }
-                else
-                {
-                    drawTargetCursor(window, mousePos, sf::Color::Red);
-                }
+            case UI::Build:
+                drawGhostBuilding(window, ui, mousePos);
                 break;
         }
     }
@@ -1035,10 +1050,10 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
         {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
         {sf::Keyboard::R, 'R', {"Build", "Turret"}},
-        {sf::Keyboard::A, 'A', {"Attack/", "Gather"}},
+        {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}},
         {sf::Keyboard::S, 'S', {"Stop"}},
         {sf::Keyboard::D, 'D', {"Deposit"}},
-        {sf::Keyboard::F, 'F', {"Scuttle"}}
+        {sf::Keyboard::F, 'F', {"Fetch"}}
     };
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
@@ -1138,8 +1153,90 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
+void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int fontSize, int width, sf::Transform* transform)
+{
+    vector<string> words = splitLineIntoWords(textBlock);
+
+    string wrappedTextBlock("");
+    sf::Text renderedTextBlock(sf::String(""), tutorialFont, fontSize);
+    for (unsigned i=0; i<words.size(); i++)
+    {
+        auto word = words[i];
+        string oldWrappedTextBlock = wrappedTextBlock;
+
+        wrappedTextBlock += (i == 0 ? "" : " ") + word;
+        renderedTextBlock.setString(sf::String(wrappedTextBlock));
+        if (renderedTextBlock.getLocalBounds().width > width)
+        {
+            wrappedTextBlock = oldWrappedTextBlock + "\n" + word;
+            renderedTextBlock.setString(wrappedTextBlock);
+            if (renderedTextBlock.getLocalBounds().width > width)
+            {
+                // indicates the word itself is too big, or something else wierd
+                throw "Error text wrapping.\n";
+            }
+        }
+    }
+
+    window->draw(renderedTextBlock, *transform);
+
+    transform->translate(sf::Vector2f(0, fontSize + renderedTextBlock.getLocalBounds().height));
+}
+
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, UI ui, int boxWidth)
+{
+    sf::Transform transform;
+    transform.translate(
+        sf::Vector2f(
+            screenDimensions.x - boxWidth - 10,
+            10
+        )
+    );
+
+    vector<string> preBarTextBlocks = get<0>(tutorial->currentStep()->getText(game, &ui));
+    vector<string> postBarTextBlocks = get<1>(tutorial->currentStep()->getText(game, &ui));
+
+    for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
+    {
+        wrapAndRenderText(window, preBarTextBlocks[i], 13, boxWidth, &transform);
+    }
+
+    if (auto progress = tutorial->currentStep()->getProgress(game, &ui))
+    {
+        if (*progress > 0)
+        {
+            float clampedProgress = max(0.f, min(1.f, *progress)); // clamp between 0 and 1
+
+            float progressBarMaxWidth = boxWidth;
+            float progressBarWidth = clampedProgress * progressBarMaxWidth;
+            sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
+            sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
+
+            progressBar.setFillColor(sf::Color(150, 150, 255));
+            maxProgressBar.setOutlineColor(sf::Color::White);
+            maxProgressBar.setOutlineThickness(1);
+            maxProgressBar.setFillColor(sf::Color::Transparent);
+
+            window->draw(progressBar, transform);
+            window->draw(maxProgressBar, transform);
+
+            transform.translate(sf::Vector2f(0, 18));
+
+            for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
+            {
+                wrapAndRenderText(window, postBarTextBlocks[i], 13, boxWidth, &transform);
+            }
+        }
+    }
+    
+    if (tutorial->currentStep()->isReadyToFinish(game, &ui) && tutorial->currentStep()->waitForEnter)
+    {
+        wrapAndRenderText(window, "Press enter to continue", 16, boxWidth, &transform);
+    }
+}
+
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId)
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial* tutorial, bool drawWalletHints)
 {
     if (ui.minimapEnabled)
     {
@@ -1163,38 +1260,30 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (prime->isActive())
                     {
-                        if (auto primeTarget = prime->getMaybeMoveTarget())
+                        if (auto flowFromEntity = get<0>(prime->goldFlowFrom_view))
                         {
-                            if (prime->goldTransferState_view == Pushing || prime->goldTransferState_view == BuildingSomething)
+                            if (game->frame % 3 == 0)
                             {
-                                if (game->frame % 3 == 0)
-                                {
-                                    particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), *primeTarget, sf::Color::Yellow)));
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
                             }
-                            if (prime->goldTransferState_view == BuildingSomething)
+
+                            bool scuttling = get<1>(prime->goldFlowFrom_view);
+                            if (scuttling)
                             {
-                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
-                                {
-                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Blue);
-                                }
+                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), prime->getPos(), sf::Color::Red);
                             }
-                            if (prime->goldTransferState_view == Pulling || prime->goldTransferState_view == ScuttlingSomething)
+                        }
+                        if (auto flowToEntity = get<0>(prime->goldFlowTo_view)) 
+                        {
+                            if (game->frame % 3 == 0)
                             {
-                                if (optional<vector2fp> targetPos = primeTarget->getPointUnlessTargetDeleted(*game))
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(*targetPos), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
-                                    }
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
                             }
-                            if (prime->goldTransferState_view == ScuttlingSomething)
+
+                            bool building = get<1>(prime->goldFlowTo_view);
+                            if (building)
                             {
-                                if (auto targetPos = primeTarget->getPointUnlessTargetDeleted((*game)))
-                                {
-                                    drawEnergyLine(window, ui.camera, *targetPos, prime->getPos(), sf::Color::Red);
-                                }
+                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), prime->getPos(), sf::Color::Blue);
                             }
                         }
                     }
@@ -1203,70 +1292,35 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 {
                     if (gateway->isActive())
                     {
-                        // draw queue lines
-                        sf::VertexArray lines(sf::Lines, gateway->buildTargetQueue.size() * 2 + gateway->scuttleTargetQueue.size() * 2);
-                        for (unsigned int i = 0; i<gateway->buildTargetQueue.size(); i++)
-                        {
-                            if (auto entity = game->entities[gateway->buildTargetQueue[i]])
-                            {
-                                lines[i*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
-                                lines[i*2].color = BUILD_QUEUE_LINE_COLOR;
-                                lines[i*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
-                                lines[i*2 + 1].color = BUILD_QUEUE_LINE_COLOR;
-                            }
-                        }
-                        int offset = gateway->buildTargetQueue.size() * 2;
-                        for (unsigned int i = 0; i<gateway->scuttleTargetQueue.size(); i++)
-                        {
-                            if (auto entity = game->entities[gateway->scuttleTargetQueue[i]])
-                            {
-                                lines[offset + i*2].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, gateway->getPos())));
-                                lines[offset + i*2].color = SCUTTLE_QUEUE_LINE_COLOR;
-                                lines[offset + i*2 + 1].position = sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, entity->getPos())));
-                                lines[offset + i*2 + 1].color = SCUTTLE_QUEUE_LINE_COLOR;
-
-                            }
-                        }
-                        window->draw(lines);
-
                         // draw active energy lines
-                        if (gateway->buildTargetQueue.size() > 0)
+                        if (auto flowFromEntity = get<0>(gateway->goldFlowFrom_view))
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->buildTargetQueue[0]))
+                            if (game->frame % 3 == 0)
                             {
-                                if (gateway->pushing_view)
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(targetEntity), sf::Color::Yellow)));
-                                    }
-                                }
-                                if(gateway->building_view)
-                                {
-                                    drawEnergyLine(window, ui.camera, gateway->getPos(), targetEntity->getPos(), sf::Color::Yellow);
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(gateway->getRefOrThrow()), sf::Color::Yellow)));
+                            }
+
+                            bool scuttling = get<1>(gateway->goldFlowFrom_view);
+                            if (scuttling)
+                            {
+                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), gateway->getPos(), sf::Color::Red);
                             }
                         }
-                        if (gateway->scuttleTargetQueue.size() > 0)
+                        if (auto flowToEntity = get<0>(gateway->goldFlowTo_view)) 
                         {
-                            if (auto targetEntity = maybeEntityRefToPtrOrNull(*game, gateway->scuttleTargetQueue[0]))
+                            if (game->frame % 3 == 0)
                             {
-                                if (gateway->pulling_view)
-                                {
-                                    if (game->frame % 3 == 0)
-                                    {
-                                        particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(targetEntity->getPos()), Target(gateway), sf::Color::Yellow)));
-                                    }
-                                }
-                                if (gateway->scuttling_view)
-                                {
-                                    drawEnergyLine(window, ui.camera, targetEntity->getPos(), gateway->getPos(), sf::Color::Red);
-                                }
+                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
                             }
-                        }  
+
+                            bool building = get<1>(gateway->goldFlowTo_view);
+                            if (building)
+                            {
+                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), gateway->getPos(), sf::Color::Blue);
+                            }
+                        }
                     }
                 }
-                
 
                 // combatUnit shots
                 if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Entity>(game->entities[i]))
@@ -1312,6 +1366,89 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
         for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
         {
+            float dashOffsetAbs = float(game->frame % 40) / 40;
+            GH::DashedLineGroup dashedLinesOutflow(10, dashOffsetAbs);
+            GH::DashedLineGroup dashedLinesInflow(10, -dashOffsetAbs);
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(ui.selectedUnits[i]))
+            {
+                // draw queue lines
+
+                optional<vector2fp> lastToPoint;
+                for (unsigned int j=0; j<prime->buildTargetQueue.size(); j++)
+                {
+                    if (auto entity = game->entities[prime->buildTargetQueue[j]])
+                    {
+                        auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
+                        auto toPoint = entity->getPos();
+                        dashedLinesOutflow.pushLine(
+                            gamePosToScreenPos(ui.camera, fromPoint),
+                            gamePosToScreenPos(ui.camera, toPoint),
+                            BUILD_JOB_LINE_COLOR
+                        );
+                        lastToPoint = toPoint;
+                    }
+                }
+                lastToPoint = {};
+                for (unsigned int j=0; j<prime->scavengeTargetQueue.size(); j++)
+                {
+                    if (auto point = prime->scavengeTargetQueue[j].getPointUnlessTargetDeleted(*game))
+                    {
+                        auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
+                        dashedLinesOutflow.pushLine(
+                            gamePosToScreenPos(ui.camera, fromPoint),
+                            gamePosToScreenPos(ui.camera, *point),
+                            SCUTTLE_JOB_LINE_COLOR
+                        );
+                        lastToPoint = point;
+                    }
+                }
+                if (prime->fundsSource && game->entities[*prime->fundsSource])
+                {
+                    dashedLinesInflow.pushLine(
+                        gamePosToScreenPos(ui.camera, prime->getPos()),
+                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos()),
+                        FUNDS_LINE_COLOR
+                    );
+                }
+                if (prime->fundsDest && game->entities[*prime->fundsDest])
+                {
+                    dashedLinesOutflow.pushLine(
+                        gamePosToScreenPos(ui.camera, prime->getPos()),
+                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos()),
+                        FUNDS_LINE_COLOR
+                    );
+                }
+            }
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui.selectedUnits[i]))
+            {
+                // draw queue lines
+                for (unsigned int j = 0; j<gateway->buildTargetQueue.size(); j++)
+                {
+                    if (auto entity = game->entities[gateway->buildTargetQueue[j]])
+                    {
+                        dashedLinesOutflow.pushLine(
+                            gamePosToScreenPos(ui.camera, gateway->getPos()),
+                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            BUILD_JOB_LINE_COLOR
+                        );
+                    }
+                }
+                for (unsigned int j = 0; j<gateway->scuttleTargetQueue.size(); j++)
+                {
+                    if (auto entity = game->entities[gateway->scuttleTargetQueue[j]])
+                    {
+                        dashedLinesInflow.pushLine(
+                            gamePosToScreenPos(ui.camera, gateway->getPos()),
+                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            SCUTTLE_JOB_LINE_COLOR
+                        );
+                    }
+                }
+            }
+
+            dashedLinesOutflow.render(window);
+            dashedLinesInflow.render(window);
+
             drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
         }
 
@@ -1331,7 +1468,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 playerCredit > lastPlayerCredit ?      sf::Color::Green :
                                                         sf::Color::Red
                 );
-            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20));
+            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
 
             lastPlayerCredit = playerCredit;
         }
@@ -1361,6 +1498,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         }
 
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
+    }
+
+    if (ui.showTutorial && tutorial && !tutorial->isFinished())
+    {
+        displayTutorial(window, tutorial, game, ui, 500);
     }
 
     window->display();

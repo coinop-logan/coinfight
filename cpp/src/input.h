@@ -7,6 +7,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+class Tutorial; // define3d in tutorial.h
+
 struct InterfaceCmd; // defined in unit_interface_cmds.h
 
 struct CameraState
@@ -31,10 +33,10 @@ struct UI
     enum CmdState {
         Default,
         SpawnBeacon,
+        AttackAbsorb,
         Deposit,
-        Build,
-        Scuttle,
-        AttackGather
+        Fetch,
+        Build
     } cmdState;
     bool minimapEnabled;
     vector2i lastMousePos;
@@ -48,6 +50,7 @@ struct UI
     int escapeTextCountdownOrNeg1;
     int debugInt;
     bool cleanDrawEnabled;
+    bool showTutorial;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
@@ -63,9 +66,9 @@ vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos);
 Target getTargetAtScreenPos(Game *, const CameraState &, vector2i);
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, Target target);
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent);
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window);
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial);
 
 boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar);
-boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos);
+boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos, bool asap);
 
 #endif // INPUT_H

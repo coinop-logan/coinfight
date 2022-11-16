@@ -2,10 +2,9 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <optional>
-#include "myvectors.h"
-#include "fpm/fixed.hpp"
-#include "fpm/ios.hpp"
-#include "common.h"
+#include "graphics_helpers.h"
+
+using namespace std;
 
 void makeSure(bool condition) // hacky test function
 {
@@ -27,9 +26,8 @@ void pr(C c) {
 
 int main()
 {
-    fixed32 a(-0.65);
-    uint16_t b = 10;
-    uint16_t c = static_cast<uint16_t>(a * b);
-
-    cout << c << endl;
+    // GH::beginDashedLines(5);
+    // GH::pushLine(vector2fl(0, 0), vector2fl(20, 20), sf::Color::Red);
+    // GH::pushLine(vector2fl(0, 0), vector2fl(50, 50), sf::Color::Red);
+    // GH::endDashedLines();
 }

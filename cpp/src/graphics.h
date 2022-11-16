@@ -10,6 +10,7 @@
 #include "engine.h"
 #include "input.h"
 #include "interface.h"
+#include "tutorial.h"
 
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
@@ -59,7 +60,7 @@ struct ParticlesContainer
 };
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId);
+void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial*, bool drawWalletHints);
 void cleanupGraphics();
 
 #endif // GRAPHICS_H

@@ -474,28 +474,92 @@ void Game::iterate()
     }
 
     // clean up units that are ded
+    // also take note of GWs, Primes, and zeroed goldpiles for purposes of the next loop
+    vector<EntityRef> goldpilesToMaybeDelete;
+    vector<boost::shared_ptr<Unit>> gatewaysAndPrimes;
+
     for (unsigned int i=0; i<entities.size(); i++)
     {
-        if (entities[i] && entities[i]->dead)
+        if (entities[i])
         {
-            // create new GoldPile to hold all droppable coins
-            boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
-
-            vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
-            for (unsigned int j=0; j<droppableCoins.size(); j++)
+            if (entities[i]->dead)
             {
-                if (droppableCoins[j]->getInt() > 0)
+                // create new GoldPile to hold all droppable coins
+                boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
+
+                vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
+                for (unsigned int j=0; j<droppableCoins.size(); j++)
                 {
-                    droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
+                    if (droppableCoins[j]->getInt() > 0)
+                    {
+                        droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
+                    }
+                }
+
+                // but only add it if there was more than 0 gold added
+                if (goldPile->gold.getInt() > 0)
+                {
+                    registerNewEntityIgnoringCollision(goldPile);
+                }
+                entities[i].reset();
+            }
+            else
+            {
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
+                {
+                    if (goldpile->gold.getInt() == 0)
+                    {
+                        goldpilesToMaybeDelete.push_back(goldpile->getRefOrThrow());
+                    }
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entities[i]))
+                {
+                    gatewaysAndPrimes.push_back(gateway);
+                }
+                else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entities[i]))
+                {
+                    gatewaysAndPrimes.push_back(prime);
+                }
+            }
+        }
+    }
+
+    // Now we just remove all goldpiles with 0 gold, if they are not referenced by a Prime or GW
+    for (unsigned int i=0; i<goldpilesToMaybeDelete.size(); i++)
+    {
+        auto goldpileRef = goldpilesToMaybeDelete[i];
+
+        bool referenceFound;
+        for (unsigned int j=0; j<gatewaysAndPrimes.size(); j++)
+        {
+            if (auto gatewayOrPrime = gatewaysAndPrimes[j])
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(gatewayOrPrime))
+                {
+                    referenceFound =
+                    (    (prime->fundsDest && *prime->fundsDest == goldpileRef)
+                      || (prime->fundsSource && *prime->fundsSource == goldpileRef)
+                      || (prime->isInBuildTargetQueue(goldpileRef))
+                      || (prime->isInScavengeTargetQueue(Target(goldpileRef)))
+                    );
+                }
+                else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(gatewayOrPrime))
+                {
+                    referenceFound =
+                    (    (gateway->isInBuildTargetQueue(goldpileRef))
+                      || (gateway->isInScuttleTargetQueue(goldpileRef))
+                    );
                 }
             }
 
-            // but only add it if there was more than 0 gold added
-            if (goldPile->gold.getInt() > 0)
-            {
-                registerNewEntityIgnoringCollision(goldPile);
-            }
-            entities[i].reset();
+            if (referenceFound)
+                break;
+        }
+
+        if (!referenceFound)
+        {
+            // no reference found, so we delete it from the entities list.
+            entities[goldpileRef].reset();
         }
     }
 
