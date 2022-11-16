@@ -302,7 +302,6 @@ int main(int argc, char *argv[])
 
         for (unsigned int i=0; i < cmdsToSend.size(); i++)
         {
-            cout << 1 << endl;
             if (!cmdsToSend[i])
                 cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
             else
