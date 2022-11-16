@@ -376,10 +376,10 @@ public:
     void pack(Netpack::Builder* to);
     Prime(Netpack::Consumer* from);
 
-    void cmdDeposit(EntityRef);
-    void cmdFetch(Target);
+    void cmdDeposit(EntityRef, bool asap);
+    void cmdFetch(Target, bool asap);
+    void cmdScuttle(boost::shared_ptr<Entity>, bool asap);
     void cmdStop();
-    void cmdScuttle(boost::shared_ptr<Entity>);
     void onMoveCmd(vector2fp moveTo);
 
     void cancelAnyFetchesFrom(Target);

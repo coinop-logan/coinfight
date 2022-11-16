@@ -102,15 +102,16 @@ struct MoveCmd : public UnitCmd
 struct AttackAbsorbCmd : public UnitCmd
 {
     Target target;
+    bool asap;
 
     uint8_t getTypechar();
     string getTypename();
+
+    AttackAbsorbCmd(vector<EntityRef>, Target, bool);
     void pack(Netpack::Builder* to);
+    AttackAbsorbCmd(Netpack::Consumer* from);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
-
-    AttackAbsorbCmd(vector<EntityRef>, Target);
-    AttackAbsorbCmd(Netpack::Consumer* from);
 };
 
 struct StopCmd : public UnitCmd
@@ -128,33 +129,35 @@ struct StopCmd : public UnitCmd
 struct DepositCmd : public UnitCmd
 {
     Target target;
+    bool asap;
 
     // Not meant for network transport
     boost::shared_ptr<Entity> entityToDepositTo;
 
     uint8_t getTypechar();
     string getTypename();
+
+    DepositCmd(vector<EntityRef>, Target, bool);
     void pack(Netpack::Builder* to);
+    DepositCmd(Netpack::Consumer* from);
 
     void prepForUnitExecution(Game*, uint8_t ownerId);
     void executeOnUnit(boost::shared_ptr<Unit>);
-
-    DepositCmd(vector<EntityRef>, Target);
-    DepositCmd(Netpack::Consumer* from);
 };
 
 struct FetchCmd : public UnitCmd
 {
     Target target;
+    bool asap;
 
     uint8_t getTypechar();
     string getTypename();
+
+    FetchCmd(vector<EntityRef>, Target, bool);
     void pack(Netpack::Builder* to);
+    FetchCmd(Netpack::Consumer* from);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
-
-    FetchCmd(vector<EntityRef>, Target);
-    FetchCmd(Netpack::Consumer* from);
 };
 
 struct GatewayBuildCmd : public UnitCmd
@@ -175,19 +178,20 @@ struct PrimeBuildCmd : public UnitCmd
 {
     uint8_t buildTypechar;
     vector2fp buildPos;
+    bool asap;
 
     // Not meant for network transport
     boost::shared_ptr<Unit> unitToBuild;
 
     uint8_t getTypechar();
     string getTypename();
+
+    PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos, bool asap);
     void pack(Netpack::Builder* to);
+    PrimeBuildCmd(Netpack::Consumer* from);
 
     void prepForUnitExecution(Game*, uint8_t ownerId);
     void executeOnUnit(boost::shared_ptr<Unit>);
-
-    PrimeBuildCmd(vector<EntityRef>, uint8_t buildTypechar, vector2fp buildPos);
-    PrimeBuildCmd(Netpack::Consumer* from);
 };
 
 struct GiftCmd : public UnitCmd

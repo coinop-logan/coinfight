@@ -247,6 +247,22 @@ string AttackAbsorbCmd::getTypename()
     return "AttackAbsorbCmd";
 }
 
+AttackAbsorbCmd::AttackAbsorbCmd(vector<EntityRef> units, Target target, bool asap)
+    : UnitCmd(units), target(target), asap(asap)
+{}
+void AttackAbsorbCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    target.pack(to);
+    to->packBool(asap);
+}
+AttackAbsorbCmd::AttackAbsorbCmd(Netpack::Consumer* from)
+    : UnitCmd(from), target((EntityRef)0)
+{
+    target = Target(from);
+    asap = from->consumeBool();
+}
+
 void AttackAbsorbCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (unit->getRefOrThrow() == target.castToEntityRef())
@@ -260,27 +276,13 @@ void AttackAbsorbCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     {
         if (auto targetPoint = target.castToPoint())
         {
-            prime->cmdFetch(target);
+            prime->cmdFetch(target, asap);
         }
         else if (auto entity = target.castToEntityPtr(*prime->getGameOrThrow()))
         {
-            prime->cmdScuttle(entity);
+            prime->cmdScuttle(entity, asap);
         }
     }
-}
-
-AttackAbsorbCmd::AttackAbsorbCmd(vector<EntityRef> units, Target target)
-    : UnitCmd(units), target(target)
-{}
-void AttackAbsorbCmd::pack(Netpack::Builder* to)
-{
-    packUnitCmdBasics(to);
-    target.pack(to);
-}
-AttackAbsorbCmd::AttackAbsorbCmd(Netpack::Consumer* from)
-    : UnitCmd(from), target((EntityRef)0)
-{
-    target = Target(from);
 }
 
 uint8_t StopCmd::getTypechar()
@@ -317,6 +319,21 @@ string DepositCmd::getTypename()
     return "DepositCmd";
 }
 
+DepositCmd::DepositCmd(vector<EntityRef> units, Target target, bool asap)
+    : UnitCmd(units), target(target), asap(asap) {}
+void DepositCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    target.pack(to);
+    to->packBool(asap);
+}
+DepositCmd::DepositCmd(Netpack::Consumer* from)
+    : UnitCmd(from), target((EntityRef)0)
+{
+    target = Target(from);
+    asap = from->consumeBool();
+}
+
 void DepositCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
 {
     if (auto entity = target.castToEntityPtr(*game))
@@ -343,7 +360,7 @@ void DepositCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdDeposit(entityToDepositTo->getRefOrThrow());
+        prime->cmdDeposit(entityToDepositTo->getRefOrThrow(), asap);
     }
 
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
@@ -352,19 +369,6 @@ void DepositCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     }
     else
         cout << "That's not a prime!!" << endl;
-}
-
-DepositCmd::DepositCmd(vector<EntityRef> units, Target target)
-    : UnitCmd(units), target(target) {}
-void DepositCmd::pack(Netpack::Builder* to)
-{
-    packUnitCmdBasics(to);
-    target.pack(to);
-}
-DepositCmd::DepositCmd(Netpack::Consumer* from)
-    : UnitCmd(from), target((EntityRef)0)
-{
-    target = Target(from);
 }
 
 
@@ -377,11 +381,27 @@ string FetchCmd::getTypename()
 {
     return "FetchCmd";
 }
+
+FetchCmd::FetchCmd(vector<EntityRef> units, Target target, bool asap)
+    : UnitCmd(units), target(target), asap(asap) {}
+void FetchCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    target.pack(to);
+    to->packBool(asap);
+}
+FetchCmd::FetchCmd(Netpack::Consumer* from)
+    : UnitCmd(from), target(EntityRef(0))
+{
+    target = Target(from);
+    asap = from->consumeBool();
+}
+
 void FetchCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdFetch(target);
+        prime->cmdFetch(target, asap);
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
@@ -394,19 +414,6 @@ void FetchCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     {
         cout << "That's not a Prime or Gateway!!" << endl;
     }
-}
-
-FetchCmd::FetchCmd(vector<EntityRef> units, Target target)
-    : UnitCmd(units), target(target) {}
-void FetchCmd::pack(Netpack::Builder* to)
-{
-    packUnitCmdBasics(to);
-    target.pack(to);
-}
-FetchCmd::FetchCmd(Netpack::Consumer* from)
-    : UnitCmd(from), target(EntityRef(0))
-{
-    target = Target(from);
 }
 
 
@@ -453,6 +460,23 @@ string PrimeBuildCmd::getTypename()
     return "PrimeBuildCmd";
 }
 
+PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, uint8_t buildTypechar, vector2fp buildPos, bool asap)
+    : UnitCmd(units), buildTypechar(buildTypechar), buildPos(buildPos), asap(asap) {}
+void PrimeBuildCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+    packTypechar(to, buildTypechar);
+    packVector2fp(to, buildPos);
+    to->packBool(asap);
+}
+PrimeBuildCmd::PrimeBuildCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{
+    buildTypechar = consumeTypechar(from);
+    buildPos = consumeVector2fp(from);
+    asap = from->consumeBool();
+}
+
 void PrimeBuildCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
 {
     switch (buildTypechar)
@@ -483,27 +507,12 @@ void PrimeBuildCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        prime->cmdDeposit(unitToBuild->getRefOrThrow());
+        prime->cmdDeposit(unitToBuild->getRefOrThrow(), asap);
     }
     else
     {
         cout << "trying to primeBuild on something other than a prime!" << endl;
     }
-}
-
-PrimeBuildCmd::PrimeBuildCmd(vector<EntityRef> units, uint8_t buildTypechar, vector2fp buildPos)
-    : UnitCmd(units), buildTypechar(buildTypechar), buildPos(buildPos) {}
-void PrimeBuildCmd::pack(Netpack::Builder* to)
-{
-    packUnitCmdBasics(to);
-    packTypechar(to, buildTypechar);
-    packVector2fp(to, buildPos);
-}
-PrimeBuildCmd::PrimeBuildCmd(Netpack::Consumer* from)
-    : UnitCmd(from)
-{
-    buildTypechar = consumeTypechar(from);
-    buildPos = consumeVector2fp(from);
 }
 
 uint8_t GiftCmd::getTypechar()
@@ -547,20 +556,13 @@ string GatewayScuttleCmd::getTypename()
 
 void GatewayScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
-    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
-    {
-        if (prime->getRefOrThrow() == targetUnit)
-            return;
-        
-        prime->cmdFetch(targetUnit);
-    }
-    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
         gateway->cmdScuttle(targetUnit);
     }
     else
     {
-        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+        cout << "Trying to execute a GatewayScuttle for a unit other than Gateway!" << endl;
     }
 }
 

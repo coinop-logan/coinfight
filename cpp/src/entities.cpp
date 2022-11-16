@@ -1887,7 +1887,7 @@ void Prime::cancelAnyDepositsTo(Target target)
     }
 }
 
-void Prime::cmdDeposit(EntityRef entityRef)
+void Prime::cmdDeposit(EntityRef entityRef, bool asap)
 {
     cancelAnyFetchesFrom(Target(entityRef));
 
@@ -1898,21 +1898,31 @@ void Prime::cmdDeposit(EntityRef entityRef)
             this->fundsDest = goldpile->getRefOrThrow();
             if (heldGold.getInt() > 0)
             {
-                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                if (asap)
+                {
+                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                }
             }
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                // if it's already in the build queue, just move it up
+                // if it's already in the build queue, just move it to front or back, based on `asap`
                 bool moved = false;
                 for (unsigned int i=0; i<buildTargetQueue.size(); i++)
                 {
                     if (buildTargetQueue[i] == entityRef)
                     {
                         buildTargetQueue.erase(buildTargetQueue.begin() + i);
-                        buildTargetQueue.insert(buildTargetQueue.begin(), entityRef);
+                        if (asap)
+                        {
+                            buildTargetQueue.insert(buildTargetQueue.begin(), entityRef);
+                        }
+                        else
+                        {
+                            buildTargetQueue.push_back(entityRef);
+                        }
                         moved = true;
                         break;
                     }
@@ -1922,10 +1932,18 @@ void Prime::cmdDeposit(EntityRef entityRef)
                 {
                     if (buildTargetQueue.size() < 255)
                     {
-                        buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
-                        if (heldGold.getInt() > 0)
+                        if (asap)
                         {
-                            setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                            buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
+
+                            if (heldGold.getInt() > 0)
+                            {
+                                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
+                            }
+                        }
+                        else
+                        {
+                            buildTargetQueue.push_back(unit->getRefOrThrow());
                         }
                     }
                 }
@@ -1935,7 +1953,7 @@ void Prime::cmdDeposit(EntityRef entityRef)
                 if (unit->typechar() == GATEWAY_TYPECHAR || unit->typechar() == PRIME_TYPECHAR)
                 {
                     this->fundsDest = unit->getRefOrThrow();
-                    if (heldGold.getInt() > 0)
+                    if (heldGold.getInt() > 0 && asap)
                     {
                         setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
                     }
@@ -1953,7 +1971,7 @@ void Prime::cmdDeposit(EntityRef entityRef)
     }
 }
 
-void Prime::cmdFetch(Target _target)
+void Prime::cmdFetch(Target _target, bool asap)
 {
     cancelAnyDepositsTo(_target);
 
@@ -1961,10 +1979,17 @@ void Prime::cmdFetch(Target _target)
     {
         if (scavengeTargetQueue.size() < 255)
         {
-            scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-            if (heldGold.getSpaceLeft() > 0)
+            if (asap)
             {
-                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
+                if (heldGold.getSpaceLeft() > 0)
+                {
+                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                }
+            }
+            else
+            {
+                scavengeTargetQueue.push_back(_target);
             }
         }
     }
@@ -1974,30 +1999,48 @@ void Prime::cmdFetch(Target _target)
         {
             if (scavengeTargetQueue.size() < 255)
             {
-                scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-                if (heldGold.getSpaceLeft() > 0)
+                if (asap)
                 {
-                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                    scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
+                    if (heldGold.getSpaceLeft() > 0)
+                    {
+                        setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+                    }
+                }
+                else
+                {
+                    scavengeTargetQueue.push_back(_target);
                 }
             }
         }
         else if (entity->typechar() == GATEWAY_TYPECHAR || entity->typechar() == PRIME_TYPECHAR)
         {
             this->fundsSource = entity->getRefOrThrow();
+            if (heldGold.getSpaceLeft() > 0 && asap)
+            {
+                setMoveTarget(_target, PRIME_TRANSFER_RANGE);
+            }
         }
     }
 }
 
-void Prime::cmdScuttle(boost::shared_ptr<Entity> entity)
+void Prime::cmdScuttle(boost::shared_ptr<Entity> entity, bool asap)
 {
     cancelAnyDepositsTo(Target(entity));
 
     if (scavengeTargetQueue.size() < 255)
     {
-        scavengeTargetQueue.insert(scavengeTargetQueue.begin(), Target(entity));
-        if (heldGold.getSpaceLeft() > 0)
+        if (asap)
         {
-            setMoveTarget(Target(entity), PRIME_TRANSFER_RANGE);
+            scavengeTargetQueue.insert(scavengeTargetQueue.begin(), Target(entity));
+            if (heldGold.getSpaceLeft() > 0)
+            {
+                setMoveTarget(Target(entity), PRIME_TRANSFER_RANGE);
+            }
+        }
+        else
+        {
+            scavengeTargetQueue.push_back(Target(entity));
         }
     }
 }
