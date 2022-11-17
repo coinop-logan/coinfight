@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <fpm/ios.hpp>
-#include <bits/stdc++.h>
+#include <boost/algorithm/string.hpp>
 #include "common.h"
 #include "coins.h"
 
@@ -123,15 +123,8 @@ uint32_t newtonSqrtFloor(uint32_t x) {
 
 vector<string> splitLineIntoWords(string line)
 {
-    istringstream ss(line);
-
     vector<string> words;
-
-    string word;
-    while (ss >> word)
-    {
-        words.push_back(word);
-    }
+    boost::split(words, line, boost::is_any_of(" "));
     
     return words;
 }
