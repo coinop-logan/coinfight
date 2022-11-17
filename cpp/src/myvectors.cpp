@@ -285,6 +285,10 @@ bool vector2i::operator==(const vector2i &c) const
 {
 	return (x == c.x && y == c.y);
 }
+bool vector2i::operator!=(const vector2i &c) const
+{
+    return (x != c.x || y != c.y);
+}
 vector2i vector2i::operator+(const vector2i &c) const
 {
 	return vector2i(x + c.x, y + c.y);
