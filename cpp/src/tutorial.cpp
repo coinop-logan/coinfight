@@ -11,17 +11,13 @@ void setupTutorialScenario(Game* game)
 
     game->players[0].credit.createMoreByFiat(dollarsToCoinsIntND(4.5));
 
-    boost::shared_ptr<GoldPile> gp1 = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp()));
-    gp1->gold.createMoreByFiat(dollarsToCoinsIntND(1));
-    game->registerNewEntityIgnoringCollision(gp1);
+    // game->players[1].credit.createMoreByFiat(FIGHTER_COST);
 
-    game->players[1].credit.createMoreByFiat(FIGHTER_COST);
-
-    vector2fp fighterPos(randomVectorWithMagnitude(1500));
-    boost::shared_ptr<Fighter> fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
-    fighter->completeBuildingInstantly(&game->players[1].credit);
-    fighter->takeHit(FIGHTER_HEALTH / 2);
-    game->registerNewEntityIgnoringCollision(fighter);
+    // vector2fp fighterPos(randomVectorWithMagnitude(1500));
+    // boost::shared_ptr<Fighter> fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
+    // fighter->completeBuildingInstantly(&game->players[1].credit);
+    // fighter->takeHit(FIGHTER_HEALTH / 2);
+    // game->registerNewEntityIgnoringCollision(fighter);
 }
 
 TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, UI* ui):
@@ -52,6 +48,55 @@ tuple<vector<string>, vector<string>> TutorialStep::getText(Game* game, UI* ui)
     throw runtime_error("getText() has not been defined for tutorial step '" + idName + "'.\n");
 }
 
+class CameraStep : public TutorialStep
+{
+public:
+    float distanceMoved;
+    vector2i lastCameraPos;
+
+    CameraStep(Game* game, UI* ui):
+        TutorialStep("camera", false, game, ui)
+    {
+        distanceMoved = 0;
+        lastCameraPos = ui->camera.gamePos;
+    }
+
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        return
+        {
+            {
+                "Hey there! This tutorial will explain the basics of Coinfight. You can hide this tutorial (or show it again) anytime by hitting F1.",
+                "First things first: you can move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
+                "Go ahead, wiggle 'er around a bit!"
+            },
+            {}
+        };
+    }
+
+    void start(Game* game, UI* ui)
+    {}
+
+    void update(Game* game, UI* ui)
+    {
+        distanceMoved += (lastCameraPos - ui->camera.gamePos).getMagnitude();
+        lastCameraPos = ui->camera.gamePos;
+    }
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return distanceMoved >= 2000;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        return distanceMoved / 2000.0;
+    }
+};
+
 class SpawnBeaconStep : public TutorialStep
 {
 public:
@@ -63,11 +108,10 @@ public:
     {
         return
         {
-            {"Hey there! This tutorial will explain the basics of Coinfight.",
-             "You can hide this tutorial (or show it again) anytime by hitting F1.",
-             "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, pretend you've just deposited $4.50 into your account, and joined a game. This is what you'll see!",
-             "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\".",
-             "Do this now by hitting \"B\" and selecting a location. For now, choose a location outside of the fourth circle.",
+            {
+                "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, this is what you'd see if you just deposited 4.5 DAI into your Coinfight wallet, and joined a game.",
+                "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\".",
+                "Do this now by hitting \"B\" and clicking on the map somewhere.",
             },
             {}
         };
@@ -81,7 +125,7 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return (game->entities.size() > 2);
+        return (game->entities.size() > 0);
     }
 };
 
@@ -117,41 +161,27 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        if (game->entities.size() < 4)
-        {
-            return false;
-        }
-        else
-        {
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        auto gateways = filterForType<Gateway, Entity>(game->entities);
+
+        return (gateways.size() > 0);
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        if (game->entities.size() < 2)
+        auto gateways = filterForType<Gateway, Entity>(game->entities);
+        if (gateways.size() > 0)
+            return 1;
+        
+        auto beacons = filterForType<Beacon, Entity>(game->entities);
+
+        if (beacons.size() > 0)
+        {
+            return float(beacons[0]->getBuiltRatio());
+        }
+        else
         {
             return 0;
         }
-        else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Entity>(game->entities[2]))
-        {
-            return float(beacon->getBuiltRatio());
-        }
-        else if (game->entities.size() > 2)
-        {
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]))
-            {
-                return 1;
-            }
-        }
-        return 0;
     }
 };
 
@@ -168,12 +198,11 @@ public:
         {
             {
                 "Now that your Gateway is finished, you can build your first unit.",
-                "Select your Gateway and hit the 'Q' key.",
+                "Select your Gateway and hit Q.",
                 "This will build a Prime, the main worker/builder in Coinfight, for $0.50."
             },
             {
-                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die.",
-                "But if they survive, you'll be able to get it back - plus any additional gold you were able to nab!  >:-)"
+                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die, for you or someone else to pick up."
             }
         };
     }
@@ -189,38 +218,20 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        for (unsigned int i=0; i<game->entities.size(); i++)
-        {
-            if (auto entity = game->entities[i])
-            {
-                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                {
-                    if (unit->ownerId == 0 && unit->typechar() == PRIME_TYPECHAR && unit->getBuiltRatio() == fixed32(1))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        auto primes = filterForType<Prime, Entity>(game->entities);
+
+        return (primes.size() > 0 && primes[0]->getBuiltRatio() == fixed32(1));
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        for (unsigned int i=0; i<game->entities.size(); i++)
+        auto primes = filterForType<Prime, Entity>(game->entities);
+
+        if (primes.size() > 0)
         {
-            if (auto entity = game->entities[i])
-            {
-                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
-                {
-                    if (unit->ownerId == 0 && unit->typechar() == PRIME_TYPECHAR)
-                    {
-                        return float(unit->getBuiltRatio());
-                    }
-                }
-            }
+            return float(primes[0]->getBuiltRatio());
         }
-        return 0;
+        else return 0;
     }
 };
 
@@ -236,7 +247,7 @@ public:
         return
         {
             {
-                "Bad news: you're broke! Good news: you have a Prime, and he can go get that gold nearby.",
+                "Bad news: you're broke! Good news: you have a Prime, and he can go pick up the gold nearby. You might need to move your camera to find the gold.",
                 "Select your Prime and right-click on that gold pile to start picking it up. Your Prime has a max capacity of $0.50.",
             },
             {
@@ -246,7 +257,15 @@ public:
     }
     
     void start(Game* game, UI* ui)
-    {}
+    {
+        auto gateways = filterForType<Gateway, Entity>(game->entities);
+
+        vector2fp gpPos = gateways[0]->getPos() + vector2fp(randomVectorWithMagnitude(600));
+
+        boost::shared_ptr<GoldPile> gp1 = boost::shared_ptr<GoldPile>(new GoldPile(gpPos));
+        gp1->gold.createMoreByFiat(dollarsToCoinsIntND(0.3));
+        game->registerNewEntityIgnoringCollision(gp1);
+    }
 
     void update(Game* game, UI* ui)
     {}
@@ -256,17 +275,12 @@ public:
 
     coinsInt getTotalGoldGathered(Game *game)
     {
-        coinsInt total = 0;
+        auto primes = filterForType<Prime, Entity>(game->entities);
 
-        for (unsigned int i=0; i<game->entities.size(); i++)
+        coinsInt total = 0;
+        for (unsigned int i=0; i<primes.size(); i++)
         {
-            if (auto entity = game->entities[i])
-            {
-                if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
-                {
-                    total += prime->heldGold.getInt();
-                }
-            }
+            total += primes[i]->heldGold.getInt();
         }
 
         return total;
@@ -294,12 +308,12 @@ public:
         return
         {
             {
-                "Great! To finish capturing that gold, it has to be brought to the Gateway. With your Prime selected, right click on the Gateway."
+                "Great! To finish capturing that gold, it has to be brought to the Gateway. With your Prime selected, right click on the Gateway.",
+                "Capture at least $0.20 of gold to continue."
             },
             {
                 "You're now funneling the credit out of the game and into your wallet, via your Gateway.",
-                "Only Gateways can do this - bring gold from the game into your Coinfight wallet, or vise versa. This means that if all your Gateways are lost, all the money you invested in your army will be stranded!",
-                "If you've also lost all your Primes, you'll have no way to address this. So protect your Gateways at all costs!"
+                "Only Gateways can bring gold in and out of the game, from and to your wallet. So keep them safe!"
             }
         };
     }
@@ -315,12 +329,12 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return (game->players[0].credit.getInt() >= dollarsToCoinsIntND(0.5));
+        return (game->players[0].credit.getInt() >= dollarsToCoinsIntND(0.2));
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return (float(game->players[0].credit.getInt()) / dollarsToCoinsIntND(0.5));
+        return (float(game->players[0].credit.getInt()) / dollarsToCoinsIntND(0.2));
     }
 };
 
@@ -343,12 +357,12 @@ public:
                 "Here's some more fake tutorial money!",
                 "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed, it'll be added to the end of the queue.",
                 "You can also hit F and click a location, to add a \"fetch to\" job: the Prime will approach the location and pick up any gold it finds on the way.",
-                "Gather enough gold to make two more Primes.",
+                "Continue gathering gold and make another Prime.",
             },
             {
                 "Primes will continue working until they run out of sources of gold (loot and Gateways) or ways to store/invest it (build jobs, Gateways, or gold piles).",
                 "Moving the Prime will only briefly interrupt this work--to stop it completely and clear its job queue, hit S.",
-                "A final note: while right-clicking usually does the right thing, the keys D (Deposit) and F (Fetch) can be more specific."
+                "(right-clicking usually does the right thing, but the keys D (Deposit) and F (Fetch) can be more specific)"
             }
         };
     }
@@ -361,10 +375,12 @@ public:
     {
         if (game->frame % 10 == 0 && numGPsCreated < 10)
         {
+            vector2fp gatewayPos = filterForType<Gateway, Entity>(game->entities)[0]->getPos();
+
             bool gpCreated = false;
             while (!gpCreated)
             {
-                vector2fp pos = vector2fp(randomVectorWithMagnitudeRange(200, 400));
+                vector2fp pos = gatewayPos + vector2fp(randomVectorWithMagnitudeRange(200, 400));
                 float gold = ((((double)rand() / RAND_MAX) * 7.5) + 0.5);
                 boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(pos));
                 gp->gold.createMoreByFiat(dollarsToCoinsIntND(gold));
@@ -399,20 +415,21 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return primeBuildProgress(game) >= 3;
+        return primeBuildProgress(game) >= 2;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return (primeBuildProgress(game) - 1) / 2.0;
+        return (primeBuildProgress(game) - 1);
     }
 };
 
-class ThatsAllForNowFolksStep : public TutorialStep
+class ScuttleStep : public TutorialStep
 {
 public:
-    ThatsAllForNowFolksStep(Game* game, UI* ui)
-        : TutorialStep("thatsall", false, game, ui)
+    int startingNumPrimes;
+    ScuttleStep(Game* game, UI* ui)
+        : TutorialStep("scuttle", true, game, ui)
         {}
         
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -420,17 +437,35 @@ public:
         return
         {
             {
-                "~ the end ~",
-                "The rest of the tutorial is still in progress. For now, take a look at the keys on the lower left: the top row (QWER keys) build units via Gateways or buildings with Primes, and the bottom row is for unit commands, most of which you've learned.",
-                "The only big remaining mechanic is that of \"asborbing\", or refunding, your units. By hitting A, your Prime will deconstruct buildings or units on the spot. The Gateway can do this too, and will bring the credit directly back into your wallet, just like when you brought it gold earlier.",
-                "When you want to fully exit the game, Gateways target themselves with the absorb command, causing them to despawn and send their $4 back to your wallet."
+                "When you're ready to get out of the game (hopefully at a profit!), you'll want to recover the money you invested in your army.",
+                "Both Gateways and Primes can \"absorb\" friendly units, deconstructing them to recover their investment cost.",
+                "Absorb one Prime with another by selecting one Prime, hitting A, and clicking on the other.",
+                "Once again, holding shift will delay the job; otherwise it will be done immediately."
             },
-            {}
+            {
+                "Gateways can also absorb units in this way, and will send the money directly to your wallet. But they can only take in one source of gold at a time, and will prioritize bringing in raw gold over absorbing functional units.",
+                "If you want, you can try this out by selecting the Gateway and right-clicking on one of your Primes."
+            }
         };
+    }
+
+    int getNumPrimes(Game* game)
+    {
+        int count = 0;
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
+            {
+                count ++;
+            }
+        }
+        return count;
     }
     
     void start(Game* game, UI* ui)
-    {}
+    {
+        startingNumPrimes = getNumPrimes(game);
+    }
 
     void update(Game* game, UI* ui)
     {}
@@ -440,132 +475,39 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return false;
+        return getNumPrimes(game) < startingNumPrimes;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return {};
-    }
-};
-
-class BuildFighterStep : public TutorialStep
-{
-public:
-    BuildFighterStep(Game* game, UI* ui)
-        : TutorialStep("buildfighter", false, game, ui)
-        {}
+        if (isReadyToFinish(game, ui))
+            return 1;
         
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
-    {
-        return
+        float highestProgress = 0;
+        for (unsigned int i=0; i<game->entities.size(); i++)
         {
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(game->entities[i]))
             {
-                "Let's get into some combat! Queue up a Fighter by selecting your Gateway and hitting 'W'."
-            },
-            {}
-        };
-    }
-    
-    void start(Game* game, UI* ui)
-    {}
-
-    void update(Game* game, UI* ui)
-    {}
-
-    void ping(int num)
-    {}
-
-    bool isReadyToFinish(Game* game, UI* ui)
-    {
-        for (unsigned int i=2; i<game->entities.size(); i++)
-        {
-            if (auto entity = game->entities[i])
-            {
-                if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(entity))
+                for (unsigned int j=0; j<prime->scavengeTargetQueue.size(); j++)
                 {
-                    return true;
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(prime->scavengeTargetQueue[j].castToEntityPtr(*game)))
+                    {
+                        float progress = 1 - float(unit->getBuiltRatio());
+                        if (progress > highestProgress)
+                            highestProgress = progress;
+                    }
                 }
             }
         }
-        
-        return false;
-    }
-
-    optional<float> getProgress(Game* game, UI* ui)
-    {
-        return {};
+        return highestProgress;
     }
 };
 
-boost::shared_ptr<Fighter> getWoundedFighter(Game* game)
-{
-    if (auto entity = game->entities[1])
-    {
-        if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(entity))
-        {
-            return fighter;
-        }
-    }
-
-    return {};
-}
-
-class CameraStep : public TutorialStep
+class ConcludeTutorialStep : public TutorialStep
 {
 public:
-    CameraStep(Game* game, UI* ui):
-        TutorialStep("camera", false, game, ui)
-    {}
-
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
-    {
-        return
-        {
-            {
-                "While we're waiting on that Fighter to build, let's look around.",
-                "You can move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
-                "To continue, find the wounded foreign Fighter."
-            },
-            {}
-        };
-    }
-
-    float getDistanceToFighterWithMargin(Game *game, UI* ui)
-    {
-        float distance = (ui->camera.gamePos - getWoundedFighter(game)->getPos()).getMagnitude();
-        return max(0.f, distance - 200);
-    }
-
-    float startDistanceToFighter;
-
-    void start(Game* game, UI* ui)
-    {
-        startDistanceToFighter = getDistanceToFighterWithMargin(game, ui);
-    }
-
-    void update(Game* game, UI* ui)
-    {}
-
-    void ping(int num)
-    {}
-
-    bool isReadyToFinish(Game* game, UI* ui)
-    {
-        return (getDistanceToFighterWithMargin(game, ui) == 0);
-    }
-
-    optional<float> getProgress(Game* game, UI* ui)
-    {
-        return 1 - (getDistanceToFighterWithMargin(game, ui) / startDistanceToFighter);
-    }
-};
-
-class AttackStep : public TutorialStep
-{
-public:
-    AttackStep(Game* game, UI* ui)
-        : TutorialStep("attack", false, game, ui)
+    ConcludeTutorialStep(Game* game, UI* ui)
+        : TutorialStep("buildstuff", false, game, ui)
         {}
         
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -573,11 +515,12 @@ public:
         return
         {
             {
-                "There it is! Once your Fighter is done building, select it and go kill it!",
-                "(If you don't have enough money to build the Fighter, you can scuttle some of your Primes by selecting the Gateway and right-clicking on them.)",
-                "With any unit, right-clicking moves the unit, and right clicking on an enemy unit attacks it.",
-                "You can also hit 'A' and click on a location to issue an \"attack-to\" command. This will cause Fighters to move toward the target location and fight anything they encounter.",
-                "Now, go kill!"
+                "Take a look at the key hints in the lower left.",
+                "The top row (QWER keys) is for building units. The first two are mobile units that can be built with Gateways; the last two are buildings that Primes can build.",
+                "When Primes are constructing buildings, they'll need more gold than they can carry, so make sure they have some source of gold (like a Gateway or some gold piles) queued up so they can finish the job.",
+                "",
+                "This pretty much concludes the tutorial, but (NOT YET IMPLEMENTED) there's a bit of a minigame for you to try out some of the combat.",
+                "Build two combat units to continue (Fighers and/or Turrets). Multiple Primes can help build any unit or building, by right clicking or hitting D.",
             },
             {}
         };
@@ -594,61 +537,133 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        if (auto fighter = getWoundedFighter(game))
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
+        auto combatUnits = filterForType<CombatUnit, Entity>(game->entities);
 
-    optional<float> getProgress(Game* game, UI* ui)
-    {
-        return {};  
-    }
-};
-
-class DropGoldExplainer : public TutorialStep
-{
-public:
-    DropGoldExplainer(Game* game, UI* ui)
-        : TutorialStep("dropgoldexplainer", true, game, ui)
-        {}
-        
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
-    {
-        return
+        int finished = 0;
+        for (unsigned int i=0; i<combatUnits.size(); i++)
         {
+            if (combatUnits[i]->getBuiltRatio() == fixed32(1))
             {
-                "As you can see, when the Fighter died, it dropped $1.50. You can come pick it up with your Primes if you want.",
-                "Upon death, units drop their investment cost as gold onto the map in the same way. As battles are waged, the battlefield will become littered with gold piles where units died. Opportunistic players might be able to make a profit simply by picking up the pieces of a larger battle between other players.",
-                "At the end of this tutorial, you'll learn how to recoup your investment in your army. Just a few more things to go over first!"
-            },
-            {}
-        };
-    }
-    
-    void start(Game* game, UI* ui)
-    {}
+                finished ++;
+            }
+        }
 
-    void update(Game* game, UI* ui)
-    {}
-
-    void ping(int num)
-    {}
-
-    bool isReadyToFinish(Game* game, UI* ui)
-    {
-        return true;
+        return finished >= 2;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return {};
+        auto combatUnits = filterForType<CombatUnit, Entity>(game->entities);
+
+        float builtRatioTotal = 0;
+        for (unsigned int i=0; i<combatUnits.size(); i++)
+        {
+            builtRatioTotal += float(combatUnits[i]->getBuiltRatio());
+        }
+
+        return builtRatioTotal / 2;
     }
 };
+
+// boost::shared_ptr<Fighter> getWoundedFighter(Game* game)
+// {
+//     if (auto entity = game->entities[1])
+//     {
+//         if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(entity))
+//         {
+//             return fighter;
+//         }
+//     }
+
+//     return {};
+// }
+
+// class AttackStep : public TutorialStep
+// {
+// public:
+//     AttackStep(Game* game, UI* ui)
+//         : TutorialStep("attack", false, game, ui)
+//         {}
+        
+//     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+//     {
+//         return
+//         {
+//             {
+//                 "There it is! Once your Fighter is done building, select it and go kill it!",
+//                 "(If you don't have enough money to build the Fighter, you can scuttle some of your Primes by selecting the Gateway and right-clicking on them.)",
+//                 "With any unit, right-clicking moves the unit, and right clicking on an enemy unit attacks it.",
+//                 "You can also hit 'A' and click on a location to issue an \"attack-to\" command. This will cause Fighters to move toward the target location and fight anything they encounter.",
+//                 "Now, go kill!"
+//             },
+//             {}
+//         };
+//     }
+    
+//     void start(Game* game, UI* ui)
+//     {}
+
+//     void update(Game* game, UI* ui)
+//     {}
+
+//     void ping(int num)
+//     {}
+
+//     bool isReadyToFinish(Game* game, UI* ui)
+//     {
+//         if (auto fighter = getWoundedFighter(game))
+//         {
+//             return false;
+//         }
+//         else
+//         {
+//             return true;
+//         }
+//     }
+
+//     optional<float> getProgress(Game* game, UI* ui)
+//     {
+//         return {};  
+//     }
+// };
+
+// class DropGoldExplainer : public TutorialStep
+// {
+// public:
+//     DropGoldExplainer(Game* game, UI* ui)
+//         : TutorialStep("dropgoldexplainer", true, game, ui)
+//         {}
+        
+//     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+//     {
+//         return
+//         {
+//             {
+//                 "As you can see, when the Fighter died, it dropped $1.50. You can come pick it up with your Primes if you want."
+//             },
+//             {}
+//         };
+//     }
+    
+//     void start(Game* game, UI* ui)
+//     {}
+
+//     void update(Game* game, UI* ui)
+//     {}
+
+//     void ping(int num)
+//     {}
+
+//     bool isReadyToFinish(Game* game, UI* ui)
+//     {
+//         return true;
+//     }
+
+//     optional<float> getProgress(Game* game, UI* ui)
+//     {
+//         return {};
+//     }
+// };
 
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
@@ -692,17 +707,15 @@ public:
 Tutorial::Tutorial(Game* game, UI* ui)
     : game(game), ui(ui)
 {
+    steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnBeaconStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new SpawnFinishStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFirstPrimeStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new MoreJobsStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new AttackStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new DropGoldExplainer(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new ThatsAllForNowFolksStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new ScuttleStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new ConcludeTutorialStep(game, ui)));
 
     stepIter = 0;
 }
