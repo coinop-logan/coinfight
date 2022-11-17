@@ -343,7 +343,7 @@ public:
                 "Here's some more fake tutorial money!",
                 "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed, it'll be added to the end of the queue.",
                 "You can also hit F and click a location, to add a \"fetch to\" job: the Prime will approach the location and pick up any gold it finds on the way.",
-                "Gather enough gold to make three more Primes.",
+                "Gather enough gold to make two more Primes.",
             },
             {
                 "Primes will continue working until they run out of sources of gold (loot and Gateways) or ways to store/invest it (build jobs, Gateways, or gold piles).",
@@ -399,12 +399,12 @@ public:
 
     bool isReadyToFinish(Game* game, UI* ui)
     {
-        return primeBuildProgress(game) >= 4;
+        return primeBuildProgress(game) >= 3;
     }
 
     optional<float> getProgress(Game* game, UI* ui)
     {
-        return (primeBuildProgress(game) - 1) / 3.0;
+        return (primeBuildProgress(game) - 1) / 2.0;
     }
 };
 
@@ -423,7 +423,7 @@ public:
                 "~ the end ~",
                 "The rest of the tutorial is still in progress. For now, take a look at the keys on the lower left: the top row (QWER keys) build units via Gateways or buildings with Primes, and the bottom row is for unit commands, most of which you've learned.",
                 "The only big remaining mechanic is that of \"asborbing\", or refunding, your units. By hitting A, your Prime will deconstruct buildings or units on the spot. The Gateway can do this too, and will bring the credit directly back into your wallet, just like when you brought it gold earlier.",
-                "When you want to full exit the game, Gateways can sacrafice themselves by targetting themselves with this command."
+                "When you want to fully exit the game, Gateways target themselves with the absorb command, causing them to despawn and send their $4 back to your wallet."
             },
             {}
         };
@@ -449,97 +449,97 @@ public:
     }
 };
 
-class GatherStep : public TutorialStep
-{
-public:
-    GatherStep(Game* game, UI* ui)
-        : TutorialStep("gather", false, game, ui)
-        {}
+// class GatherStep : public TutorialStep
+// {
+// public:
+//     GatherStep(Game* game, UI* ui)
+//         : TutorialStep("gather", false, game, ui)
+//         {}
         
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
-    {
-        return
-        {
-            {
-                "Now, you probably don't have enough money to build all those Primes, so you'll run out of money soon, and your Gateway will stop building.",
-                "Let's have the Primes automatically gather gold and bring it to the Gateway, by way of a \"gather\" command.",
-                "Left-click and drag to select ALL of your primes (even the ones that aren't done building). Then hit the 'A' key and click near the gold pile.",
-                "The unbuilt ones will execute the order once they're fully built.",
-                "Bring all the gold to your Gateway to continue."
-            },
-            {}
-        };
-    }
+//     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+//     {
+//         return
+//         {
+//             {
+//                 "Now, you probably don't have enough money to build all those Primes, so you'll run out of money soon, and your Gateway will stop building.",
+//                 "Let's have the Primes automatically gather gold and bring it to the Gateway, by way of a \"gather\" command.",
+//                 "Left-click and drag to select ALL of your primes (even the ones that aren't done building). Then hit the 'A' key and click near the gold pile.",
+//                 "The unbuilt ones will execute the order once they're fully built.",
+//                 "Bring all the gold to your Gateway to continue."
+//             },
+//             {}
+//         };
+//     }
 
-    coinsInt uncapturedGoldAtStart;
+//     coinsInt uncapturedGoldAtStart;
     
-    coinsInt countUncapturedGold(Game* game)
-    {
-        auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]);
+//     coinsInt countUncapturedGold(Game* game)
+//     {
+//         auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(game->entities[3]);
 
-        coinsInt count = 0;
-        for (unsigned int i=0; i<game->entities.size(); i++)
-        {
-            if (auto entity = game->entities[i])
-            {
-                if (entity->getRefOrThrow() == gateway->getRefOrThrow())
-                    continue;
+//         coinsInt count = 0;
+//         for (unsigned int i=0; i<game->entities.size(); i++)
+//         {
+//             if (auto entity = game->entities[i])
+//             {
+//                 if (entity->getRefOrThrow() == gateway->getRefOrThrow())
+//                     continue;
 
-                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
-                {
-                    // ignore if it's in the gateway's scuttle queue
-                    bool inQueue = false;
-                    for (unsigned int j=0; j<gateway->scuttleTargetQueue.size(); j++)
-                    {
-                        if (gateway->scuttleTargetQueue[j] == goldpile->getRefOrThrow())
-                        {
-                            inQueue = true;
-                            break;
-                        }
-                    }
+//                 if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
+//                 {
+//                     // ignore if it's in the gateway's scuttle queue
+//                     bool inQueue = false;
+//                     for (unsigned int j=0; j<gateway->scuttleTargetQueue.size(); j++)
+//                     {
+//                         if (gateway->scuttleTargetQueue[j] == goldpile->getRefOrThrow())
+//                         {
+//                             inQueue = true;
+//                             break;
+//                         }
+//                     }
 
-                    if (!inQueue)
-                    {
-                        count += goldpile->gold.getInt();
-                    }
-                }
-                else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
-                {
-                    count += prime->heldGold.getInt();
-                }
-            }
-        }
+//                     if (!inQueue)
+//                     {
+//                         count += goldpile->gold.getInt();
+//                     }
+//                 }
+//                 else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(entity))
+//                 {
+//                     count += prime->heldGold.getInt();
+//                 }
+//             }
+//         }
 
-        return count;
-    }
+//         return count;
+//     }
 
-    void start(Game* game, UI* ui)
-    {
-        uncapturedGoldAtStart = countUncapturedGold(game);
-    }
+//     void start(Game* game, UI* ui)
+//     {
+//         uncapturedGoldAtStart = countUncapturedGold(game);
+//     }
 
-    void update(Game* game, UI* ui)
-    {}
+//     void update(Game* game, UI* ui)
+//     {}
 
-    void ping(int num)
-    {}
+//     void ping(int num)
+//     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
-    {
-        return countUncapturedGold(game) == 0;
-    }
+//     bool isReadyToFinish(Game* game, UI* ui)
+//     {
+//         return countUncapturedGold(game) == 0;
+//     }
 
-    optional<float> getProgress(Game* game, UI* ui)
-    {
-        return 1 - (float(countUncapturedGold(game)) / uncapturedGoldAtStart);
-    }
-};
+//     optional<float> getProgress(Game* game, UI* ui)
+//     {
+//         return 1 - (float(countUncapturedGold(game)) / uncapturedGoldAtStart);
+//     }
+// };
 
 class BuildFighterStep : public TutorialStep
 {
 public:
     BuildFighterStep(Game* game, UI* ui)
-        : TutorialStep("name", false, game, ui)
+        : TutorialStep("buildfighter", false, game, ui)
         {}
         
     tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
@@ -659,8 +659,8 @@ public:
         return
         {
             {
-                "There it is! Once your Fighter is done building, select your fighter and go kill it!",
-                "(You might not have enough for a Fighter if you built a lot of Primes. If so, you can scuttle your Primes and recover their cost by selecting the Gateway and right-clicking on a Prime.)",
+                "There it is! Once your Fighter is done building, select it and go kill it!",
+                "(If you don't have enough money to build the Fighter, you can scuttle some of your Primes by selecting the Gateway and right-clicking on them.)",
                 "With any unit, right-clicking moves the unit, and right clicking on an enemy unit attacks it.",
                 "You can also hit 'A' and click on a location to issue an \"attack-to\" command. This will cause Fighters to move toward the target location and fight anything they encounter.",
                 "Now, go kill!"
@@ -784,12 +784,11 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new PickupGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ReturnGoldStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new MoreJobsStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new ThatsAllForNowFolksStep(game, ui)));
-    steps.push_back(boost::shared_ptr<TutorialStep>(new GatherStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new BuildFighterStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new AttackStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new DropGoldExplainer(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new ThatsAllForNowFolksStep(game, ui)));
 
     stepIter = 0;
 }
