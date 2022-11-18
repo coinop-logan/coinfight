@@ -20,6 +20,7 @@ UI::UI()
     : spawnBeaconInterfaceCmdWithState(boost::shared_ptr<InterfaceCmd>(new SpawnBeaconInterfaceCmd))
 {
     camera.gamePos = vector2fl(0, 0);
+    lastMousePos = screenCenter;
     debugInt = 0;
     cmdState = Default;
     minimapEnabled = false;
@@ -557,14 +558,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
             {
                 if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
                 {
-                    vector2i moveVector = mouseMoveToVec(event.mouseMove) - ui->lastMousePos;
+                    vector2i mousePos = mouseMoveToVec(event.mouseMove);
+                    vector2i moveVector = mousePos - ui->lastMousePos;
                     moveVector.y *= -1;
                     ui->camera.gamePos -= moveVector;
-                    if (ui->camera.gamePos.getMagnitude() > 4500)
-                    {
-                        ui->camera.gamePos = composeVector2i(ui->camera.gamePos.getAngle(), 4500);
-                    }
                 }
+
                 Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
                 ui->mouseoverEntity = target.castToEntityPtr(*game);
 
@@ -947,5 +946,25 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
             break;
         }
     }
+
+    // mouse-edge camera move
+    vector2i screenEdgeCameraMove;
+    screenEdgeCameraMove.x =
+        (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+        (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
+        0;
+    screenEdgeCameraMove.y =
+        (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
+        (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+        0;
+
+    ui->camera.gamePos += screenEdgeCameraMove;
+
+    // constrain camera
+    if (ui->camera.gamePos.getMagnitude() > 4500)
+    {
+        ui->camera.gamePos = composeVector2i(ui->camera.gamePos.getAngle(), 4500);
+    }
+
     return cmdsToSend;
 }

@@ -1851,6 +1851,85 @@ Prime::Prime(Netpack::Consumer* from)
     fetchToImmediateTarget = from->consumeOptional<EntityRef>(consumeEntityRef);
 }
 
+void Prime::addToScavengeQueue_enforceUnique(Target target, bool asap)
+{
+    for (unsigned int i=0; i<scavengeTargetQueue.size(); i++)
+    {
+        if (scavengeTargetQueue[i] == target)
+        {
+            scavengeTargetQueue.erase(scavengeTargetQueue.begin() + i);
+            i --;
+        }
+    }
+    if (auto entityRef = target.castToEntityRef())
+    {
+        if (fundsDest && *fundsDest == entityRef)
+        {
+            fundsDest = {};
+        }
+        if (fundsSource && *fundsSource == entityRef)
+        {
+            fundsSource = {};
+        }
+        for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+        {
+            if (buildTargetQueue[i] == *entityRef)
+            {
+                buildTargetQueue.erase(buildTargetQueue.begin() + i);
+                i --;
+            }
+        }
+    }
+    
+    if (asap)
+    {
+        scavengeTargetQueue.insert(scavengeTargetQueue.begin(), target);
+    }
+    else
+    {
+        scavengeTargetQueue.push_back(target);
+    }
+}
+void Prime::addToBuildQueue_enforceUnique(EntityRef entityRef, bool asap)
+{
+    for (unsigned int i=0; i<scavengeTargetQueue.size(); i++)
+    {
+        if (auto thisEntityRef = scavengeTargetQueue[i].castToEntityRef())
+        {
+            if (*thisEntityRef == entityRef)
+            {
+                scavengeTargetQueue.erase(scavengeTargetQueue.begin() + i);
+                i --;
+            }
+        }
+    }
+    for (unsigned int i=0; i<buildTargetQueue.size(); i++)
+    {
+        if (buildTargetQueue[i] == entityRef)
+        {
+            buildTargetQueue.erase(buildTargetQueue.begin() + i);
+            i --;
+        }
+    }
+    if (fundsDest && *fundsDest == entityRef)
+    {
+        fundsDest = {};
+    }
+    if (fundsSource && *fundsSource == entityRef)
+    {
+        fundsSource = {};
+    }
+
+    if (asap)
+    {
+        buildTargetQueue.insert(buildTargetQueue.begin(), entityRef);
+    }
+    else
+    {
+        buildTargetQueue.push_back(entityRef);
+    }
+}
+
 void Prime::cancelAnyFetchesFrom(Target target)
 {
     if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(target.castToEntityPtr(*getGameOrThrow())))
@@ -1916,44 +1995,11 @@ void Prime::cmdDeposit(EntityRef entityRef, bool asap)
         {
             if (unit->getBuiltRatio() < fixed32(1))
             {
-                // if it's already in the build queue, just move it to front or back, based on `asap`
-                bool moved = false;
-                for (unsigned int i=0; i<buildTargetQueue.size(); i++)
-                {
-                    if (buildTargetQueue[i] == entityRef)
-                    {
-                        buildTargetQueue.erase(buildTargetQueue.begin() + i);
-                        if (asap)
-                        {
-                            buildTargetQueue.insert(buildTargetQueue.begin(), entityRef);
-                        }
-                        else
-                        {
-                            buildTargetQueue.push_back(entityRef);
-                        }
-                        moved = true;
-                        break;
-                    }
-                }
+                addToBuildQueue_enforceUnique(entityRef, asap);
 
-                if (!moved)
+                if (asap && heldGold.getInt() > 0)
                 {
-                    if (buildTargetQueue.size() < 255)
-                    {
-                        if (asap)
-                        {
-                            buildTargetQueue.insert(buildTargetQueue.begin(), unit->getRefOrThrow());
-
-                            if (heldGold.getInt() > 0)
-                            {
-                                setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
-                            }
-                        }
-                        else
-                        {
-                            buildTargetQueue.push_back(unit->getRefOrThrow());
-                        }
-                    }
+                    setMoveTarget(Target(entityRef), PRIME_TRANSFER_RANGE);
                 }
             }
             else
@@ -1987,17 +2033,10 @@ void Prime::cmdFetch(Target _target, bool asap)
     {
         if (scavengeTargetQueue.size() < 255)
         {
-            if (asap)
+            addToScavengeQueue_enforceUnique(_target, asap);
+            if (asap && heldGold.getSpaceLeft() > 0)
             {
-                scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-                if (heldGold.getSpaceLeft() > 0)
-                {
-                    setMoveTarget(_target, fixed32(0));
-                }
-            }
-            else
-            {
-                scavengeTargetQueue.push_back(_target);
+                setMoveTarget(_target, fixed32(0));
             }
         }
     }
@@ -2007,17 +2046,14 @@ void Prime::cmdFetch(Target _target, bool asap)
         {
             if (scavengeTargetQueue.size() < 255)
             {
-                if (asap)
+                addToScavengeQueue_enforceUnique(_target, asap);
+                if (asap && heldGold.getSpaceLeft() > 0)
                 {
-                    scavengeTargetQueue.insert(scavengeTargetQueue.begin(), _target);
-                    if (heldGold.getSpaceLeft() > 0)
-                    {
-                        setMoveTarget(_target, PRIME_TRANSFER_RANGE);
-                    }
+                    setMoveTarget(_target, fixed32(0));
                 }
-                else
+                if (asap && heldGold.getSpaceLeft() > 0)
                 {
-                    scavengeTargetQueue.push_back(_target);
+                    setMoveTarget(_target, PRIME_TRANSFER_RANGE);
                 }
             }
         }
@@ -2035,20 +2071,14 @@ void Prime::cmdFetch(Target _target, bool asap)
 void Prime::cmdScuttle(boost::shared_ptr<Entity> entity, bool asap)
 {
     cancelAnyDepositsTo(Target(entity));
+    cancelAnyFetchesFrom(Target(entity));
 
     if (scavengeTargetQueue.size() < 255)
     {
-        if (asap)
+        addToScavengeQueue_enforceUnique(Target(entity), asap);
+        if (asap && heldGold.getSpaceLeft() > 0)
         {
-            scavengeTargetQueue.insert(scavengeTargetQueue.begin(), Target(entity));
-            if (heldGold.getSpaceLeft() > 0)
-            {
-                setMoveTarget(Target(entity), PRIME_TRANSFER_RANGE);
-            }
-        }
-        else
-        {
-            scavengeTargetQueue.push_back(Target(entity));
+            setMoveTarget(Target(entity), PRIME_TRANSFER_RANGE);
         }
     }
 }
@@ -2172,23 +2202,6 @@ void Prime::validateTargets()
             }
         }
     }
-
-    // // Clear first scuttle target if it's a point and we've reached it
-    // if (scavengeTargetQueue.size() > 0 && scavengeTargetQueue[0].type == Target::PointTarget)
-    // {
-    //     if (!getMaybeMoveTarget()) // will be {} if the unit has stopped moving
-    //     {
-            
-    //     }
-    //     if (auto moveTarget = getMaybeMoveTarget())
-    //     {
-    //         // if this is the move target and mobileUnitIsIdle(), we've arrived
-    //         if (moveTarget == scavengeTargetQueue[0].castToPoint() && mobileUnitIsIdle())
-    //         {
-    //             scavengeTargetQueue.erase(scavengeTargetQueue.begin());
-    //         }
-    //     }
-    // }
 
     if (fundsSource && ! game->entities[*fundsSource])
     {

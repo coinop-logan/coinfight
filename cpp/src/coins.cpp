@@ -29,10 +29,10 @@ coinsInt weiDepositStringToCoinsInt(string weiString)
     newString.erase(newString.length() - digitsToRemove);
     return stoi(newString);
 }
-string coinsIntToWeiDepositString(coinsInt coins)
+string coinsIntToWeiDepositString(coinsInt amount)
 {
     int digitsToAdd = WEI_PER_DOLLAR_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
-    string coinsString = to_string(coins);
+    string coinsString = to_string(amount);
     string weiString = coinsString + string(digitsToAdd, '0');
     return weiString;
 }
@@ -82,16 +82,20 @@ bool Coins::tryAdd(coinsInt addAmount)
 
 // PUBLIC
 
+string coinsIntToDollarString(coinsInt amount)
+{
+    float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    char buf[100];
+    snprintf(buf, 100, "$%.2f", dollars);
+    return sf::String(buf);
+}
 coinsInt Coins::getInt()
 {
     return heldAmount;
 }
 sf::String Coins::getDollarString()
 {
-    float dollars = getInt() / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
-    char buf[100];
-    snprintf(buf, 100, "$%.2f", dollars);
-    return sf::String(buf);
+    return coinsIntToDollarString(getInt());
 }
 coinsInt Coins::getSpaceLeft()
 {

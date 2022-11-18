@@ -7,6 +7,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
+
 class Tutorial; // define3d in tutorial.h
 
 struct InterfaceCmd; // defined in unit_interface_cmds.h

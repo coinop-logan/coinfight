@@ -82,6 +82,7 @@ struct vector2i
     vector2i(const vector2i &c);
     vector2i operator=(const vector2i &c);
     bool operator==(const vector2i &c) const;
+    bool operator!=(const vector2i &c) const;
     vector2i operator+(const vector2i &c) const;
     void operator+=(const vector2i &c);
     vector2i operator-(const vector2i &c) const;
