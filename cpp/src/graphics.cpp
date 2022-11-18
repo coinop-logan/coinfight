@@ -1169,7 +1169,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdo
 
 void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
 {
-    sf::Color backgroundColor(50, 50, 100);
+    sf::Color backgroundColor(0, 0, 50);
     window->clear(backgroundColor);
 
     float zoomOutFactor = 10;
