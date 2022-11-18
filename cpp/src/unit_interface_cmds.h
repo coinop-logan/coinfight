@@ -10,7 +10,7 @@ using namespace std;
 struct InterfaceCmd
 {
     bool eligible, active;
-    int visualFlashStart;
+    sf::Clock visualFlashClock;
     InterfaceCmd()
         : eligible(false), active(false)
         {}

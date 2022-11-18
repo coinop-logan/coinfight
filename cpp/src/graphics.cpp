@@ -1024,10 +1024,14 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
         hotkeyBackgroundColor = sf::Color::Black;
         hotkeyTextColor = sf::Color(80, 80, 80);
     }
+    sf::Color backgroundColor =
+        interfaceCmd.visualFlashClock.getElapsedTime() < sf::seconds(0.06) || interfaceCmd.active ?
+        sf::Color(150, 0, 0, 100) :
+        sf::Color::Transparent ;
 
     sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
     rectShape.setPosition(drawPos.x, drawPos.y);
-    rectShape.setFillColor(sf::Color::Transparent);
+    rectShape.setFillColor(backgroundColor);
     rectShape.setOutlineColor(mainOutlineColor);
     rectShape.setOutlineThickness(1);
     window->draw(rectShape);

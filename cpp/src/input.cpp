@@ -189,7 +189,9 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
 {
     if (boost::dynamic_pointer_cast<AttackAbsorbInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
+        ui->returnToDefaultState();
         ui->cmdState = UI::AttackAbsorb;
+        unitInterfaceCmd->active = true;
 
         return noCmds;
     }
@@ -197,7 +199,7 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     {
         if (ui->selectedUnits.size() > 0)
         {
-            
+            unitInterfaceCmd->visualFlashClock.restart();
             return {boost::shared_ptr<StopCmd>(new StopCmd(entityPtrsToRefsOrThrow(ui->selectedUnits)))};
         }
         else
@@ -207,40 +209,55 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     }
     else if (boost::dynamic_pointer_cast<DepositInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
+        ui->returnToDefaultState();
         ui->cmdState = UI::Deposit;
+        unitInterfaceCmd->active = true;
+
         return noCmds;
     }
     else if (boost::dynamic_pointer_cast<FetchInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
+        ui->returnToDefaultState();
         ui->cmdState = UI::Fetch;
+        unitInterfaceCmd->active = true;
 
         return noCmds;
     }
     else if (boost::dynamic_pointer_cast<GatewayBuildPrimeInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, PRIME_TYPECHAR))
+        {
+            unitInterfaceCmd->visualFlashClock.restart();
             return {cmd};
+        }
         else
             return noCmds;
     }
     else if (boost::dynamic_pointer_cast<GatewayBuildFighterInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, FIGHTER_TYPECHAR))
+        {
+            unitInterfaceCmd->visualFlashClock.restart();
             return {cmd};
+        }
         else
             return noCmds;
     }
     else if (boost::dynamic_pointer_cast<PrimeBuildGatewayInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
+        ui->returnToDefaultState();
         ui->cmdState = UI::Build;
         ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+        unitInterfaceCmd->active = true;
 
         return noCmds;
     }
     else if (boost::dynamic_pointer_cast<PrimeBuildTurretInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
+        ui->returnToDefaultState();
         ui->cmdState = UI::Build;
         ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
+        unitInterfaceCmd->active = true;
 
         return noCmds;
     }
@@ -255,7 +272,10 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
 {
     if (spawnBeaconInterfaceCmd.eligible && spawnBeaconInterfaceCmd.getKey() == key)
     {
+        returnToDefaultState();
         cmdState = UI::SpawnBeacon;
+        spawnBeaconInterfaceCmd.active = true;
+
         return noCmds;
     }
 
@@ -804,7 +824,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
                             if (!isShiftPressed())
                             {
-                                ui->cmdState = UI::Default;
+                                ui->returnToDefaultState();
                             }
                         }
                         break;
@@ -819,7 +839,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow())));
                                     if (!isShiftPressed())
                                     {
-                                        ui->cmdState = UI::Default;
+                                        ui->returnToDefaultState();
                                     }
                                 }
                             }
@@ -835,7 +855,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
                                     if (!isShiftPressed())
                                     {
-                                        ui->cmdState = UI::Default;
+                                        ui->returnToDefaultState();
                                     }
                                 }
                             }
@@ -855,7 +875,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                 cmdsToSend.push_back(boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesAndGateways), target, asap)));
                                 if (!isShiftPressed())
                                 {
-                                    ui->cmdState = UI::Default;
+                                    ui->returnToDefaultState();
                                 }
                             }
                         }
@@ -904,7 +924,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                             cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
                                             if (!isShiftPressed())
                                             {
-                                                ui->cmdState = UI::Default;
+                                                ui->returnToDefaultState();
                                             }
                                         }
                                     }
@@ -915,7 +935,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                         if (primesInSelection.size() > 0)
                                         {
                                             cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow(), asap)));
-                                            ui->cmdState = UI::Default;
+                                            ui->returnToDefaultState();
                                         }
                                     }
                                 }
@@ -927,7 +947,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                                 if (primesInSelection.size() > 0)
                                 {
                                     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), clickTarget, asap)));
-                                    ui->cmdState = UI::Default;
+                                    ui->returnToDefaultState();
                                 }
                             }
                         }
@@ -939,7 +959,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
                             if (!isShiftPressed())
                             {
-                                ui->cmdState = UI::Default;
+                                ui->returnToDefaultState();
                             }
                         }
                         break;
@@ -957,7 +977,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                     }
                     else
                     {
-                        ui->cmdState = UI::Default;
+                        ui->returnToDefaultState();
                     }
                 }
             }
@@ -980,7 +1000,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                 case sf::Keyboard::Escape:
                     if (ui->cmdState != UI::Default)
                     {
-                        ui->cmdState = UI::Default;
+                        ui->returnToDefaultState();
                     }
                     else if (ui->selectedUnits.size() > 0)
                     {
@@ -1038,4 +1058,14 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
     }
 
     return cmdsToSend;
+}
+
+void UI::returnToDefaultState()
+{
+    cmdState = Default;
+    spawnBeaconInterfaceCmd.active = false;
+    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
+    {
+        unitInterfaceCmds[i]->active = false;
+    }
 }
