@@ -15,6 +15,7 @@ coinsInt consumeCoinsInt(Netpack::Consumer* from);
 
 coinsInt weiDepositStringToCoinsInt(string weiString);
 string coinsIntToWeiDepositString(coinsInt coins);
+string coinsIntToDollarString(coinsInt coins);
 
 class Coins
 {

@@ -1001,7 +1001,7 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines)
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines, optional<coinsInt> maybeCost)
 {
     sf::Color mainColor = interfaceCmdWithState->eligible ? sf::Color(100, 100, 255) : sf::Color(80, 80, 80);
 
@@ -1016,6 +1016,21 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
     hotkeyText.setFillColor(mainColor);
     hotkeyText.setPosition(sf::Vector2f(drawPos.x + 2, drawPos.y-1));
     window->draw(hotkeyText);
+
+    if (maybeCost)
+    {
+        string coinsString = coinsIntToDollarString(*maybeCost);
+        sf::Text costText(coinsString, mainFont, 12);
+        costText.setFillColor(
+            interfaceCmdWithState->eligible ?
+            sf::Color::Yellow :
+            mainColor
+        );
+
+        int width = costText.getLocalBounds().width;
+        costText.setPosition(sf::Vector2f((drawPos.x + HOTKEY_BOX_WIDTH) - (4 + width), drawPos.y-1));
+        window->draw(costText);
+    }
 
     float lineHeight = 12;
     float allLinesHeight = lineHeight * cmdNameLines.size();
@@ -1039,21 +1054,21 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
 void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
 {
     vector2i drawPos(HOTKEY_BOX_SPACING, screenDimensions.y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Gateway"});
+    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Gateway"}, {GATEWAY_COST});
 }
 
 void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
 {
-    const tuple<sf::Keyboard::Key, char, vector<string>> hotkeyInfo[] =
+    const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> hotkeyInfo[] =
     {
-        {sf::Keyboard::Q, 'Q', {"Build", "Prime"}},
-        {sf::Keyboard::W, 'W', {"Build", "Fighter"}},
-        {sf::Keyboard::E, 'E', {"Build", "Gateway"}},
-        {sf::Keyboard::R, 'R', {"Build", "Turret"}},
-        {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}},
-        {sf::Keyboard::S, 'S', {"Stop"}},
-        {sf::Keyboard::D, 'D', {"Deposit"}},
-        {sf::Keyboard::F, 'F', {"Fetch"}}
+        {sf::Keyboard::Q, 'Q', {"Build", "Prime"}, {PRIME_COST}},
+        {sf::Keyboard::W, 'W', {"Build", "Fighter"}, {FIGHTER_COST}},
+        {sf::Keyboard::E, 'E', {"Build", "Gateway"}, {GATEWAY_COST}},
+        {sf::Keyboard::R, 'R', {"Build", "Turret"}, {TURRET_COST}},
+        {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}, {}},
+        {sf::Keyboard::S, 'S', {"Stop"}, {}},
+        {sf::Keyboard::D, 'D', {"Deposit"}, {}},
+        {sf::Keyboard::F, 'F', {"Fetch"}, {}}
     };
 
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
@@ -1072,6 +1087,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
         sf::Keyboard::Key keyCode = get<0>(hotkeyInfo[i]);
         char keyChar = get<1>(hotkeyInfo[i]);
         vector<string> cmdNameLines = get<2>(hotkeyInfo[i]);
+        optional<coinsInt> maybeCost = get<3>(hotkeyInfo[i]);
 
         InterfaceCmdWithState* interfaceCmdWithState(NULL);
         for (unsigned int j=0; j<ui->unitInterfaceCmdsWithState.size(); j++)
@@ -1095,7 +1111,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
             drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
         }
 
-        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar, cmdNameLines);
+        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar, cmdNameLines, maybeCost);
     }
 }
 
