@@ -519,7 +519,7 @@ public:
                 "The top row (QWER keys) is for building units. The first two are mobile units that can be built with Gateways; the last two are buildings that Primes can build.",
                 "When Primes are constructing buildings, they'll need more gold than they can carry, so make sure they have some source of gold (like a Gateway or some gold piles) queued up so they can finish the job.",
                 "",
-                "This pretty much concludes the tutorial, but (NOT YET IMPLEMENTED) there's a bit of a minigame for you to try out some of the combat.",
+                "This pretty much concludes the tutorial, but there's a bit of a minigame for you to try out some of the combat.",
                 "Build two combat units to continue (Fighers and/or Turrets). Multiple Primes can help build any unit or building, by right clicking or hitting D.",
             },
             {}
@@ -565,6 +565,144 @@ public:
     }
 };
 
+float randomFloat()
+{
+    return (float)rand() / RAND_MAX;
+}
+float randomFloatRange(float min, float max)
+{
+    return randomFloat() * (max - min) + min;
+}
+float randomFloatUnder1()
+{
+    return (float)rand() / (float(RAND_MAX) + 1);
+}
+template<class T> T randomChoice(vector<T> vec)
+{
+    int iter = int(randomFloatUnder1() * vec.size());
+    return vec[iter];
+}
+
+class EndMinigameStep : public TutorialStep
+{
+public:
+    const int FRAMES_BETWEEN_WAVES = 6000;
+    int minigameStartFrame;
+    int difficulty;
+
+    EndMinigameStep(Game* game, UI* ui)
+        : TutorialStep("minigame", false, game, ui)
+        {}
+         
+    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    {
+        int numFighersComing = 0;
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(game->entities[i]))
+            {
+                if (fighter->ownerId == 1)
+                {
+                    numFighersComing ++;
+                }
+            }
+        }
+        stringstream numFightersSS;
+        if (numFighersComing > 0)
+        {
+            numFightersSS << numFighersComing << " fighters are coming!";
+        }
+        else
+        {
+            numFightersSS << " ";
+        }
+        return {
+            {
+                numFightersSS.str(),
+                "Next wave countdown:"
+            },
+            {
+                "Tab will toggle a (really minimal) view of the map!"
+            }
+        };
+    }
+
+    void spawnInFighters(Game* game)
+    {
+        int numFightersToCreate = int(pow(float(difficulty), 1.7) * randomFloatRange(0.7, 1.3)) + 1;
+
+        vector2fp groupPos;
+        Target groupTarget = Target(vector2fp());
+        int numCreatedThisGroup = 0;
+        while (numFightersToCreate > 0)
+        {
+            if (groupPos == vector2fp() || randomFloat() > 0.8)
+            {
+                groupPos = vector2fp(randomVectorWithMagnitudeRange(500, 4000));
+
+                // get a target
+                vector<vector2fp> playerEntityPositions;
+                for (unsigned int i=0; i<game->entities.size(); i++)
+                {
+                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                    {
+                        if (unit->ownerId == 0)
+                        {
+                            playerEntityPositions.push_back(unit->getPos());
+                        }
+                    }
+                }
+                groupTarget = Target(randomChoice(playerEntityPositions));
+
+                numCreatedThisGroup = 0;
+            }
+
+            vector2fp fighterPos = groupPos + vector2fp(randomVectorWithMagnitude(numCreatedThisGroup*2)); // for now a hacky way to avoid collision.cpp failing on too-close units
+            auto fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
+            game->registerNewEntityIgnoringCollision(fighter);
+
+            game->players[1].credit.createMoreByFiat(FIGHTER_COST);
+            fighter->completeBuildingInstantly(&game->players[1].credit);
+
+            fighter->cmdAttack(groupTarget);
+
+            numFightersToCreate --;
+            numCreatedThisGroup ++;
+        }
+
+        difficulty ++;
+    } 
+    
+    void start(Game* game, UI* ui)
+    {
+        minigameStartFrame = game->frame;
+        spawnInFighters(game);
+    }
+
+    void update(Game* game, UI* ui)
+    {
+        if ((game->frame - minigameStartFrame) % FRAMES_BETWEEN_WAVES == 0)
+        {
+            spawnInFighters(game);
+        }
+    }
+
+    void ping(int num)
+    {}
+
+    bool isReadyToFinish(Game* game, UI* ui)
+    {
+        return false;
+    }
+
+    optional<float> getProgress(Game* game, UI* ui)
+    {
+        // hackily being used as a next wave counter
+        return {
+            float((game->frame - minigameStartFrame) % FRAMES_BETWEEN_WAVES) / FRAMES_BETWEEN_WAVES
+        };
+    }
+};
 
 // just here for copy/pasting convenience
 class TutorialStepTemplate : public TutorialStep
@@ -617,11 +755,13 @@ Tutorial::Tutorial(Game* game, UI* ui)
     steps.push_back(boost::shared_ptr<TutorialStep>(new MoreJobsStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ScuttleStep(game, ui)));
     steps.push_back(boost::shared_ptr<TutorialStep>(new ConcludeTutorialStep(game, ui)));
+    steps.push_back(boost::shared_ptr<TutorialStep>(new EndMinigameStep(game, ui)));
 
     stepIter = 0;
 }
 void Tutorial::start()
 {
+    srand(time(0));
     stepIter = 0;
     steps[stepIter]->start(game, ui);
 }

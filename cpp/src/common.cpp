@@ -77,7 +77,6 @@ vector2fl randomVectorWithMagnitude(float magnitude)
     float angle = ((double)rand() / RAND_MAX) * M_PI * 2;
     return composeVector2fl(angle, magnitude);
 }
-
 vector2fl randomVectorWithMagnitudeRange(float min, float max)
 {
     float magnitude = (((double)rand() / RAND_MAX) * (max - min)) + min;
