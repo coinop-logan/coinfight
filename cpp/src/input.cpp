@@ -1038,18 +1038,21 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
         }
     }
 
-    // mouse-edge camera move
-    vector2i screenEdgeCameraMove;
-    screenEdgeCameraMove.x =
-        (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-        (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
-        0;
-    screenEdgeCameraMove.y =
-        (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
-        (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-        0;
+    if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+    {
+        // mouse-edge camera move
+        vector2i screenEdgeCameraMove;
+        screenEdgeCameraMove.x =
+            (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+            (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
+            0;
+        screenEdgeCameraMove.y =
+            (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
+            (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+            0;
 
-    ui->camera.gamePos += screenEdgeCameraMove;
+        ui->camera.gamePos += screenEdgeCameraMove;
+    }
 
     // constrain camera
     if (ui->camera.gamePos.getMagnitude() > 4500)
