@@ -1,26 +1,57 @@
 #include "unit_interface_cmds.h"
 
-vector<boost::shared_ptr<Cmd>> noCmds;
-
 sf::Keyboard::Key InterfaceCmd::getKey()
 {
     throw runtime_error("getKey() has not been defined for this uxCmd.");
 }
-vector<boost::shared_ptr<Cmd>> InterfaceCmd::execute(UI *ui)
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> InterfaceCmd::getHotkeyInfo() const
 {
-    throw runtime_error("execute() has not been defined for this uxCmd.");
+    throw runtime_error("getHotkeyInfo() has not been defined for this uxCmd.");
 }
 
 sf::Keyboard::Key SpawnBeaconInterfaceCmd::getKey()
 {
     return sf::Keyboard::B;
 }
-vector<boost::shared_ptr<Cmd>> SpawnBeaconInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::SpawnBeacon;
-    return noCmds;
-}
 
+
+
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> SpawnBeaconInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::B, 'B', {"Spawn", "Beacon"}, {GATEWAY_COST}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> GatewayBuildPrimeInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::Q, 'Q', {"Build", "Prime"}, {PRIME_COST}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> GatewayBuildFighterInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::W, 'W', {"Build", "Fighter"}, {FIGHTER_COST}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> PrimeBuildGatewayInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::E, 'E', {"Build", "Gateway"}, {GATEWAY_COST}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> PrimeBuildTurretInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::R, 'R', {"Build", "Turret"}, {TURRET_COST}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> AttackAbsorbInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}, {}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> StopInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::S, 'S', {"Stop"}, {}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> DepositInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::D, 'D', {"Deposit"}, {}};
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> FetchInterfaceCmd::getHotkeyInfo() const
+{
+    return {sf::Keyboard::F, 'F', {"Fetch"}, {}};
+}
 
 
 
@@ -28,14 +59,14 @@ sf::Keyboard::Key UnitInterfaceCmd::getKey()
 {
     throw runtime_error("getKey() has not been defined for this uxCmd.");
 }
-vector<boost::shared_ptr<Cmd>> UnitInterfaceCmd::execute(UI *ui)
-{
-    throw runtime_error("execute() has not been defined for this uxCmd.");
-}
 
 bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     throw runtime_error("isUnitEligible() has not been defined for this uxCmd.");
+}
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> UnitInterfaceCmd::getHotkeyInfo() const
+{
+    throw runtime_error("getHotkeyInfo() has not been defined for this uxCmd.");
 }
 
 
@@ -44,12 +75,6 @@ bool UnitInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 sf::Keyboard::Key AttackAbsorbInterfaceCmd::getKey()
 {
     return sf::Keyboard::A;
-}
-vector<boost::shared_ptr<Cmd>> AttackAbsorbInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::AttackAbsorb;
-
-    return noCmds;
 }
 bool AttackAbsorbInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
@@ -63,18 +88,6 @@ sf::Keyboard::Key StopInterfaceCmd::getKey()
 {
     return sf::Keyboard::S;
 }
-vector<boost::shared_ptr<Cmd>> StopInterfaceCmd::execute(UI *ui)
-{
-    if (ui->selectedUnits.size() > 0)
-    {
-        
-        return {boost::shared_ptr<StopCmd>(new StopCmd(entityPtrsToRefsOrThrow(ui->selectedUnits)))};
-    }
-    else
-    {
-        return noCmds;
-    }
-}
 bool StopInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
@@ -86,11 +99,6 @@ bool StopInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 sf::Keyboard::Key DepositInterfaceCmd::getKey()
 {
     return sf::Keyboard::D;
-}
-vector<boost::shared_ptr<Cmd>> DepositInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::Deposit;
-    return noCmds;
 }
 bool DepositInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
@@ -104,12 +112,6 @@ sf::Keyboard::Key FetchInterfaceCmd::getKey()
 {
     return sf::Keyboard::F;
 }
-vector<boost::shared_ptr<Cmd>> FetchInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::Fetch;
-
-    return noCmds;
-}
 bool FetchInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
@@ -121,13 +123,6 @@ bool FetchInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 sf::Keyboard::Key GatewayBuildPrimeInterfaceCmd::getKey()
 {
     return sf::Keyboard::Q;
-}
-vector<boost::shared_ptr<Cmd>> GatewayBuildPrimeInterfaceCmd::execute(UI *ui)
-{
-    if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, PRIME_TYPECHAR))
-        return {cmd};
-    else
-        return noCmds;
 }
 bool GatewayBuildPrimeInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
@@ -141,13 +136,6 @@ sf::Keyboard::Key GatewayBuildFighterInterfaceCmd::getKey()
 {
     return sf::Keyboard::W;
 }
-vector<boost::shared_ptr<Cmd>> GatewayBuildFighterInterfaceCmd::execute(UI *ui)
-{
-    if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, FIGHTER_TYPECHAR))
-        return {cmd};
-    else
-        return noCmds;
-}
 bool GatewayBuildFighterInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == GATEWAY_TYPECHAR);
@@ -160,13 +148,6 @@ sf::Keyboard::Key PrimeBuildGatewayInterfaceCmd::getKey()
 {
     return sf::Keyboard::E;
 }
-vector<boost::shared_ptr<Cmd>> PrimeBuildGatewayInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::Build;
-    ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
-
-    return noCmds;
-}
 bool PrimeBuildGatewayInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == PRIME_TYPECHAR);
@@ -178,13 +159,6 @@ bool PrimeBuildGatewayInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 sf::Keyboard::Key PrimeBuildTurretInterfaceCmd::getKey()
 {
     return sf::Keyboard::R;
-}
-vector<boost::shared_ptr<Cmd>> PrimeBuildTurretInterfaceCmd::execute(UI *ui)
-{
-    ui->cmdState = UI::Build;
-    ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
-
-    return noCmds;
 }
 bool PrimeBuildTurretInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {

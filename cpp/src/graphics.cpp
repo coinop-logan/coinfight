@@ -1001,10 +1001,15 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithState *interfaceCmdWithState, unsigned char keyChar, vector<string> cmdNameLines, optional<coinsInt> maybeCost)
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &interfaceCmd)
 {
+    auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
+    char keyChar = get<1>(hotkeyInfo);
+    vector<string> cmdNameLines = get<2>(hotkeyInfo);
+    optional<coinsInt> maybeCost = get<3>(hotkeyInfo);
+
     sf::Color mainOutlineColor, nameColor, hotkeyTextColor, hotkeyBackgroundColor, hotkeyOutlineColor, costStringColor;
-    if (interfaceCmdWithState->eligible)
+    if (interfaceCmd.eligible)
     {
         mainOutlineColor = sf::Color(100, 100, 255);
         nameColor = sf::Color::White;
@@ -1088,23 +1093,11 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, InterfaceCmdWithStat
 void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
 {
     vector2i drawPos(HOTKEY_BOX_SPACING, screenDimensions.y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    drawHotkey(window, drawPos, &ui->spawnBeaconInterfaceCmdWithState, 'B', {"Spawn","Gateway"}, {GATEWAY_COST});
+    drawHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd);
 }
 
 void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
 {
-    const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> hotkeyInfo[] =
-    {
-        {sf::Keyboard::Q, 'Q', {"Build", "Prime"}, {PRIME_COST}},
-        {sf::Keyboard::W, 'W', {"Build", "Fighter"}, {FIGHTER_COST}},
-        {sf::Keyboard::E, 'E', {"Build", "Gateway"}, {GATEWAY_COST}},
-        {sf::Keyboard::R, 'R', {"Build", "Turret"}, {TURRET_COST}},
-        {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}, {}},
-        {sf::Keyboard::S, 'S', {"Stop"}, {}},
-        {sf::Keyboard::D, 'D', {"Deposit"}, {}},
-        {sf::Keyboard::F, 'F', {"Fetch"}, {}}
-    };
-
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
     vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, screenDimensions.y - (hotkeyHelpBoxHeight + 10));
@@ -1116,25 +1109,8 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
     hotkeyHelpBoudingRect.setOutlineThickness(1);
     window->draw(hotkeyHelpBoudingRect);
 
-    for (unsigned int i=0; i<8; i++)
+    for (unsigned int i=0; i<ui->unitInterfaceCmds.size(); i++)
     {
-        sf::Keyboard::Key keyCode = get<0>(hotkeyInfo[i]);
-        char keyChar = get<1>(hotkeyInfo[i]);
-        vector<string> cmdNameLines = get<2>(hotkeyInfo[i]);
-        optional<coinsInt> maybeCost = get<3>(hotkeyInfo[i]);
-
-        InterfaceCmdWithState* interfaceCmdWithState(NULL);
-        for (unsigned int j=0; j<ui->unitInterfaceCmdsWithState.size(); j++)
-        {
-            if (ui->unitInterfaceCmdsWithState[j].interfaceCmd->getKey() == keyCode)
-            {
-                interfaceCmdWithState = &ui->unitInterfaceCmdsWithState[j];
-                break;
-            }
-        }
-        if (!interfaceCmdWithState)
-            continue;
-
         vector2i drawPosOffset;
         if (i < 4)
         {
@@ -1145,7 +1121,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
             drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
         }
 
-        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, interfaceCmdWithState, keyChar, cmdNameLines, maybeCost);
+        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i]);
     }
 }
 

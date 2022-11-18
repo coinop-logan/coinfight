@@ -11,19 +11,9 @@ const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 
 class Tutorial; // define3d in tutorial.h
 
-struct InterfaceCmd; // defined in unit_interface_cmds.h
-
 struct CameraState
 {
     vector2i gamePos;
-};
-
-struct InterfaceCmdWithState
-{
-    bool eligible;
-    boost::shared_ptr<InterfaceCmd> interfaceCmd;
-    InterfaceCmdWithState(boost::shared_ptr<InterfaceCmd> interfaceCmd)
-        : eligible(false), interfaceCmd(interfaceCmd) {}
 };
 
 struct UI
@@ -45,8 +35,8 @@ struct UI
     optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;
     CameraState camera;
-    vector<InterfaceCmdWithState> unitInterfaceCmdsWithState;
-    InterfaceCmdWithState spawnBeaconInterfaceCmdWithState;
+    vector<boost::shared_ptr<UnitInterfaceCmd>> unitInterfaceCmds;
+    SpawnBeaconInterfaceCmd spawnBeaconInterfaceCmd;
     int countdownToQuitOrNeg1;
     bool quitNow;
     int escapeTextCountdownOrNeg1;

@@ -2,10 +2,13 @@
 #include "config.h"
 #include "interface.h"
 #include "tutorial.h"
+#include "cmds.h"
 
 extern Game game;
 extern UI ui;
 extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
+
+vector<boost::shared_ptr<Cmd>> noCmds;
 
 bool isShiftPressed()
 {
@@ -17,7 +20,6 @@ bool isCtrlPressed()
 }
 
 UI::UI()
-    : spawnBeaconInterfaceCmdWithState(boost::shared_ptr<InterfaceCmd>(new SpawnBeaconInterfaceCmd))
 {
     camera.gamePos = vector2fl(0, 0);
     lastMousePos = screenCenter;
@@ -25,16 +27,16 @@ UI::UI()
     cmdState = Default;
     minimapEnabled = false;
     maybeSelectionBoxStart = {};
-    unitInterfaceCmdsWithState = vector<InterfaceCmdWithState>
+    unitInterfaceCmds = vector<boost::shared_ptr<UnitInterfaceCmd>>
     {
-        boost::shared_ptr<InterfaceCmd>(new AttackAbsorbInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new StopInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new DepositInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new FetchInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
-        boost::shared_ptr<InterfaceCmd>(new PrimeBuildTurretInterfaceCmd())
+        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new AttackAbsorbInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new StopInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new FetchInterfaceCmd())
     };
     quitNow = false;
     countdownToQuitOrNeg1 = -1;
@@ -45,14 +47,14 @@ UI::UI()
 
 void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 {
-    spawnBeaconInterfaceCmdWithState.eligible = spawnBeaconAvailable;
+    spawnBeaconInterfaceCmd.eligible = spawnBeaconAvailable;
 
     // set all to false, and create a list of pointers to track those we've yet to enable
-    vector<InterfaceCmdWithState*> notYetEnabledUnitInterfaceCmds;
-    for (unsigned int i=0; i<unitInterfaceCmdsWithState.size(); i++)
+    vector<boost::shared_ptr<InterfaceCmd>> notYetEnabledUnitInterfaceCmds;
+    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
     {
-        unitInterfaceCmdsWithState[i].eligible = false;
-        notYetEnabledUnitInterfaceCmds.push_back(&unitInterfaceCmdsWithState[i]);
+        unitInterfaceCmds[i]->eligible = false;
+        notYetEnabledUnitInterfaceCmds.push_back(unitInterfaceCmds[i]);
     }
 
     for (unsigned int i=0; i<selectedUnits.size(); i++)
@@ -63,7 +65,7 @@ void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 
         for (unsigned int j=0; j<notYetEnabledUnitInterfaceCmds.size(); j++)
         {
-            if (auto unitInterfaceCmd = boost::dynamic_pointer_cast<UnitInterfaceCmd, InterfaceCmd>(notYetEnabledUnitInterfaceCmds[j]->interfaceCmd))
+            if (auto unitInterfaceCmd = boost::dynamic_pointer_cast<UnitInterfaceCmd, InterfaceCmd>(notYetEnabledUnitInterfaceCmds[j]))
             {
                 if (unitInterfaceCmd->isUnitEligible(selectedUnits[i]))
                 {
@@ -183,16 +185,85 @@ void UI::removeDuplicatesFromSelection()
     }
 }
 
+vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInterfaceCmd> unitInterfaceCmd, UI* ui)
+{
+    if (boost::dynamic_pointer_cast<AttackAbsorbInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        ui->cmdState = UI::AttackAbsorb;
+
+        return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<StopInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        if (ui->selectedUnits.size() > 0)
+        {
+            
+            return {boost::shared_ptr<StopCmd>(new StopCmd(entityPtrsToRefsOrThrow(ui->selectedUnits)))};
+        }
+        else
+        {
+            return noCmds;
+        }
+    }
+    else if (boost::dynamic_pointer_cast<DepositInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        ui->cmdState = UI::Deposit;
+        return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<FetchInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        ui->cmdState = UI::Fetch;
+
+        return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<GatewayBuildPrimeInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, PRIME_TYPECHAR))
+            return {cmd};
+        else
+            return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<GatewayBuildFighterInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, FIGHTER_TYPECHAR))
+            return {cmd};
+        else
+            return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<PrimeBuildGatewayInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        ui->cmdState = UI::Build;
+        ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+
+        return noCmds;
+    }
+    else if (boost::dynamic_pointer_cast<PrimeBuildTurretInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    {
+        ui->cmdState = UI::Build;
+        ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
+
+        return noCmds;
+    }
+    else
+    {
+        cout << "Logic error! I can't figure out which UnitInterfaceCmd that is!" << endl;
+        return noCmds;
+    }
+}
+
 vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
 {
-    if (spawnBeaconInterfaceCmdWithState.eligible && spawnBeaconInterfaceCmdWithState.interfaceCmd->getKey() == key)
-        return {spawnBeaconInterfaceCmdWithState.interfaceCmd->execute(this)};
-
-    for (unsigned int i=0; i<unitInterfaceCmdsWithState.size(); i++)
+    if (spawnBeaconInterfaceCmd.eligible && spawnBeaconInterfaceCmd.getKey() == key)
     {
-        if (unitInterfaceCmdsWithState[i].eligible && unitInterfaceCmdsWithState[i].interfaceCmd->getKey() == key)
+        cmdState = UI::SpawnBeacon;
+        return noCmds;
+    }
+
+    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
+    {
+        if (unitInterfaceCmds[i]->eligible && unitInterfaceCmds[i]->getKey() == key)
         {
-            return {unitInterfaceCmdsWithState[i].interfaceCmd->execute(this)};
+            return executeUnitInterfaceCmd(unitInterfaceCmds[i], this);
         }
     }
 
