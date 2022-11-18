@@ -377,6 +377,9 @@ public:
     void pack(Netpack::Builder* to);
     Prime(Netpack::Consumer* from);
 
+    void addToScavengeQueue_enforceUnique(Target, bool asap);
+    void addToBuildQueue_enforceUnique(EntityRef, bool asap);
+
     void cmdDeposit(EntityRef, bool asap);
     void cmdFetch(Target, bool asap);
     void cmdScuttle(boost::shared_ptr<Entity>, bool asap);
@@ -434,7 +437,7 @@ public:
     bool isIdle();
 };
 
-const coinsInt TURRET_COST = 50000;
+const coinsInt TURRET_COST = 60000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(400);
