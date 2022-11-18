@@ -6,8 +6,6 @@
 
 const fixed32 MAX_UNIT_RADIUS(30);
 
-const coinsInt GOLD_TRANSFER_RATE = 5 * HYPERSPEED_TRANSFER_MULTIPLIER;
-
 class Game;
 
 struct RegInfo {
