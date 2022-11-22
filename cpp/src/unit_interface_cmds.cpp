@@ -11,14 +11,14 @@ const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> Interfa
 
 sf::Keyboard::Key SpawnBeaconInterfaceCmd::getKey()
 {
-    return sf::Keyboard::B;
+    return sf::Keyboard::G;
 }
 
 
 
 const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> SpawnBeaconInterfaceCmd::getHotkeyInfo() const
 {
-    return {sf::Keyboard::B, 'B', {"Spawn", "Beacon"}, {GATEWAY_COST}};
+    return {sf::Keyboard::B, 'G', {"Spawn", "Gateway"}, {GATEWAY_COST}};
 }
 const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> GatewayBuildPrimeInterfaceCmd::getHotkeyInfo() const
 {
