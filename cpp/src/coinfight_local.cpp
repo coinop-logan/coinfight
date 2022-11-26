@@ -38,10 +38,13 @@ int main(int argc, char *argv[])
     bool startTutorial = true; // may be switched when processing arguments
 
     int c;
-    while ((c = getopt(argc, argv, "ns:g:w::")) != -1)
+    while ((c = getopt(argc, argv, "tns:g:w::")) != -1)
     {
         switch (c)
         {
+            case 't':
+                startTutorial = false;
+                break;
             case 's':
                 playerStartDollars = stoi(optarg);
                 startTutorial = false;
@@ -83,7 +86,15 @@ int main(int argc, char *argv[])
         firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
         firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
         firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-        firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xff0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf0ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x888f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x8fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf88f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x808f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+        if (honeypotStartingAmount > 0)
+            firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
         
         for (unsigned int i=0; i<firstEvents.size(); i++)
         {

@@ -206,11 +206,11 @@ void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp from
 
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
 {
-    float width = ceil(sqrt(goldPile->gold.getInt() / 300.0)) + 1;
+    float width = ceil(sqrt(goldPile->gold.getInt() / 150.0)) + 5;
     float height = width * .4;
     if (width > 1)
     {
-        sf::Color goldBottomColor(sf::Color(255, 180, 0));
+        sf::Color goldBottomColor(sf::Color(255, 130, 0));
         sf::Color goldTopColor(sf::Color::Yellow);
 
         sf::VertexArray diamond(sf::Quads, 4);
@@ -1503,9 +1503,11 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
             lastPlayerCredit = playerCredit;
         }
 
+        if (! ui.hideUX)
+        {
         vector<sf::String> outputStrings;
-
         drawOutputStrings(window, outputStrings);
+        }
 
         bool playerOwnsUnits(false);
         for (unsigned int i=0; i<game->entities.size(); i++)
@@ -1517,10 +1519,13 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                     break;
                 }
         }
+        if (!ui.hideUX)
+        {
         if (playerOwnsUnits)
             drawUnitHotkeyHelp(window, &ui);
         else
             drawSpawnBeaconHotkey(window, &ui);
+        }
 
         if (ui.escapeTextCountdownOrNeg1 >= 0)
         {
@@ -1530,7 +1535,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
     }
 
-    if (ui.showTutorial && tutorial && !tutorial->isFinished())
+    if (ui.showTutorial && tutorial && !tutorial->isFinished() && (!ui.hideUX))
     {
         displayTutorial(window, tutorial, game, ui, 500);
     }

@@ -43,6 +43,7 @@ UI::UI()
     escapeTextCountdownOrNeg1 = -1;
     cleanDrawEnabled = false;
     showTutorial = true; // only matters for coinfight_local right now
+    hideUX = false;
 }
 
 void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
@@ -1013,6 +1014,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                     break;
                 case sf::Keyboard::H:
                     ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
+                    break;
+                case sf::Keyboard::J:
+                    ui->hideUX = ! ui->hideUX;
                     break;
                 // case sf::Keyboard::P:
                 //     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GiftCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), 0)));

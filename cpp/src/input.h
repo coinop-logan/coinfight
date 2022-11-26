@@ -42,6 +42,7 @@ struct UI
     int escapeTextCountdownOrNeg1;
     int debugInt;
     bool cleanDrawEnabled;
+    bool hideUX;
     bool showTutorial;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
