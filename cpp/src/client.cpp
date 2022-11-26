@@ -293,92 +293,105 @@ int main(int argc, char *argv[])
         io_service.poll();
 
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
-        if (now < nextFrameStart || receivedFrameEventsPackets.size() == 0)
+        if (now < nextFrameStart)
             continue;
 
-        // we want to speed up iteration a bit if we're behind in processing packets.
-        auto nextFrameDelay = (receivedFrameEventsPackets.size() > LAG_THRESHOLD_IN_FRAMES) ?
-            ONE_FRAME / 2
-            : ONE_FRAME;
-        nextFrameStart += nextFrameDelay;
-
+        // PROCESS INPUT
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
 
-        for (unsigned int i=0; i < cmdsToSend.size(); i++)
-        {
-            if (!cmdsToSend[i])
-                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
-            else
-                connectionHandler.sendCmd(cmdsToSend[i]);
-        }
-        cmdsToSend.clear();
-
-        if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
-        {
-            // replacedGameOnResync = game;
-            if (!gameStatesAreIdentical_triggerDebugIfNot(&game, &receivedResyncs[0]))
-            {
-                cout << "Uh oh, I'm seeing some desyncs!" << endl;
-            }
-            // game = receivedResyncs[0];
-            // game.reassignEntityGamePointers();
-
-            receivedResyncs.erase(receivedResyncs.begin());
-        }
-
-        FrameEventsPacket fep = receivedFrameEventsPackets[0];
-        receivedFrameEventsPackets.erase(receivedFrameEventsPackets.begin());
-
-        assert(fep.frame == game.frame);
-
-        // go through events
-        for (unsigned int i = 0; i < fep.events.size(); i++)
-        {
-            fep.events[i]->execute(&game);
-        }
-
-        // go through cmds
-        for (unsigned int i = 0; i < fep.authdCmds.size(); i++)
-        {
-            auto cmd = fep.authdCmds[i]->cmd;
-            if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
-            {
-                unitCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
-            }
-            else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
-            {
-                spawnBeaconCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
-            }
-            else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
-            {
-                // ignore. Server processes withdrawals and creates an event.
-            }
-            else
-            {
-                cout << "Woah, I don't know how to handle that cmd as a client!" << endl;
-            }
-        }
-
-        game.iterate();
+        // ITERATE UI
         ui.iterate();
         if (ui.quitNow)
         {
             window->close();
         }
 
-        // Try to update playerId if necessary
+        // SEND CMDS
+        for (unsigned int i=0; i < cmdsToSend.size(); i++)
+        {
+            if (!cmdsToSend[i])
+                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+            else
+                connectionHandler.sendCmd(cmdsToSend[i]); 
+        }
+        cmdsToSend.clear();
+
+        // DISPLAY
+        display(window, &game, ui, &particles, maybePlayerId, {}, true);
+
+        if (game.frame % 200 == 0)
+            cout << "Lag in frames: " << receivedFrameEventsPackets.size() << endl;
+        
+        // GAME LOGIC
+
+        int framesToProcess;
+        if (receivedFrameEventsPackets.size() == 0)
+            framesToProcess = 0;
+        else if (receivedFrameEventsPackets.size() < LAG_THRESHOLD_IN_FRAMES)
+            framesToProcess = 1;
+        else
+            framesToProcess = 2;
+        
+        for (int i=0; i<framesToProcess; i++)
+        {
+            // PROCESS AND CHECK RESYNCS
+            if (receivedResyncs.size() > 0 && receivedResyncs[0].frame == game.frame)
+            {
+                // replacedGameOnResync = game;
+                if (!gameStatesAreIdentical_triggerDebugIfNot(&game, &receivedResyncs[0]))
+                {
+                    cout << "Uh oh, I'm seeing some desyncs!" << endl;
+                }
+                // game = receivedResyncs[0];
+                // game.reassignEntityGamePointers();
+
+                receivedResyncs.erase(receivedResyncs.begin());
+            }
+
+            // PROCESS EVENTS FROM SERVER
+            FrameEventsPacket fep = receivedFrameEventsPackets[0];
+            receivedFrameEventsPackets.erase(receivedFrameEventsPackets.begin());
+
+            assert(fep.frame == game.frame);
+
+            for (unsigned int i = 0; i < fep.events.size(); i++)
+            {
+                fep.events[i]->execute(&game);
+            }
+
+            // EXECUTE USER CMDS FOR THIS FRAME
+            for (unsigned int i = 0; i < fep.authdCmds.size(); i++)
+            {
+                auto cmd = fep.authdCmds[i]->cmd;
+                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
+                {
+                    unitCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
+                }
+                else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
+                {
+                    spawnBeaconCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
+                }
+                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
+                {
+                    // ignore. Server processes withdrawals and creates an event.
+                }
+                else
+                {
+                    cout << "Woah, I don't know how to handle that cmd as a client!" << endl;
+                }
+            }
+
+            // ITERATE GAME
+            game.iterate();
+        }
+
+        nextFrameStart += ONE_FRAME;
+
+        // UPDATE PLAYER ID
         if (!maybePlayerId)
         {
             maybePlayerId = game.playerAddressToMaybeId(playerAddress);
         }
-
-        // only display if we're not behind schedule
-        now = chrono::system_clock::now();
-        if (now <= nextFrameStart)
-            display(window, &game, ui, &particles, maybePlayerId, {}, true);
-
-        if (game.frame % 200 == 0)
-            cout << "num ncps " << receivedFrameEventsPackets.size() << endl;
     }
     delete window;
 
