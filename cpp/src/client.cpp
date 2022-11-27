@@ -207,6 +207,8 @@ public:
 
 int main(int argc, char *argv[])
 {
+    uint latencyAllowance = 10;
+
     bool fullscreen = true;
     bool smallScreen = false;
     if (argc-1 == 1)
@@ -327,7 +329,7 @@ int main(int argc, char *argv[])
         int framesToProcess;
         if (receivedFrameEventsPackets.size() == 0)
             framesToProcess = 0;
-        else if (receivedFrameEventsPackets.size() < LAG_THRESHOLD_IN_FRAMES)
+        else if (receivedFrameEventsPackets.size() < latencyAllowance)
             framesToProcess = 1;
         else
             framesToProcess = 2;
