@@ -28,7 +28,7 @@ prep-server:
 	cp web3-api-key bin/web3-api-key
 	cp package-assets/server/* bin/
 
-client: pre-build client-build bin/coinfight_local
+client: pre-build client-build
 
 server: pre-build server-build prep-server
 
@@ -37,11 +37,11 @@ pre-build:
 	mkdir -p bin/
 	mkdir -p dist/
 
-main-build: server-build client-build bin/coinfight_local prep-server
+all: server-build client-build prep-server
 
 server-build: bin/server
 
-client-build: bin/client
+client-build: bin/coinfight
 	cp assets/Andale_Mono.ttf bin/
 	cp assets/NotoSansCJK-Regular.ttc bin/
 
@@ -51,10 +51,7 @@ package-client:
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-bin/coinfight_local: cpp/obj/coinfight_local.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/input.o cpp/obj/graphics.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/menu.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
-
-bin/client: cpp/obj/client.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/menu.o
+bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/menu.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o

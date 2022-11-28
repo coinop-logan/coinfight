@@ -17,9 +17,9 @@ struct CameraState
     vector2i gamePos;
 };
 
-struct UI
+struct GameUI
 {
-    UI(sf::Font buttonFont);
+    GameUI(sf::Font buttonFont);
     TextButton testButton;
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
@@ -60,9 +60,9 @@ struct UI
 vector2fp screenPosToGamePos(CameraState, vector2i);
 vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos);
 Target getTargetAtScreenPos(Game *, const CameraState &, vector2i);
-boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, UI ui, Target target);
+boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, GameUI ui, Target target);
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent);
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial);
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial);
 
 boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar);
 boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos, bool asap);

@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    UI ui(mainFont);
+    GameUI ui(mainFont);
 
     ParticlesContainer particles;
 
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
         // PROCESS INPUT
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
 
-        // ITERATE UI
+        // ITERATE GameUI
         ui.iterate();
         if (ui.quitNow)
         {

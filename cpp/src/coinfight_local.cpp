@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    UI ui(mainFont);
+    GameUI ui(mainFont);
     uint8_t currentPlayerId = 0;
 
     Tutorial* tutorial = NULL;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
                 // if we have time, display and perform UX.
 
                 // poll for cmds from input
-                // (also updates UI)
+                // (also updates GameUI)
                 vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window, tutorial);
                 pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 

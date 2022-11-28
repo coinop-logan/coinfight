@@ -5,7 +5,7 @@
 #include "cmds.h"
 
 extern Game game;
-extern UI ui;
+extern GameUI ui;
 extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<boost::shared_ptr<Cmd>> noCmds;
@@ -24,7 +24,7 @@ void printHi()
     cout << "hi" << endl;
 }
 
-UI::UI(sf::Font buttonFont)
+GameUI::GameUI(sf::Font buttonFont)
     : testButton(vector2i(200, 200), printHi, "Hiiiii!", buttonFont, 22)
 {
     camera.gamePos = vector2fl(0, 0);
@@ -52,7 +52,7 @@ UI::UI(sf::Font buttonFont)
     hideUX = false;
 }
 
-void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
+void GameUI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 {
     spawnBeaconInterfaceCmd.eligible = spawnBeaconAvailable;
 
@@ -86,7 +86,7 @@ void UI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
     }
 }
 
-void UI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
+void GameUI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
 {
     vector2i halfScreenDimensions = screenDimensions / 2;
     vector2fp corner1 = this->camera.gamePos - vector2fp(halfScreenDimensions);
@@ -121,16 +121,16 @@ void UI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit>
     set_union(selectedUnitsCopy.begin(), selectedUnitsCopy.end(), ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end(), back_inserter(this->selectedUnits));
 }
 
-void UI::startEscapeToQuit()
+void GameUI::startEscapeToQuit()
 {
     countdownToQuitOrNeg1 = ESCAPE_TO_QUIT_TICKS;
     escapeTextCountdownOrNeg1 = ESCAPE_TO_QUIT_TEXT_LIFE;
 }
-void UI::cancelEscapeToQuit()
+void GameUI::cancelEscapeToQuit()
 {
     countdownToQuitOrNeg1 = -1;
 }
-void UI::iterate()
+void GameUI::iterate()
 {
     // quit countdown
     if (countdownToQuitOrNeg1 < 0)
@@ -177,7 +177,7 @@ void UI::iterate()
     // }
 }
 
-void UI::removeDuplicatesFromSelection()
+void GameUI::removeDuplicatesFromSelection()
 {
     for (unsigned int i=0; i<selectedUnits.size(); i++)
     {
@@ -192,12 +192,12 @@ void UI::removeDuplicatesFromSelection()
     }
 }
 
-vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInterfaceCmd> unitInterfaceCmd, UI* ui)
+vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInterfaceCmd> unitInterfaceCmd, GameUI* ui)
 {
     if (boost::dynamic_pointer_cast<AttackAbsorbInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = UI::AttackAbsorb;
+        ui->cmdState = GameUI::AttackAbsorb;
         unitInterfaceCmd->active = true;
 
         return noCmds;
@@ -217,7 +217,7 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     else if (boost::dynamic_pointer_cast<DepositInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = UI::Deposit;
+        ui->cmdState = GameUI::Deposit;
         unitInterfaceCmd->active = true;
 
         return noCmds;
@@ -225,7 +225,7 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     else if (boost::dynamic_pointer_cast<FetchInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = UI::Fetch;
+        ui->cmdState = GameUI::Fetch;
         unitInterfaceCmd->active = true;
 
         return noCmds;
@@ -253,7 +253,7 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     else if (boost::dynamic_pointer_cast<PrimeBuildGatewayInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = UI::Build;
+        ui->cmdState = GameUI::Build;
         ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
         unitInterfaceCmd->active = true;
 
@@ -262,7 +262,7 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     else if (boost::dynamic_pointer_cast<PrimeBuildTurretInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = UI::Build;
+        ui->cmdState = GameUI::Build;
         ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
         unitInterfaceCmd->active = true;
 
@@ -275,12 +275,12 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
     }
 }
 
-vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
+vector<boost::shared_ptr<Cmd>> GameUI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
 {
     if (spawnBeaconInterfaceCmd.eligible && spawnBeaconInterfaceCmd.getKey() == key)
     {
         returnToDefaultState();
-        cmdState = UI::SpawnBeacon;
+        cmdState = GameUI::SpawnBeacon;
         spawnBeaconInterfaceCmd.active = true;
 
         return noCmds;
@@ -297,7 +297,7 @@ vector<boost::shared_ptr<Cmd>> UI::handlePossibleUnitInterfaceCmd(sf::Keyboard::
     return {};
 }
 
-bool UI::selectionHasGateways()
+bool GameUI::selectionHasGateways()
 {
     for (unsigned int i=0; i<selectedUnits.size(); i++)
     {
@@ -312,7 +312,7 @@ bool UI::selectionHasGateways()
     return false;
 }
 
-bool UI::selectionWouldStaySegregated(uint8_t typechar)
+bool GameUI::selectionWouldStaySegregated(uint8_t typechar)
 {
     if (selectedUnits.size() == 0) return true;
 
@@ -378,7 +378,7 @@ Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i
         return Target(gamePos);
 }
 
-boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, UI ui, int playerID, Target target)
+boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int playerID, Target target)
 {
     boost::shared_ptr<Cmd> noCmd;
     if (ui.selectedUnits.size() == 0)
@@ -635,7 +635,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
     }
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
 {
     bool spawnBeaconAvailable = maybePlayerId ?
         ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
@@ -819,12 +819,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                 {
                     switch (ui->cmdState)
                     {
-                        case UI::Default:
+                        case GameUI::Default:
                         {
                             ui->maybeSelectionBoxStart = {vector2i(mouseButtonToVec(event.mouseButton))};
                         }
                         break;
-                        case UI::SpawnBeacon:
+                        case GameUI::SpawnBeacon:
                         {
                             vector2fp spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
 
@@ -835,7 +835,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             }
                         }
                         break;
-                        case UI::AttackAbsorb:
+                        case GameUI::AttackAbsorb:
                         {
                             Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
 
@@ -868,7 +868,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             }
                         }
                         break;
-                        case UI::Deposit:
+                        case GameUI::Deposit:
                         {
                             Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
 
@@ -887,7 +887,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             }
                         }
                         break;
-                        case UI::Fetch:
+                        case GameUI::Fetch:
                         {
                             Target clickTarget = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
                             if (auto targetEntity = clickTarget.castToEntityPtr(*game))
@@ -959,7 +959,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                             }
                         }
                         break;
-                        case UI::Build:
+                        case GameUI::Build:
                         {
                             vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                             vector2fl buildPos(screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton)));
@@ -974,7 +974,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                 }
                 else if (event.mouseButton.button == sf::Mouse::Right)
                 {
-                    if (ui->cmdState == UI::Default)
+                    if (ui->cmdState == GameUI::Default)
                     {
                         if (ui->selectedUnits.size() > 0)
                         {
@@ -1005,7 +1005,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
                     ui->minimapEnabled = !(ui->minimapEnabled);
                     break;
                 case sf::Keyboard::Escape:
-                    if (ui->cmdState != UI::Default)
+                    if (ui->cmdState != GameUI::Default)
                     {
                         ui->returnToDefaultState();
                     }
@@ -1073,7 +1073,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, UI *ui, o
     return cmdsToSend;
 }
 
-void UI::returnToDefaultState()
+void GameUI::returnToDefaultState()
 {
     cmdState = Default;
     spawnBeaconInterfaceCmd.active = false;

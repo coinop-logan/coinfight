@@ -26,8 +26,6 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
-sf::Font mainFont, tutorialFont;
-
 float radToDeg(float rad)
 {
     return rad * (180 / M_PI);
@@ -61,13 +59,16 @@ public:
     }
 };
 
-sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
+void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 {
-    if (!mainFont.loadFromFile("Andale_Mono.ttf"))
+    if (!mainFont->loadFromFile("Andale_Mono.ttf"))
         throw runtime_error("Can't load main font");
-    if (!tutorialFont.loadFromFile("NotoSansCJK-Regular.ttc"))
+    if (!tutorialFont->loadFromFile("NotoSansCJK-Regular.ttc"))
         throw runtime_error("Can't load tutorial font");
+}
 
+void setupGraphics(sf::RenderWindow* window, bool fullscreen, bool smallScreen)
+{
     // choose a good videomode
     sf::VideoMode chosenMode;
     if (smallScreen)
@@ -117,10 +118,9 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
                    : sf::Style::Close | sf::Style::Titlebar;
-    sf::RenderWindow *window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
-    window->setKeyRepeatEnabled(false);
 
-    return window;
+    window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
+    window->setKeyRepeatEnabled(false);
 }
 
 void drawBackground(sf::RenderWindow *window, CameraState camera)
@@ -485,13 +485,13 @@ void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entit
     window->draw(pixel);
 }
 
-void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool drawWalletHints)
+void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool drawWalletHints)
 {
     if (drawWalletHints)
     {
         vector<sf::Text> hints
-            {sf::Text(sf::String("This can be spent or captured via Gateways"), mainFont, 16),
-            sf::Text(sf::String("and withdraws/deposits into xDai."), mainFont, 16)
+            {sf::Text(sf::String("This can be spent or captured via Gateways"), font, 16),
+            sf::Text(sf::String("and withdraws/deposits into xDai."), font, 16)
             };
 
         sf::Transform hintsTransform;
@@ -507,9 +507,9 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
 
     int textSpacing = 10;
 
-    sf::Text title(sf::String("Wallet"), mainFont, 24);
+    sf::Text title(sf::String("Wallet"), font, 24);
 
-    sf::Text balance(sf::String(playerBalance->getDollarString()), mainFont, 30);
+    sf::Text balance(sf::String(playerBalance->getDollarString()), font, 30);
     balance.setFillColor(balanceTextColor);
 
     sf::Transform transform;
@@ -521,11 +521,11 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Colo
     window->draw(balance, transform);
 }
 
-void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings)
+void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font font)
 {
     for (unsigned int i=0; i<strings.size(); i++)
     {
-        sf::Text text(strings[i], mainFont, 16);
+        sf::Text text(strings[i], font, 16);
         text.setFillColor(sf::Color(150, 150, 150));
 
         float width = text.getLocalBounds().width;
@@ -735,7 +735,7 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
-void drawGhostBuilding(sf::RenderWindow *window, const UI &ui, vector2i mousePos)
+void drawGhostBuilding(sf::RenderWindow *window, const GameUI &ui, vector2i mousePos)
 {
     window->setMouseCursorVisible(false);
 
@@ -760,7 +760,7 @@ void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
     window->draw(rect);
 }
 
-void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t> maybePlayerId)
+void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint8_t> maybePlayerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
@@ -773,7 +773,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
         // depending on cmdState and mouseoverEntity
         switch (ui.cmdState)
         {
-            case UI::Default:
+            case GameUI::Default:
                 if (ui.mouseoverEntity)
                 {
                     if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Foreign)
@@ -790,10 +790,10 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawNormalCursor(window);
                 }
                 break;
-            case UI::SpawnBeacon:
+            case GameUI::SpawnBeacon:
                 drawTargetCursor(window, mousePos, sf::Color::Yellow);
                 break;
-            case UI::AttackAbsorb:
+            case GameUI::AttackAbsorb:
                 if (ui.mouseoverEntity)
                 {
                     drawBracketsCursor(window, mousePos, sf::Color::Red);
@@ -803,7 +803,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawTargetCursor(window, mousePos, sf::Color::Red);
                 }
                 break;
-            case UI::Deposit:
+            case GameUI::Deposit:
                 if (ui.mouseoverEntity)
                 {
                     drawBracketsCursor(window, mousePos, sf::Color::Blue);
@@ -813,7 +813,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     drawTargetCursor(window, mousePos, sf::Color::Blue);
                 }
                 break;
-            case UI::Fetch:
+            case GameUI::Fetch:
                 if (ui.mouseoverEntity)
                 {
                     if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -837,7 +837,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, UI ui, optional<uint8_t>
                     }
                 }
                 break;
-            case UI::Build:
+            case GameUI::Build:
                 drawGhostBuilding(window, ui, mousePos);
                 break;
         }
@@ -849,7 +849,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
     drawCircleAround(window, gamePosToScreenPos(camera, entity->getPos()), 15, 1, sf::Color::Green);
 }
 
-void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, optional<uint8_t> maybePlayerId)
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI ui, optional<uint8_t> maybePlayerId, sf::Font font)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -888,7 +888,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, option
         vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
-            sf::Text aboveText(displayAboveCoins->getDollarString(), mainFont, 16);
+            sf::Text aboveText(displayAboveCoins->getDollarString(), font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
             vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(30));
@@ -908,7 +908,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, option
         }
         if (displayBelowCoins && displayBelowCoins->getInt() > 0)
         {
-            sf::Text belowText(displayBelowCoins->getDollarString(), mainFont, 16);
+            sf::Text belowText(displayBelowCoins->getDollarString(), font, 16);
             sf::FloatRect textRec = belowText.getLocalBounds();
 
             vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(-20));
@@ -929,7 +929,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, UI ui, option
     }
 }
 
-void drawUnitHealthBars(sf::RenderWindow* window, Game* game, UI ui, optional<uint8_t> maybePlayerId)
+void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI ui, optional<uint8_t> maybePlayerId)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -979,7 +979,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, UI ui, optional<ui
     }
 }
 
-void drawArrow(sf::RenderWindow* window, UI ui, vector2fp drawPos, bool pointingUp, sf::Color color)
+void drawArrow(sf::RenderWindow* window, GameUI ui, vector2fp drawPos, bool pointingUp, sf::Color color)
 {
     sf::ConvexShape arrowPoint;
     arrowPoint.setPointCount(3);
@@ -1002,7 +1002,7 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &interfaceCmd)
+void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &interfaceCmd, sf::Font font)
 {
     auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
     char keyChar = get<1>(hotkeyInfo);
@@ -1037,7 +1037,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
     rectShape.setOutlineThickness(1);
     window->draw(rectShape);
 
-    sf::Text hotkeyText(string(1, keyChar), mainFont, 14);
+    sf::Text hotkeyText(string(1, keyChar), font, 14);
     hotkeyText.setFillColor(hotkeyTextColor);
 
     // determine horizontal placement of hotkey
@@ -1068,7 +1068,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
     if (maybeCost)
     {
         string coinsString = coinsIntToDollarString(*maybeCost);
-        sf::Text costText(coinsString, mainFont, 12);
+        sf::Text costText(coinsString, font, 12);
         costText.setFillColor(costStringColor);
 
         int width = costText.getLocalBounds().width;
@@ -1082,7 +1082,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
     vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
     for (unsigned int i=0; i<cmdNameLines.size(); i++)
     {
-        sf::Text lineText(cmdNameLines[i], mainFont, 12);
+        sf::Text lineText(cmdNameLines[i], font, 12);
 
         float width = lineText.getGlobalBounds().width;
         float lineXFromCenter = - width / 2;
@@ -1095,13 +1095,13 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
     }
 }
 
-void drawSpawnBeaconHotkey(sf::RenderWindow* window, UI *ui)
+void drawSpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font font)
 {
     vector2i drawPos(HOTKEY_BOX_SPACING, screenDimensions.y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    drawHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd);
+    drawHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
 }
 
-void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
+void drawUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
 {
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
@@ -1126,14 +1126,14 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, UI *ui)
             drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
         }
 
-        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i]);
+        drawHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i], font);
     }
 }
 
-void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdown, int countdownToQuitOrNeg1)
+void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdown, int countdownToQuitOrNeg1, sf::Font font)
 {
-    sf::Text escapeQuitText("Hold Escape to quit.", mainFont, 40);
-    sf::Text extraText("This will automatically withdraw your balance", mainFont, 20);
+    sf::Text escapeQuitText("Hold Escape to quit.", font, 40);
+    sf::Text extraText("This will automatically withdraw your balance", font, 20);
 
     int alpha = ((float)escapeTextCountdown / ESCAPE_TO_QUIT_TEXT_LIFE) * 255;
     escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
@@ -1184,12 +1184,12 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
-void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int fontSize, int width, sf::Transform* transform)
+void wrapAndRenderText(sf::RenderWindow* window, string textBlock, sf::Font font, int fontSize, int width, sf::Transform* transform)
 {
     vector<string> words = splitLineIntoWords(textBlock);
 
     string wrappedTextBlock("");
-    sf::Text renderedTextBlock(sf::String(""), tutorialFont, fontSize);
+    sf::Text renderedTextBlock(sf::String(""), font, fontSize);
     for (unsigned i=0; i<words.size(); i++)
     {
         auto word = words[i];
@@ -1214,7 +1214,7 @@ void wrapAndRenderText(sf::RenderWindow* window, string textBlock, int fontSize,
     transform->translate(sf::Vector2f(0, fontSize + renderedTextBlock.getLocalBounds().height));
 }
 
-void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, UI ui, int boxWidth)
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI ui, int boxWidth, sf::Font font)
 {
     sf::Transform transform;
     transform.translate(
@@ -1229,7 +1229,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, U
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
-        wrapAndRenderText(window, preBarTextBlocks[i], 13, boxWidth, &transform);
+        wrapAndRenderText(window, preBarTextBlocks[i], font, 13, boxWidth, &transform);
     }
 
     if (auto progress = tutorial->currentStep()->getProgress(game, &ui))
@@ -1255,19 +1255,19 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, U
 
             for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
             {
-                wrapAndRenderText(window, postBarTextBlocks[i], 13, boxWidth, &transform);
+                wrapAndRenderText(window, postBarTextBlocks[i], font, 13, boxWidth, &transform);
             }
         }
     }
     
     if (tutorial->currentStep()->isReadyToFinish(game, &ui) && tutorial->currentStep()->waitForEnter)
     {
-        wrapAndRenderText(window, "Press enter to continue", 16, boxWidth, &transform);
+        wrapAndRenderText(window, "Press enter to continue", font, 16, boxWidth, &transform);
     }
 }
 
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial* tutorial, bool drawWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
 {
     if (ui.minimapEnabled)
     {
@@ -1485,7 +1485,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
         if (!ui.cleanDrawEnabled)
         {
-            drawUnitDroppableValues(window, game, ui, maybePlayerId);
+            drawUnitDroppableValues(window, game, ui, maybePlayerId, mainFont);
             drawUnitHealthBars(window, game, ui, maybePlayerId);
         }
 
@@ -1499,7 +1499,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
                 playerCredit > lastPlayerCredit ?      sf::Color::Green :
                                                         sf::Color::Red
                 );
-            drawAccountBalance(window, &game->players[playerId].credit,balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
+            drawAccountBalance(window, &game->players[playerId].credit, mainFont, balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
 
             lastPlayerCredit = playerCredit;
         }
@@ -1507,7 +1507,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         if (! ui.hideUX)
         {
         vector<sf::String> outputStrings;
-        drawOutputStrings(window, outputStrings);
+        drawOutputStrings(window, outputStrings, mainFont);
         }
 
         bool playerOwnsUnits(false);
@@ -1523,14 +1523,14 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
         if (!ui.hideUX)
         {
         if (playerOwnsUnits)
-            drawUnitHotkeyHelp(window, &ui);
+            drawUnitHotkeyHelp(window, &ui, mainFont);
         else
-            drawSpawnBeaconHotkey(window, &ui);
+            drawSpawnBeaconHotkey(window, &ui, mainFont);
         }
 
         if (ui.escapeTextCountdownOrNeg1 >= 0)
         {
-            drawEscapeQuitText(window, (unsigned int)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1);
+            drawEscapeQuitText(window, (unsigned int)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1, mainFont);
         }
 
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
@@ -1538,7 +1538,7 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
 
     if (ui.showTutorial && tutorial && !tutorial->isFinished() && (!ui.hideUX))
     {
-        displayTutorial(window, tutorial, game, ui, 500);
+        displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
     }
 
     ui.testButton.draw(window);

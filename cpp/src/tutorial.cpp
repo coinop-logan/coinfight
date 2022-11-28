@@ -20,14 +20,14 @@ void setupTutorialScenario(Game* game)
     // game->registerNewEntityIgnoringCollision(fighter);
 }
 
-TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, UI* ui):
+TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, GameUI* ui):
     idName(idName), waitForEnter(waitForEnter) {}
 
-void TutorialStep::start(Game* game, UI* ui)
+void TutorialStep::start(Game* game, GameUI* ui)
 {
     throw runtime_error("start() has not been defined for tutorial step '" + idName + "'.\n");
 }
-void TutorialStep::update(Game* game, UI* ui)
+void TutorialStep::update(Game* game, GameUI* ui)
 {
     throw runtime_error("update() has not been defined for tutorial step '" + idName + "'.\n");
 }
@@ -35,15 +35,15 @@ void TutorialStep::ping(int num)
 {
     throw runtime_error("ping() has not been defined for tutorial step '" + idName + "'.\n");
 }
-bool TutorialStep::isReadyToFinish(Game* game, UI* ui)
+bool TutorialStep::isReadyToFinish(Game* game, GameUI* ui)
 {
     throw runtime_error("isReadyToFinish() has not been defined for tutorial step '" + idName + "'.\n");
 }
-optional<float> TutorialStep::getProgress(Game* game, UI* ui)
+optional<float> TutorialStep::getProgress(Game* game, GameUI* ui)
 {
     return {};
 }
-tuple<vector<string>, vector<string>> TutorialStep::getText(Game* game, UI* ui)
+tuple<vector<string>, vector<string>> TutorialStep::getText(Game* game, GameUI* ui)
 {
     throw runtime_error("getText() has not been defined for tutorial step '" + idName + "'.\n");
 }
@@ -54,14 +54,14 @@ public:
     float distanceMoved;
     vector2i lastCameraPos;
 
-    CameraStep(Game* game, UI* ui):
+    CameraStep(Game* game, GameUI* ui):
         TutorialStep("camera", false, game, ui)
     {
         distanceMoved = 0;
         lastCameraPos = ui->camera.gamePos;
     }
 
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -74,10 +74,10 @@ public:
         };
     }
 
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {
         distanceMoved += (lastCameraPos - ui->camera.gamePos).getMagnitude();
         lastCameraPos = ui->camera.gamePos;
@@ -86,12 +86,12 @@ public:
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return distanceMoved >= 2000;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         return distanceMoved / 2000.0;
     }
@@ -100,11 +100,11 @@ public:
 class SpawnBeaconStep : public TutorialStep
 {
 public:
-    SpawnBeaconStep(Game* game, UI* ui)
+    SpawnBeaconStep(Game* game, GameUI* ui)
         : TutorialStep("beacon", false, game, ui)
     {}
 
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -117,13 +117,13 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return (game->entities.size() > 0);
     }
@@ -132,11 +132,11 @@ public:
 class SpawnFinishStep : public TutorialStep
 {
 public:
-    SpawnFinishStep(Game* game, UI* ui):
+    SpawnFinishStep(Game* game, GameUI* ui):
         TutorialStep("spawnfinish", true, game, ui)
     {}
     
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -150,23 +150,23 @@ public:
         };
     }
 
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         auto gateways = filterForType<Gateway, Entity>(game->entities);
 
         return (gateways.size() > 0);
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         auto gateways = filterForType<Gateway, Entity>(game->entities);
         if (gateways.size() > 0)
@@ -188,11 +188,11 @@ public:
 class BuildFirstPrimeStep : public TutorialStep
 {
 public:
-    BuildFirstPrimeStep(Game* game, UI* ui)
+    BuildFirstPrimeStep(Game* game, GameUI* ui)
         : TutorialStep("firstprime", true, game, ui)
         {}
     
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -207,23 +207,23 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         auto primes = filterForType<Prime, Entity>(game->entities);
 
         return (primes.size() > 0 && primes[0]->getBuiltRatio() == fixed32(1));
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         auto primes = filterForType<Prime, Entity>(game->entities);
 
@@ -238,11 +238,11 @@ public:
 class PickupGoldStep : public TutorialStep
 {
 public:
-    PickupGoldStep(Game* game, UI* ui)
+    PickupGoldStep(Game* game, GameUI* ui)
         : TutorialStep("pickupgold", true, game, ui)
         {}
 
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -256,7 +256,7 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {
         auto gateways = filterForType<Gateway, Entity>(game->entities);
 
@@ -267,7 +267,7 @@ public:
         game->registerNewEntityIgnoringCollision(gp1);
     }
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
@@ -285,12 +285,12 @@ public:
 
         return total;
     }
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.2));
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.2));
     }
@@ -299,11 +299,11 @@ public:
 class ReturnGoldStep : public TutorialStep
 {
 public:
-    ReturnGoldStep(Game* game, UI* ui)
+    ReturnGoldStep(Game* game, GameUI* ui)
         : TutorialStep("returngold", true, game, ui)
         {}
 
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -318,21 +318,21 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return (game->players[0].credit.getInt() >= dollarsToCoinsIntND(0.2));
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         return (float(game->players[0].credit.getInt()) / dollarsToCoinsIntND(0.2));
     }
@@ -343,13 +343,13 @@ class MoreJobsStep : public TutorialStep
 public:
     int numGPsCreated;
 
-    MoreJobsStep(Game* game, UI* ui)
+    MoreJobsStep(Game* game, GameUI* ui)
         : TutorialStep("morejobs", true, game, ui)
     {
         numGPsCreated = 0;
     }
     
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -367,11 +367,11 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {
     }
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {
         if (game->frame % 10 == 0 && numGPsCreated < 10)
         {
@@ -413,12 +413,12 @@ public:
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return primeBuildProgress(game) >= 2;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         return (primeBuildProgress(game) - 1);
     }
@@ -428,11 +428,11 @@ class ScuttleStep : public TutorialStep
 {
 public:
     int startingNumPrimes;
-    ScuttleStep(Game* game, UI* ui)
+    ScuttleStep(Game* game, GameUI* ui)
         : TutorialStep("scuttle", true, game, ui)
         {}
         
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -462,23 +462,23 @@ public:
         return count;
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {
         startingNumPrimes = getNumPrimes(game);
     }
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return getNumPrimes(game) < startingNumPrimes;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         if (isReadyToFinish(game, ui))
             return 1;
@@ -506,11 +506,11 @@ public:
 class ConcludeTutorialStep : public TutorialStep
 {
 public:
-    ConcludeTutorialStep(Game* game, UI* ui)
+    ConcludeTutorialStep(Game* game, GameUI* ui)
         : TutorialStep("buildstuff", false, game, ui)
         {}
         
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -526,16 +526,16 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         auto combatUnits = filterForType<CombatUnit, Entity>(game->entities);
 
@@ -551,7 +551,7 @@ public:
         return finished >= 2;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         auto combatUnits = filterForType<CombatUnit, Entity>(game->entities);
 
@@ -590,11 +590,11 @@ public:
     int minigameStartFrame;
     int difficulty;
 
-    EndMinigameStep(Game* game, UI* ui)
+    EndMinigameStep(Game* game, GameUI* ui)
         : TutorialStep("minigame", false, game, ui)
         {}
          
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         int numFighersComing = 0;
         for (unsigned int i=0; i<game->entities.size(); i++)
@@ -673,13 +673,13 @@ public:
         difficulty ++;
     } 
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {
         minigameStartFrame = game->frame;
         spawnInFighters(game);
     }
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {
         if ((game->frame - minigameStartFrame) % FRAMES_BETWEEN_WAVES == 0)
         {
@@ -690,12 +690,12 @@ public:
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return false;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         // hackily being used as a next wave counter
         return {
@@ -708,11 +708,11 @@ public:
 class TutorialStepTemplate : public TutorialStep
 {
 public:
-    TutorialStepTemplate(Game* game, UI* ui)
+    TutorialStepTemplate(Game* game, GameUI* ui)
         : TutorialStep("name", false, game, ui)
         {}
         
-    tuple<vector<string>, vector<string>> getText(Game* game, UI* ui)
+    tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
     {
         return
         {
@@ -723,27 +723,27 @@ public:
         };
     }
     
-    void start(Game* game, UI* ui)
+    void start(Game* game, GameUI* ui)
     {}
 
-    void update(Game* game, UI* ui)
+    void update(Game* game, GameUI* ui)
     {}
 
     void ping(int num)
     {}
 
-    bool isReadyToFinish(Game* game, UI* ui)
+    bool isReadyToFinish(Game* game, GameUI* ui)
     {
         return false;
     }
 
-    optional<float> getProgress(Game* game, UI* ui)
+    optional<float> getProgress(Game* game, GameUI* ui)
     {
         return {};
     }
 };
 
-Tutorial::Tutorial(Game* game, UI* ui)
+Tutorial::Tutorial(Game* game, GameUI* ui)
     : game(game), ui(ui)
 {
     steps.push_back(boost::shared_ptr<TutorialStep>(new CameraStep(game, ui)));
