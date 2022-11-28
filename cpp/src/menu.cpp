@@ -62,7 +62,7 @@ void Button::draw(sf::RenderWindow* window)
     else // mouseover && pressed
     {
         buttonRect.setFillColor(sf::Color(50, 50, 100));
-        buttonRect.setOutlineColor(sf::Color(150, 150, 255));
+        buttonRect.setOutlineColor(sf::Color(150, 150, 255, 200));
     }
 
     window->draw(buttonRect);
@@ -105,8 +105,9 @@ MainMenu::MainMenu(vector<tuple<string, MainMenuEvent>> buttonInfos, sf::Font fo
     vector2i centerPos = screenDimensions / 2;
 
     int height =
-        (buttonInfos.size() * (MAIN_MENU_BUTTON_HEIGHT + MAIN_MENU_BUTTON_SPACING))
-        + (MAIN_MENU_PADDING * 2);
+        (buttonInfos.size() * MAIN_MENU_BUTTON_HEIGHT) // total button height
+      + (buttonInfos.size() == 0 ? 0 : (buttonInfos.size() - 1) * MAIN_MENU_BUTTON_SPACING)
+      + (MAIN_MENU_PADDING * 2);
     
     int width = MAIN_MENU_WIDTH;
 
@@ -146,8 +147,9 @@ void MainMenu::draw(sf::RenderWindow* window)
 {
     sf::RectangleShape mainBox(toSFVec(vector2fl(p2 - p1)));
     mainBox.setPosition(toSFVec(vector2fl(p1)));
-    mainBox.setOutlineColor(sf::Color(0, 0, 255));
+    mainBox.setFillColor(sf::Color::Black);
     mainBox.setOutlineThickness(1);
+    mainBox.setOutlineColor(sf::Color(0, 0, 255));
     window->draw(mainBox);
 
     for (uint i=0; i<boundButtons.size(); i++)
