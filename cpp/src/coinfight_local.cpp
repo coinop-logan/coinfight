@@ -24,7 +24,7 @@
 
 Game game;
 
-UI ui;
+extern sf::Font mainFont;
 
 int main(int argc, char *argv[])
 {
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    ui = UI();
+    UI ui(mainFont);
     uint8_t currentPlayerId = 0;
 
     Tutorial* tutorial = NULL;

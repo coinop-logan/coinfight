@@ -8,6 +8,7 @@
 #include "config.h"
 #include "tutorial.h"
 #include "graphics_helpers.h"
+#include "menu.h"
 
 using namespace std;
 
@@ -1539,6 +1540,8 @@ void display(sf::RenderWindow *window, Game *game, UI ui, ParticlesContainer *pa
     {
         displayTutorial(window, tutorial, game, ui, 500);
     }
+
+    ui.testButton.draw(window);
 
     window->display();
 }

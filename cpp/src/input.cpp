@@ -19,7 +19,13 @@ bool isCtrlPressed()
     return sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
 }
 
-UI::UI()
+void printHi()
+{
+    cout << "hi" << endl;
+}
+
+UI::UI(sf::Font buttonFont)
+    : testButton(vector2i(200, 200), printHi, "Hiiiii!", buttonFont, 22)
 {
     camera.gamePos = vector2fl(0, 0);
     lastMousePos = screenCenter;

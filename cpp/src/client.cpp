@@ -29,7 +29,7 @@ using vch = vector<unsigned char>;
 
 Game game;
 
-UI ui;
+extern sf::Font mainFont;
 
 vector<FrameEventsPacket> receivedFrameEventsPackets;
 vector<Game> receivedResyncs;
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    ui = UI();
+    UI ui(mainFont);
 
     ParticlesContainer particles;
 

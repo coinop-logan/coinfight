@@ -3,6 +3,7 @@
 #include "cmds.h"
 #include "unit_interface_cmds.h"
 #include "interface.h"
+#include "menu.h"
 
 #ifndef INPUT_H
 #define INPUT_H
@@ -18,7 +19,8 @@ struct CameraState
 
 struct UI
 {
-    UI();
+    UI(sf::Font buttonFont);
+    TextButton testButton;
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;
