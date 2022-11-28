@@ -59,9 +59,9 @@ struct ParticlesContainer
     void addLineParticle(boost::shared_ptr<LineParticle> lineParticle);
 };
 
-void setupGraphics(sf::RenderWindow* window, bool fullscreen, bool smallScreen);
+sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
 void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial*, bool drawWalletHints);
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont);
-void cleanupGraphics();
+void cleanupGraphics(sf::RenderWindow* window);
 
 #endif // GRAPHICS_H

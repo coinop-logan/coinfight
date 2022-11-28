@@ -67,7 +67,7 @@ void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
         throw runtime_error("Can't load tutorial font");
 }
 
-void setupGraphics(sf::RenderWindow* window, bool fullscreen, bool smallScreen)
+sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     // choose a good videomode
     sf::VideoMode chosenMode;
@@ -119,8 +119,10 @@ void setupGraphics(sf::RenderWindow* window, bool fullscreen, bool smallScreen)
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
                    : sf::Style::Close | sf::Style::Titlebar;
 
-    window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
+    sf::RenderWindow* window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
+
+    return window;
 }
 
 void drawBackground(sf::RenderWindow *window, CameraState camera)
@@ -1541,7 +1543,10 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
         displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
     }
 
-    ui.testButton.draw(window);
-
     window->display();
+}
+
+void cleanupGraphics(sf::RenderWindow* window)
+{
+    delete window;
 }

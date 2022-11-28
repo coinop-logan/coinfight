@@ -54,10 +54,31 @@ int main(int argc, char *argv[])
     sf::Font mainFont, tutorialFont;
     loadFonts(&mainFont, &tutorialFont);
 
-    sf::RenderWindow window;
-    setupGraphics(&window, fullscreen, smallScreen);
+    sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    
+    MainMenu mainMenu({}, mainFont);
+
+    while (window->isOpen())
+    {
+        sf::Event event;
+        while (window->pollEvent(event))
+        {
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                    window->close();
+                    break;
+                default:
+                {
+                    mainMenu.processEvent(event);
+                }
+            }
+        }
+        mainMenu.draw(window);
+        window->display();
+    }
+
+    cleanupGraphics(window);
 }
 
 // void oldStuff() {
@@ -110,8 +131,8 @@ int main(int argc, char *argv[])
 //     int lastDisplayedFrame = -1;
 
 //     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
-//     while (window->isOpen())
-//     {
+    
+//     while (window->isOpen()) {
 //         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
 //         if (now < nextFrameStart)
 //         {

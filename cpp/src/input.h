@@ -19,8 +19,7 @@ struct CameraState
 
 struct GameUI
 {
-    GameUI(sf::Font buttonFont);
-    TextButton testButton;
+    GameUI();
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;

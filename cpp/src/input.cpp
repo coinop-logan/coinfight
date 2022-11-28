@@ -24,8 +24,7 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::Font buttonFont)
-    : testButton(vector2i(200, 200), printHi, "Hiiiii!", buttonFont, 22)
+GameUI::GameUI()
 {
     camera.gamePos = vector2fl(0, 0);
     lastMousePos = screenCenter;
