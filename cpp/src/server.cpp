@@ -345,17 +345,17 @@ void actuateWithdrawal(Address userAddress, coinsInt amount)
     withdrawDescriptorFile << writeData;
     withdrawDescriptorFile.close();
 
-    filesystem::rename(filename, "./accounting/pending_withdrawals/" + filename);
+    filesystem::rename(filename, "./events_out/withdrawals/" + filename);
 }
 
-vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
+vector<boost::shared_ptr<Event>> pollPendingEvents()
 {
     vector<boost::shared_ptr<Event>> events;
 
-    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::path depositsDirPath("./events_in/deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
-    for (boost::filesystem::directory_iterator dirIter(accountingDirPath); dirIter != directoryEndIter; dirIter++)
+    for (boost::filesystem::directory_iterator dirIter(depositsDirPath); dirIter != directoryEndIter; dirIter++)
     {
         if (boost::filesystem::is_regular_file(dirIter->path())) {
             string depositFilePath = dirIter->path().string();
@@ -397,6 +397,25 @@ vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
         }
     }
 
+    boost::filesystem::path eventsDirPath("./events_in/");
+    directoryEndIter = boost::filesystem::directory_iterator(); // default constructor makes it an end_iter
+
+    bool resetBeacons = false;
+    for (boost::filesystem::directory_iterator dirIter(eventsDirPath); dirIter != directoryEndIter; dirIter++)
+    {
+        // right now just consumes ANY REGULAR FILE in this dir as a beacon reset
+        // once more events are at play, we should check the name. Python already renames this type of file simply "reset_beacons".
+        if (boost::filesystem::is_regular_file(dirIter->path())) {
+            resetBeacons = true;
+
+            boost::filesystem::remove(dirIter->path());
+        }
+    }
+    if (resetBeacons)
+    {
+        events.push_back(boost::shared_ptr<Event>(new ResetBeaconsEvent()));
+    }
+
     return events;
 }
 
@@ -410,7 +429,7 @@ int main(int argc, char *argv[])
     listener.startAccept();
 
     // server will scan this directory for pending deposits (supplied by py/balance_tracker.py)
-    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::path depositsDirPath("./events_in/deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
@@ -456,7 +475,7 @@ int main(int argc, char *argv[])
         pendingWithdrawEvents.clear();
 
         // scan for any pending deposits or honeypotAdd events
-        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingDepositsAndHoneypotEvents();
+        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingEvents();
         pendingEvents.insert(pendingEvents.end(), depositAndHoneypotEvents.begin(), depositAndHoneypotEvents.end());
 
         // build FrameEventsPacket for this frame
