@@ -14,7 +14,7 @@ const int MAIN_MENU_BUTTON_FONT_SIZE = 18;
 const int MAIN_MENU_BUTTON_HEIGHT = 22;
 const int MAIN_MENU_BUTTON_SPACING = 8;
 const int MAIN_MENU_PADDING = 5;
-const int MAIN_MENU_WIDTH = 200;
+const int MAIN_MENU_WIDTH = 400;
 
 class Button
 {
