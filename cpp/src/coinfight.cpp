@@ -21,11 +21,22 @@
 #include "events.h"
 #include "packets.h"
 #include "tutorial.h"
+#include "client_networking.h"
 
 sf::Font mainFont, tutorialFont;
 
 void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float playerStartDollars, bool checkNetpack);
 void runTutorial(sf::RenderWindow* window);
+void runClient(sf::RenderWindow* window, string serverIP);
+
+enum MainMenuEvent
+{
+    StartLocal,
+    StartLocalDebug,
+    StartTutorial,
+    StartClient,
+    StartClientWithLocalhost
+};
 
 int main(int argc, char *argv[])
 {
@@ -33,12 +44,23 @@ int main(int argc, char *argv[])
     bool fullscreen = true;
     bool smallScreen = false;
     bool checkNetpack = true;
+    bool showDevOptions = false;
+    optional<string> customServerIP;
 
     int c;
-    while ((c = getopt(argc, argv, "nw::")) != -1)
+    while ((c = getopt(argc, argv, "ndi:w::")) != -1)
     {
         switch (c)
         {
+            case 'n':
+                checkNetpack = false;
+                break;
+            case 'd':
+                showDevOptions = true;
+                break;
+            case 'i':
+                customServerIP = string(optarg);
+                break;
             case 'w':
                 fullscreen = false;
                 if (optarg && string(optarg) == "small")
@@ -50,20 +72,26 @@ int main(int argc, char *argv[])
                     smallScreen = false;
                 }
                 break;
-            case 'n':
-                checkNetpack = false;
-                break;
         }
     }
+
+    string serverIP = customServerIP ? *customServerIP : SERVER_IP_DEFAULT;
+
     loadFonts(&mainFont, &tutorialFont);
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
     vector<tuple<string, MainMenuEvent>> menuOptions = {
         {"Local Playground / Demo", StartLocal},
-        {"Local Debug", StartLocalDebug},
-        {"Tutorial", StartTutorial}
+        {"Tutorial", StartTutorial},
+        {"Connect to Server", StartClient}
     };
+
+    if (showDevOptions)
+    {
+        menuOptions.push_back({"Local Debug", StartLocalDebug});
+        menuOptions.push_back({"Connect to Local Server", StartClientWithLocalhost});
+    }
 
     MainMenu mainMenu(menuOptions, mainFont);
 
@@ -104,16 +132,27 @@ int main(int argc, char *argv[])
                 case StartLocal:
                 {
                     runLocal(window, 10, 50, false);
+                    break;
                 }
-                break;
                 case StartLocalDebug:
                 {
                     runLocal(window, 10, 50, true);
+                    break;
                 }
-                break;
                 case StartTutorial:
                 {
                     runTutorial(window);
+                    break;
+                }
+                case StartClient:
+                {
+                    runClient(window, serverIP);
+                    break;
+                }
+                case StartClientWithLocalhost:
+                {
+                    runClient(window, "localhost");
+                    break;
                 }
             }
         }
@@ -379,4 +418,173 @@ void runTutorial(sf::RenderWindow* window)
             }
         }
     }
+}
+
+using namespace boost::asio::ip;
+
+void runClient(sf::RenderWindow* window, string serverAddressString)
+{
+    uint latencyAllowance = 10;
+
+    boost::asio::io_service io_service;
+    tcp::socket socket(io_service);
+
+    if (serverAddressString == "localhost")
+    {
+        socket.connect(tcp::endpoint(tcp::v4(), MAIN_PORT));
+    }
+    else
+    {
+        socket.connect(tcp::endpoint(address::from_string(serverAddressString), MAIN_PORT));
+    }
+
+    // socket will now have its own local port.
+
+    cout << "Creating ConnectionHandler..." << endl;
+    ConnectionHandler connectionHandler(io_service, socket);
+
+    // HANDSHAKE
+
+    optional<uint8_t> maybePlayerId = {};
+
+    // Wait for the sig challenge and respond with the user's help
+    string sigChallenge = connectionHandler.receiveSigChallenge();
+    cout << "Sign this with the address you deposited to:" << endl << sigChallenge << endl;
+
+    string userResponse;
+    cout << "sig: ";
+    cin >> userResponse;
+
+    connectionHandler.sendSignature(userResponse + "\n");
+    Address playerAddress = connectionHandler.receiveAddress();
+
+    connectionHandler.startReceivingLoop();
+
+    Game game;
+
+    // Get the first resync packet
+    while (true)
+    {
+        io_service.poll();
+
+        if (connectionHandler.receivedResyncs.size() > 0)
+        {
+            game = connectionHandler.receivedResyncs[0];
+            game.reassignEntityGamePointers();
+
+            connectionHandler.receivedResyncs.erase(connectionHandler.receivedResyncs.begin());
+            break;
+        }
+    }
+
+    GameUI ui;
+
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+    while (window->isOpen())
+    {
+        io_service.poll();
+
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
+            continue;
+
+        // PROCESS INPUT
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
+
+        // ITERATE GAME_UI
+        ui.iterate();
+        if (ui.quitNow)
+        {
+            window->close();
+        }
+
+        // SEND CMDS
+        for (unsigned int i=0; i < cmdsToSend.size(); i++)
+        {
+            if (!cmdsToSend[i])
+                cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
+            else
+                connectionHandler.sendCmd(cmdsToSend[i]); 
+        }
+        cmdsToSend.clear();
+
+        // DISPLAY
+        display(window, &game, &ui, maybePlayerId, {}, mainFont, tutorialFont, true);
+
+        if (game.frame % 200 == 0)
+            cout << "Latency buffer size: " << connectionHandler.receivedFrameEventsPackets.size() << endl;
+        
+        // GAME LOGIC
+
+        int framesToProcess;
+        if (connectionHandler.receivedFrameEventsPackets.size() == 0)
+            framesToProcess = 0;
+        else if (connectionHandler.receivedFrameEventsPackets.size() < latencyAllowance)
+            framesToProcess = 1;
+        else
+            framesToProcess = 2;
+        
+        for (int i=0; i<framesToProcess; i++)
+        {
+            // PROCESS AND CHECK RESYNCS
+            if (connectionHandler.receivedResyncs.size() > 0 && connectionHandler.receivedResyncs[0].frame == game.frame)
+            {
+                // replacedGameOnResync = game;
+                if (!gameStatesAreIdentical_triggerDebugIfNot(&game, &connectionHandler.receivedResyncs[0]))
+                {
+                    cout << "Uh oh, I'm seeing some desyncs!" << endl;
+                }
+                // game = receivedResyncs[0];
+                // game.reassignEntityGamePointers();
+
+                connectionHandler.receivedResyncs.erase(connectionHandler.receivedResyncs.begin());
+            }
+
+            // PROCESS EVENTS FROM SERVER
+            FrameEventsPacket fep = connectionHandler.receivedFrameEventsPackets[0];
+            connectionHandler.receivedFrameEventsPackets.erase(connectionHandler.receivedFrameEventsPackets.begin());
+
+            assert(fep.frame == game.frame);
+
+            for (unsigned int i = 0; i < fep.events.size(); i++)
+            {
+                fep.events[i]->execute(&game);
+            }
+
+            // EXECUTE USER CMDS FOR THIS FRAME
+            for (unsigned int i = 0; i < fep.authdCmds.size(); i++)
+            {
+                auto cmd = fep.authdCmds[i]->cmd;
+                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(cmd))
+                {
+                    unitCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
+                }
+                else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(cmd))
+                {
+                    spawnBeaconCmd->executeAsPlayer(&game, fep.authdCmds[i]->playerAddress);
+                }
+                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(cmd))
+                {
+                    // ignore. Server processes withdrawals and creates an event.
+                }
+                else
+                {
+                    cout << "Woah, I don't know how to handle that cmd as a client!" << endl;
+                }
+            }
+
+            // ITERATE GAME
+            game.iterate();
+        }
+
+        nextFrameStart += ONE_FRAME;
+
+        // UPDATE PLAYER ID
+        if (!maybePlayerId)
+        {
+            maybePlayerId = game.playerAddressToMaybeId(playerAddress);
+        }
+    }
+
+    socket.close();
 }
