@@ -25,6 +25,7 @@
 sf::Font mainFont, tutorialFont;
 
 void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float playerStartDollars, bool checkNetpack);
+void runTutorial(sf::RenderWindow* window);
 
 int main(int argc, char *argv[])
 {
@@ -60,7 +61,8 @@ int main(int argc, char *argv[])
 
     vector<tuple<string, MainMenuEvent>> menuOptions = {
         {"Local Playground / Demo", StartLocal},
-        {"Local Debug", StartLocalDebug}
+        {"Local Debug", StartLocalDebug},
+        {"Tutorial", StartTutorial}
     };
 
     MainMenu mainMenu(menuOptions, mainFont);
@@ -109,6 +111,10 @@ int main(int argc, char *argv[])
                     runLocal(window, 10, 50, true);
                 }
                 break;
+                case StartTutorial:
+                {
+                    runTutorial(window);
+                }
             }
         }
 
@@ -299,22 +305,78 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
     }
 }
 
-void otherStuff()
+void runTutorial(sf::RenderWindow* window)
 {
-    // if (startTutorial)
-    // {
-    //     setupTutorialScenario(&game);
-    // }
+    Game game;
+    GameUI ui;
 
-    // Tutorial* tutorial = NULL;
-    // if (startTutorial)
-    // {
-    //     tutorial = new Tutorial(&game, &ui);
-    //     tutorial->start();
-    // }
+    setupTutorialScenario(&game);
 
-    // if (tutorial && !tutorial->isFinished())
-    // {
-    //     tutorial->update();
-    // }
+    Tutorial tutorial(&game, &ui);
+
+    tutorial.start();
+
+    vector<boost::shared_ptr<Cmd>> pendingCmds;
+
+    int lastDisplayedFrame = -1;
+
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+    
+    while (window->isOpen()) {
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
+        {
+            if (lastDisplayedFrame < (int)game.frame)
+            {
+                lastDisplayedFrame = game.frame;
+
+                // poll for cmds from input
+                // (also updates GameUI)
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, {});
+                pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
+
+                display(window, &game, &ui, 0, &tutorial, mainFont, tutorialFont, false);
+            }
+        }
+        else
+        {
+            nextFrameStart += ONE_FRAME;
+
+            // simply execute all pending cmds
+            for (unsigned int i=0; i < pendingCmds.size(); i++)
+            {
+                if (auto unitCmd = boost::dynamic_pointer_cast<UnitCmd, Cmd>(pendingCmds[i]))
+                {
+                    unitCmd->executeAsPlayer(&game, game.playerIdToAddress(0));
+                }
+                else if (auto spawnBeaconCmd = boost::dynamic_pointer_cast<SpawnBeaconCmd, Cmd>(pendingCmds[i]))
+                {
+                    spawnBeaconCmd->executeAsPlayer(&game, game.playerIdToAddress(0));
+                }
+                else if (auto withdrawCmd = boost::dynamic_pointer_cast<WithdrawCmd, Cmd>(pendingCmds[i]))
+                {
+                    // ignore. Server processes withdrawals and creates an event.
+                }
+                else
+                {
+                    cout << "Woah, I don't know how to handle that cmd!" << endl;
+                }
+            }
+            pendingCmds.clear();
+
+            // iterate game
+            game.iterate();
+
+            ui.iterate();
+            if (ui.quitNow)
+            {
+                window->close();
+            }
+
+            if (!tutorial.isFinished())
+            {
+                tutorial.update();
+            }
+        }
+    }
 }

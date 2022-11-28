@@ -48,7 +48,8 @@ public:
 enum MainMenuEvent
 {
     StartLocal,
-    StartLocalDebug
+    StartLocalDebug,
+    StartTutorial
 };
 
 template<class T>
