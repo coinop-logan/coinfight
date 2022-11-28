@@ -35,6 +35,6 @@ def main():
     with open(filename, 'w') as f:
         f.write(cmdLine)
     
-    os.system("mv " + filename + " ../bin/accounting/pending_withdrawals/")
+    os.system("mv " + filename + " ../bin/events_out/withdrawals/")
 
 main()

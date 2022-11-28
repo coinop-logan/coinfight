@@ -20,9 +20,9 @@ clean:
 	rm -rf dist/*
 
 prep-server:
-	mkdir -p bin/accounting
-	mkdir -p bin/accounting/pending_deposits
-	mkdir -p bin/accounting/pending_withdrawals
+	mkdir -p bin/events_in
+	mkdir -p bin/events_in/deposits
+	mkdir -p bin/events_out/withdrawals
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
 	cp web3-api-key bin/web3-api-key
