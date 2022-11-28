@@ -4,6 +4,7 @@
 #include "unit_interface_cmds.h"
 #include "interface.h"
 #include "menu.h"
+#include "particles.h"
 
 #ifndef INPUT_H
 #define INPUT_H
@@ -11,11 +12,6 @@
 const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 
 class Tutorial; // define3d in tutorial.h
-
-struct CameraState
-{
-    vector2i gamePos;
-};
 
 struct GameUI
 {
@@ -45,6 +41,7 @@ struct GameUI
     bool cleanDrawEnabled;
     bool hideUX;
     bool showTutorial;
+    ParticlesContainer particles;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);

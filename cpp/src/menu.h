@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include "myvectors.h"
 #include "interface.h"
 
@@ -19,13 +20,12 @@ class Button
 {
 public:
     vector2i p1, p2;
-    void (*onClick)();
     vector2i mousePos;
     bool pressed, mouseover;
-    Button(vector2i p1, vector2i p2, void (*onClick)());
+    Button(vector2i p1, vector2i p2);
     void registerMouseMove(vector2i);
-    void registerClick();
-    void registerRelease();
+    void registerPress();
+    bool registerRelease();
     void draw(sf::RenderWindow*);
     virtual void drawContent(sf::RenderWindow*) {}
     vector2i getDimensions()
@@ -41,17 +41,30 @@ class TextButton : public Button
     int fontSize;
     int textOffsetY;
 public:
-    TextButton(vector2i p1, vector2i, string, sf::Font, int fontSize, int textOffsetY, void (*onClick)());
+    TextButton(vector2i p1, vector2i, string, sf::Font, int fontSize, int textOffsetY);
     void drawContent(sf::RenderWindow*);
+};
+
+enum MainMenuEvent
+{
+    StartLocal,
+    StartLocalDebug
+};
+
+template<class T>
+struct BoundButton
+{
+    boost::shared_ptr<Button> button;
+    T eventMsg;
 };
 
 class MainMenu
 {
     vector2i p1, p2;
-    vector<TextButton> buttons;
+    vector<BoundButton<MainMenuEvent>> boundButtons;
 public:
-    MainMenu(vector<tuple<string, void (*)()>> buttonInfos, sf::Font font);
-    void processEvent(sf::Event);
+    MainMenu(vector<tuple<string, MainMenuEvent>> buttonInfos, sf::Font font);
+    optional<MainMenuEvent> processEvent(sf::Event);
     void draw(sf::RenderWindow*);
 };
 

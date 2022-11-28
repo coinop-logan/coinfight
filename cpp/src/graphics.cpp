@@ -9,6 +9,7 @@
 #include "tutorial.h"
 #include "graphics_helpers.h"
 #include "menu.h"
+#include "particles.h"
 
 using namespace std;
 
@@ -30,34 +31,6 @@ float radToDeg(float rad)
 {
     return rad * (180 / M_PI);
 }
-
-class sfLine : public sf::Drawable
-{
-private:
-    sf::Vertex vertices[4];
-public:
-    sfLine(const sf::Vector2f& point1, const sf::Vector2f& point2, sf::Color color, float width)
-    {
-        sf::Vector2f direction = point2 - point1;
-        sf::Vector2f unitDirection = direction/std::sqrt(direction.x*direction.x+direction.y*direction.y);
-        sf::Vector2f unitPerpendicular(-unitDirection.y,unitDirection.x);
-
-        sf::Vector2f offset = (width/2.f)*unitPerpendicular;
-
-        vertices[0].position = point1 + offset;
-        vertices[1].position = point2 + offset;
-        vertices[2].position = point2 - offset;
-        vertices[3].position = point1 - offset;
-
-        for (int i=0; i<4; ++i)
-            vertices[i].color = color;
-    }
-
-    void draw(sf::RenderTarget &target, sf::RenderStates states) const
-    {
-        target.draw(vertices,4,sf::Quads);
-    }
-};
 
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 {
@@ -540,128 +513,6 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf:
     }
 }
 
-Particle::Particle(vector2fl pos, Target target, sf::Color color)
-    : pos(pos), velocity(randomVectorWithMagnitude(3)), target(target), color(color), dead(false)
-{}
-FadingParticle::FadingParticle(vector2fl pos, Target target, sf::Color color, bool fadeOut)
-    : Particle(pos, target, color), startPos(pos), fadeOut(fadeOut)
-{}
-
-void Particle::iterate(const Game &game)
-{
-    if (auto targetPos = target.getPointUnlessTargetDeleted(game))
-    {
-        vector2fl toTarget = vector2fl(*targetPos) - pos;
-        if (toTarget.getMagnitude() < 10)
-        {
-            dead = true;
-            return;
-        }
-
-        velocity += toTarget.normalized() * PARTICLE_MAGNET_STRENGTH;
-        velocity *= PARTICLE_FRICTION_CONSTANT;
-        pos += velocity;
-    }
-    else
-        dead = true;
-
-}
-void Particle::drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color whichColor)
-{
-    sf::RectangleShape pixel(sf::Vector2f(2,2));
-    pixel.setOrigin(1,1);
-    vector2i drawPos = gamePosToScreenPos(camera, vector2fp(pos));
-    pixel.setPosition(drawPos.x, drawPos.y);
-    pixel.setFillColor(whichColor);
-
-    window->draw(pixel);
-}
-void Particle::draw(sf::RenderWindow *window, CameraState camera)
-{
-    drawWithColor(window, camera, this->color);
-}
-void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
-{
-    if (auto targetPoint = target.castToPoint())
-    {
-        float progressRatio = (pos - vector2fl(*targetPoint)).getMagnitudeSquared() / (startPos - vector2fl(*targetPoint)).getMagnitudeSquared();
-        float alphaFloat = this->fadeOut ? (1-progressRatio) : progressRatio;
-        int alphaInt = alphaFloat * 255;
-
-        sf::Color fadedColor(this->color);
-        fadedColor.a = alphaInt;
-        drawWithColor(window, camera, fadedColor);
-    }
-    else
-    {
-        dead = true;
-    }
-}
-
-LineParticle::LineParticle(vector2fl from, vector2fl to, sf::Color color, float width, int lifetime)
-    : from(from), to(to), color(color), width(width), lifetime(lifetime), timeLeft(lifetime), dead(false)
-{}
-void LineParticle::iterate()
-{
-    timeLeft --;
-    if (timeLeft <= 0)
-        dead = true;
-}
-void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
-{
-    vector2i drawFrom = gamePosToScreenPos(camera, vector2fp(from));
-    vector2i drawTo = gamePosToScreenPos(camera, vector2fp(to));
-
-    color.a = ((float)timeLeft / lifetime) * 255;
-
-    sfLine line(sf::Vector2f(drawFrom.x, drawFrom.y), sf::Vector2f(drawTo.x, drawTo.y), color, width);
-
-    window->draw(line);
-}
-
-void ParticlesContainer::iterateParticles(const Game &game)
-{
-    for (unsigned int i=0; i<particles.size(); i++)
-    {
-        if (!particles[i]->dead)
-            particles[i]->iterate(game);
-        else
-        {
-            particles.erase(particles.begin()+i);
-            i--;
-        }
-    }
-    for (unsigned int i=0; i<lineParticles.size(); i++)
-    {
-        if (!lineParticles[i]->dead)
-            lineParticles[i]->iterate();
-        else
-        {
-            lineParticles.erase(lineParticles.begin()+i);
-            i--;
-        }
-    }
-}
-void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState camera)
-{
-    for (unsigned int i=0; i<particles.size(); i++)
-    {
-        particles[i]->draw(window, camera);
-    }
-    for (unsigned int i=0; i<lineParticles.size(); i++)
-    {
-        lineParticles[i]->draw(window, camera);
-    }
-}
-void ParticlesContainer::addParticle(boost::shared_ptr<Particle> particle)
-{
-    particles.push_back(particle);
-}
-void ParticlesContainer::addLineParticle(boost::shared_ptr<LineParticle> lineParticle)
-{
-    lineParticles.push_back(lineParticle);
-}
-
 void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, unsigned int radius, unsigned int thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
@@ -737,11 +588,11 @@ void drawSelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     drawBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
-void drawGhostBuilding(sf::RenderWindow *window, const GameUI &ui, vector2i mousePos)
+void drawGhostBuilding(sf::RenderWindow *window, const GameUI* ui, vector2i mousePos)
 {
     window->setMouseCursorVisible(false);
 
-    drawEntity(window, ui.ghostBuilding, mousePos);
+    drawEntity(window, ui->ghostBuilding, mousePos);
 }
 
 void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
@@ -762,23 +613,23 @@ void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
     window->draw(rect);
 }
 
-void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint8_t> maybePlayerId)
+void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<uint8_t> maybePlayerId)
 {
     vector2i mousePos = vector2i(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y);
 
-    if (ui.maybeSelectionBoxStart)
+    if (ui->maybeSelectionBoxStart)
     {
-        drawSelectionBox(window, *ui.maybeSelectionBoxStart, mousePos);
+        drawSelectionBox(window, *ui->maybeSelectionBoxStart, mousePos);
     }
     else
     {
         // depending on cmdState and mouseoverEntity
-        switch (ui.cmdState)
+        switch (ui->cmdState)
         {
             case GameUI::Default:
-                if (ui.mouseoverEntity)
+                if (ui->mouseoverEntity)
                 {
-                    if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Foreign)
+                    if (getAllianceType(maybePlayerId, ui->mouseoverEntity) == Foreign)
                     {
                         drawBracketsCursor(window, mousePos, sf::Color::Red);
                     }
@@ -796,7 +647,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint
                 drawTargetCursor(window, mousePos, sf::Color::Yellow);
                 break;
             case GameUI::AttackAbsorb:
-                if (ui.mouseoverEntity)
+                if (ui->mouseoverEntity)
                 {
                     drawBracketsCursor(window, mousePos, sf::Color::Red);
                 }
@@ -806,7 +657,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint
                 }
                 break;
             case GameUI::Deposit:
-                if (ui.mouseoverEntity)
+                if (ui->mouseoverEntity)
                 {
                     drawBracketsCursor(window, mousePos, sf::Color::Blue);
                 }
@@ -816,9 +667,9 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint
                 }
                 break;
             case GameUI::Fetch:
-                if (ui.mouseoverEntity)
+                if (ui->mouseoverEntity)
                 {
-                    if (getAllianceType(maybePlayerId, ui.mouseoverEntity) == Owned || ui.mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
+                    if (getAllianceType(maybePlayerId, ui->mouseoverEntity) == Owned || ui->mouseoverEntity->typechar() == GOLDPILE_TYPECHAR)
                     {
                         drawBracketsCursor(window, mousePos, sf::Color::Yellow);
                     }
@@ -829,7 +680,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI ui, optional<uint
                 }
                 else
                 {
-                    if (filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits).size() > 0)
+                    if (filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits).size() > 0)
                     {
                         drawTargetCursor(window, mousePos, sf::Color::Yellow);
                     }
@@ -851,7 +702,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camer
     drawCircleAround(window, gamePosToScreenPos(camera, entity->getPos()), 15, 1, sf::Color::Green);
 }
 
-void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -894,7 +745,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI ui, op
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
             vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(30));
-            vector2fl textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+            vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             aboveText.setFillColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
@@ -914,7 +765,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI ui, op
             sf::FloatRect textRec = belowText.getLocalBounds();
 
             vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(-20));
-            vector2fl textScreenPos = gamePosToScreenPos(ui.camera, textGamePos);
+            vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             belowText.setFillColor(sf::Color(200, 200, 255));
             belowText.setOrigin(textRec.width / 2, textRec.height / 2);
@@ -931,7 +782,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI ui, op
     }
 }
 
-void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI ui, optional<uint8_t> maybePlayerId)
+void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -963,7 +814,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI ui, optiona
 
             sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
             healthBar.setOrigin(healthBar.getLocalBounds().width / 2, healthBar.getLocalBounds().height / 2);
-            healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, healthBarPos))));
+            healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, healthBarPos))));
 
             healthBar.setOutlineColor(barColorOutline);
             healthBar.setFillColor(sf::Color(100, 100, 100));
@@ -981,7 +832,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI ui, optiona
     }
 }
 
-void drawArrow(sf::RenderWindow* window, GameUI ui, vector2fp drawPos, bool pointingUp, sf::Color color)
+void drawArrow(sf::RenderWindow* window, GameUI* ui, vector2fp drawPos, bool pointingUp, sf::Color color)
 {
     sf::ConvexShape arrowPoint;
     arrowPoint.setPointCount(3);
@@ -990,7 +841,7 @@ void drawArrow(sf::RenderWindow* window, GameUI ui, vector2fp drawPos, bool poin
     arrowPoint.setPoint(2, sf::Vector2f(5, 4));
 
     arrowPoint.setFillColor(color);
-    arrowPoint.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui.camera, drawPos))));
+    arrowPoint.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, drawPos))));
 
     if (!pointingUp)
     {
@@ -1216,7 +1067,7 @@ void wrapAndRenderText(sf::RenderWindow* window, string textBlock, sf::Font font
     transform->translate(sf::Vector2f(0, fontSize + renderedTextBlock.getLocalBounds().height));
 }
 
-void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI ui, int boxWidth, sf::Font font)
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font font)
 {
     sf::Transform transform;
     transform.translate(
@@ -1226,15 +1077,15 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
         )
     );
 
-    vector<string> preBarTextBlocks = get<0>(tutorial->currentStep()->getText(game, &ui));
-    vector<string> postBarTextBlocks = get<1>(tutorial->currentStep()->getText(game, &ui));
+    vector<string> preBarTextBlocks = get<0>(tutorial->currentStep()->getText(game, ui));
+    vector<string> postBarTextBlocks = get<1>(tutorial->currentStep()->getText(game, ui));
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
         wrapAndRenderText(window, preBarTextBlocks[i], font, 13, boxWidth, &transform);
     }
 
-    if (auto progress = tutorial->currentStep()->getProgress(game, &ui))
+    if (auto progress = tutorial->currentStep()->getProgress(game, ui))
     {
         if (*progress > 0)
         {
@@ -1262,30 +1113,30 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
         }
     }
     
-    if (tutorial->currentStep()->isReadyToFinish(game, &ui) && tutorial->currentStep()->waitForEnter)
+    if (tutorial->currentStep()->isReadyToFinish(game, ui) && tutorial->currentStep()->waitForEnter)
     {
         wrapAndRenderText(window, "Press enter to continue", font, 16, boxWidth, &transform);
     }
 }
 
 coinsInt lastPlayerCredit = 0;
-void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer *particles, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
 {
-    if (ui.minimapEnabled)
+    if (ui->minimapEnabled)
     {
         displayMinimap(window, game, maybePlayerId, screenDimensions);
     }
     else {
-        drawBackground(window, ui.camera);
+        drawBackground(window, ui->camera);
 
-        particles->drawParticles(window, ui.camera);
-        particles->iterateParticles(*game);
+        ui->particles.drawParticles(window, ui->camera);
+        ui->particles.iterateParticles(*game);
 
         for (unsigned int i = 0; i < game->entities.size(); i++)
         {
             if (game->entities[i])
             {
-                vector2i drawPos = gamePosToScreenPos(ui.camera, vector2i(game->entities[i]->getPos()));
+                vector2i drawPos = gamePosToScreenPos(ui->camera, vector2i(game->entities[i]->getPos()));
                 drawEntity(window, game->entities[i], drawPos);
 
                 // add some effects for gold transfer and building/scuttling
@@ -1297,26 +1148,26 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                         {
                             if (game->frame % 3 == 0)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
+                                ui->particles.addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(prime->getRefOrThrow()), sf::Color::Yellow)));
                             }
 
                             bool scuttling = get<1>(prime->goldFlowFrom_view);
                             if (scuttling)
                             {
-                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), prime->getPos(), sf::Color::Red);
+                                drawEnergyLine(window, ui->camera, flowFromEntity->getPos(), prime->getPos(), sf::Color::Red);
                             }
                         }
                         if (auto flowToEntity = get<0>(prime->goldFlowTo_view)) 
                         {
                             if (game->frame % 3 == 0)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
+                                ui->particles.addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(prime->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
                             }
 
                             bool building = get<1>(prime->goldFlowTo_view);
                             if (building)
                             {
-                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), prime->getPos(), sf::Color::Blue);
+                                drawEnergyLine(window, ui->camera, flowToEntity->getPos(), prime->getPos(), sf::Color::Blue);
                             }
                         }
                     }
@@ -1330,26 +1181,26 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                         {
                             if (game->frame % 3 == 0)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(gateway->getRefOrThrow()), sf::Color::Yellow)));
+                                ui->particles.addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(flowFromEntity->getPos()), Target(gateway->getRefOrThrow()), sf::Color::Yellow)));
                             }
 
                             bool scuttling = get<1>(gateway->goldFlowFrom_view);
                             if (scuttling)
                             {
-                                drawEnergyLine(window, ui.camera, flowFromEntity->getPos(), gateway->getPos(), sf::Color::Red);
+                                drawEnergyLine(window, ui->camera, flowFromEntity->getPos(), gateway->getPos(), sf::Color::Red);
                             }
                         }
                         if (auto flowToEntity = get<0>(gateway->goldFlowTo_view)) 
                         {
                             if (game->frame % 3 == 0)
                             {
-                                particles->addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
+                                ui->particles.addParticle(boost::shared_ptr<Particle>(new Particle(vector2fl(gateway->getPos()), Target(flowToEntity->getRefOrThrow()), sf::Color::Yellow)));
                             }
 
                             bool building = get<1>(gateway->goldFlowTo_view);
                             if (building)
                             {
-                                drawEnergyLine(window, ui.camera, flowToEntity->getPos(), gateway->getPos(), sf::Color::Blue);
+                                drawEnergyLine(window, ui->camera, flowToEntity->getPos(), gateway->getPos(), sf::Color::Blue);
                             }
                         }
                     }
@@ -1392,17 +1243,17 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                         }
 
                         boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, color, width, lifetime));
-                        particles->addLineParticle(line);
+                        ui->particles.addLineParticle(line);
                     }
                 }
             }
         }
-        for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
+        for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
         {
             float dashOffsetAbs = float(game->frame % 40) / 40;
             GH::DashedLineGroup dashedLinesOutflow(10, dashOffsetAbs);
             GH::DashedLineGroup dashedLinesInflow(10, -dashOffsetAbs);
-            if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(ui.selectedUnits[i]))
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(ui->selectedUnits[i]))
             {
                 // draw queue lines
 
@@ -1414,8 +1265,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                         auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
                         auto toPoint = entity->getPos();
                         dashedLinesOutflow.pushLine(
-                            gamePosToScreenPos(ui.camera, fromPoint),
-                            gamePosToScreenPos(ui.camera, toPoint),
+                            gamePosToScreenPos(ui->camera, fromPoint),
+                            gamePosToScreenPos(ui->camera, toPoint),
                             BUILD_JOB_LINE_COLOR
                         );
                         lastToPoint = toPoint;
@@ -1428,8 +1279,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                     {
                         auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
                         dashedLinesOutflow.pushLine(
-                            gamePosToScreenPos(ui.camera, fromPoint),
-                            gamePosToScreenPos(ui.camera, *point),
+                            gamePosToScreenPos(ui->camera, fromPoint),
+                            gamePosToScreenPos(ui->camera, *point),
                             SCUTTLE_JOB_LINE_COLOR
                         );
                         lastToPoint = point;
@@ -1438,21 +1289,21 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                 if (prime->fundsSource && game->entities[*prime->fundsSource])
                 {
                     dashedLinesInflow.pushLine(
-                        gamePosToScreenPos(ui.camera, prime->getPos()),
-                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsSource]->getPos()),
+                        gamePosToScreenPos(ui->camera, prime->getPos()),
+                        gamePosToScreenPos(ui->camera, game->entities[*prime->fundsSource]->getPos()),
                         FUNDS_LINE_COLOR
                     );
                 }
                 if (prime->fundsDest && game->entities[*prime->fundsDest])
                 {
                     dashedLinesOutflow.pushLine(
-                        gamePosToScreenPos(ui.camera, prime->getPos()),
-                        gamePosToScreenPos(ui.camera, game->entities[*prime->fundsDest]->getPos()),
+                        gamePosToScreenPos(ui->camera, prime->getPos()),
+                        gamePosToScreenPos(ui->camera, game->entities[*prime->fundsDest]->getPos()),
                         FUNDS_LINE_COLOR
                     );
                 }
             }
-            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui.selectedUnits[i]))
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui->selectedUnits[i]))
             {
                 // draw queue lines
                 for (unsigned int j = 0; j<gateway->buildTargetQueue.size(); j++)
@@ -1460,8 +1311,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                     if (auto entity = game->entities[gateway->buildTargetQueue[j]])
                     {
                         dashedLinesOutflow.pushLine(
-                            gamePosToScreenPos(ui.camera, gateway->getPos()),
-                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            gamePosToScreenPos(ui->camera, gateway->getPos()),
+                            gamePosToScreenPos(ui->camera, entity->getPos()),
                             BUILD_JOB_LINE_COLOR
                         );
                     }
@@ -1471,8 +1322,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                     if (auto entity = game->entities[gateway->scuttleTargetQueue[j]])
                     {
                         dashedLinesInflow.pushLine(
-                            gamePosToScreenPos(ui.camera, gateway->getPos()),
-                            gamePosToScreenPos(ui.camera, entity->getPos()),
+                            gamePosToScreenPos(ui->camera, gateway->getPos()),
+                            gamePosToScreenPos(ui->camera, entity->getPos()),
                             SCUTTLE_JOB_LINE_COLOR
                         );
                     }
@@ -1482,10 +1333,10 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
             dashedLinesOutflow.render(window);
             dashedLinesInflow.render(window);
 
-            drawSelectionCircleAroundEntity(window, ui.camera, ui.selectedUnits[i]);
+            drawSelectionCircleAroundEntity(window, ui->camera, ui->selectedUnits[i]);
         }
 
-        if (!ui.cleanDrawEnabled)
+        if (!ui->cleanDrawEnabled)
         {
             drawUnitDroppableValues(window, game, ui, maybePlayerId, mainFont);
             drawUnitHealthBars(window, game, ui, maybePlayerId);
@@ -1506,7 +1357,7 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
             lastPlayerCredit = playerCredit;
         }
 
-        if (! ui.hideUX)
+        if (! ui->hideUX)
         {
         vector<sf::String> outputStrings;
         drawOutputStrings(window, outputStrings, mainFont);
@@ -1522,23 +1373,23 @@ void display(sf::RenderWindow *window, Game *game, GameUI ui, ParticlesContainer
                     break;
                 }
         }
-        if (!ui.hideUX)
+        if (!ui->hideUX)
         {
         if (playerOwnsUnits)
-            drawUnitHotkeyHelp(window, &ui, mainFont);
+            drawUnitHotkeyHelp(window, ui, mainFont);
         else
-            drawSpawnBeaconHotkey(window, &ui, mainFont);
+            drawSpawnBeaconHotkey(window, ui, mainFont);
         }
 
-        if (ui.escapeTextCountdownOrNeg1 >= 0)
+        if (ui->escapeTextCountdownOrNeg1 >= 0)
         {
-            drawEscapeQuitText(window, (unsigned int)ui.escapeTextCountdownOrNeg1, ui.countdownToQuitOrNeg1, mainFont);
+            drawEscapeQuitText(window, (unsigned int)ui->escapeTextCountdownOrNeg1, ui->countdownToQuitOrNeg1, mainFont);
         }
 
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
     }
 
-    if (ui.showTutorial && tutorial && !tutorial->isFinished() && (!ui.hideUX))
+    if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))
     {
         displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
     }

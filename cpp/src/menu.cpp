@@ -15,28 +15,33 @@ bool collides(vector2i p1, vector2i p2, vector2i point)
     );
 }
 
-Button::Button(vector2i p1, vector2i p2, void (*onClick)())
-    : p1(p1), p2(p2), onClick(onClick), mousePos(), pressed(false), mouseover(false)
+Button::Button(vector2i p1, vector2i p2)
+    : p1(p1), p2(p2), mousePos(), pressed(false), mouseover(false)
     {}
 void Button::registerMouseMove(vector2i newMousePos)
 {
     mouseover = collides(p1, p2, newMousePos);
     mousePos = newMousePos;
 }
-void Button::registerClick()
+void Button::registerPress()
 {
     if (mouseover)
     {
         pressed = true;
     }
 }
-void Button::registerRelease()
+bool Button::registerRelease()
 {
     if (pressed && mouseover)
     {
-        onClick();
+        pressed = false;
+        return true;
     }
-    pressed = false;
+    else
+    {
+        pressed = false;
+        return false;
+    }
 }
 void Button::draw(sf::RenderWindow* window)
 {
@@ -72,10 +77,8 @@ void Button::draw(sf::RenderWindow* window)
 //     return p1 + vector2i(boundingRect.width, fontSize) + (BUTTON_TEXT_PADDING * 2);
 // }
 
-sf::Text rtext2;
-
-TextButton::TextButton(vector2i p1, vector2i dimensions, string text, sf::Font font, int fontSize, int textOffsetY, void (*onClick)())
-    : Button(p1, (p1 + dimensions), onClick), text(text), font(font), fontSize(fontSize), textOffsetY(textOffsetY)
+TextButton::TextButton(vector2i p1, vector2i dimensions, string text, sf::Font font, int fontSize, int textOffsetY)
+    : Button(p1, (p1 + dimensions)), text(text), font(font), fontSize(fontSize), textOffsetY(textOffsetY)
 {
 }
 
@@ -99,7 +102,7 @@ void TextButton::drawContent(sf::RenderWindow* window)
 }
 
 
-MainMenu::MainMenu(vector<tuple<string, void (*)()>> buttonInfos, sf::Font font)
+MainMenu::MainMenu(vector<tuple<string, MainMenuEvent>> buttonInfos, sf::Font font)
 {
     vector2i buttonDimensions =
         vector2i(
@@ -131,15 +134,18 @@ MainMenu::MainMenu(vector<tuple<string, void (*)()>> buttonInfos, sf::Font font)
                   (i * (MAIN_MENU_BUTTON_HEIGHT + MAIN_MENU_BUTTON_SPACING))
                 );
 
-        buttons.push_back(TextButton
+        boost::shared_ptr<Button> newButton(new TextButton
           ( buttonP1,
             buttonDimensions,
             get<0>(buttonInfos[i]),
             font,
             MAIN_MENU_BUTTON_FONT_SIZE,
-            MAIN_MENU_BUTTON_TEXT_OFFSET_Y,
-            get<1>(buttonInfos[i])
+            MAIN_MENU_BUTTON_TEXT_OFFSET_Y
           )
+        );
+
+        boundButtons.push_back(
+            {newButton, get<1>(buttonInfos[i])}
         );
     }
 }
@@ -152,25 +158,48 @@ void MainMenu::draw(sf::RenderWindow* window)
     mainBox.setOutlineThickness(1);
     window->draw(mainBox);
 
-    for (uint i=0; i<buttons.size(); i++)
+    for (uint i=0; i<boundButtons.size(); i++)
     {
-        buttons[i].draw(window);
+        boundButtons[i].button->draw(window);
     }
 }
 
-void MainMenu::processEvent(sf::Event event)
+optional<MainMenuEvent> MainMenu::processEvent(sf::Event event)
 {
+    optional<MainMenuEvent> menuEventMsg;
+
     switch (event.type)
+    {
+        case sf::Event::MouseMoved:
         {
-            case sf::Event::MouseMoved:
+            for (uint i=0; i<boundButtons.size(); i++)
             {
-                for (uint i=0; i<buttons.size(); i++)
-                {
-                    buttons[i].registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
-                }
-                break;
+                boundButtons[i].button->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
             }
-            default:
-            {}
+            break;
         }
+        case sf::Event::MouseButtonPressed:
+        {
+            for (uint i=0; i<boundButtons.size(); i++)
+            {
+                boundButtons[i].button->registerPress();
+            }
+            break;
+        }
+        case sf::Event::MouseButtonReleased:
+        {
+            for (uint i=0; i<boundButtons.size(); i++)
+            {
+                if (boundButtons[i].button->registerRelease())
+                {
+                    menuEventMsg = boundButtons[i].eventMsg;
+                }
+            }
+            break;
+        }
+        default:
+        {}
+    }
+    
+    return menuEventMsg;
 }
