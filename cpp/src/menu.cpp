@@ -69,14 +69,6 @@ void Button::draw(sf::RenderWindow* window)
     drawContent(window);
 }
 
-
-// vector2i calcTextButtonP2(vector2i p1, string s, sf::Font font, int fontSize)
-// {
-//     sf::Text renderedText(sf::String(s), font, fontSize);
-//     auto boundingRect = renderedText.getLocalBounds();
-//     return p1 + vector2i(boundingRect.width, fontSize) + (BUTTON_TEXT_PADDING * 2);
-// }
-
 TextButton::TextButton(vector2i p1, vector2i dimensions, string text, sf::Font font, int fontSize, int textOffsetY)
     : Button(p1, (p1 + dimensions)), text(text), font(font), fontSize(fontSize), textOffsetY(textOffsetY)
 {

@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const int MAIN_MENU_BUTTON_TEXT_OFFSET_Y = 20;
+const int MAIN_MENU_BUTTON_TEXT_OFFSET_Y = -1;
 const int MAIN_MENU_BUTTON_FONT_SIZE = 18;
 const int MAIN_MENU_BUTTON_HEIGHT = 22;
 const int MAIN_MENU_BUTTON_SPACING = 8;
