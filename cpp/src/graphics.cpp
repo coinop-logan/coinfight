@@ -986,17 +986,13 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
 void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdown, int countdownToQuitOrNeg1, sf::Font font)
 {
     sf::Text escapeQuitText("Hold Escape to quit.", font, 40);
-    sf::Text extraText("This will automatically withdraw your balance", font, 20);
 
     int alpha = ((float)escapeTextCountdown / ESCAPE_TO_QUIT_TEXT_LIFE) * 255;
     escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
-    extraText.setFillColor(sf::Color(255, 255, 255, alpha));
 
     escapeQuitText.setPosition(30, 100);
-    extraText.setPosition(30, 160);
 
     window->draw(escapeQuitText);
-    window->draw(extraText);
 
     if (countdownToQuitOrNeg1 >= 0)
     {
