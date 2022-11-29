@@ -35,7 +35,8 @@ enum MainMenuEvent
     StartLocalDebug,
     StartTutorial,
     StartClient,
-    StartClientWithLocalhost
+    StartClientWithLocalhost,
+    Quit
 };
 
 int main(int argc, char *argv[])
@@ -81,17 +82,16 @@ int main(int argc, char *argv[])
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
-    vector<tuple<string, MainMenuEvent>> menuOptions = {
-        {"Local Playground / Demo", StartLocal},
-        {"Tutorial", StartTutorial},
-        {"Connect to Server", StartClient}
-    };
-
+    vector<tuple<string, MainMenuEvent>> menuOptions;
+    
+    menuOptions.push_back({"Local Playground / Demo", StartLocal});
     if (showDevOptions)
-    {
         menuOptions.push_back({"Local Debug", StartLocalDebug});
+    menuOptions.push_back({"Tutorial", StartTutorial});
+    menuOptions.push_back({"Connect to Server", StartClient});
+    if (showDevOptions)
         menuOptions.push_back({"Connect to Local Server", StartClientWithLocalhost});
-    }
+    menuOptions.push_back({"Quit", Quit});
 
     MainMenu mainMenu(menuOptions, mainFont);
 
@@ -152,6 +152,11 @@ int main(int argc, char *argv[])
                 case StartClientWithLocalhost:
                 {
                     runClient(window, "localhost");
+                    break;
+                }
+                case Quit:
+                {
+                    window->close();
                     break;
                 }
             }
