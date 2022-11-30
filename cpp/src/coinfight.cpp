@@ -607,6 +607,7 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
     {
         sf::Event event;
         optional<LoginWindow::Msg> msg = {};
+        optional<string> sigResponse;
         while (mainWindow->pollEvent(event))
         {
             msg = loginWindow.processEvent(event);
@@ -618,15 +619,21 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
                 }
                 case LoginWindow::ResponseEntered:
                 {
-                    // wut;
+                    if (!loginWindow.sigResponse)
+                    {
+                        throw runtime_error("LoginWindow says it got a sigResponse, but there isn't anything here!");
+                    }
+                    sigResponse = loginWindow.sigResponse;
                 }
             }
         }
-        // onPaste {
-        //     connectionHandler->sendSignature(userResponse + "\n");
-        //     optional<Address> maybePlayerAddress = connectionHandler->tryReceiveAddressAsync();
-        //     return maybePlayerAddress;
-        // }
+
+        if (sigResponse)
+        {
+            connectionHandler->sendSignature(*sigResponse + "\n");
+            optional<Address> maybePlayerAddress = connectionHandler->receiveAddress();
+            return maybePlayerAddress;
+        }
 
         mainWindow->clear();
         loginWindow.draw(mainWindow);

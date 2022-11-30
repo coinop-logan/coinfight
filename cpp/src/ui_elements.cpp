@@ -7,12 +7,16 @@ using namespace std;
 
 sf::Texture
     copyActionSource,
-    copyDoneSource
+    copyDoneSource,
+    pasteActionSource,
+    pasteDoneSource
 ;
 
 sf::Sprite
     copyActionIcon,
-    copyDoneIcon
+    copyDoneIcon,
+    pasteActionIcon,
+    pasteDoneIcon
 ;
 
 void loadIcons()
@@ -28,6 +32,18 @@ void loadIcons()
         throw runtime_error("Can't load copy done icon");
     }
     copyDoneIcon.setTexture(copyDoneSource);
+
+    if (!pasteActionSource.loadFromFile("clipboard-paste-action.png"))
+    {
+        throw runtime_error("Can't load paste icon");
+    }
+    pasteActionIcon.setTexture(pasteActionSource);
+
+    if (!pasteDoneSource.loadFromFile("clipboard-paste-done.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    pasteDoneIcon.setTexture(pasteDoneSource);
 }
 
 bool collides(vector2i p1, vector2i p2, vector2i point)
@@ -218,8 +234,12 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 
     drawStepNum(window, '2', vector2i(leftBorder, yPos));
 
-
     // 2. Paste the resulting signature.
+    if (!pasteButton)
+    {
+        pasteButton = boost::shared_ptr<ImageButton>(new ImageButton(vector2i(buttonsStartX, yPos), COPYPASTE_BUTTON_DIMENSIONS, pasteActionIcon));
+    }
+    pasteButton->draw(window);
 }
 optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
 {
@@ -265,7 +285,7 @@ optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
                 if (pasteButton->registerRelease())
                 {
                     string inClipboard = sf::Clipboard::getString();
-                    cout << "in clipboard: " << inClipboard << endl;
+                    pasteButton->changeImage(pasteDoneIcon);
                     sigResponse = inClipboard;
                     sf::Clipboard::setString("");
                     return ResponseEntered;
@@ -288,6 +308,8 @@ void drawStepNum(sf::RenderWindow* window, char numChar, vector2i drawPos)
 uint drawWrappedStepText(sf::RenderWindow* window, string textString, vector2i drawPos, uint textBoxWidth)
 {
     // todo;
+
+    return 80;
     // return text block height
 }
 void drawCopyOrPasteUX(sf::RenderWindow* window, boost::shared_ptr<Button> copyOrPasteButton, bool actionSuccessful)
