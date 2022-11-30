@@ -3,7 +3,7 @@
 #include "cmds.h"
 #include "unit_interface_cmds.h"
 #include "interface.h"
-#include "menu.h"
+#include "ui_elements.h"
 #include "particles.h"
 
 #ifndef INPUT_H

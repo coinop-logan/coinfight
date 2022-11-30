@@ -5,17 +5,24 @@
 #include "common.h"
 #include "interface.h"
 
-#ifndef MENU_H
-#define MENU_H
+#ifndef UI_ELEMENTS_H
+#define UI_ELEMENTS_H
 
 using namespace std;
+
+const int WINDOW_PADDING = 5;
 
 const int MAIN_MENU_BUTTON_TEXT_OFFSET_Y = -1;
 const int MAIN_MENU_BUTTON_FONT_SIZE = 18;
 const int MAIN_MENU_BUTTON_HEIGHT = 22;
 const int MAIN_MENU_BUTTON_SPACING = 8;
-const int MAIN_MENU_PADDING = 5;
 const int MAIN_MENU_WIDTH = 400;
+
+const vector2i LOGIN_WINDOW_DIMENSIONS(300, 500);
+
+const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
+
+void loadIcons();
 
 class Button
 {
@@ -46,6 +53,14 @@ public:
     void drawContent(sf::RenderWindow*);
 };
 
+class ImageButton : public Button
+{
+public:
+    sf::Sprite sprite;
+    ImageButton(vector2i p1, vector2i dimensions, sf::Sprite sprite);
+    void drawContent(sf::RenderWindow*);
+};
+
 template<class EventMsg>
 struct BoundButton
 {
@@ -53,17 +68,28 @@ struct BoundButton
     EventMsg eventMsg;
 };
 
-template<class EventMsg>
-class MainMenu
+class Window
 {
+public:
     vector2i p1, p2;
+    Window() {}
+    Window(vector2i p1, vector2i p2);
+    virtual void drawContent(sf::RenderWindow* window, vector2i drawOffset) {}
+    void draw(sf::RenderWindow* window);
+};
+
+template<class EventMsg>
+class MainMenu : public Window
+{
     vector<BoundButton<EventMsg>> boundButtons;
 public:
     MainMenu(vector<tuple<string, EventMsg>> buttonInfos, sf::Font font)
     {
+        // Window::p1 and p2 will be set a bit later
+
         vector2i buttonDimensions =
             vector2i(
-                MAIN_MENU_WIDTH - (MAIN_MENU_PADDING * 2),
+                MAIN_MENU_WIDTH - (WINDOW_PADDING * 2),
                 MAIN_MENU_BUTTON_HEIGHT
             );
         
@@ -72,7 +98,7 @@ public:
         int height =
             (buttonInfos.size() * MAIN_MENU_BUTTON_HEIGHT) // total button height
         + (buttonInfos.size() == 0 ? 0 : (buttonInfos.size() - 1) * MAIN_MENU_BUTTON_SPACING)
-        + (MAIN_MENU_PADDING * 2);
+        + (WINDOW_PADDING * 2);
         
         int width = MAIN_MENU_WIDTH;
 
@@ -86,7 +112,7 @@ public:
         {
             vector2i buttonP1 =
                 p1
-            + vector2i(MAIN_MENU_PADDING, MAIN_MENU_PADDING)
+            + vector2i(WINDOW_PADDING, WINDOW_PADDING)
             + vector2i
                     ( 0,
                     (i * (MAIN_MENU_BUTTON_HEIGHT + MAIN_MENU_BUTTON_SPACING))
@@ -146,15 +172,8 @@ public:
         
         return menuEventMsg;
     }
-    void draw(sf::RenderWindow* window)
+    void drawContent(sf::RenderWindow* window, vector2i drawOffset)
     {
-        sf::RectangleShape mainBox(toSFVec(vector2fl(p2 - p1)));
-        mainBox.setPosition(toSFVec(vector2fl(p1)));
-        mainBox.setFillColor(sf::Color::Black);
-        mainBox.setOutlineThickness(1);
-        mainBox.setOutlineColor(sf::Color(0, 0, 255));
-        window->draw(mainBox);
-
         for (uint i=0; i<boundButtons.size(); i++)
         {
             boundButtons[i].button->draw(window);
@@ -162,4 +181,22 @@ public:
     }
 };
 
-#endif // MENU_H
+class LoginWindow : public Window
+{
+public:
+    enum Msg
+    {
+        Back,
+        ResponseEntered
+    };
+    string sigChallenge;
+    optional<string> sigResponse;
+    boost::shared_ptr<TextButton> backButton;
+    boost::shared_ptr<Button> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
+    bool copySuccessful;
+    LoginWindow(vector2i center, string sigChallenge, sf::Font);
+    void drawContent(sf::RenderWindow* window, vector2i drawOffset);
+    optional<Msg> processEvent(sf::Event event);
+};
+
+#endif // UI_ELEMENTS_H

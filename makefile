@@ -26,7 +26,7 @@ prep-server:
 	cp py/* bin/
 	cp secret.txt bin/secret.txt
 	cp web3-api-key bin/web3-api-key
-	cp package-assets/server/* bin/
+	cp assets/server/* bin/
 
 client: pre-build client-build
 
@@ -42,8 +42,7 @@ all: server-build client-build prep-server
 server-build: bin/server
 
 client-build: bin/coinfight
-	cp assets/Andale_Mono.ttf bin/
-	cp assets/NotoSansCJK-Regular.ttc bin/
+	cp assets/client/* bin/
 
 package-client:
 	cd package-assets/client && ./package.sh && mv coinfight-client-linux.zip ../../dist/ && cd ../..
@@ -51,7 +50,7 @@ package-client:
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
 
-bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/menu.o cpp/obj/particles.o cpp/obj/client_networking.o
+bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/interface.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/client_networking.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o

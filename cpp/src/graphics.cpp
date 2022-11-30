@@ -8,7 +8,7 @@
 #include "config.h"
 #include "tutorial.h"
 #include "graphics_helpers.h"
-#include "menu.h"
+#include "ui_elements.h"
 #include "particles.h"
 
 using namespace std;

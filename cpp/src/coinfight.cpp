@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
     string serverIP = customServerIP ? *customServerIP : SERVER_IP_DEFAULT;
 
     loadFonts(&mainFont, &tutorialFont);
+    loadIcons();
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
@@ -427,6 +428,8 @@ void runTutorial(sf::RenderWindow* window)
 
 using namespace boost::asio::ip;
 
+optional<Address> runLoginScreen(sf::RenderWindow* window, ConnectionHandler* connectionHandler, string sigChallenge);
+
 void runClient(sf::RenderWindow* window, string serverAddressString)
 {
     uint latencyAllowance = 10;
@@ -450,22 +453,23 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
     // HANDSHAKE
 
-    optional<uint8_t> maybePlayerId = {};
+    // displayWaitingForSigChallenge(window);
 
     // Wait for the sig challenge and respond with the user's help
     string sigChallenge = connectionHandler.receiveSigChallenge();
-    cout << "Sign this with the address you deposited to:" << endl << sigChallenge << endl;
 
-    string userResponse;
-    cout << "sig: ";
-    cin >> userResponse;
-
-    connectionHandler.sendSignature(userResponse + "\n");
-    Address playerAddress = connectionHandler.receiveAddress();
+    optional<Address> maybePlayerAddress = runLoginScreen(window, &connectionHandler, sigChallenge);
+    if (!maybePlayerAddress)
+    {
+        // Back was pressed; return
+        return;
+    }
+    Address playerAddress = *maybePlayerAddress;
 
     connectionHandler.startReceivingLoop();
 
     Game game;
+    optional<uint8_t> maybePlayerId = {};
 
     // Get the first resync packet
     while (true)
@@ -592,4 +596,38 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
     }
 
     socket.close();
+}
+
+optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler* connectionHandler, string sigChallenge)
+{
+    LoginWindow loginWindow(screenCenter, sigChallenge, mainFont);
+
+    while (mainWindow->isOpen())
+    {
+        sf::Event event;
+        optional<LoginWindow::Msg> msg = {};
+        while (mainWindow->pollEvent(event))
+        {
+            msg = loginWindow.processEvent(event);
+            if (msg) switch (*msg)
+            {
+                case LoginWindow::Back:
+                {
+                    return {};
+                }
+                case LoginWindow::ResponseEntered:
+                {
+                    // wut;
+                }
+            }
+        }
+        // onPaste {
+        //     connectionHandler->sendSignature(userResponse + "\n");
+        //     optional<Address> maybePlayerAddress = connectionHandler->tryReceiveAddressAsync();
+        //     return maybePlayerAddress;
+        // }
+
+        loginWindow.draw(mainWindow);
+        mainWindow->display();
+    }
 }
