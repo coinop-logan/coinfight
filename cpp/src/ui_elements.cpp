@@ -5,20 +5,29 @@
 
 using namespace std;
 
-sf::Sprite copyIcon;//, pasteIcon;
+sf::Texture
+    copyActionSource,
+    copyDoneSource
+;
+
+sf::Sprite
+    copyActionIcon,
+    copyDoneIcon
+;
 
 void loadIcons()
 {
-    sf::Texture texture;
-    if (!texture.loadFromFile("clipboard-blue-in.png"))
+    if (!copyActionSource.loadFromFile("clipboard-copy-action.png"))
     {
         throw runtime_error("Can't load copy icon");
     }
-    copyIcon.setTexture(texture);
-    // if (!pasteIcon.loadFromFile(wut))
-    // {
-    //     throw runtime_error("Can't load paste icon");
-    // }
+    copyActionIcon.setTexture(copyActionSource);
+
+    if (!copyDoneSource.loadFromFile("clipboard-copy-done.png"))
+    {
+        throw runtime_error("Can't load copy done icon");
+    }
+    copyDoneIcon.setTexture(copyDoneSource);
 }
 
 bool collides(vector2i p1, vector2i p2, vector2i point)
@@ -115,16 +124,21 @@ ImageButton::ImageButton(vector2i p1, vector2i dimensions, sf::Sprite sprite)
 
 void ImageButton::drawContent(sf::RenderWindow* window)
 {
-    // auto bounds = sprite.getLocalBounds();
-    // vector2i dimensions(bounds.width, bounds.height);
+    auto bounds = sprite.getLocalBounds();
+    vector2i dimensions(bounds.width, bounds.height);
 
-    // vector2i halfDims = dimensions / 2;
-    // vector2i buttonCenter = p1 + (getDimensions() / 2);
+    vector2i halfDims = dimensions / 2;
+    vector2i buttonCenter = p1 + (getDimensions() / 2);
 
-    // vector2i pos = buttonCenter - halfDims;
+    vector2i pos = buttonCenter - halfDims;
 
-    // sprite.setPosition(toSFVec(vector2fl(pos)));
-    // window->draw(sprite);
+    sprite.setPosition(toSFVec(vector2fl(pos)));
+    window->draw(sprite);
+}
+
+void ImageButton::changeImage(sf::Sprite newSprite)
+{
+    sprite = newSprite;
 }
 
 Window::Window(vector2i p1, vector2i p2)
@@ -185,7 +199,7 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
     // this is kind of hacky, but I don't want to sort through this stateless/stateful dilemma right now.
     if (!copyButton)
     {
-        copyButton = boost::shared_ptr<Button>(new ImageButton(vector2i(buttonsStartX, yPos), COPYPASTE_BUTTON_DIMENSIONS, copyIcon));
+        copyButton = boost::shared_ptr<ImageButton>(new ImageButton(vector2i(buttonsStartX, yPos), COPYPASTE_BUTTON_DIMENSIONS, copyActionIcon));
     }
     copyButton->draw(window);
     backButton->draw(window);
@@ -235,7 +249,15 @@ optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
             {
                 if (copyButton->registerRelease())
                 {
-                    sf::Clipboard::setString("Hello World!");
+                    sf::Clipboard::setString(sigChallenge);
+                    if (sf::Clipboard::getString() == sigChallenge)
+                    {
+                        copyButton->changeImage(copyDoneIcon);
+                    }
+                    else
+                    {
+                        cout << "ERROR: copying to the clipboard didn't work!" << endl;
+                    }
                 }
             }
             if (pasteButton)

@@ -58,6 +58,7 @@ class ImageButton : public Button
 public:
     sf::Sprite sprite;
     ImageButton(vector2i p1, vector2i dimensions, sf::Sprite sprite);
+    void changeImage(sf::Sprite sprite);
     void drawContent(sf::RenderWindow*);
 };
 
@@ -192,7 +193,7 @@ public:
     string sigChallenge;
     optional<string> sigResponse;
     boost::shared_ptr<TextButton> backButton;
-    boost::shared_ptr<Button> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
+    boost::shared_ptr<ImageButton> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
     bool copySuccessful;
     LoginWindow(vector2i center, string sigChallenge, sf::Font);
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);
