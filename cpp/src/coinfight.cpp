@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        window->clear();
         mainMenu.draw(window);
         window->display();
     }
@@ -627,6 +628,7 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
         //     return maybePlayerAddress;
         // }
 
+        mainWindow->clear();
         loginWindow.draw(mainWindow);
         mainWindow->display();
     }
