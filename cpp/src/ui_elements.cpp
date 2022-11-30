@@ -24,10 +24,10 @@ void loadIcons()
 bool collides(vector2i p1, vector2i p2, vector2i point)
 {
     return (
-        point.x >= p1.x &&
-        point.x <= p2.x &&
-        point.y >= p1.y &&
-        point.y <= p2.y
+        point.x     >= p1.x &&
+        point.x - 1 <= p2.x &&
+        point.y     >= p1.y &&
+        point.y - 1 <= p2.y
     );
 }
 
@@ -179,7 +179,7 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
     uint textStartX = leftBorder + numberPointsWidth;
     uint shortTextWidth = 200;
     uint longTextWidth = 400;
-    uint buttonsStartX = shortTextWidth + spacing;
+    uint buttonsStartX = textStartX + shortTextWidth + spacing;
 
     // create copyButton if it's not already set.
     // this is kind of hacky, but I don't want to sort through this stateless/stateful dilemma right now.
