@@ -11,6 +11,8 @@
 
 using namespace std;
 
+const int EXPECTED_SIGNATURE_LENGTH = 130;
+
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
@@ -96,5 +98,7 @@ public:
     bool operator ==(const Address &other);
     bool operator !=(const Address &other);
 };
+
+optional<string> maybeExtractSigFromAmbiguousString(string str);
 
 #endif // COMMON_H

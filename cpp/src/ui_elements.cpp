@@ -197,6 +197,7 @@ LoginWindow::LoginWindow(vector2i center, string sigChallenge, sf::Font* font)
 }
 void drawStepNum(sf::RenderWindow* window, string numString, sf::Font* font, vector2i drawPos);
 uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, uint textBoxWidth);
+uint drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, uint textBoxWidth);
 void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 {
     uint spacing = 40;
@@ -251,6 +252,12 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 
     elementHeight = max(textHeight, COPYPASTE_BUTTON_DIMENSIONS.y);
     yPos += elementHeight + spacing;
+
+    // Display any error
+    if (errorString)
+    {
+        drawErrorText(window, *errorString, font, vector2i(leftBorder, yPos), 500);
+    }
 }
 optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
 {
@@ -296,8 +303,21 @@ optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
                 if (pasteButton->registerRelease())
                 {
                     string inClipboard = sf::Clipboard::getString();
+                    if (inClipboard == "" || inClipboard == sigChallenge)
+                    {
+                        errorString = "You haven't copied the signature into your clipboard yet - see step 2.";
+                        return {};
+                    }
+
+                    optional<string> probablySig = maybeExtractSigFromAmbiguousString(inClipboard);
+                    if (!probablySig)
+                    {
+                        errorString = "That doesn't look like an Ethereum signature.";
+                        return {};
+                    }
+
                     pasteButton->changeImage(pasteDoneIcon);
-                    sigResponse = inClipboard;
+                    sigResponse = probablySig;
                     sf::Clipboard::setString("");
                     return ResponseEntered;
                 }
@@ -323,5 +343,10 @@ uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* 
 {
     uint textHeight = GH::wrapAndRenderTextAtPos(window, textString, font, 24, sf::Color::White, textBoxWidth, drawPos);
 
+    return textHeight;
+}
+uint drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, uint textBoxWidth)
+{
+    uint textHeight = GH::wrapAndRenderTextAtPos(window, errorString, font, 18, sf::Color::Red, textBoxWidth, drawPos);
     return textHeight;
 }

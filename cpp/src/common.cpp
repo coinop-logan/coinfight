@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <fpm/ios.hpp>
 #include <boost/algorithm/string.hpp>
+#include "nlohmann/json.hpp"
 #include "common.h"
 #include "coins.h"
 
@@ -156,4 +157,50 @@ bool Address::operator ==(const Address &other)
 bool Address::operator !=(const Address &other)
 {
     return (s != other.getString());
+}
+
+using json = nlohmann::json;
+
+optional<string> tryExtractingSigFromJson(string str)
+{
+    auto data = json::parse(str, nullptr, false);
+    if (data.is_discarded())
+    {
+        return {};
+    }
+    else if (data.contains("sig"))
+    {
+        return data["sig"];
+    }
+}
+
+optional<string> maybeExtractSigFromAmbiguousString(string str)
+{
+    auto maybeExtractedFromJson = tryExtractingSigFromJson(str);
+    if (maybeExtractedFromJson) return maybeExtractedFromJson;
+    else
+    {
+        // remove a 0x if there is one
+        if (str.size() < 2)
+            return {};
+        if (boost::starts_with(str, "0x"))
+        {
+            str = str.substr(2);
+        }
+
+        // We can eliminate obviously wrong candidates
+        // Is it an incorrect length?
+        if (str.size() != EXPECTED_SIGNATURE_LENGTH)
+            return {};
+        
+        // Are any of the digits non-hex?
+        for (uint i=0; i<str.size(); i++)
+        {
+            if (!isdigit(str[i]))
+                return {};
+        }
+
+        // Eh, looks plausible!
+        return {str};
+    }
 }

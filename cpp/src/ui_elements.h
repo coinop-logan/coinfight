@@ -196,6 +196,7 @@ public:
     boost::shared_ptr<ImageButton> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
     sf::Font* font;
     bool copySuccessful;
+    optional<string> errorString;
     LoginWindow(vector2i center, string sigChallenge, sf::Font*);
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);
     optional<Msg> processEvent(sf::Event event);

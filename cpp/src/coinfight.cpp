@@ -449,7 +449,6 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
     // socket will now have its own local port.
 
-    cout << "Creating ConnectionHandler..." << endl;
     ConnectionHandler connectionHandler(io_service, socket);
 
     // HANDSHAKE
