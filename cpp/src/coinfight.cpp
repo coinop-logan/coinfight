@@ -630,8 +630,17 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
         if (sigResponse)
         {
             connectionHandler->sendSignature(*sigResponse + "\n");
-            optional<Address> maybePlayerAddress = connectionHandler->receiveAddress();
-            return maybePlayerAddress;
+            optional<Address> maybePlayerAddress = connectionHandler->receiveAddressIfNotDenied();
+            if (maybePlayerAddress)
+            {
+                cout << "addr " << maybePlayerAddress->getString();
+                return maybePlayerAddress;
+            }
+            else
+            {
+                runNoticeWindow(mainWindow, "The server received the signature, but the signature was invalid.", &mainFont);
+                return {};
+            }
         }
 
         mainWindow->clear();

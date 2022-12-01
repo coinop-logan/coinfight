@@ -170,6 +170,8 @@ public:
                 }
                 else
                 {
+                    // send a 0 to indicate failure to client
+                    boost::asio::write(*socket, boost::asio::buffer("0"));
                     cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
                     cout << error << endl;
                     state = Closed;
@@ -180,7 +182,8 @@ public:
             cout << "Player authenticated and connected." << endl;
 
             // should really return a fail/success code here. On fail client just hangs atm.
-            boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress.getString()));
+            string response = "1" + connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
+            boost::asio::write(*socket, boost::asio::buffer(response));
 
             state = ReadyForFirstSync;
             startReceivingLoop();

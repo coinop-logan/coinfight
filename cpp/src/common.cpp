@@ -172,6 +172,7 @@ optional<string> tryExtractingSigFromJson(string str)
     {
         return data["sig"];
     }
+    else return {};
 }
 
 optional<string> maybeExtractSigFromAmbiguousString(string str)

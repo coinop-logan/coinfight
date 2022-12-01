@@ -15,11 +15,20 @@ void ConnectionHandler::sendSignature(string sig)
 {
     boost::asio::write(socket, boost::asio::buffer(sig));
 }
-Address ConnectionHandler::receiveAddress()
+optional<Address> ConnectionHandler::receiveAddressIfNotDenied()
 {
-    boost::asio::streambuf buf(42);
-    boost::asio::read(socket, buf);
-    return Address(string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size()));
+    boost::asio::streambuf successBuf(1);
+    boost::asio::read(socket, successBuf);
+    if (string(boost::asio::buffer_cast<const char*>(successBuf.data()), successBuf.size()) == "0")
+    {
+        return {};
+    }
+    else
+    {
+        boost::asio::streambuf buf(42);
+        boost::asio::read(socket, buf);
+        return Address(string(boost::asio::buffer_cast<const char*>(buf.data()), buf.size()));
+    }
 }
 void ConnectionHandler::startReceivingLoop()
 {

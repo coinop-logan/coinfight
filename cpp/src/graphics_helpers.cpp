@@ -97,7 +97,7 @@ sf::Text GH::wrapTextBlock(string text, sf::Font* font, int fontSize, int width)
         }
     }
 
-    uint height = renderedTextBlock.getLocalBounds().height;
+    // uint height = renderedTextBlock.getLocalBounds().height;
 
     return renderedTextBlock;
 }

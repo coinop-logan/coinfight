@@ -30,7 +30,7 @@ public:
     ConnectionHandler(boost::asio::io_service &ioService, tcp::socket &socket);
     string receiveSigChallenge();
     void sendSignature(string sig);
-    Address receiveAddress();
+    optional<Address> receiveAddressIfNotDenied();
     void startReceivingLoop();
 
     void clearVchAndReceiveNextPacket();

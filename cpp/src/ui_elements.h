@@ -18,6 +18,9 @@ const int MAIN_MENU_BUTTON_HEIGHT = 22;
 const int MAIN_MENU_BUTTON_SPACING = 8;
 const int MAIN_MENU_WIDTH = 400;
 
+const int NOTICE_WINDOW_FONT_SIZE = 18;
+const int NOTICE_WINDOW_WIDTH = 400;
+
 const vector2i LOGIN_WINDOW_DIMENSIONS(600, 500);
 
 const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
@@ -201,5 +204,19 @@ public:
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);
     optional<Msg> processEvent(sf::Event event);
 };
+
+class NoticeWindow : public Window
+{
+public:
+    string message;
+    boost::shared_ptr<TextButton> okayButton;
+    sf::Font* font;
+    NoticeWindow(vector2i center, string message, sf::Font*);
+    sf::Text renderText();
+    void drawContent(sf::RenderWindow* window, vector2i drawOffset);
+    bool processEvent(sf::Event event);
+};
+
+void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);
 
 #endif // UI_ELEMENTS_H

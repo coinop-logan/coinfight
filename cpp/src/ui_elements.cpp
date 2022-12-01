@@ -350,3 +350,90 @@ uint drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font,
     uint textHeight = GH::wrapAndRenderTextAtPos(window, errorString, font, 18, sf::Color::Red, textBoxWidth, drawPos);
     return textHeight;
 }
+
+NoticeWindow::NoticeWindow(vector2i center, string message, sf::Font* font)
+    : message(message), font(font)
+{
+    uint spacing = 10;
+
+    auto renderedText = renderText();
+    uint textHeight = renderedText.getLocalBounds().height;
+
+    uint totalHeight = textHeight + MAIN_MENU_BUTTON_HEIGHT + spacing + WINDOW_PADDING*2;
+
+    vector2i halfDims = vector2i(NOTICE_WINDOW_WIDTH, totalHeight) / 2;
+    p1 = center - halfDims;
+    p2 = center + halfDims;
+
+    uint okayButtonY = p1.y + WINDOW_PADDING + textHeight + spacing;
+    vector2i okayButtonPos(p1.x + WINDOW_PADDING, okayButtonY);
+    okayButton = boost::shared_ptr<TextButton>(new TextButton(
+        okayButtonPos,
+        vector2i(NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2), MAIN_MENU_BUTTON_HEIGHT),
+        "Okay",
+        font,
+        MAIN_MENU_BUTTON_FONT_SIZE,
+        MAIN_MENU_BUTTON_TEXT_OFFSET_Y
+    ));
+}
+sf::Text NoticeWindow::renderText()
+{
+    return GH::wrapTextBlock(message, font, NOTICE_WINDOW_FONT_SIZE, NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2));
+}
+void NoticeWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
+{
+    auto renderedText = renderText();
+    renderedText.setPosition(toSFVecF(drawOffset));
+    renderedText.setFillColor(sf::Color::White);
+    window->draw(renderedText);
+    okayButton->draw(window);
+}
+bool NoticeWindow::processEvent(sf::Event event)
+{
+    switch (event.type)
+    {
+        case sf::Event::MouseMoved:
+        {
+            okayButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
+            break;
+        }
+        case sf::Event::MouseButtonPressed:
+        {
+            okayButton->registerPress();
+            break;
+        }
+        case sf::Event::MouseButtonReleased:
+        {
+            if (okayButton->registerRelease())
+            {
+                return true;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return false;
+}
+
+void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
+{
+    NoticeWindow noticeWindow(screenCenter, message, font);
+
+    while (window->isOpen())
+    {
+        sf::Event event;
+        while (window->pollEvent(event))
+        {
+            bool okayPressed = noticeWindow.processEvent(event);
+            if (okayPressed)
+            {
+                return;
+            }
+        }
+
+        window->clear(sf::Color::Black);
+        noticeWindow.draw(window);
+        window->display();
+    }    
+}
