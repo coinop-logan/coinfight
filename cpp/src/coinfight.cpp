@@ -639,4 +639,6 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
         loginWindow.draw(mainWindow);
         mainWindow->display();
     }
+
+    return {};
 }

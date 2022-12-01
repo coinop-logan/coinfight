@@ -1033,36 +1033,6 @@ void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> mayb
     }
 }
 
-void wrapAndRenderText(sf::RenderWindow* window, string textBlock, sf::Font font, int fontSize, int width, sf::Transform* transform)
-{
-    vector<string> words = splitLineIntoWords(textBlock);
-
-    string wrappedTextBlock("");
-    sf::Text renderedTextBlock(sf::String(""), font, fontSize);
-    for (unsigned i=0; i<words.size(); i++)
-    {
-        auto word = words[i];
-        string oldWrappedTextBlock = wrappedTextBlock;
-
-        wrappedTextBlock += (i == 0 ? "" : " ") + word;
-        renderedTextBlock.setString(sf::String(wrappedTextBlock));
-        if (renderedTextBlock.getLocalBounds().width > width)
-        {
-            wrappedTextBlock = oldWrappedTextBlock + "\n" + word;
-            renderedTextBlock.setString(wrappedTextBlock);
-            if (renderedTextBlock.getLocalBounds().width > width)
-            {
-                // indicates the word itself is too big, or something else wierd
-                throw "Error text wrapping.\n";
-            }
-        }
-    }
-
-    window->draw(renderedTextBlock, *transform);
-
-    transform->translate(sf::Vector2f(0, fontSize + renderedTextBlock.getLocalBounds().height));
-}
-
 void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font font)
 {
     sf::Transform transform;
@@ -1078,7 +1048,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
-        wrapAndRenderText(window, preBarTextBlocks[i], font, 13, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, preBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
     }
 
     if (auto progress = tutorial->currentStep()->getProgress(game, ui))
@@ -1104,14 +1074,14 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
             for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
             {
-                wrapAndRenderText(window, postBarTextBlocks[i], font, 13, boxWidth, &transform);
+                GH::wrapAndRenderTextWithTransform(window, postBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
             }
         }
     }
     
     if (tutorial->currentStep()->isReadyToFinish(game, ui) && tutorial->currentStep()->waitForEnter)
     {
-        wrapAndRenderText(window, "Press enter to continue", font, 16, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, "Press enter to continue", &font, 16, sf::Color::White, boxWidth, &transform);
     }
 }
 

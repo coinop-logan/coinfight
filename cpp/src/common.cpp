@@ -91,6 +91,10 @@ sf::Vector2i toSFVec(vector2i v)
 {
     return sf::Vector2i(v.x, v.y);
 }
+sf::Vector2f toSFVecF(vector2i v)
+{
+    return sf::Vector2f(v.x, v.y);
+}
 vector2fl fromSFVec(sf::Vector2f v)
 {
     return vector2fl(v.x, v.y);

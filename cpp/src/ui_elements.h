@@ -194,6 +194,7 @@ public:
     optional<string> sigResponse;
     boost::shared_ptr<TextButton> backButton;
     boost::shared_ptr<ImageButton> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
+    sf::Font font;
     bool copySuccessful;
     LoginWindow(vector2i center, string sigChallenge, sf::Font);
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);

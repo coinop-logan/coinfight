@@ -2,6 +2,7 @@
 #include "ui_elements.h"
 #include "common.h"
 #include "myvectors.h"
+#include "graphics_helpers.h"
 
 using namespace std;
 
@@ -174,7 +175,7 @@ void Window::draw(sf::RenderWindow* window)
 }
 
 LoginWindow::LoginWindow(vector2i center, string sigChallenge, sf::Font font)
-    : sigChallenge(sigChallenge)
+    : sigChallenge(sigChallenge), font(font)
 {
     copySuccessful = false;
     vector2i halfDims = LOGIN_WINDOW_DIMENSIONS / 2;
@@ -194,8 +195,8 @@ LoginWindow::LoginWindow(vector2i center, string sigChallenge, sf::Font font)
         )
     );
 }
-void drawStepNum(sf::RenderWindow* window, char numChar, vector2i drawPos);
-uint drawWrappedStepText(sf::RenderWindow* window, string textString, vector2i drawPos, uint textBoxWidth);
+void drawStepNum(sf::RenderWindow* window, string numString, sf::Font* font, vector2i drawPos);
+uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, uint textBoxWidth);
 void drawCopyOrPasteUX(sf::RenderWindow* window, boost::shared_ptr<Button> copyOrPasteButton, bool actionSuccessful);
 void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 {
@@ -224,15 +225,16 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 
     // 1. Copy this payload
 
-    drawStepNum(window, '1', vector2i(leftBorder, yPos));
-    uint height = drawWrappedStepText(window, "test text wow", vector2i(textStartX, yPos), shortTextWidth);
+    drawStepNum(window, "1", &font, vector2i(leftBorder, yPos));
+    int textHeight = drawWrappedStepText(window, "test text wow", &font, vector2i(textStartX, yPos), shortTextWidth);
     drawCopyOrPasteUX(window, copyButton, copySuccessful);
+    int elementHeight = max(textHeight, COPYPASTE_BUTTON_DIMENSIONS.y);
 
-    yPos += height + spacing;
+    yPos += elementHeight + spacing;
 
     // 2. Sign the challenge with a web3 provider. Metamask + (link/button)MyEtherWallet/sign will work well for this.
 
-    drawStepNum(window, '2', vector2i(leftBorder, yPos));
+    drawStepNum(window, "2", &font, vector2i(leftBorder, yPos));
 
     // 2. Paste the resulting signature.
     if (!pasteButton)
@@ -301,16 +303,18 @@ optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
 }
 
 
-void drawStepNum(sf::RenderWindow* window, char numChar, vector2i drawPos)
+void drawStepNum(sf::RenderWindow* window, string numStr, sf::Font* font, vector2i drawPos)
 {
-    // todo;
+    sf::Text text(numStr + ".", *font, 26);
+    text.setFillColor(sf::Color::White);
+    text.setPosition(toSFVecF(drawPos));
+    window->draw(text);
 }
-uint drawWrappedStepText(sf::RenderWindow* window, string textString, vector2i drawPos, uint textBoxWidth)
+uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, uint textBoxWidth)
 {
-    // todo;
+    uint textHeight = GH::wrapAndRenderTextAtPos(window, textString, font, 24, sf::Color::White, textBoxWidth, drawPos);
 
-    return 80;
-    // return text block height
+    return textHeight;
 }
 void drawCopyOrPasteUX(sf::RenderWindow* window, boost::shared_ptr<Button> copyOrPasteButton, bool actionSuccessful)
 {

@@ -61,6 +61,7 @@ template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContain
 
 sf::Vector2f toSFVec(vector2fl v);
 sf::Vector2i toSFVec(vector2i v);
+sf::Vector2f toSFVecF(vector2i v);
 vector2fl fromSFVec(sf::Vector2f v);
 vector2i fromSFVec(sf::Vector2i v);
 
