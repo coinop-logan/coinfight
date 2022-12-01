@@ -45,11 +45,11 @@ public:
 class TextButton : public Button
 {
     string text;
-    sf::Font font;
+    sf::Font* font;
     int fontSize;
     int textOffsetY;
 public:
-    TextButton(vector2i p1, vector2i, string, sf::Font, int fontSize, int textOffsetY);
+    TextButton(vector2i p1, vector2i, string, sf::Font*, int fontSize, int textOffsetY);
     void drawContent(sf::RenderWindow*);
 };
 
@@ -84,7 +84,7 @@ class MainMenu : public Window
 {
     vector<BoundButton<EventMsg>> boundButtons;
 public:
-    MainMenu(vector<tuple<string, EventMsg>> buttonInfos, sf::Font font)
+    MainMenu(vector<tuple<string, EventMsg>> buttonInfos, sf::Font* font)
     {
         // Window::p1 and p2 will be set a bit later
 
@@ -194,9 +194,9 @@ public:
     optional<string> sigResponse;
     boost::shared_ptr<TextButton> backButton;
     boost::shared_ptr<ImageButton> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
-    sf::Font font;
+    sf::Font* font;
     bool copySuccessful;
-    LoginWindow(vector2i center, string sigChallenge, sf::Font);
+    LoginWindow(vector2i center, string sigChallenge, sf::Font*);
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);
     optional<Msg> processEvent(sf::Event event);
 };

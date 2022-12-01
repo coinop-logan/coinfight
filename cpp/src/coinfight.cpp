@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         menuOptions.push_back({"Connect to Local Server", StartClientWithLocalhost});
     menuOptions.push_back({"Quit", Quit});
 
-    MainMenu mainMenu(menuOptions, mainFont);
+    MainMenu mainMenu(menuOptions, &mainFont);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
 
@@ -601,7 +601,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
 optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler* connectionHandler, string sigChallenge)
 {
-    LoginWindow loginWindow(screenCenter, sigChallenge, mainFont);
+    LoginWindow loginWindow(screenCenter, sigChallenge, &mainFont);
 
     while (mainWindow->isOpen())
     {
