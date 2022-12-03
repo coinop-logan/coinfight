@@ -197,7 +197,7 @@ optional<string> maybeExtractSigFromAmbiguousString(string str)
         // Are any of the digits non-hex?
         for (uint i=0; i<str.size(); i++)
         {
-            if (!isdigit(str[i]))
+            if (!isxdigit(str[i]))
                 return {};
         }
 
