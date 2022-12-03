@@ -209,7 +209,7 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 
     uint textStartX = leftBorder + numberPointsWidth;
     uint shortTextWidth = 400;
-    uint longTextWidth = 600;
+    uint longTextWidth = 500;
     uint buttonsStartX = textStartX + shortTextWidth + spacing;
 
     // "back" button
@@ -219,7 +219,7 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
     // 1. Copy payload
 
     drawStepNum(window, "1", font, vector2i(leftBorder, yPos));
-    int textHeight = drawWrappedStepText(window, "Click to copy the signature payload:", font, vector2i(textStartX, yPos), shortTextWidth);
+    int textHeight = drawWrappedStepText(window, "Click to copy the server's challenge text:", font, vector2i(textStartX, yPos), shortTextWidth);
 
     // create copyButton if it's not already set.
     // this is kind of hacky, but I don't want to sort through this stateless/stateful dilemma right now.
@@ -235,14 +235,14 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
     // 2. Go sign it
 
     drawStepNum(window, "2", font, vector2i(leftBorder, yPos));
-    textHeight = drawWrappedStepText(window, "Sign the payload with an Ethereum/Web3 wallet. Metamask & myetherwallet.com/wallet/sign works well.", font, vector2i(textStartX, yPos), longTextWidth);
+    textHeight = drawWrappedStepText(window, "Sign the challenge text with the Login Helper at coinfight.io. (You'll need a web3 wallet like Metamask)", font, vector2i(textStartX, yPos), longTextWidth);
 
     yPos += textHeight + spacing;
 
     // 3. Paste signature
 
     drawStepNum(window, "3", font, vector2i(leftBorder, yPos));
-    textHeight = drawWrappedStepText(window, "Click to paste the result here.", font, vector2i(textStartX, yPos), shortTextWidth);
+    textHeight = drawWrappedStepText(window, "Click to paste the resulting signature here.", font, vector2i(textStartX, yPos), shortTextWidth);
 
     if (!pasteButton)
     {
