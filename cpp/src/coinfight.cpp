@@ -606,7 +606,7 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
     {
         sf::Event event;
         optional<LoginWindow::Msg> msg = {};
-        optional<string> sigResponse;
+        optional<tuple<Address, string>> addressAndSigResponse;
         while (mainWindow->pollEvent(event))
         {
             msg = loginWindow.processEvent(event);
@@ -618,22 +618,28 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
                 }
                 case LoginWindow::ResponseEntered:
                 {
-                    if (!loginWindow.sigResponse)
+                    if (!loginWindow.addressAndSigResponse)
                     {
-                        throw runtime_error("LoginWindow says it got a sigResponse, but there isn't anything here!");
+                        throw runtime_error("LoginWindow says it got a addressAndSigResponse, but there isn't anything here!");
                     }
-                    sigResponse = loginWindow.sigResponse;
+                    addressAndSigResponse = loginWindow.addressAndSigResponse;
                 }
             }
         }
 
-        if (sigResponse)
+        if (addressAndSigResponse)
         {
-            connectionHandler->sendSignature(*sigResponse + "\n");
+            Address taggedAddress = get<0>(*addressAndSigResponse);
+            string sig = get<1>(*addressAndSigResponse);
+            connectionHandler->sendSignature(sig + "\n");
             optional<Address> maybePlayerAddress = connectionHandler->receiveAddressIfNotDenied();
             if (maybePlayerAddress)
             {
-                cout << "addr " << maybePlayerAddress->getString();
+                if (taggedAddress != *maybePlayerAddress)
+                {
+                    runNoticeWindow(mainWindow, "The address claimed (" + taggedAddress.getString() + ") doesn't match the address derived from the signature (" + maybePlayerAddress->getString() + "). Maybe you signed an old or misformed challenge?", &mainFont);
+                    return {};
+                }
                 return maybePlayerAddress;
             }
             else

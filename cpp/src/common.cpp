@@ -125,6 +125,13 @@ uint32_t newtonSqrtFloor(uint32_t x) {
     }
 }
 
+string lowercaseStr(string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+    return s;
+}
+
 vector<string> splitLineIntoWords(string line)
 {
     vector<string> words;
@@ -132,10 +139,8 @@ vector<string> splitLineIntoWords(string line)
     
     return words;
 }
-
 Address::Address(string _s)
 {
-    assert(_s.size() == 42);
     s = _s;
 }
 Address::Address(Netpack::Consumer* from)
@@ -152,56 +157,68 @@ void Address::pack(Netpack::Builder* to)
 }
 bool Address::operator ==(const Address &other)
 {
-    return (s == other.getString());
+    return (lowercaseStr(s) == lowercaseStr(other.getString()));
 }
 bool Address::operator !=(const Address &other)
 {
-    return (s != other.getString());
+    return (lowercaseStr(s) != lowercaseStr(other.getString()));
 }
 
 using json = nlohmann::json;
 
-optional<string> tryExtractingSigFromJson(string str)
+// optional<string> tryExtractingSigFromJson(string str)
+// {
+//     auto data = json::parse(str, nullptr, false);
+//     if (data.is_discarded())
+//     {
+//         return {};
+//     }
+//     else if (data.contains("sig"))
+//     {
+//         return data["sig"];
+//     }
+//     else return {};
+// }
+
+optional<tuple<Address, string>> decodeAddressAndSig(string str)
 {
     auto data = json::parse(str, nullptr, false);
     if (data.is_discarded())
     {
         return {};
     }
-    else if (data.contains("sig"))
+    
+    if (!(data.contains("sig") && data.contains("address")))
     {
-        return data["sig"];
+        return {};
     }
-    else return {};
-}
 
-optional<string> maybeExtractSigFromAmbiguousString(string str)
-{
-    auto maybeExtractedFromJson = tryExtractingSigFromJson(str);
-    if (maybeExtractedFromJson) return maybeExtractedFromJson;
-    else
-    {
-        // remove a 0x if there is one
-        if (str.size() < 2)
-            return {};
-        if (boost::starts_with(str, "0x"))
-        {
-            str = str.substr(2);
-        }
+    return {{Address(data["address"]), data["sig"]}};
+    // auto maybeExtractedFromJson = tryExtractingSigFromJson(str);
+    // if (maybeExtractedFromJson) return maybeExtractedFromJson;
+    // else
+    // {
+    //     // remove a 0x if there is one
+    //     if (str.size() < 2)
+    //         return {};
+    //     if (boost::starts_with(str, "0x"))
+    //     {
+    //         str = str.substr(2);
+    //     }
 
-        // We can eliminate obviously wrong candidates
-        // Is it an incorrect length?
-        if (str.size() != EXPECTED_SIGNATURE_LENGTH)
-            return {};
+    //     // We can eliminate obviously wrong candidates
+    //     // Is it an incorrect length?
+    //     if (str.size() != EXPECTED_SIGNATURE_LENGTH)
+    //         return {};
         
-        // Are any of the digits non-hex?
-        for (uint i=0; i<str.size(); i++)
-        {
-            if (!isxdigit(str[i]))
-                return {};
-        }
+    //     // Are any of the digits non-hex?
+    //     for (uint i=0; i<str.size(); i++)
+    //     {
+    //         if (!isxdigit(str[i]))
+    //             return {};
+    //     }
 
-        // Eh, looks plausible!
-        return {str};
-    }
+    //     // Eh, looks plausible!
+    //     return {str};
+    // }
 }

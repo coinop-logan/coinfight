@@ -99,6 +99,6 @@ public:
     bool operator !=(const Address &other);
 };
 
-optional<string> maybeExtractSigFromAmbiguousString(string str);
+optional<tuple<Address, string>> decodeAddressAndSig(string str);
 
 #endif // COMMON_H

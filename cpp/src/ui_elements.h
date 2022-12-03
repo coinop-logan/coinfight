@@ -19,7 +19,7 @@ const int MAIN_MENU_BUTTON_SPACING = 8;
 const int MAIN_MENU_WIDTH = 400;
 
 const int NOTICE_WINDOW_FONT_SIZE = 18;
-const int NOTICE_WINDOW_WIDTH = 400;
+const int NOTICE_WINDOW_WIDTH = 600;
 
 const vector2i LOGIN_WINDOW_DIMENSIONS(600, 500);
 
@@ -194,7 +194,7 @@ public:
         ResponseEntered
     };
     string sigChallenge;
-    optional<string> sigResponse;
+    optional<tuple<Address, string>> addressAndSigResponse;
     boost::shared_ptr<TextButton> backButton;
     boost::shared_ptr<ImageButton> copyButton, pasteButton; // will be set in drawContent. Hacky! Sorry!
     sf::Font* font;

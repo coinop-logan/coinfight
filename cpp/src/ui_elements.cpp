@@ -309,15 +309,15 @@ optional<LoginWindow::Msg> LoginWindow::processEvent(sf::Event event)
                         return {};
                     }
 
-                    optional<string> probablySig = maybeExtractSigFromAmbiguousString(inClipboard);
-                    if (!probablySig)
+                    optional<tuple<Address, string>> maybeAddressAndSig = decodeAddressAndSig(inClipboard);
+                    if (!maybeAddressAndSig)
                     {
-                        errorString = "That doesn't look like an Ethereum signature.";
+                        errorString = "Unexpected format. Are you using coinfight.io to sign the message?";
                         return {};
                     }
 
                     pasteButton->changeImage(pasteDoneIcon);
-                    sigResponse = probablySig;
+                    addressAndSigResponse = maybeAddressAndSig;
                     sf::Clipboard::setString("");
                     return ResponseEntered;
                 }
