@@ -148,40 +148,25 @@ public:
             // But leave out the trailing \n leftover
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
 
-            if (sig == string("fake1"))
+            // now have sig and sentChallenge as strings.
+            string error;
+            if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
             {
-                connectionAuthdUserAddress = string("0x798D9726775BD490e2456127e64440bdbbc54abB");
-            }
-            else if (sig == string("fake2"))
-            {
-                connectionAuthdUserAddress = string("0xFd00CF60a6a06cd101177062C690f963C2DBfFB2");
-            }
-            else if (sig == string("fake3"))
-            {
-                connectionAuthdUserAddress = string("0x93d42e141D1B79D61Ec61b21261fd8B872d284d6");
+                connectionAuthdUserAddress = *maybeRecoveredAddress;
             }
             else
             {
-                // now have sig and sentChallenge as strings.
-                string error;
-                if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
-                {
-                    connectionAuthdUserAddress = *maybeRecoveredAddress;
-                }
-                else
-                {
-                    // send a 0 to indicate failure to client
-                    boost::asio::write(*socket, boost::asio::buffer("0"));
-                    cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
-                    cout << error << endl;
-                    state = Closed;
-                    return;
-                }
+                // send a 0 to indicate failure to client
+                boost::asio::write(*socket, boost::asio::buffer("0"));
+                cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
+                cout << error << endl;
+                state = Closed;
+                return;
             }
+            
 
             cout << "Player authenticated and connected." << endl;
 
-            // should really return a fail/success code here. On fail client just hangs atm.
             string response = "1" + connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
             boost::asio::write(*socket, boost::asio::buffer(response));
 
