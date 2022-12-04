@@ -59,7 +59,7 @@ def scanForAndRecordDeposits(w3, contract):
 def executePendingWithdrawals(w3, ethAccount):
     global nextNonce
 
-    withdrawsDir = eventsFromServerDir + "pending_withdrawals/"
+    withdrawsDir = eventsFromServerDir + "withdrawals/"
     withdrawCmdFiles = os.listdir(withdrawsDir)
     for fname in withdrawCmdFiles:
         with open(withdrawsDir + fname, 'r') as f:
