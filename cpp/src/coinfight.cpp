@@ -49,13 +49,10 @@ int main(int argc, char *argv[])
     optional<string> customServerIP;
 
     int c;
-    while ((c = getopt(argc, argv, "ndi:w::")) != -1)
+    while ((c = getopt(argc, argv, "di:w::")) != -1)
     {
         switch (c)
         {
-            case 'n':
-                checkNetpack = false;
-                break;
             case 'd':
                 showDevOptions = true;
                 break;
@@ -197,7 +194,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
         firstEvents[i]->execute(&game);
     }
 
-    GameUI ui;
+    GameUI ui(&mainFont, false);
     uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmds;
@@ -344,7 +341,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
             ui.iterate();
             if (ui.quitNow)
             {
-                window->close();
+                return;
             }
 
         }
@@ -354,7 +351,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 void runTutorial(sf::RenderWindow* window)
 {
     Game game;
-    GameUI ui;
+    GameUI ui(&mainFont, false);
 
     setupTutorialScenario(&game);
 
@@ -416,7 +413,7 @@ void runTutorial(sf::RenderWindow* window)
             ui.iterate();
             if (ui.quitNow)
             {
-                window->close();
+                return;
             }
 
             if (!tutorial.isFinished())
@@ -486,7 +483,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
         }
     }
 
-    GameUI ui;
+    GameUI ui(&mainFont, true);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())
@@ -500,13 +497,6 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
         // PROCESS INPUT
         vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
 
-        // ITERATE GAME_UI
-        ui.iterate();
-        if (ui.quitNow)
-        {
-            window->close();
-        }
-
         // SEND CMDS
         for (unsigned int i=0; i < cmdsToSend.size(); i++)
         {
@@ -516,6 +506,13 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
                 connectionHandler.sendCmd(cmdsToSend[i]); 
         }
         cmdsToSend.clear();
+
+        // ITERATE GAME_UI
+        ui.iterate();
+        if (ui.quitNow)
+        {
+            return;
+        }
 
         // DISPLAY
         display(window, &game, &ui, maybePlayerId, {}, mainFont, tutorialFont, true);

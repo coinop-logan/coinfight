@@ -5,6 +5,7 @@
 #include "interface.h"
 #include "ui_elements.h"
 #include "particles.h"
+#include "ui_elements.h"
 
 #ifndef INPUT_H
 #define INPUT_H
@@ -13,9 +14,18 @@ const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 
 class Tutorial; // define3d in tutorial.h
 
+enum InGameMenuMsg {
+    Resume,
+    Withdraw,
+    Disconnect,
+    WithdrawAndDisconnect
+};
+
 struct GameUI
 {
-    GameUI();
+    GameUI(sf::Font* font, bool online);
+    sf::Font* font;
+    optional<MainMenu<InGameMenuMsg>> inGameMenu;
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;
@@ -34,21 +44,19 @@ struct GameUI
     CameraState camera;
     vector<boost::shared_ptr<UnitInterfaceCmd>> unitInterfaceCmds;
     SpawnBeaconInterfaceCmd spawnBeaconInterfaceCmd;
-    int countdownToQuitOrNeg1;
     bool quitNow;
-    int escapeTextCountdownOrNeg1;
     int debugInt;
     bool cleanDrawEnabled;
     bool hideUX;
     bool showTutorial;
+    bool online;
     ParticlesContainer particles;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     bool selectionHasGateways();
     bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others
-    void startEscapeToQuit();
-    void cancelEscapeToQuit();
+    void openInGameMenu();
     void iterate();
     void removeDuplicatesFromSelection();
     void returnToDefaultState();

@@ -1085,8 +1085,20 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
     }
 }
 
-coinsInt lastPlayerCredit = 0;
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
+{
+    displayGame(window, game, ui, maybePlayerId, tutorial, mainFont, tutorialFont, drawWalletHints);
+
+    if (ui->inGameMenu)
+    {
+        ui->inGameMenu->draw(window);
+    }
+
+    window->display();
+}
+
+coinsInt lastPlayerCredit = 0;
+void displayGame(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
 {
     if (ui->minimapEnabled)
     {
@@ -1347,11 +1359,6 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t>
             drawSpawnBeaconHotkey(window, ui, mainFont);
         }
 
-        if (ui->escapeTextCountdownOrNeg1 >= 0)
-        {
-            drawEscapeQuitText(window, (unsigned int)ui->escapeTextCountdownOrNeg1, ui->countdownToQuitOrNeg1, mainFont);
-        }
-
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
     }
 
@@ -1359,8 +1366,6 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t>
     {
         displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
     }
-
-    window->display();
 }
 
 void cleanupGraphics(sf::RenderWindow* window)

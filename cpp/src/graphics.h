@@ -19,6 +19,7 @@ const vector2fl COMBATUNIT_SHOT_OFFSET(20, 10);
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial*, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints);
+void displayGame(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial*, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints);
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont);
 void cleanupGraphics(sf::RenderWindow* window);
 
