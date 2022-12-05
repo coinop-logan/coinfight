@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
     // these are defaults which arguments may change
     bool fullscreen = true;
     bool smallScreen = false;
-    bool checkNetpack = true;
     bool showDevOptions = false;
     optional<string> customServerIP;
 

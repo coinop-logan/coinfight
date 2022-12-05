@@ -9,13 +9,11 @@ case "${unameOut}" in
         exit 1;;
 esac
 
-rm -f coinfight-client-${machineName}.zip
+rm -f coinfight-${machineName}.zip
 
-mkdir coinfight-client-${machineName}
-cp install.sh coinfight-client-${machineName}/
-cp ../../bin/Andale_Mono.ttf coinfight-client-${machineName}/
-cp ../../bin/client coinfight-client-${machineName}/coinfight
-cp ../../bin/coinfight_local coinfight-client-${machineName}/local_demo
+mkdir coinfight-${machineName}
+cp install.sh coinfight-${machineName}/
+cp ../../bin/* coinfight-${machineName}/
 
-zip -r coinfight-client-${machineName}.zip coinfight-client-${machineName}
-rm -rf coinfight-client-${machineName}
+zip -r coinfight-${machineName}.zip coinfight-${machineName}
+rm -rf coinfight-${machineName}

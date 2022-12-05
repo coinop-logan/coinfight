@@ -10,9 +10,9 @@ else
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
 endif
 
-all: pre-build main-build
+all: pre-build client-build server-build
 
-release: pre-build main-build package-client
+release: pre-build client-build package-client server-build
 
 clean:
 	rm -f cpp/obj/*
@@ -45,7 +45,7 @@ client-build: bin/coinfight
 	cp assets/client/* bin/
 
 package-client:
-	cd package-assets/client && ./package.sh && mv coinfight-client-linux.zip ../../dist/ && cd ../..
+	cd package-assets/client && ./package.sh && mv coinfight-linux.zip ../../dist/ && cd ../..
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
