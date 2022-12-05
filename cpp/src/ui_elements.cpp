@@ -119,7 +119,7 @@ TextButton::TextButton(vector2i p1, vector2i dimensions, string text, sf::Font* 
 void TextButton::drawContent(sf::RenderWindow* window)
 {
     sf::Text renderedText(sf::String(text), *font, fontSize);
-    
+
     // center text
     int spaceForText = (p2.x - p1.x);
 
@@ -196,21 +196,21 @@ LoginWindow::LoginWindow(vector2i center, string sigChallenge, sf::Font* font)
     );
 }
 void drawStepNum(sf::RenderWindow* window, string numString, sf::Font* font, vector2i drawPos);
-uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, uint textBoxWidth);
-uint drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, uint textBoxWidth);
+unsigned int drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, unsigned int textBoxWidth);
+unsigned int drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, unsigned int textBoxWidth);
 void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
 {
-    uint spacing = 40;
-    uint numberPointsWidth = 30;
+    unsigned int spacing = 40;
+    unsigned int numberPointsWidth = 30;
     // decompose drawOffset since we'll be using them quite separately
     // will be updateing yPos frequently
-    uint yPos = drawOffset.y + backButton->getDimensions().y + spacing;
-    uint leftBorder = drawOffset.x;
+    unsigned int yPos = drawOffset.y + backButton->getDimensions().y + spacing;
+    unsigned int leftBorder = drawOffset.x;
 
-    uint textStartX = leftBorder + numberPointsWidth;
-    uint shortTextWidth = 400;
-    uint longTextWidth = 500;
-    uint buttonsStartX = textStartX + shortTextWidth + spacing;
+    unsigned int textStartX = leftBorder + numberPointsWidth;
+    unsigned int shortTextWidth = 400;
+    unsigned int longTextWidth = 500;
+    unsigned int buttonsStartX = textStartX + shortTextWidth + spacing;
 
     // "back" button
 
@@ -339,33 +339,33 @@ void drawStepNum(sf::RenderWindow* window, string numStr, sf::Font* font, vector
     text.setPosition(toSFVecF(drawPos));
     window->draw(text);
 }
-uint drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, uint textBoxWidth)
+unsigned int drawWrappedStepText(sf::RenderWindow* window, string textString, sf::Font* font, vector2i drawPos, unsigned int textBoxWidth)
 {
-    uint textHeight = GH::wrapAndRenderTextAtPos(window, textString, font, 24, sf::Color::White, textBoxWidth, drawPos);
+    unsigned int textHeight = GH::wrapAndRenderTextAtPos(window, textString, font, 24, sf::Color::White, textBoxWidth, drawPos);
 
     return textHeight;
 }
-uint drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, uint textBoxWidth)
+unsigned int drawErrorText(sf::RenderWindow* window, string errorString, sf::Font* font, vector2i drawPos, unsigned int textBoxWidth)
 {
-    uint textHeight = GH::wrapAndRenderTextAtPos(window, errorString, font, 18, sf::Color::Red, textBoxWidth, drawPos);
+    unsigned int textHeight = GH::wrapAndRenderTextAtPos(window, errorString, font, 18, sf::Color::Red, textBoxWidth, drawPos);
     return textHeight;
 }
 
 NoticeWindow::NoticeWindow(vector2i center, string message, sf::Font* font)
     : message(message), font(font)
 {
-    uint spacing = 10;
+    unsigned int spacing = 10;
 
     auto renderedText = renderText();
-    uint textHeight = renderedText.getLocalBounds().height;
+    unsigned int textHeight = renderedText.getLocalBounds().height;
 
-    uint totalHeight = textHeight + MAIN_MENU_BUTTON_HEIGHT + spacing + WINDOW_PADDING*2;
+    unsigned int totalHeight = textHeight + MAIN_MENU_BUTTON_HEIGHT + spacing + WINDOW_PADDING*2;
 
     vector2i halfDims = vector2i(NOTICE_WINDOW_WIDTH, totalHeight) / 2;
     p1 = center - halfDims;
     p2 = center + halfDims;
 
-    uint okayButtonY = p1.y + WINDOW_PADDING + textHeight + spacing;
+    unsigned int okayButtonY = p1.y + WINDOW_PADDING + textHeight + spacing;
     vector2i okayButtonPos(p1.x + WINDOW_PADDING, okayButtonY);
     okayButton = boost::shared_ptr<TextButton>(new TextButton(
         okayButtonPos,
@@ -435,5 +435,5 @@ void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
         window->clear(sf::Color::Black);
         noticeWindow.draw(window);
         window->display();
-    }    
+    }
 }

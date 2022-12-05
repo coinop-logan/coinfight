@@ -96,23 +96,23 @@ public:
                 MAIN_MENU_WIDTH - (WINDOW_PADDING * 2),
                 MAIN_MENU_BUTTON_HEIGHT
             );
-        
+
         vector2i centerPos = screenDimensions / 2;
 
         int height =
             (buttonInfos.size() * MAIN_MENU_BUTTON_HEIGHT) // total button height
         + (buttonInfos.size() == 0 ? 0 : (buttonInfos.size() - 1) * MAIN_MENU_BUTTON_SPACING)
         + (WINDOW_PADDING * 2);
-        
+
         int width = MAIN_MENU_WIDTH;
 
         vector2i dimensions(width, height);
         vector2i halfDimensions = dimensions / 2;
-        
+
         p1 = centerPos - halfDimensions;
         p2 = centerPos + halfDimensions;
 
-        for (uint i=0; i<buttonInfos.size(); i++)
+        for (unsigned int i=0; i<buttonInfos.size(); i++)
         {
             vector2i buttonP1 =
                 p1
@@ -145,7 +145,7 @@ public:
         {
             case sf::Event::MouseMoved:
             {
-                for (uint i=0; i<boundButtons.size(); i++)
+                for (unsigned int i=0; i<boundButtons.size(); i++)
                 {
                     boundButtons[i].button->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
                 }
@@ -153,7 +153,7 @@ public:
             }
             case sf::Event::MouseButtonPressed:
             {
-                for (uint i=0; i<boundButtons.size(); i++)
+                for (unsigned int i=0; i<boundButtons.size(); i++)
                 {
                     boundButtons[i].button->registerPress();
                 }
@@ -161,7 +161,7 @@ public:
             }
             case sf::Event::MouseButtonReleased:
             {
-                for (uint i=0; i<boundButtons.size(); i++)
+                for (unsigned int i=0; i<boundButtons.size(); i++)
                 {
                     if (boundButtons[i].button->registerRelease())
                     {
@@ -173,12 +173,12 @@ public:
             default:
             {}
         }
-        
+
         return menuEventMsg;
     }
     void drawContent(sf::RenderWindow* window, vector2i drawOffset)
     {
-        for (uint i=0; i<boundButtons.size(); i++)
+        for (unsigned int i=0; i<boundButtons.size(); i++)
         {
             boundButtons[i].button->draw(window);
         }

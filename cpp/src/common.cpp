@@ -136,7 +136,7 @@ vector<string> splitLineIntoWords(string line)
 {
     vector<string> words;
     boost::split(words, line, boost::is_any_of(" "));
-    
+
     return words;
 }
 Address::Address(string _s)
@@ -187,7 +187,7 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str)
     {
         return {};
     }
-    
+
     if (!(data.contains("sig") && data.contains("address")))
     {
         return {};
@@ -210,9 +210,9 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str)
     //     // Is it an incorrect length?
     //     if (str.size() != EXPECTED_SIGNATURE_LENGTH)
     //         return {};
-        
+
     //     // Are any of the digits non-hex?
-    //     for (uint i=0; i<str.size(); i++)
+    //     for (unsigned int i=0; i<str.size(); i++)
     //     {
     //         if (!isxdigit(str[i]))
     //             return {};

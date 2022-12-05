@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
     vector<tuple<string, MainMenuEvent>> menuOptions;
-    
+
     menuOptions.push_back({"Local Playground / Demo", StartLocal});
     if (showDevOptions)
         menuOptions.push_back({"Local Debug", StartLocalDebug});
@@ -187,7 +187,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x808f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
     if (honeypotStartingAmount > 0)
         firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
-    
+
     for (unsigned int i=0; i<firstEvents.size(); i++)
     {
         firstEvents[i]->execute(&game);
@@ -201,7 +201,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
     int lastDisplayedFrame = -1;
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
-    
+
     while (window->isOpen()) {
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
         if (now < nextFrameStart)
@@ -363,7 +363,7 @@ void runTutorial(sf::RenderWindow* window)
     int lastDisplayedFrame = -1;
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
-    
+
     while (window->isOpen()) {
         chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
         if (now < nextFrameStart)
@@ -429,7 +429,7 @@ optional<Address> runLoginScreen(sf::RenderWindow* window, ConnectionHandler* co
 
 void runClient(sf::RenderWindow* window, string serverAddressString)
 {
-    uint latencyAllowance = 10;
+    unsigned int latencyAllowance = 10;
 
     boost::asio::io_service io_service;
     tcp::socket socket(io_service);
@@ -502,7 +502,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
             if (!cmdsToSend[i])
                 cout << "Uh oh, I'm seeing some null cmds in cmdsToSend!" << endl;
             else
-                connectionHandler.sendCmd(cmdsToSend[i]); 
+                connectionHandler.sendCmd(cmdsToSend[i]);
         }
         cmdsToSend.clear();
 
@@ -518,7 +518,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
         if (game.frame % 200 == 0)
             cout << "Latency buffer size: " << connectionHandler.receivedFrameEventsPackets.size() << endl;
-        
+
         // GAME LOGIC
 
         int framesToProcess;
@@ -528,7 +528,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
             framesToProcess = 1;
         else
             framesToProcess = 2;
-        
+
         for (int i=0; i<framesToProcess; i++)
         {
             // PROCESS AND CHECK RESYNCS

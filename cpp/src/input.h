@@ -5,14 +5,13 @@
 #include "interface.h"
 #include "ui_elements.h"
 #include "particles.h"
-#include "ui_elements.h"
 
 #ifndef INPUT_H
 #define INPUT_H
 
 const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 
-class Tutorial; // define3d in tutorial.h
+class Tutorial; // defined in tutorial.h
 
 enum InGameMenuMsg {
     Resume,

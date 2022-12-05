@@ -28,7 +28,7 @@ void GH::DashedLineGroup::render(sf::RenderWindow* window)
         bool endLoop = false;
         for (float x=xStart; x < 1; x += oneDashPortion * 2)
         {
-            
+
             vector2fl dashStart;
             // In case of a negative offset
             if (x < 0)
@@ -42,7 +42,7 @@ void GH::DashedLineGroup::render(sf::RenderWindow* window)
             {
                 dashStart = dashedLine.p1 + (p2p * x);
             }
-                
+
             vector2fl dashEnd;
             if (x + oneDashPortion >= 1)
             {
@@ -97,7 +97,7 @@ sf::Text GH::wrapTextBlock(string text, sf::Font* font, int fontSize, int width)
         }
     }
 
-    // uint height = renderedTextBlock.getLocalBounds().height;
+    // unsigned int height = renderedTextBlock.getLocalBounds().height;
 
     return renderedTextBlock;
 }
@@ -112,10 +112,10 @@ void GH::wrapAndRenderTextWithTransform(sf::RenderWindow* window, string text, s
     transform->translate(sf::Vector2f(0, fontSize + rendered.getLocalBounds().height));
 }
 
-uint GH::wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2i drawPos)
+unsigned int GH::wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2i drawPos)
 {
     auto rendered = wrapTextBlock(text, font, fontSize, width);
-    uint height = rendered.getLocalBounds().height;
+    unsigned int height = rendered.getLocalBounds().height;
 
     rendered.setFillColor(color);
     rendered.setPosition(toSFVecF(drawPos));
