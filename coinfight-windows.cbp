@@ -222,6 +222,8 @@
 			<Option target="Debug Demo" />
 			<Option target="Debug Client" />
 		</Unit>
+		<Unit filename="cpp/src/graphics_helpers.cpp" />
+		<Unit filename="cpp/src/graphics_helpers.h" />
 		<Unit filename="cpp/src/input.cpp">
 			<Option target="Release Client" />
 			<Option target="Release Demo" />
@@ -284,6 +286,8 @@
 		<Unit filename="cpp/src/test.cpp">
 			<Option target="test" />
 		</Unit>
+		<Unit filename="cpp/src/tutorial.cpp" />
+		<Unit filename="cpp/src/tutorial.h" />
 		<Unit filename="cpp/src/unit_interface_cmds.cpp">
 			<Option target="Release Client" />
 			<Option target="Release Demo" />
