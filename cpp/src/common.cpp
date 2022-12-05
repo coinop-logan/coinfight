@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <fpm/ios.hpp>
 #include <boost/algorithm/string.hpp>
+#include "nlohmann/json.hpp"
 #include "common.h"
 #include "coins.h"
 
@@ -91,6 +92,10 @@ sf::Vector2i toSFVec(vector2i v)
 {
     return sf::Vector2i(v.x, v.y);
 }
+sf::Vector2f toSFVecF(vector2i v)
+{
+    return sf::Vector2f(v.x, v.y);
+}
 vector2fl fromSFVec(sf::Vector2f v)
 {
     return vector2fl(v.x, v.y);
@@ -120,10 +125,100 @@ uint32_t newtonSqrtFloor(uint32_t x) {
     }
 }
 
+string lowercaseStr(string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+    return s;
+}
+
 vector<string> splitLineIntoWords(string line)
 {
     vector<string> words;
     boost::split(words, line, boost::is_any_of(" "));
     
     return words;
+}
+Address::Address(string _s)
+{
+    s = _s;
+}
+Address::Address(Netpack::Consumer* from)
+{
+    s = from->consumeStringGivenSize(42);
+}
+string Address::getString() const
+{
+    return s;
+}
+void Address::pack(Netpack::Builder* to)
+{
+    to->packStringWithoutSize(s);
+}
+bool Address::operator ==(const Address &other)
+{
+    return (lowercaseStr(s) == lowercaseStr(other.getString()));
+}
+bool Address::operator !=(const Address &other)
+{
+    return (lowercaseStr(s) != lowercaseStr(other.getString()));
+}
+
+using json = nlohmann::json;
+
+// optional<string> tryExtractingSigFromJson(string str)
+// {
+//     auto data = json::parse(str, nullptr, false);
+//     if (data.is_discarded())
+//     {
+//         return {};
+//     }
+//     else if (data.contains("sig"))
+//     {
+//         return data["sig"];
+//     }
+//     else return {};
+// }
+
+optional<tuple<Address, string>> decodeAddressAndSig(string str)
+{
+    auto data = json::parse(str, nullptr, false);
+    if (data.is_discarded())
+    {
+        return {};
+    }
+    
+    if (!(data.contains("sig") && data.contains("address")))
+    {
+        return {};
+    }
+
+    return {{Address(data["address"]), data["sig"]}};
+    // auto maybeExtractedFromJson = tryExtractingSigFromJson(str);
+    // if (maybeExtractedFromJson) return maybeExtractedFromJson;
+    // else
+    // {
+    //     // remove a 0x if there is one
+    //     if (str.size() < 2)
+    //         return {};
+    //     if (boost::starts_with(str, "0x"))
+    //     {
+    //         str = str.substr(2);
+    //     }
+
+    //     // We can eliminate obviously wrong candidates
+    //     // Is it an incorrect length?
+    //     if (str.size() != EXPECTED_SIGNATURE_LENGTH)
+    //         return {};
+        
+    //     // Are any of the digits non-hex?
+    //     for (uint i=0; i<str.size(); i++)
+    //     {
+    //         if (!isxdigit(str[i]))
+    //             return {};
+    //     }
+
+    //     // Eh, looks plausible!
+    //     return {str};
+    // }
 }

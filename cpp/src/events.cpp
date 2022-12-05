@@ -19,6 +19,8 @@ boost::shared_ptr<Event> consumeEvent(Netpack::Consumer* from)
         return boost::shared_ptr<Event>(new BalanceUpdateEvent(from));
     case EVENT_HONEYPOT_CHAR:
         return boost::shared_ptr<Event>(new HoneypotAddedEvent(from));
+    case EVENT_RESETBEACONS_CHAR:
+        return boost::shared_ptr<Event>(new ResetBeaconsEvent(from));
     }
     throw runtime_error("Trying to unpack an unrecognized event");
 }
@@ -126,3 +128,28 @@ HoneypotAddedEvent::HoneypotAddedEvent(Netpack::Consumer *from)
 {
     honeypotAmount = consumeCoinsInt(from);
 }
+
+
+uint8_t ResetBeaconsEvent::typechar()
+{
+    return EVENT_RESETBEACONS_CHAR;
+}
+
+void ResetBeaconsEvent::execute(Game *game)
+{
+    for (unsigned int i=0; i<game->players.size(); i++)
+    {
+        game->players[i].beaconAvailable = true;
+    }
+}
+
+ResetBeaconsEvent::ResetBeaconsEvent()
+    : Event()
+    {}
+void ResetBeaconsEvent::pack(Netpack::Builder* to)
+{
+    packEventBasics(to);
+}
+ResetBeaconsEvent::ResetBeaconsEvent(Netpack::Consumer *from)
+    : Event(from)
+{}

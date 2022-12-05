@@ -15,13 +15,13 @@ class TutorialStep
 public:
     string idName;
     bool waitForEnter;
-    TutorialStep(string idName, bool waitForEnter, Game* game, UI* ui);
-    virtual void start(Game* game, UI* ui);
-    virtual void update(Game* game, UI* ui);
+    TutorialStep(string idName, bool waitForEnter, Game* game, GameUI* ui);
+    virtual void start(Game* game, GameUI* ui);
+    virtual void update(Game* game, GameUI* ui);
     virtual void ping(int num);
-    virtual bool isReadyToFinish(Game* game, UI* ui);
-    virtual optional<float> getProgress(Game* game, UI* ui);
-    virtual tuple<vector<string>, vector<string>> getText(Game* game, UI* ui);
+    virtual bool isReadyToFinish(Game* game, GameUI* ui);
+    virtual optional<float> getProgress(Game* game, GameUI* ui);
+    virtual tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui);
 };
 
 class Tutorial
@@ -29,9 +29,9 @@ class Tutorial
     vector<boost::shared_ptr<TutorialStep>> steps;
     unsigned stepIter;
     Game* game;
-    UI* ui;
+    GameUI* ui;
 public:
-    Tutorial(Game* game, UI* ui);
+    Tutorial(Game* game, GameUI* ui);
     void start();
     void stepForward();
     void update();

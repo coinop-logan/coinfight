@@ -14,7 +14,8 @@ CONTRACT_ADDRESS = "0x4b21628532624867ac62875Db99dbBE21b830626"
 WEB3_PROVIDER = Web3.HTTPProvider("https://gno.getblock.io/mainnet/", session = web3RequestSession)
 
 neededConfirmations = 1
-serverAccountingDir = "accounting/"
+eventsToServerDir = "events_in/"
+eventsFromServerDir = "events_out/"
 
 def getLastBlockProcessed():
     with open("lastblock.txt", "r") as f:
@@ -58,9 +59,10 @@ def scanForAndRecordDeposits(w3, contract):
 def executePendingWithdrawals(w3, ethAccount):
     global nextNonce
 
-    withdrawCmdFiles = os.listdir(serverAccountingDir + "pending_withdrawals/")
+    withdrawsDir = eventsFromServerDir + "withdrawals/"
+    withdrawCmdFiles = os.listdir(withdrawsDir)
     for fname in withdrawCmdFiles:
-        with open(serverAccountingDir + "pending_withdrawals/" + fname, 'r') as f:
+        with open(withdrawsDir + fname, 'r') as f:
             withdrawCmdData = f.read().split(' ')
             (address, amount) = withdrawCmdData[0], withdrawCmdData[1]
 
@@ -79,7 +81,7 @@ def executePendingWithdrawals(w3, ethAccount):
 
         print("withdrawal", txHash, address, amount)
 
-        os.remove(serverAccountingDir + "pending_withdrawals/" + fname)
+        os.remove(withdrawsDir + fname)
 
 def main():
     provider = WEB3_PROVIDER
@@ -135,6 +137,6 @@ def recordNewDeposits(newDepositLogs, newHoneypotLogs, filename):
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
-        os.system("mv " + filename + " " + serverAccountingDir + "pending_deposits/")
+        os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
 
 main()

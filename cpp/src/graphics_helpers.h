@@ -43,6 +43,10 @@ public:
     void render(sf::RenderWindow* window);
 };
 
+sf::Text wrapTextBlock(string text, sf::Font* font, int fontSize, int width);
+void wrapAndRenderTextWithTransform(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, sf::Transform* transform);
+uint wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2i drawPos);
+
 }
 
 #endif // GRAPHICS_HELPERS_H

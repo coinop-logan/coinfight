@@ -11,6 +11,8 @@
 
 using namespace std;
 
+const int EXPECTED_SIGNATURE_LENGTH = 130;
+
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
@@ -61,6 +63,7 @@ template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContain
 
 sf::Vector2f toSFVec(vector2fl v);
 sf::Vector2i toSFVec(vector2i v);
+sf::Vector2f toSFVecF(vector2i v);
 vector2fl fromSFVec(sf::Vector2f v);
 vector2i fromSFVec(sf::Vector2i v);
 
@@ -83,5 +86,19 @@ uint64_t constexpr ipow(uint32_t base, uint32_t exp)
 }
 
 vector<string> splitLineIntoWords(string);
+
+class Address
+{
+    string s;
+public:
+    Address(string s);
+    Address(Netpack::Consumer*);
+    string getString() const;
+    void pack(Netpack::Builder*);
+    bool operator ==(const Address &other);
+    bool operator !=(const Address &other);
+};
+
+optional<tuple<Address, string>> decodeAddressAndSig(string str);
 
 #endif // COMMON_H

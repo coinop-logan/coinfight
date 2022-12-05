@@ -22,18 +22,6 @@ const int SEARCH_GRID_NUM_ROWS = 200;
 const int SEARCH_GRID_CELL_WIDTH = 200;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
 
-class Address
-{
-    string s;
-public:
-    Address(string s);
-    Address(Netpack::Consumer*);
-    string getString() const;
-    void pack(Netpack::Builder*);
-    bool operator ==(const Address &other);
-    bool operator !=(const Address &other);
-};
-
 sf::Color playerAddressToColor(Address address);
 
 class Game;

@@ -1672,7 +1672,7 @@ void Gateway::iterate()
         }
     }
 
-    // if we have money, maybe there's something to build?
+    // if we have money, maybe there's something to fund?
     if (game->players[this->ownerId].credit.getInt() > 0 && maybeDepositTargetInfo)
     {
         EntityRef depositTarget = get<0>(*maybeDepositTargetInfo);
@@ -1693,8 +1693,15 @@ void Gateway::iterate()
                 {
                     if (unit->getBuiltRatio() < fixed32(1))
                     {
-                        maybeCoinsToDepositTo = &unit->goldInvested;
-                        maybeBuildingUnit = unit;
+                        if (fromQueue)
+                        {
+                            maybeCoinsToDepositTo = &unit->goldInvested;
+                            maybeBuildingUnit = unit;
+                        }
+                        // If it's not from queue, this indicates that `depositTarget` (now `unit`)
+                        // is actually a Prime that is trying to withdraw, but somehow became not-fully-built.
+                        // By not setting either of the above maybe.. vars,
+                        // we ensure that half a page down or so, maybeWithdrawingPrime will be cleared.
                     }
                     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                     {

@@ -10,6 +10,7 @@ using namespace std;
 
 const uint8_t EVENT_BALANCEUPDATE_CHAR = 1;
 const uint8_t EVENT_HONEYPOT_CHAR = 2;
+const uint8_t EVENT_RESETBEACONS_CHAR = 3;
 
 struct Event;
 
@@ -55,6 +56,18 @@ struct HoneypotAddedEvent : public Event
 
     HoneypotAddedEvent(coinsInt honeypotAmount);
     HoneypotAddedEvent(Netpack::Consumer*);
+};
+
+struct ResetBeaconsEvent : public Event
+{
+    uint8_t typechar();
+
+    void execute(Game *game);
+
+    void pack(Netpack::Builder*);
+
+    ResetBeaconsEvent();
+    ResetBeaconsEvent(Netpack::Consumer*);
 };
 
 #endif // EVENTS_H

@@ -148,39 +148,27 @@ public:
             // But leave out the trailing \n leftover
             string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
 
-            if (sig == string("fake1"))
+            // now have sig and sentChallenge as strings.
+            string error;
+            if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
             {
-                connectionAuthdUserAddress = string("0x798D9726775BD490e2456127e64440bdbbc54abB");
-            }
-            else if (sig == string("fake2"))
-            {
-                connectionAuthdUserAddress = string("0xFd00CF60a6a06cd101177062C690f963C2DBfFB2");
-            }
-            else if (sig == string("fake3"))
-            {
-                connectionAuthdUserAddress = string("0x93d42e141D1B79D61Ec61b21261fd8B872d284d6");
+                connectionAuthdUserAddress = *maybeRecoveredAddress;
             }
             else
             {
-                // now have sig and sentChallenge as strings.
-                string error;
-                if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
-                {
-                    connectionAuthdUserAddress = *maybeRecoveredAddress;
-                }
-                else
-                {
-                    cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
-                    cout << error << endl;
-                    state = Closed;
-                    return;
-                }
+                // send a 0 to indicate failure to client
+                boost::asio::write(*socket, boost::asio::buffer("0"));
+                cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
+                cout << error << endl;
+                state = Closed;
+                return;
             }
+            
 
             cout << "Player authenticated and connected." << endl;
 
-            // should really return a fail/success code here. On fail client just hangs atm.
-            boost::asio::write(*socket, boost::asio::buffer(connectionAuthdUserAddress.getString()));
+            string response = "1" + connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
+            boost::asio::write(*socket, boost::asio::buffer(response));
 
             state = ReadyForFirstSync;
             startReceivingLoop();
@@ -345,17 +333,17 @@ void actuateWithdrawal(Address userAddress, coinsInt amount)
     withdrawDescriptorFile << writeData;
     withdrawDescriptorFile.close();
 
-    filesystem::rename(filename, "./accounting/pending_withdrawals/" + filename);
+    filesystem::rename(filename, "./events_out/withdrawals/" + filename);
 }
 
-vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
+vector<boost::shared_ptr<Event>> pollPendingEvents()
 {
     vector<boost::shared_ptr<Event>> events;
 
-    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::path depositsDirPath("./events_in/deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
-    for (boost::filesystem::directory_iterator dirIter(accountingDirPath); dirIter != directoryEndIter; dirIter++)
+    for (boost::filesystem::directory_iterator dirIter(depositsDirPath); dirIter != directoryEndIter; dirIter++)
     {
         if (boost::filesystem::is_regular_file(dirIter->path())) {
             string depositFilePath = dirIter->path().string();
@@ -397,6 +385,25 @@ vector<boost::shared_ptr<Event>> pollPendingDepositsAndHoneypotEvents()
         }
     }
 
+    boost::filesystem::path eventsDirPath("./events_in/");
+    directoryEndIter = boost::filesystem::directory_iterator(); // default constructor makes it an end_iter
+
+    bool resetBeacons = false;
+    for (boost::filesystem::directory_iterator dirIter(eventsDirPath); dirIter != directoryEndIter; dirIter++)
+    {
+        // right now just consumes ANY REGULAR FILE in this dir as a beacon reset
+        // once more events are at play, we should check the name. Python already renames this type of file simply "reset_beacons".
+        if (boost::filesystem::is_regular_file(dirIter->path())) {
+            resetBeacons = true;
+
+            boost::filesystem::remove(dirIter->path());
+        }
+    }
+    if (resetBeacons)
+    {
+        events.push_back(boost::shared_ptr<Event>(new ResetBeaconsEvent()));
+    }
+
     return events;
 }
 
@@ -410,7 +417,7 @@ int main(int argc, char *argv[])
     listener.startAccept();
 
     // server will scan this directory for pending deposits (supplied by py/balance_tracker.py)
-    boost::filesystem::path accountingDirPath("./accounting/pending_deposits/");
+    boost::filesystem::path depositsDirPath("./events_in/deposits/");
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
@@ -456,7 +463,7 @@ int main(int argc, char *argv[])
         pendingWithdrawEvents.clear();
 
         // scan for any pending deposits or honeypotAdd events
-        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingDepositsAndHoneypotEvents();
+        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingEvents();
         pendingEvents.insert(pendingEvents.end(), depositAndHoneypotEvents.begin(), depositAndHoneypotEvents.end());
 
         // build FrameEventsPacket for this frame

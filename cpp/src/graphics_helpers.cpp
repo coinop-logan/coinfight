@@ -71,3 +71,56 @@ void GH::DashedLineGroup::render(sf::RenderWindow* window)
     }
     window->draw(lines);
 }
+
+sf::Text GH::wrapTextBlock(string text, sf::Font* font, int fontSize, int width)
+{
+    vector<string> words = splitLineIntoWords(text);
+
+    string wrappedTextBlock("");
+    sf::Text renderedTextBlock(sf::String(""), *font, fontSize);
+    for (unsigned i=0; i<words.size(); i++)
+    {
+        auto word = words[i];
+        string oldWrappedTextBlock = wrappedTextBlock;
+
+        wrappedTextBlock += (i == 0 ? "" : " ") + word;
+        renderedTextBlock.setString(sf::String(wrappedTextBlock));
+        if (renderedTextBlock.getLocalBounds().width > width)
+        {
+            wrappedTextBlock = oldWrappedTextBlock + "\n" + word;
+            renderedTextBlock.setString(wrappedTextBlock);
+            if (renderedTextBlock.getLocalBounds().width > width)
+            {
+                // indicates the word itself is too big, or something else wierd
+                throw "Error text wrapping.\n";
+            }
+        }
+    }
+
+    // uint height = renderedTextBlock.getLocalBounds().height;
+
+    return renderedTextBlock;
+}
+
+void GH::wrapAndRenderTextWithTransform(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, sf::Transform* transform)
+{
+    auto rendered = wrapTextBlock(text, font, fontSize, width);
+    rendered.setFillColor(color);
+
+    window->draw(rendered, *transform);
+
+    transform->translate(sf::Vector2f(0, fontSize + rendered.getLocalBounds().height));
+}
+
+uint GH::wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2i drawPos)
+{
+    auto rendered = wrapTextBlock(text, font, fontSize, width);
+    uint height = rendered.getLocalBounds().height;
+
+    rendered.setFillColor(color);
+    rendered.setPosition(toSFVecF(drawPos));
+
+    window->draw(rendered);
+
+    return height;
+}
