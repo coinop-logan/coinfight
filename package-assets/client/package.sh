@@ -3,7 +3,7 @@
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     machineName=linux;;
-    Darwin*)    machineName=mac;;
+    Darwin*)    machineName=mac-x86;;
     *)
         echo "Can't build for platform ${unameOut}"
         exit 1;;

@@ -45,7 +45,7 @@ client-build: bin/coinfight
 	cp assets/client/* bin/
 
 package-client:
-	cd package-assets/client && ./package.sh && mv coinfight-linux.zip ../../dist/ && cd ../..
+	cd package-assets/client && ./package.sh && mv coinfight-*.zip ../../dist/ && cd ../..
 
 cpp/obj/%.o: cpp/src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@ $(INC)
