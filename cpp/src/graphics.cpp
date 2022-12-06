@@ -1375,10 +1375,11 @@ void cleanupGraphics(sf::RenderWindow* window)
 
 const vector<string> titleTextSrcLines = 
 {
-    "  ___ ____ _ _  _ ___ _ ____ _ _ ___ ",
-    " / __|    | | \\| | __| | ___} | |_ _|",
-    "| |__| || | |  \\ | __| | |_ | - || | ",
-    " \\___|____|_|_|\\_|_| |_\\____}_|_||_| " // note the "non-rendered" double backslashes here
+    "  __    ___    _    _  _    ___    _     __    _ _    ___ ",
+    " / _}  |   |  | |  | \\| |  | __}  | |   / _}  | | |  |_ _|",
+    "| |_   | | |  | |  |  \\ |  | __}  | |  | | |  | - |   | |  ",
+    " \\__}  |___|  |_|  |_|\\_|  |_|    |_|   \\__|  |_|_|   |_| "
+     // note the "non-rendered" double backslashes here
 };
 
 void drawTitle(sf::RenderWindow* window, sf::Font* font)
@@ -1395,6 +1396,8 @@ void drawTitle(sf::RenderWindow* window, sf::Font* font)
     string srcText = srcTextSS.str();
 
     sf::Text rendered(sf::String(srcText), *font, 14);
+    rendered.setCharacterSize(36);
+    // rendered.setFillColor(sf::Color(1.f, 1.f, 0.f));
 
     unsigned int width = rendered.getLocalBounds().width;
     vector2i drawPos(

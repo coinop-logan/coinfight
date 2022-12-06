@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
         }
 
         window->clear();
+        drawTitle(window, &mainFont);
         mainMenu.draw(window);
         window->display();
     }
