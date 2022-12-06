@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <optional>
 #include <boost/shared_ptr.hpp>
+#include "address.h"
 #include "myvectors.h"
 #include "netpack.h"
 #include "fpm/fixed.hpp"
@@ -86,18 +87,6 @@ uint64_t constexpr ipow(uint32_t base, uint32_t exp)
 }
 
 vector<string> splitLineIntoWords(string);
-
-class Address
-{
-    string s;
-public:
-    Address(string s);
-    Address(Netpack::Consumer*);
-    string getString() const;
-    void pack(Netpack::Builder*);
-    bool operator ==(const Address &other);
-    bool operator !=(const Address &other);
-};
 
 optional<tuple<Address, string>> decodeAddressAndSig(string str);
 
