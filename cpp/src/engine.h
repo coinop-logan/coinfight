@@ -22,8 +22,6 @@ const int SEARCH_GRID_NUM_ROWS = 200;
 const int SEARCH_GRID_CELL_WIDTH = 200;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
 
-sf::Color playerAddressToColor(Address address);
-
 class Game;
 
 const Address zeroAddress("0x0000000000000000000000000000000000000000");
