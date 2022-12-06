@@ -1372,3 +1372,36 @@ void cleanupGraphics(sf::RenderWindow* window)
 {
     delete window;
 }
+
+const vector<string> titleTextSrcLines = 
+{
+    "  ___ ____ _ _  _ ___ _ ____ _ _ ___ ",
+    " / __|    | | \\| | __| | ___} | |_ _|",
+    "| |__| || | |  \\ | __| | |_ | - || | ",
+    " \\___|____|_|_|\\_|_| |_\\____}_|_||_| " // note the "non-rendered" double backslashes here
+};
+
+void drawTitle(sf::RenderWindow* window, sf::Font* font)
+{
+    stringstream srcTextSS;
+    for (unsigned int i=0; i<titleTextSrcLines.size(); i++)
+    {
+        if (i!=0)
+        {
+            srcTextSS << "\n";
+        }
+        srcTextSS << titleTextSrcLines[i];
+    }
+    string srcText = srcTextSS.str();
+
+    sf::Text rendered(sf::String(srcText), *font, 14);
+
+    unsigned int width = rendered.getLocalBounds().width;
+    vector2i drawPos(
+        (screenCenter.x - (width / 2)),
+        TITLE_POS_Y
+    );
+    rendered.setPosition(toSFVecF(drawPos));
+
+    window->draw(rendered);
+}
