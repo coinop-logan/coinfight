@@ -110,8 +110,8 @@ public:
         {
             {
                 "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, this is what you'd see if you just deposited 4.5 DAI into your Coinfight wallet, and joined a game.",
-                "The first step after joining a game will be to spawn in your first Gateway, with a one-time-use \"Beacon\".",
-                "Do this now by hitting \"B\" and clicking on the map somewhere.",
+                "The first step after joining a game will be to spawn in your first Gateway.",
+                "Do this now by hitting \"G\" and clicking on the map somewhere.",
             },
             {}
         };
@@ -144,7 +144,7 @@ public:
                 "Note that this is spending money from your Coinfight wallet. All told, the Gateway takes a $4 investment."
             },
             {
-                "In a real game, everyone has only one Beacon--one chance to \"teleport in\" a Gateway like this anywhere on the map.",
+                "In a real game, you can only \"teleport in\" a Gateway like this by spending a ticket to a Coinfight round.",
                 "Any additional Gateways will have to be built with units and gold on location."
             }
         };
@@ -283,6 +283,8 @@ public:
             total += primes[i]->heldGold.getInt();
         }
 
+        total += game->players[0].credit.getInt();
+
         return total;
     }
     bool isReadyToFinish(Game* game, GameUI* ui)
@@ -360,7 +362,7 @@ public:
                 "Continue gathering gold and make another Prime.",
             },
             {
-                "Primes will continue working until they run out of sources of gold (loot and Gateways) or ways to store/invest it (build jobs, Gateways, or gold piles).",
+                "Primes will continue working until they run out of sources of gold or ways to store/invest it."
                 "Moving the Prime will only briefly interrupt this work--to stop it completely and clear its job queue, hit S.",
                 "(right-clicking usually does the right thing, but the keys D (Deposit) and F (Fetch) can be more specific)"
             }
@@ -520,7 +522,7 @@ public:
                 "When Primes are constructing buildings, they'll need more gold than they can carry, so make sure they have some source of gold (like a Gateway or some gold piles) queued up so they can finish the job.",
                 "",
                 "This pretty much concludes the tutorial, but there's a bit of a minigame for you to try out some of the combat.",
-                "Build two combat units to continue (Fighers and/or Turrets). Multiple Primes can help build any unit or building, by right clicking or hitting D.",
+                "To start the ~Tutorial Graduation Minigame~, build two combat units (Fighers and/or Turrets).",
             },
             {}
         };
@@ -618,6 +620,7 @@ public:
         }
         return {
             {
+                "In a real game, your wallet balance (upper left) is withdrawable xDai, even after your army is lost. How high can you get it before you die?",
                 numFightersSS.str(),
                 "Next wave countdown:"
             },
@@ -652,7 +655,10 @@ public:
                         }
                     }
                 }
-                groupTarget = Target(randomChoice(playerEntityPositions));
+                if (playerEntityPositions.size() > 0)
+                    groupTarget = Target(randomChoice(playerEntityPositions));
+                else
+                    groupTarget = Target(vector2fp());
 
                 numCreatedThisGroup = 0;
             }

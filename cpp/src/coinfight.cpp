@@ -375,7 +375,7 @@ void runTutorial(sf::RenderWindow* window)
 
                 // poll for cmds from input
                 // (also updates GameUI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, {});
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, &tutorial);
                 pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 
                 display(window, &game, &ui, 0, &tutorial, mainFont, tutorialFont, false);
