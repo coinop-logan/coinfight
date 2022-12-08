@@ -459,8 +459,6 @@ int main(int argc, char *argv[])
 {
     srand(time(0));
 
-    cout << GIT_COMMIT_HASH << endl;
-
     boost::asio::io_service io_service;
 
     Listener listener(io_service);
