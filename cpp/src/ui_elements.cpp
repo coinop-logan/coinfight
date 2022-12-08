@@ -354,7 +354,7 @@ unsigned int drawErrorText(sf::RenderWindow* window, string errorString, sf::Fon
 NoticeWindow::NoticeWindow(vector2i center, string message, sf::Font* font)
     : message(message), font(font)
 {
-    unsigned int spacing = 10;
+    unsigned int spacing = 50;
 
     auto renderedText = renderText();
     unsigned int textHeight = renderedText.getLocalBounds().height;

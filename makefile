@@ -1,5 +1,7 @@
+GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
+
 CXX = g++
-CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie
+CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie -DGIT_COMMIT_HASH='"$(GIT_COMMIT_HASH)"'
 UNAME := $(shell uname)
 INC=-I/usr/include -I/usr/include/python3.8/ -I ./cpp/include/ `python3-config --includes`
 LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
@@ -12,7 +14,13 @@ endif
 
 all: pre-build client-build server-build
 
-release: pre-build client-build package-client server-build
+abort-if-git-not-clean:
+	@if test -n "$$(git status --porcelain)"; then \
+		echo "ERROR: git repo is not clean."; \
+		exit 1; \
+	fi
+
+release: abort-if-git-not-clean pre-build client-build package-client server-build
 
 clean:
 	rm -f cpp/obj/*

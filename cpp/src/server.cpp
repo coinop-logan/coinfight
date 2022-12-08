@@ -70,12 +70,13 @@ class ClientChannel
 
     vch receivedBytes;
     boost::asio::streambuf receivedSig;
+    boost::asio::streambuf receivedCodeHash;
 
     string sentChallenge;
 
     string genRandomString(int len)
     {
-        // hacky, untested, probably insecure!! Only good for the hackathon and a demo.
+        // hacky, untested, probably insecure!!
         static const char alphanum[] =
             "0123456789"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -108,8 +109,8 @@ public:
 
     void startHandshakeAsync()
     {
-        generateAndSendSigChallenge();
-        receiveSigAsync(); // also kicks off receiving loop
+        // Client initiates handshake by sending a code hash, to check version match
+        receiveAndCheckCodeHashAsync();
     }
 
     void generateAndSendSigChallenge()
@@ -121,6 +122,53 @@ public:
         cout << "sent challenge" << endl;
 
         sentChallenge = challenge;
+    }
+
+    void receiveAndCheckCodeHashAsync()
+    {
+        boost::asio::async_read_until(
+            *socket,
+            receivedCodeHash,
+            '\n',
+            boost::bind(
+                &ClientChannel::codeHashReceived,
+                this,
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred
+            )
+        );
+    }
+
+    void codeHashReceived(const boost::system::error_code &error, size_t transferred)
+    {
+        cout << "version received" << endl;
+        if (error)
+        {
+            cout << "Error receiving codehash from " << connectionAuthdUserAddress.getString() << ". Kicking." << endl;
+            state = Closed;
+        }
+        else
+        {
+            // turn the received data into a string, leaving out trailing \n.
+            string codeHash(boost::asio::buffer_cast<const char*>(receivedCodeHash.data()), receivedCodeHash.size() - 1);
+
+            // If there was a version mismatch, send a fail flag
+            if (codeHash != GIT_COMMIT_HASH)
+            {
+                cout << "Received code hash doesn't match! Sending denial and closing connection." << endl;
+                boost::asio::write(*socket, boost::asio::buffer("0"));
+                state = Closed;
+                return;
+            }
+
+            // Otherwise, send a success flag and a sig challenge
+            cout << "Code hash matches. Sending success flag and sig challenge, and waiting for sig." << endl;
+            boost::asio::write(*socket, boost::asio::buffer("1"));
+            generateAndSendSigChallenge();
+
+            // Wait for client's signature
+            receiveSigAsync();
+        }
     }
 
     void receiveSigAsync()
@@ -410,6 +458,8 @@ vector<boost::shared_ptr<Event>> pollPendingEvents()
 int main(int argc, char *argv[])
 {
     srand(time(0));
+
+    cout << GIT_COMMIT_HASH << endl;
 
     boost::asio::io_service io_service;
 

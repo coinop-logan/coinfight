@@ -450,9 +450,26 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
     // HANDSHAKE
 
-    // displayWaitingForSigChallenge(window);
+    // Client initiates by sending code hash, for a version check.
+    connectionHandler.sendCodeHash(GIT_COMMIT_HASH);
 
-    // Wait for the sig challenge and respond with the user's help
+    // Server will send a success flag upon version match
+    auto maybeSuccess = connectionHandler.receiveSuccessFlag();
+    if (auto success = maybeSuccess)
+    {
+        if (!*success)
+        {
+            runNoticeWindow(window, "Version mismatch. Do you have the latest version of Coinfight?", &mainFont);
+            return;
+        }
+    }
+    else
+    {
+        runNoticeWindow(window, "Handshake failed! :/", &mainFont);
+        return;
+    }
+
+    // Server will also immediately send a sigChallenge
     string sigChallenge = connectionHandler.receiveSigChallenge();
 
     optional<Address> maybePlayerAddress = runLoginScreen(window, &connectionHandler, sigChallenge);
@@ -628,7 +645,7 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
         {
             Address taggedAddress = get<0>(*addressAndSigResponse);
             string sig = get<1>(*addressAndSigResponse);
-            connectionHandler->sendSignature(sig + "\n");
+            connectionHandler->sendSignature(sig);
             optional<Address> maybePlayerAddress = connectionHandler->receiveAddressIfNotDenied();
             if (maybePlayerAddress)
             {

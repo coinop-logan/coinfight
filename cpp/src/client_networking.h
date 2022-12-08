@@ -28,6 +28,8 @@ public:
     vector<Game> receivedResyncs;
 
     ConnectionHandler(boost::asio::io_service &ioService, tcp::socket &socket);
+    void sendCodeHash(string codeHash);
+    optional<bool> receiveSuccessFlag();
     string receiveSigChallenge();
     void sendSignature(string sig);
     optional<Address> receiveAddressIfNotDenied();

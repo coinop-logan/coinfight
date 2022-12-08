@@ -5,6 +5,21 @@ ConnectionHandler::ConnectionHandler(boost::asio::io_service &ioService, tcp::so
 {
     sending = false;
 }
+void ConnectionHandler::sendCodeHash(string codeHash)
+{
+    boost::asio::write(socket, boost::asio::buffer(codeHash + "\n"));
+}
+optional<bool> ConnectionHandler::receiveSuccessFlag()
+{
+    boost::asio::streambuf successBuf(1);
+    boost::asio::read(socket, successBuf);
+    string successStr(boost::asio::buffer_cast<const char*>(successBuf.data()), successBuf.size());
+
+    if (successStr == "1") return true;
+    else if (successStr == "0") return false;
+    else return {};
+
+}
 string ConnectionHandler::receiveSigChallenge()
 {
     boost::asio::streambuf buf(50);
@@ -13,7 +28,7 @@ string ConnectionHandler::receiveSigChallenge()
 }
 void ConnectionHandler::sendSignature(string sig)
 {
-    boost::asio::write(socket, boost::asio::buffer(sig));
+    boost::asio::write(socket, boost::asio::buffer(sig + "\n"));
 }
 optional<Address> ConnectionHandler::receiveAddressIfNotDenied()
 {
