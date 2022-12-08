@@ -69,9 +69,9 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
                 break;
             }
         }
-        cout << "lowering standards" << endl;
         if (!modeFound) // gotta lower our standards!
         {
+            cout << "lowering standards" << endl;
             for (unsigned int i = 0; i < modes.size(); i++)
             {
                 cout << i << endl;
@@ -91,7 +91,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
             chosenMode = modes[0];
             cout << "defaulting to mode 0" << endl;
         }
-        chosenMode.bitsPerPixel = 24;
+        // chosenMode.bitsPerPixel = 24;
     }
     updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
 
