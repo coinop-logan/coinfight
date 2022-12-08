@@ -56,22 +56,28 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     {
         bool modeFound(false);
 
+        cout << "scanning video modes" << endl << endl;
         auto modes = sf::VideoMode::getFullscreenModes();
         for (unsigned int i = 0; i < modes.size(); i++)
         {
+            cout << i << ": " << modes[i].width << "x" << modes[i].height << endl;
             if (modes[i].width == 1920 && modes[i].height == 1080)
             {
+                cout << "found - breaking" << endl;
                 modeFound = true;
                 chosenMode = modes[i];
                 break;
             }
         }
+        cout << "lowering standards" << endl;
         if (!modeFound) // gotta lower our standards!
         {
             for (unsigned int i = 0; i < modes.size(); i++)
             {
+                cout << i << endl;
                 if (modes[i].width <= 1920)
                 {
+                    cout << "found - breaking" << endl;
                     modeFound = true;
                     chosenMode = modes[i];
                     break;
@@ -83,6 +89,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
             // weird, but okay. Just choose the first mode found.
             modeFound = true;
             chosenMode = modes[0];
+            cout << "defaulting to mode 0" << endl;
         }
         chosenMode.bitsPerPixel = 24;
     }
