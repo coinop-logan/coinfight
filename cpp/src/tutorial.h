@@ -8,6 +8,9 @@
 
 using namespace std;
 
+const string TUTORIAL_PLAYER_ADDRESS_STR = "0x0f0f00f000f00f00f000f00f00f000f00f00f000";
+const string TUTORIAL_OTHER_ADDRESS_STR = "0xf00f00f000f00f00f000f00f00f000f00f00f000";
+
 void setupTutorialScenario(Game* game);
 
 class TutorialStep

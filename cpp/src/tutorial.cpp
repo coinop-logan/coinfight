@@ -6,18 +6,10 @@ using namespace std;
 
 void setupTutorialScenario(Game* game)
 {
-    game->players.push_back(Player(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000")));
-    game->players.push_back(Player(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000")));
+    game->players.push_back(Player(Address(TUTORIAL_PLAYER_ADDRESS_STR)));
+    game->players.push_back(Player(Address(TUTORIAL_OTHER_ADDRESS_STR)));
 
     game->players[0].credit.createMoreByFiat(dollarsToCoinsIntND(4.5));
-
-    // game->players[1].credit.createMoreByFiat(FIGHTER_COST);
-
-    // vector2fp fighterPos(randomVectorWithMagnitude(1500));
-    // boost::shared_ptr<Fighter> fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
-    // fighter->completeBuildingInstantly(&game->players[1].credit);
-    // fighter->takeHit(FIGHTER_HEALTH / 2);
-    // game->registerNewEntityIgnoringCollision(fighter);
 }
 
 TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, GameUI* ui):

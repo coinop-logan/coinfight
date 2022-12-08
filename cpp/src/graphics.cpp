@@ -496,6 +496,17 @@ void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font
     window->draw(balance, transform);
 }
 
+void drawDepositNeededMsg(sf::RenderWindow* window, Address playerAddress, sf::Font* font, sf::Vector2f upperLeft)
+{
+    string msg = "To participate in the round, you'll need to either:\n* deposit at least $4.50 at coinfight.io to afford your first Gateway and Prime\n* receive some units as a gift from another player.";
+    sf::Text text(sf::String(msg), *font, 16);
+
+    text.setFillColor(sf::Color::White);
+    text.setPosition(upperLeft);
+
+    window->draw(text);
+}
+
 void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font font)
 {
     for (unsigned int i=0; i<strings.size(); i++)
@@ -1085,9 +1096,9 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
     }
 }
 
-void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
 {
-    displayGame(window, game, ui, maybePlayerId, tutorial, mainFont, tutorialFont, drawWalletHints);
+    displayGameAndUI(window, game, ui, maybePlayerAddress, tutorial, mainFont, tutorialFont, drawWalletHints);
 
     if (ui->inGameMenu)
     {
@@ -1098,8 +1109,14 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t>
 }
 
 coinsInt lastPlayerCredit = 0;
-void displayGame(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
+void displayGameAndUI(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool drawWalletHints)
 {
+    optional<uint8_t> maybePlayerId;
+    if (maybePlayerAddress)
+    {
+        maybePlayerId = game->playerAddressToMaybeId(*maybePlayerAddress);
+    }
+
     if (ui->minimapEnabled)
     {
         displayMinimap(window, game, maybePlayerId, screenDimensions);
@@ -1320,19 +1337,28 @@ void displayGame(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint
             drawUnitHealthBars(window, game, ui, maybePlayerId);
         }
 
-        if (maybePlayerId)
+        // depending on how maybePlayerAddress and maybePlayerId are set,
+        // we might draw a balance or a message about coinfight.io.
+        if (maybePlayerAddress)
         {
-            uint8_t playerId = *maybePlayerId;
-            coinsInt playerCredit = game->players[playerId].credit.getInt();
+            if (maybePlayerId) // player has logged in and is registered in the game (triggered by deposit)
+            {
+                uint8_t playerId = *maybePlayerId;
+                coinsInt playerCredit = game->players[playerId].credit.getInt();
 
-            sf::Color balanceTextColor =
-                (playerCredit - lastPlayerCredit == 0 ? sf::Color::White :
-                playerCredit > lastPlayerCredit ?      sf::Color::Green :
-                                                        sf::Color::Red
-                );
-            drawAccountBalance(window, &game->players[playerId].credit, mainFont, balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
+                sf::Color balanceTextColor =
+                    (playerCredit - lastPlayerCredit == 0 ? sf::Color::White :
+                    playerCredit > lastPlayerCredit ?      sf::Color::Green :
+                                                            sf::Color::Red
+                    );
+                drawAccountBalance(window, &game->players[playerId].credit, mainFont, balanceTextColor, sf::Vector2f(20, 20), drawWalletHints);
 
-            lastPlayerCredit = playerCredit;
+                lastPlayerCredit = playerCredit;
+            }
+            else // player has an address but no ID. To become a registered player in the game they need to deposit
+            {
+                drawDepositNeededMsg(window, *maybePlayerAddress, &mainFont, sf::Vector2f(20, 20));
+            }
         }
 
         if (! ui->hideUX)

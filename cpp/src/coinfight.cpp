@@ -224,7 +224,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
                     cout << "now controlling player " << currentPlayerId << endl;
                 }
 
-                display(window, &game, &ui, currentPlayerId, {}, mainFont, tutorialFont, false);
+                display(window, &game, &ui, game.players[currentPlayerId].address, {}, mainFont, tutorialFont, false);
             }
         }
         else {
@@ -378,7 +378,7 @@ void runTutorial(sf::RenderWindow* window)
                 vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, &tutorial);
                 pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 
-                display(window, &game, &ui, 0, &tutorial, mainFont, tutorialFont, false);
+                display(window, &game, &ui, Address(TUTORIAL_PLAYER_ADDRESS_STR), &tutorial, mainFont, tutorialFont, false);
             }
         }
         else
@@ -515,7 +515,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
         }
 
         // DISPLAY
-        display(window, &game, &ui, maybePlayerId, {}, mainFont, tutorialFont, true);
+        display(window, &game, &ui, playerAddress, {}, mainFont, tutorialFont, true);
 
         if (game.frame % 200 == 0)
             cout << "Latency buffer size: " << connectionHandler.receivedFrameEventsPackets.size() << endl;
