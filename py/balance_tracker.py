@@ -42,17 +42,26 @@ def scanForAndRecordDeposits(w3, contract):
     
     print("scanning range", startBlock, endBlock)
         
-    depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
-    honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
+    # We want to try to "consume" each type of event one at a time,
+    # so that if a filter breaks, we avoid the chance of having "consumed" one filter but broken the other
+    # which may result in skipping some events on the next pass
     try:
+        filename = str(startBlock) + "-" + str(endBlock) + "deposits.dat"
+        depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
         newDepositLogs = depositEventFilter.get_all_entries()
-        newHoneypotLogs = honeypotEventFilter.get_all_entries()
+        recordNewPlayerDeposits(newDepositLogs, filename)
     except ValueError as e:
-        print("uh oh, the filter broke!")
+        print("Exception when trying to use the player deposit event filter:", e)
         return
 
-    filename = str(startBlock) + "-" + str(endBlock) + ".dat"
-    recordNewDeposits(newDepositLogs, newHoneypotLogs, filename)
+    try:
+        filename = str(startBlock) + "-" + str(endBlock) + "honeypot.dat"
+        honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
+        newHoneypotLogs = honeypotEventFilter.get_all_entries()
+        recordNewHoneypotDeposits(newHoneypotLogs, filename)
+    except ValueError as e:
+        print("Exception when trying to use the honeypot deposit event filter:", e)
+        return
 
     setLastBlockProcessed(endBlock)
 
@@ -111,29 +120,49 @@ def main():
     nextNonce = w3.eth.getTransactionCount(ethAccount.address)
 
     while True:
-        scanForAndRecordDeposits(w3, contract)
-        executePendingWithdrawals(w3, ethAccount)
+        try:
+            scanForAndRecordDeposits(w3, contract)
+        except Exception as e:
+            print("exception when scanning for deposits:", e)
+        try:
+            executePendingWithdrawals(w3, ethAccount)
+        except Exception as e:
+            print("exception when executing pending withdrawals:", e)
+            
         sleep(10)
 
-
-def recordNewDeposits(newDepositLogs, newHoneypotLogs, filename):
-    if len(newDepositLogs + newHoneypotLogs) == 0:
-        print("no new events")
+def recordNewPlayerDeposits(newDepositLogs, filename):
+    if len(newDepositLogs) == 0:
+        print("no new Deposit events")
     
     else:
-        print("processing", len(newDepositLogs), "deposits and", len(newHoneypotLogs), "new honeypot adds")
+        print("processing", len(newDepositLogs), "deposits")
 
         fileLines = []
         for log in newDepositLogs:
             forAccount = log.args.forAccount
             amountStr = str(log.args.amount)
             fileLines.append(forAccount + " " + amountStr)
+            
+        print("writing player deposit events to file for game server")
+        with open(filename, 'w') as f:
+            f.write('\n'.join(fileLines))
         
+        os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
+
+def recordNewHoneypotDeposits(newHoneypotLogs, filename):
+    if len(newHoneypotLogs) == 0:
+        print("no new Honeypot events")
+    
+    else:
+        print("processing", len(newHoneypotLogs), "new honeypot adds")
+
+        fileLines = []
         for log in newHoneypotLogs:
             amountStr = str(log.args.amount)
             fileLines.append("honeypot " + amountStr)
             
-        print("writing events to file for game server")
+        print("writing honeypot deposit events to file for game server")
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
