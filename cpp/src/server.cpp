@@ -156,14 +156,14 @@ public:
             if (codeHash != GIT_COMMIT_HASH)
             {
                 cout << "Received code hash doesn't match! Sending denial and closing connection." << endl;
-                boost::asio::write(*socket, boost::asio::buffer("0"));
+                boost::asio::write(*socket, boost::asio::buffer(string("0")));
                 state = Closed;
                 return;
             }
 
             // Otherwise, send a success flag and a sig challenge
             cout << "Code hash matches. Sending success flag and sig challenge, and waiting for sig." << endl;
-            boost::asio::write(*socket, boost::asio::buffer("1"));
+            boost::asio::write(*socket, boost::asio::buffer(string("1")));
             generateAndSendSigChallenge();
 
             // Wait for client's signature
@@ -201,11 +201,12 @@ public:
             if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
             {
                 connectionAuthdUserAddress = *maybeRecoveredAddress;
+                boost::asio::write(*socket, boost::asio::buffer(string("1")));
             }
             else
             {
                 // send a 0 to indicate failure to client
-                boost::asio::write(*socket, boost::asio::buffer("0"));
+                boost::asio::write(*socket, boost::asio::buffer(string("0")));
                 cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
                 cout << error << endl;
                 state = Closed;
@@ -215,7 +216,7 @@ public:
 
             cout << "Player authenticated and connected." << endl;
 
-            string response = "1" + connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
+            string response = connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
             boost::asio::write(*socket, boost::asio::buffer(response));
 
             state = ReadyForFirstSync;
