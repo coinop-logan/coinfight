@@ -106,7 +106,7 @@ def main():
         else:
             startScanBlock = int(startScanBlockInput)
         
-        setLastBlockProcessed(startScanBlock)
+        setLastBlockProcessed(startScanBlock - 1)
 
     address = CONTRACT_ADDRESS
     abi = json.load(open('CoinfightDepositsWithdrawals.json','r'))['abi']
