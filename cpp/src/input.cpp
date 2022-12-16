@@ -124,9 +124,9 @@ void GameUI::openInGameMenu()
     vector<tuple<string, InGameMenuMsg>> menuOptions;
     
     menuOptions.push_back({"Resume", Resume});
-    if (online) menuOptions.push_back({"Withdraw All", Withdraw});
-    menuOptions.push_back({"Exit", Disconnect});
-    if (online) menuOptions.push_back({"Exit and Withdraw All", WithdrawAndDisconnect});
+    if (online) menuOptions.push_back({"Withdraw Wallet Balance", Withdraw});
+    menuOptions.push_back({"Disconnect", Disconnect});
+    if (online) menuOptions.push_back({"Disconnect and Withdraw Wallet Balance", WithdrawAndDisconnect});
 
     inGameMenu = MainMenu(menuOptions, font);
 }
