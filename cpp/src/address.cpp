@@ -3,7 +3,7 @@
 
 Address::Address(string _s)
 {
-    s = _s;
+    s = lowercaseStr(_s);
 }
 Address::Address(Netpack::Consumer* from)
 {

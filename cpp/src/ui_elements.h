@@ -22,6 +22,7 @@ const int NOTICE_WINDOW_FONT_SIZE = 18;
 const int NOTICE_WINDOW_WIDTH = 600;
 
 const vector2i LOGIN_WINDOW_DIMENSIONS(600, 500);
+const vector2i GIFT_WINDOW_DIMENSIONS(600, 300);
 
 const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
 
@@ -52,7 +53,7 @@ class TextButton : public Button
     int fontSize;
     int textOffsetY;
 public:
-    TextButton(vector2i p1, vector2i, string, sf::Font*, int fontSize, int textOffsetY);
+    TextButton(vector2i p1, vector2i dimensions, string, sf::Font*, int fontSize, int textOffsetY);
     void drawContent(sf::RenderWindow*);
 };
 
@@ -185,6 +186,18 @@ public:
     }
 };
 
+class NoticeWindow : public Window
+{
+public:
+    string message;
+    boost::shared_ptr<TextButton> okayButton;
+    sf::Font* font;
+    NoticeWindow(vector2i center, string message, sf::Font*);
+    sf::Text renderText();
+    void drawContent(sf::RenderWindow* window, vector2i drawOffset);
+    bool processEvent(sf::Event event);
+};
+
 class LoginWindow : public Window
 {
 public:
@@ -205,16 +218,24 @@ public:
     optional<Msg> processEvent(sf::Event event);
 };
 
-class NoticeWindow : public Window
+class GiftUnitsWindow : public Window
 {
 public:
-    string message;
-    boost::shared_ptr<TextButton> okayButton;
+    enum Msg
+    {
+        Back,
+        AddressSubmitted
+    };
+    optional<string> pastedText;
+    optional<Address> submittedAddress;
+    boost::shared_ptr<TextButton> backButton;
+    boost::shared_ptr<TextButton> submitButton;
+    boost::shared_ptr<ImageButton> pasteButton;
     sf::Font* font;
-    NoticeWindow(vector2i center, string message, sf::Font*);
-    sf::Text renderText();
+    optional<string> errorString;
+    GiftUnitsWindow(vector2i center, sf::Font*);
     void drawContent(sf::RenderWindow* window, vector2i drawOffset);
-    bool processEvent(sf::Event event);
+    optional<Msg> processEvent(sf::Event event);
 };
 
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);

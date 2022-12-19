@@ -15,6 +15,7 @@ class Tutorial; // defined in tutorial.h
 
 enum InGameMenuMsg {
     Resume,
+    GiftUnits,
     Withdraw,
     Disconnect,
     WithdrawAndDisconnect
@@ -25,6 +26,7 @@ struct GameUI
     GameUI(sf::Font* font, bool online);
     sf::Font* font;
     optional<MainMenu<InGameMenuMsg>> inGameMenu;
+    optional<GiftUnitsWindow> giftUnitsWindow;
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;

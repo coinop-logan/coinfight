@@ -124,6 +124,12 @@ void GameUI::openInGameMenu()
     vector<tuple<string, InGameMenuMsg>> menuOptions;
     
     menuOptions.push_back({"Resume", Resume});
+    if (selectedUnits.size() > 0)
+    {
+        stringstream ss;
+        ss << "Gift Selected Units (" << selectedUnits.size() << ")";
+        menuOptions.push_back({ss.str(), GiftUnits});
+    }
     if (online) menuOptions.push_back({"Withdraw Wallet Balance", Withdraw});
     menuOptions.push_back({"Disconnect", Disconnect});
     if (online) menuOptions.push_back({"Disconnect and Withdraw Wallet Balance", WithdrawAndDisconnect});
@@ -613,7 +619,33 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
     sf::Event event;
     while (window->pollEvent(event))
     {
-        if (ui->inGameMenu)
+        if (ui->giftUnitsWindow)
+        {
+            optional<GiftUnitsWindow::Msg> maybeMsg = ui->giftUnitsWindow->processEvent(event);
+            if (maybeMsg)
+            {
+                switch (*maybeMsg)
+                {
+                    case GiftUnitsWindow::Back:
+                    {
+                        ui->giftUnitsWindow = {};
+                        break;
+                    }
+                    case GiftUnitsWindow::AddressSubmitted:
+                    {
+                        if (ui->giftUnitsWindow->submittedAddress)
+                        {
+                            auto newOnwerId = game->getPlayerId_createIfNone(*ui->giftUnitsWindow->submittedAddress);
+                            
+                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GiftCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), newOnwerId)));
+                            ui->giftUnitsWindow = {};
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        else if (ui->inGameMenu)
         {
             optional<InGameMenuMsg> maybeMsg = ui->inGameMenu->processEvent(event);
             if (maybeMsg) {
@@ -622,6 +654,11 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     case Resume:
                     {
                         ui->inGameMenu = {};
+                        break;
+                    }
+                    case GiftUnits:
+                    {
+                        ui->giftUnitsWindow = GiftUnitsWindow(screenCenter, ui->font);
                         break;
                     }
                     case Withdraw:
@@ -1016,6 +1053,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     case sf::Keyboard::Tab:
                         ui->minimapEnabled = !(ui->minimapEnabled);
                         break;
+                    case sf::Keyboard::F10:
+                        if (!ui->inGameMenu)
+                        {
+                            ui->openInGameMenu();
+                        }
+                        break;
                     case sf::Keyboard::Escape:
                         if (ui->cmdState != GameUI::Default)
                         {
@@ -1036,9 +1079,6 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     case sf::Keyboard::J:
                         ui->hideUX = ! ui->hideUX;
                         break;
-                    // case sf::Keyboard::P:
-                    //     cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GiftCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), 0)));
-                    //     break;
                     default:
                         vector<boost::shared_ptr<Cmd>> cmds = ui->handlePossibleUnitInterfaceCmd(event.key.code);
                         cmdsToSend.insert(cmdsToSend.begin(), cmds.begin(), cmds.end());

@@ -89,5 +89,6 @@ uint64_t constexpr ipow(uint32_t base, uint32_t exp)
 vector<string> splitLineIntoWords(string);
 
 optional<tuple<Address, string>> decodeAddressAndSig(string str);
+optional<Address> validateAddress(string addrStr);
 
 #endif // COMMON_H

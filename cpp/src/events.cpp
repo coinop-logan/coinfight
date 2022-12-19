@@ -54,19 +54,7 @@ void BalanceUpdateEvent::execute(Game *game)
 {
     if (isDeposit)
     {
-        optional<uint8_t> maybePlayerId = game->playerAddressToMaybeId(userAddress);
-
-        uint8_t playerId;
-        if (maybePlayerId)
-        {
-            playerId = *maybePlayerId;
-        }
-        else
-        {
-            // if no user for this address, create one
-            game->players.push_back(Player(userAddress));
-            playerId = game->players.size() - 1;
-        }
+        uint8_t playerId = game->getPlayerId_createIfNone(userAddress);
 
         game->players[playerId].credit.createMoreByFiat(amount);
     }

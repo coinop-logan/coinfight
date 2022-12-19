@@ -1104,6 +1104,10 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
     {
         ui->inGameMenu->draw(window);
     }
+    if (ui->giftUnitsWindow)
+    {
+        ui->giftUnitsWindow->draw(window);
+    }
 
     window->display();
 }
