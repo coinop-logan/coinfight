@@ -750,8 +750,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                                 int rectBottom = min(get<0>(corners).y, get<1>(corners).y);
                                 int rectTop = max(get<0>(corners).y, get<1>(corners).y);
 
-                                // For arg 2 here, we use rectBottom instead of rectTop, since we're using +Y=up here, while SFML assumes +Y=down
-                                sf::Rect selectionRectGameCoords(rectLeft, rectBottom, (rectRight - rectLeft), (rectTop - rectBottom));
+                                // For arg1.x here, we use rectBottom instead of rectTop, since we're using +Y=up here, while SFML assumes +Y=down
+                                sf::Rect selectionRectGameCoords(sf::Vector2f(rectLeft, rectBottom), sf::Vector2f((rectRight - rectLeft), (rectTop - rectBottom)));
 
                                 if (!isShiftPressed())
                                 {
@@ -804,7 +804,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                                         {
                                             if (unit->ownerId == *playerId)
                                             {
-                                                if (selectionRectGameCoords.contains(toSFVec(vector2i(unit->getPos()))))
+                                                if (selectionRectGameCoords.contains(toSFVecF(vector2i(unit->getPos()))))
                                                 {
                                                     ui->selectedUnits.push_back(unit);
                                                 }

@@ -23,9 +23,9 @@ public:
             vertices[i].color = color;
     }
 
-    void draw(sf::RenderTarget &target, sf::RenderStates states) const
+    void draw(sf::RenderTarget &target, const sf::RenderStates &states) const
     {
-        target.draw(vertices,4,sf::Quads);
+        target.draw(vertices,4,sf::PrimitiveType::TriangleFan);
     }
 };
 
@@ -58,9 +58,9 @@ void Particle::iterate(const Game &game)
 void Particle::drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color whichColor)
 {
     sf::RectangleShape pixel(sf::Vector2f(2,2));
-    pixel.setOrigin(1,1);
-    vector2i drawPos = gamePosToScreenPos(camera, vector2fp(pos));
-    pixel.setPosition(drawPos.x, drawPos.y);
+    pixel.setOrigin(sf::Vector2f(1,1));
+    vector2fl drawPos = gamePosToScreenPos(camera, vector2fp(pos));
+    pixel.setPosition(toSFVec(drawPos));
     pixel.setFillColor(whichColor);
 
     window->draw(pixel);

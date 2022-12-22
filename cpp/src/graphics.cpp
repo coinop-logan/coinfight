@@ -27,11 +27,6 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
-float radToDeg(float rad)
-{
-    return rad * (180 / M_PI);
-}
-
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 {
     if (!mainFont->loadFromFile("Andale_Mono.ttf"))
@@ -46,11 +41,11 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     sf::VideoMode chosenMode;
     if (smallScreen)
     {
-        chosenMode = sf::VideoMode(800, 600, 24);
+        chosenMode = sf::VideoMode(sf::Vector2u(800, 600), 24);
     }
     else if (!fullscreen)
     {
-        chosenMode = sf::VideoMode(1280, 720, 24);
+        chosenMode = sf::VideoMode(sf::Vector2u(1280, 720), 24);
     }
     else
     {
@@ -59,7 +54,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         auto modes = sf::VideoMode::getFullscreenModes();
         for (unsigned int i = 0; i < modes.size(); i++)
         {
-            if (modes[i].width == 1920 && modes[i].height == 1080)
+            if (modes[i].size.x == 1920 && modes[i].size.y == 1080)
             {
                 modeFound = true;
                 chosenMode = modes[i];
@@ -70,7 +65,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         {
             for (unsigned int i = 0; i < modes.size(); i++)
             {
-                if (modes[i].width <= 1920)
+                if (modes[i].size.x <= 1920)
                 {
                     modeFound = true;
                     chosenMode = modes[i];
@@ -86,7 +81,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         }
         chosenMode.bitsPerPixel = 24;
     }
-    updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
+    updateScreenDimensions(vector2i(chosenMode.size.x, chosenMode.size.y));
 
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
@@ -112,7 +107,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
     circle.setFillColor(sf::Color::Transparent);
     circle.setOutlineColor(backgroundCirclesColor);
     circle.setOutlineThickness(1);
-    circle.setPosition(centerOfMapScreenPos.x, centerOfMapScreenPos.y);
+    circle.setPosition(toSFVec(centerOfMapScreenPos));
 
     for (unsigned int i=0; i<10; i++)
     {
@@ -122,7 +117,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
         // draw circle
         circle.setRadius(radius);
         circle.setPointCount(i * 20);
-        circle.setOrigin(radius, radius);
+        circle.setOrigin(sf::Vector2f(radius, radius));
 
         window->draw(circle);
 
@@ -130,7 +125,7 @@ void drawBackground(sf::RenderWindow *window, CameraState camera)
         {
             unsigned int numSpokes = pow(2, i);
 
-            sf::VertexArray lines(sf::Lines, numSpokes*2);
+            sf::VertexArray lines(sf::PrimitiveType::Lines, numSpokes*2);
             for (unsigned int i=0; i<numSpokes; i++)
             {
                 float angle = ((float)i / numSpokes) * 2 * M_PI;
@@ -160,7 +155,7 @@ void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp from
 
     int numNonEndPoints = length / ENERGY_LINE_SEGMENT_LENGTH; // i.e. if length is 1 and ENERGY(..) is 1.2, this would be zero because the only points would be the end points.
 
-    sf::VertexArray lines(sf::LineStrip, numNonEndPoints + 2);
+    sf::VertexArray lines(sf::PrimitiveType::LineStrip, numNonEndPoints + 2);
 
     lines[0].position = toSFVec(from);
     lines[0].color = color;
@@ -189,7 +184,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
         sf::Color goldBottomColor(sf::Color(255, 130, 0));
         sf::Color goldTopColor(sf::Color::Yellow);
 
-        sf::VertexArray diamond(sf::Quads, 4);
+        sf::VertexArray diamond(sf::PrimitiveType::TriangleFan, 4);
         diamond[0].position = sf::Vector2f(width/2, 0);
         diamond[1].position = sf::Vector2f(width/3, -height);
         diamond[2].position = sf::Vector2f(-width/3, -height);
@@ -200,7 +195,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
         diamond[3].color = goldBottomColor;
 
         sf::Transform transform;
-        transform.translate(drawPos.x, drawPos.y + height/2);
+        transform.translate(toSFVec(drawPos + vector2fl(0, height/2)));
 
         window->draw(diamond, transform);
     }
@@ -214,12 +209,12 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
 
     sf::Color fadedInnerOutlineColor(GATEWAY_INNEROUTLINE_COLOR.r, GATEWAY_INNEROUTLINE_COLOR.g, GATEWAY_INNEROUTLINE_COLOR.b, alpha);
     sf::RectangleShape innerRect(sf::Vector2f(10, 10));
-    innerRect.setOrigin(5, 5);
+    innerRect.setOrigin(sf::Vector2f(5, 5));
     innerRect.setFillColor(teamColorFaded);
     innerRect.setOutlineColor(teamColor);
     innerRect.setOutlineThickness(1.5);
-    innerRect.setRotation(45);
-    innerRect.setPosition(drawPos.x, drawPos.y);
+    innerRect.setRotation(sf::degrees(45));
+    innerRect.setPosition(toSFVec(drawPos));
 
     window->draw(innerRect);
 }
@@ -229,12 +224,12 @@ void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColo
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, alpha);
 
     sf::CircleShape outerHex(15, 6);
-    outerHex.setOrigin(15, 15);
+    outerHex.setOrigin(sf::Vector2f(15, 15));
     outerHex.setFillColor(fillColorFaded);
     outerHex.setOutlineColor(UNIT_OUTLINE_COLOR);
     outerHex.setOutlineThickness(1);
-    outerHex.setPosition(drawPos.x, drawPos.y);
-    outerHex.setRotation(90);
+    outerHex.setPosition(toSFVec(drawPos));
+    outerHex.setRotation(sf::degrees(90));
 
     window->draw(outerHex);
 
@@ -244,8 +239,8 @@ void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColo
 void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl drawPos, float drawRotation, unsigned int alpha)
 {
     sf::Transform transform = sf::Transform();
-    transform.translate(drawPos.x, drawPos.y);
-    transform.rotate(radToDeg(drawRotation));
+    transform.translate(toSFVec(drawPos));
+    transform.rotate(sf::radians(drawRotation));
 
     sf::Color teamColor = prime->getTeamColor();
     sf::Color mainPrimeColor(teamColor.r, teamColor.g, teamColor.b, alpha);
@@ -253,7 +248,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     float borderThickness = 2;
     float primeCavityRadius = static_cast<float>(PRIME_RADIUS) - borderThickness;
 
-    sf::VertexArray wingPoints(sf::Triangles, 3);
+    sf::VertexArray wingPoints(sf::PrimitiveType::Triangles, 3);
     wingPoints[0].position = sf::Vector2f(0, static_cast<float>(PRIME_RADIUS));
     wingPoints[1].position = sf::Vector2f(-static_cast<float>(PRIME_RADIUS)*1.4, static_cast<float>(PRIME_RADIUS));
     wingPoints[2].position = toSFVec(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
@@ -301,8 +296,8 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     oneSide.setPointCount(3);
 
     oneSide.setFillColor(fillColorFaded);
-    oneSide.setPosition(drawPos.x, drawPos.y);
-    oneSide.setRotation(radToDeg(rotation));
+    oneSide.setPosition(toSFVec(drawPos));
+    oneSide.setRotation(sf::radians(rotation));
 
     sf::Vector2f front = sf::Vector2f(12, 0);
     sf::Vector2f back = sf::Vector2f(-4, 0);
@@ -311,7 +306,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 
     // draw gun barrels
     sf::Color fadedBarrelColor(FIGHTER_BARREL_COLOR.r, FIGHTER_BARREL_COLOR.g, FIGHTER_BARREL_COLOR.b, alpha);
-    sf::VertexArray gunBarrelPoints(sf::Triangles, 3);
+    sf::VertexArray gunBarrelPoints(sf::PrimitiveType::Triangles, 3);
     gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
     gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
     gunBarrelPoints[2].position = toSFVec(COMBATUNIT_SHOT_OFFSET);
@@ -320,8 +315,8 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     gunBarrelPoints[2].color = fadedBarrelColor;
 
     sf::Transform transform = sf::Transform();
-    transform.translate(drawPos.x, drawPos.y);
-    transform.rotate(radToDeg(rotation));
+    transform.translate(toSFVec(drawPos));
+    transform.rotate(sf::radians(rotation));
     window->draw(gunBarrelPoints, transform);
 
     gunBarrelPoints[0].position.y *= -1;
@@ -338,7 +333,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     window->draw(oneSide);
 
     // draw outline
-    sf::VertexArray lines(sf::LinesStrip, 5);
+    sf::VertexArray lines(sf::PrimitiveType::LineStrip, 5);
     lines[0].position = front;
     lines[1].position = right;
     lines[2].position = back;
@@ -351,8 +346,8 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     lines[4].color = UNIT_OUTLINE_COLOR;
 
     transform = sf::Transform();
-    transform.translate(drawPos.x, drawPos.y);
-    transform.rotate(radToDeg(rotation));
+    transform.translate(toSFVec(drawPos));
+    transform.rotate(sf::radians(rotation));
     window->draw(lines, transform);
 }
 
@@ -364,11 +359,11 @@ void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf:
     int width = halfWidth * 2;
 
     sf::RectangleShape box(sf::Vector2f(width, width));
-    box.setOrigin(halfWidth, halfWidth);
+    box.setOrigin(sf::Vector2f(halfWidth, halfWidth));
     box.setFillColor(fillColorFaded);
     box.setOutlineColor(UNIT_OUTLINE_COLOR);
     box.setOutlineThickness(1);
-    box.setPosition(drawPos.x, drawPos.y);
+    box.setPosition(toSFVec(drawPos));
 
     window->draw(box);
 
@@ -527,10 +522,10 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf:
 void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, unsigned int radius, unsigned int thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
-    mouseTransform.translate(screenPos.x, screenPos.y);
+    mouseTransform.translate(toSFVecF(screenPos));
 
     sf::CircleShape circle(radius);
-    circle.setOrigin(radius, radius);
+    circle.setOrigin(sf::Vector2f(radius, radius));
     circle.setOutlineColor(color);
     circle.setFillColor(sf::Color::Transparent);
     circle.setOutlineThickness(thickness);
@@ -547,35 +542,35 @@ void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color col
 {
     window->setMouseCursorVisible(false);
 
-    sf::VertexArray lines(sf::Lines, 2);
+    sf::VertexArray lines(sf::PrimitiveType::Lines, 2);
     lines[0].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
     lines[1].position = sf::Vector2f(4, 4);
     lines[0].color = color;
     lines[1].color = color;
 
     sf::Transform transform;
-    transform.translate(mousePos.x, mousePos.y);
+    transform.translate(toSFVecF(mousePos));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
 
     sf::RectangleShape rect(sf::Vector2f(2,2));
-    rect.setPosition(-1, -1);
+    rect.setPosition(sf::Vector2f(-1, -1));
     rect.setFillColor(color);
 
     transform = sf::Transform();
-    transform.translate(mousePos.x, mousePos.y);
+    transform.translate(toSFVecF(mousePos));
     window->draw(rect, transform);
 }
 void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color color)
 {
     window->setMouseCursorVisible(false);
 
-    sf::VertexArray lines(sf::LinesStrip, 3);
+    sf::VertexArray lines(sf::PrimitiveType::LineStrip, 3);
     lines[0].position = sf::Vector2f(CURSOR_SIZE/2 - 6, CURSOR_SIZE/2);
     lines[1].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2);
     lines[2].position = sf::Vector2f(CURSOR_SIZE/2, CURSOR_SIZE/2 - 6);
@@ -584,13 +579,13 @@ void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color c
     lines[2].color = color;
 
     sf::Transform transform;
-    transform.translate(mousePos.x, mousePos.y);
+    transform.translate(toSFVecF(mousePos));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
-    transform.rotate(90);
+    transform.rotate(sf::degrees(90));
     window->draw(lines, transform);
 }
 
@@ -616,7 +611,7 @@ void drawSelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
     int height = rectBottom - rectTop;
 
     sf::RectangleShape rect(sf::Vector2f(width, height));
-    rect.setPosition(rectLeft, rectTop);
+    rect.setPosition(sf::Vector2f(rectLeft, rectTop));
     rect.setOutlineColor(sf::Color::Green);
     rect.setOutlineThickness(1);
     rect.setFillColor(sf::Color::Transparent);
@@ -759,12 +754,12 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             aboveText.setFillColor(topTextColor);
-            aboveText.setOrigin(textRec.width / 2, textRec.height / 2);
-            aboveText.setPosition(textScreenPos.x, textScreenPos.y);
+            aboveText.setOrigin(textRec.getSize() / 2.f);
+            aboveText.setPosition(toSFVec(textScreenPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.width / 2, textRec.height / 2);
-            drawRect.setPosition(textScreenPos.x, textScreenPos.y + 3);
+            drawRect.setOrigin(textRec.getSize() / 2.f);
+            drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
@@ -779,12 +774,12 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             belowText.setFillColor(sf::Color(200, 200, 255));
-            belowText.setOrigin(textRec.width / 2, textRec.height / 2);
-            belowText.setPosition(textScreenPos.x, textScreenPos.y);
+            belowText.setOrigin(textRec.getSize() / 2.f);
+            belowText.setPosition(toSFVec(textScreenPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.width / 2, textRec.height / 2);
-            drawRect.setPosition(textScreenPos.x, textScreenPos.y + 3);
+            drawRect.setOrigin(textRec.getSize() / 2.f);
+            drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
@@ -824,7 +819,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, option
             float healthBarLength = static_cast<float>(unit->getRadius()) * 2;
 
             sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
-            healthBar.setOrigin(healthBar.getLocalBounds().width / 2, healthBar.getLocalBounds().height / 2);
+            healthBar.setOrigin(healthBar.getLocalBounds().getSize() / 2.f);
             healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, healthBarPos))));
 
             healthBar.setOutlineColor(barColorOutline);
@@ -856,7 +851,7 @@ void drawArrow(sf::RenderWindow* window, GameUI* ui, vector2fp drawPos, bool poi
 
     if (!pointingUp)
     {
-        arrowPoint.setRotation(180);
+        arrowPoint.setRotation(sf::degrees(180));
     }
 
     window->draw(arrowPoint);
@@ -866,7 +861,7 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &interfaceCmd, sf::Font font)
+void drawHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font font)
 {
     auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
     char keyChar = get<1>(hotkeyInfo);
@@ -895,7 +890,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
         sf::Color::Transparent ;
 
     sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
-    rectShape.setPosition(drawPos.x, drawPos.y);
+    rectShape.setPosition(toSFVec(drawPos));
     rectShape.setFillColor(backgroundColor);
     rectShape.setOutlineColor(mainOutlineColor);
     rectShape.setOutlineThickness(1);
@@ -921,7 +916,7 @@ void drawHotkey(sf::RenderWindow *window, vector2i drawPos, const InterfaceCmd &
     hotkeyText.setPosition(sf::Vector2f(drawPos.x + xOffset , drawPos.y-1));
 
     sf::RectangleShape hotkeyBackground(sf::Vector2f(16, 18));
-    hotkeyBackground.setPosition(drawPos.x, drawPos.y);
+    hotkeyBackground.setPosition(toSFVec(drawPos));
     hotkeyBackground.setFillColor(hotkeyBackgroundColor);
     hotkeyBackground.setOutlineColor(hotkeyOutlineColor);
     hotkeyBackground.setOutlineThickness(1);
@@ -1001,7 +996,7 @@ void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdo
     int alpha = ((float)escapeTextCountdown / ESCAPE_TO_QUIT_TEXT_LIFE) * 255;
     escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
 
-    escapeQuitText.setPosition(30, 100);
+    escapeQuitText.setPosition(sf::Vector2f(30, 100));
 
     window->draw(escapeQuitText);
 
@@ -1013,8 +1008,8 @@ void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdo
         sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
         sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
 
-        progressBar.setPosition(30, 150);
-        maxProgressBar.setPosition(30, 150);
+        progressBar.setPosition(sf::Vector2f(30, 150));
+        maxProgressBar.setPosition(sf::Vector2f(30, 150));
 
         int white = ((1-fractionLeft) * 255);
         sf::Color fillColor(255, white, white);
