@@ -59,7 +59,7 @@ public:
         {
             {
                 "Hey there! This tutorial will explain the basics of Coinfight. You can hide this tutorial (or show it again) anytime by hitting F1.",
-                "First things first: you can move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
+                "First, move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
                 "Go ahead, wiggle 'er around a bit!"
             },
             {}
@@ -101,7 +101,7 @@ public:
         return
         {
             {
-                "Other than this playground/tutorial, Coinfight is always played in an arena against others, and is always played with real money. For now, this is what you'd see if you just deposited 4.5 DAI into your Coinfight wallet, and joined a game.",
+                "A real Coinfight game will require crypto, but for now we'll pretend you deposited $4.50 into your Coinfight wallet - see your balance on the upper left.",
                 "The first step after joining a game will be to spawn in your first Gateway.",
                 "Do this now by hitting \"G\" and clicking on the map somewhere.",
             },
