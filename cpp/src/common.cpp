@@ -150,3 +150,20 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str)
 
     return {{Address(data["address"]), data["sig"]}};
 }
+
+optional<Address> validateAddress(string addrStr)
+{
+    if (addrStr.substr(0, 2) != "0x")
+        return {};
+    if (addrStr.size() != 42)
+        return {};
+    for (unsigned int i=2; i<addrStr.size(); i++)
+    {
+        if (!isxdigit(addrStr[i]))
+        {
+            return {};
+        }
+    }
+    
+    return Address(addrStr);
+}

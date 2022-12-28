@@ -75,6 +75,7 @@ public:
     void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
 
     optional<uint8_t> playerAddressToMaybeId(Address address);
+    uint8_t getPlayerId_createIfNone(Address userAddress);
     Address playerIdToAddress(uint8_t playerId);
     bool getPlayerBeaconAvailable(uint8_t playerId);
     void setPlayerBeaconAvailable(uint8_t playerId, bool flag);

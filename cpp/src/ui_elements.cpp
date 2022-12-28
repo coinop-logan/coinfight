@@ -174,6 +174,93 @@ void Window::draw(sf::RenderWindow* window)
     drawContent(window, p1 + vector2i(WINDOW_PADDING, WINDOW_PADDING));
 }
 
+NoticeWindow::NoticeWindow(vector2i center, string message, sf::Font* font)
+    : message(message), font(font)
+{
+    unsigned int spacing = 50;
+
+    auto renderedText = renderText();
+    unsigned int textHeight = renderedText.getLocalBounds().height;
+
+    unsigned int totalHeight = textHeight + MAIN_MENU_BUTTON_HEIGHT + spacing + WINDOW_PADDING*2;
+
+    vector2i halfDims = vector2i(NOTICE_WINDOW_WIDTH, totalHeight) / 2;
+    p1 = center - halfDims;
+    p2 = center + halfDims;
+
+    unsigned int okayButtonY = p1.y + WINDOW_PADDING + textHeight + spacing;
+    vector2i okayButtonPos(p1.x + WINDOW_PADDING, okayButtonY);
+    okayButton = boost::shared_ptr<TextButton>(new TextButton(
+        okayButtonPos,
+        vector2i(NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2), MAIN_MENU_BUTTON_HEIGHT),
+        "Okay",
+        font,
+        MAIN_MENU_BUTTON_FONT_SIZE,
+        MAIN_MENU_BUTTON_TEXT_OFFSET_Y
+    ));
+}
+sf::Text NoticeWindow::renderText()
+{
+    return GH::wrapTextBlock(message, font, NOTICE_WINDOW_FONT_SIZE, NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2));
+}
+void NoticeWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
+{
+    auto renderedText = renderText();
+    renderedText.setPosition(toSFVecF(drawOffset));
+    renderedText.setFillColor(sf::Color::White);
+    window->draw(renderedText);
+    okayButton->draw(window);
+}
+bool NoticeWindow::processEvent(sf::Event event)
+{
+    switch (event.type)
+    {
+        case sf::Event::MouseMoved:
+        {
+            okayButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
+            break;
+        }
+        case sf::Event::MouseButtonPressed:
+        {
+            okayButton->registerPress();
+            break;
+        }
+        case sf::Event::MouseButtonReleased:
+        {
+            if (okayButton->registerRelease())
+            {
+                return true;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return false;
+}
+
+void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
+{
+    NoticeWindow noticeWindow(screenCenter, message, font);
+
+    while (window->isOpen())
+    {
+        sf::Event event;
+        while (window->pollEvent(event))
+        {
+            bool okayPressed = noticeWindow.processEvent(event);
+            if (okayPressed)
+            {
+                return;
+            }
+        }
+
+        window->clear(sf::Color::Black);
+        noticeWindow.draw(window);
+        window->display();
+    }
+}
+
 LoginWindow::LoginWindow(vector2i center, string sigChallenge, sf::Font* font)
     : sigChallenge(sigChallenge), font(font)
 {
@@ -351,89 +438,154 @@ unsigned int drawErrorText(sf::RenderWindow* window, string errorString, sf::Fon
     return textHeight;
 }
 
-NoticeWindow::NoticeWindow(vector2i center, string message, sf::Font* font)
-    : message(message), font(font)
+
+GiftUnitsWindow::GiftUnitsWindow(vector2i center, sf::Font* font)
+    : font(font)
 {
-    unsigned int spacing = 50;
-
-    auto renderedText = renderText();
-    unsigned int textHeight = renderedText.getLocalBounds().height;
-
-    unsigned int totalHeight = textHeight + MAIN_MENU_BUTTON_HEIGHT + spacing + WINDOW_PADDING*2;
-
-    vector2i halfDims = vector2i(NOTICE_WINDOW_WIDTH, totalHeight) / 2;
+    vector2i halfDims = GIFT_WINDOW_DIMENSIONS / 2;
     p1 = center - halfDims;
     p2 = center + halfDims;
 
-    unsigned int okayButtonY = p1.y + WINDOW_PADDING + textHeight + spacing;
-    vector2i okayButtonPos(p1.x + WINDOW_PADDING, okayButtonY);
-    okayButton = boost::shared_ptr<TextButton>(new TextButton(
-        okayButtonPos,
-        vector2i(NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2), MAIN_MENU_BUTTON_HEIGHT),
-        "Okay",
+    vector2i drawStart = p1 + vector2i(WINDOW_PADDING, WINDOW_PADDING);
+
+    backButton = boost::shared_ptr<TextButton>(
+        new TextButton(
+            drawStart,
+            vector2i(GIFT_WINDOW_DIMENSIONS.x - WINDOW_PADDING * 2, MAIN_MENU_BUTTON_HEIGHT),
+            "Back",
+            font,
+            MAIN_MENU_BUTTON_FONT_SIZE,
+            MAIN_MENU_BUTTON_TEXT_OFFSET_Y
+        )
+    );
+}
+void GiftUnitsWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
+{
+    // lots of repeated stuff from LoginWindow...
+    unsigned int spacing = 40;
+    unsigned int textWidth = 400;
+
+    unsigned int yPos = drawOffset.y + backButton->getDimensions().y + spacing;
+    unsigned int buttonsStartX = drawOffset.x + textWidth + spacing;
+
+
+    backButton->draw(window);
+
+    int textHeight = GH::wrapAndRenderTextAtPos(
+        window,
+        "Copy the recipient's address, then click to paste here:",
         font,
-        MAIN_MENU_BUTTON_FONT_SIZE,
-        MAIN_MENU_BUTTON_TEXT_OFFSET_Y
-    ));
+        24,
+        sf::Color::White,
+        textWidth,
+        vector2i(drawOffset.x, yPos)
+    );
+
+    if (!pasteButton)
+    {
+        pasteButton = boost::shared_ptr<ImageButton>(new ImageButton(vector2i(buttonsStartX, yPos), COPYPASTE_BUTTON_DIMENSIONS, pasteActionIcon));
+    }
+    pasteButton->draw(window);
+
+    yPos += (max(COPYPASTE_BUTTON_DIMENSIONS.y, textHeight)) + spacing;
+
+    textHeight = GH::wrapAndRenderTextAtPos(
+        window,
+        (pastedText ? *pastedText : " "),
+        font,
+        14,
+        sf::Color(150, 150, 255),
+        textWidth,
+        vector2i(drawOffset.x, yPos)
+    );
+
+    yPos += textHeight + spacing;
+
+    if (submittedAddress)
+    {
+        if (!submitButton)
+        {
+            submitButton = boost::shared_ptr<TextButton>(new TextButton(
+                vector2i(drawOffset.x, yPos),
+                vector2i(GIFT_WINDOW_DIMENSIONS.x - WINDOW_PADDING * 2, MAIN_MENU_BUTTON_HEIGHT),
+                "Submit",
+                font,
+                MAIN_MENU_BUTTON_FONT_SIZE,
+                MAIN_MENU_BUTTON_TEXT_OFFSET_Y
+            ));
+        }
+        submitButton->draw(window);
+    }
+
+    // Display any error
+    if (errorString)
+    {
+        drawErrorText(window, *errorString, font, vector2i(drawOffset.x, yPos), textWidth);
+    }
 }
-sf::Text NoticeWindow::renderText()
-{
-    return GH::wrapTextBlock(message, font, NOTICE_WINDOW_FONT_SIZE, NOTICE_WINDOW_WIDTH - (WINDOW_PADDING*2));
-}
-void NoticeWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
-{
-    auto renderedText = renderText();
-    renderedText.setPosition(toSFVecF(drawOffset));
-    renderedText.setFillColor(sf::Color::White);
-    window->draw(renderedText);
-    okayButton->draw(window);
-}
-bool NoticeWindow::processEvent(sf::Event event)
+optional<GiftUnitsWindow::Msg> GiftUnitsWindow::processEvent(sf::Event event)
 {
     switch (event.type)
     {
         case sf::Event::MouseMoved:
         {
-            okayButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
+            backButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
+            if (submitButton) submitButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
+            if (pasteButton) pasteButton->registerMouseMove(vector2i(event.mouseMove.x, event.mouseMove.y));
             break;
         }
         case sf::Event::MouseButtonPressed:
         {
-            okayButton->registerPress();
+            backButton->registerPress();
+            if (submitButton) submitButton->registerPress();
+            if (pasteButton) pasteButton->registerPress();
             break;
         }
         case sf::Event::MouseButtonReleased:
         {
-            if (okayButton->registerRelease())
+            if (backButton->registerRelease())
             {
-                return true;
+                return Back;
             }
-            break;
+            if (pasteButton)
+            {
+                if (pasteButton->registerRelease())
+                {
+                    string inClipboard = sf::Clipboard::getString();
+                    if (inClipboard == "")
+                    {
+                        return {};
+                    }
+
+                    pastedText = inClipboard;
+                    optional<Address> maybeAddress = validateAddress(inClipboard);
+                    if (!maybeAddress)
+                    {
+                        errorString = "I can't parse that address....";
+                        return {};
+                    }
+
+                    errorString = {};
+                    pasteButton->changeImage(pasteDoneIcon);
+                    submittedAddress = maybeAddress;
+                    return {};
+                }
+            }
+            if (submitButton) 
+            {
+                if (submitButton->registerRelease())
+                {
+                    if (submittedAddress)
+                    {
+                        return AddressSubmitted;
+                    }
+                }
+                break;
+            }
         }
         default:
-            break;
+        {}
     }
-    return false;
-}
 
-void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
-{
-    NoticeWindow noticeWindow(screenCenter, message, font);
-
-    while (window->isOpen())
-    {
-        sf::Event event;
-        while (window->pollEvent(event))
-        {
-            bool okayPressed = noticeWindow.processEvent(event);
-            if (okayPressed)
-            {
-                return;
-            }
-        }
-
-        window->clear(sf::Color::Black);
-        noticeWindow.draw(window);
-        window->display();
-    }
+    return {};
 }

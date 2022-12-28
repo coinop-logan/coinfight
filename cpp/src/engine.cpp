@@ -233,6 +233,24 @@ optional<uint8_t> Game::playerAddressToMaybeId(Address address)
     }
     return {};
 }
+uint8_t Game::getPlayerId_createIfNone(Address userAddress)
+{
+    optional<uint8_t> maybePlayerId = playerAddressToMaybeId(userAddress);
+
+    uint8_t playerId;
+    if (maybePlayerId)
+    {
+        playerId = *maybePlayerId;
+    }
+    else
+    {
+        // if no user for this address, create one
+        players.push_back(Player(userAddress));
+        playerId = players.size() - 1;
+    }
+
+    return playerId;
+}
 Address Game::playerIdToAddress(uint8_t playerId)
 {
     return players[playerId].address;
