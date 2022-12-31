@@ -83,12 +83,17 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     }
     updateScreenDimensions(vector2i(chosenMode.size.x, chosenMode.size.y));
 
+
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
                    : sf::Style::Close | sf::Style::Titlebar;
 
     sf::RenderWindow* window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
+
+    cout << "chosenMode x " << chosenMode.size.x << endl;
+    cout << "window getSize x " << window->getSize().x << endl;
+    cout << "window getviewport x " << window->getViewport(window->getDefaultView()).getSize().x << endl;
 
     return window;
 }
