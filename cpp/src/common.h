@@ -91,4 +91,6 @@ vector<string> splitLineIntoWords(string);
 optional<tuple<Address, string>> decodeAddressAndSig(string str);
 optional<Address> validateAddress(string addrStr);
 
+double radiansToDegrees(double radians);
+
 #endif // COMMON_H

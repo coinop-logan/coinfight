@@ -23,7 +23,7 @@ public:
             vertices[i].color = color;
     }
 
-    void draw(sf::RenderTarget &target, const sf::RenderStates &states) const
+    void draw(sf::RenderTarget &target, const sf::RenderStates states) const
     {
         target.draw(vertices,4,sf::PrimitiveType::TriangleFan);
     }

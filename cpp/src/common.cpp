@@ -167,3 +167,8 @@ optional<Address> validateAddress(string addrStr)
     
     return Address(addrStr);
 }
+
+double radiansToDegrees(double radians)
+{
+    return (radians / M_PI) * 180;
+}

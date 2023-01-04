@@ -41,11 +41,11 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     sf::VideoMode chosenMode;
     if (smallScreen)
     {
-        chosenMode = sf::VideoMode(sf::Vector2u(800, 600), 24);
+        chosenMode = sf::VideoMode(800, 600, 24);
     }
     else if (!fullscreen)
     {
-        chosenMode = sf::VideoMode(sf::Vector2u(1280, 720), 24);
+        chosenMode = sf::VideoMode(1280, 720, 24);
     }
     else
     {
@@ -54,7 +54,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         auto modes = sf::VideoMode::getFullscreenModes();
         for (unsigned int i = 0; i < modes.size(); i++)
         {
-            if (modes[i].size.x == 1920 && modes[i].size.y == 1080)
+            if (modes[i].width == 1920 && modes[i].height == 1080)
             {
                 modeFound = true;
                 chosenMode = modes[i];
@@ -65,7 +65,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         {
             for (unsigned int i = 0; i < modes.size(); i++)
             {
-                if (modes[i].size.x <= 1920)
+                if (modes[i].width <= 1920)
                 {
                     modeFound = true;
                     chosenMode = modes[i];
@@ -81,7 +81,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         }
         chosenMode.bitsPerPixel = 24;
     }
-    updateScreenDimensions(vector2i(chosenMode.size.x, chosenMode.size.y));
+    updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
 
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
@@ -213,7 +213,7 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
     innerRect.setFillColor(teamColorFaded);
     innerRect.setOutlineColor(teamColor);
     innerRect.setOutlineThickness(1.5);
-    innerRect.setRotation(sf::degrees(45));
+    innerRect.setRotation(45);
     innerRect.setPosition(toSFVec(drawPos));
 
     window->draw(innerRect);
@@ -229,7 +229,7 @@ void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColo
     outerHex.setOutlineColor(UNIT_OUTLINE_COLOR);
     outerHex.setOutlineThickness(1);
     outerHex.setPosition(toSFVec(drawPos));
-    outerHex.setRotation(sf::degrees(90));
+    outerHex.setRotation(90);
 
     window->draw(outerHex);
 
@@ -240,7 +240,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
 {
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVec(drawPos));
-    transform.rotate(sf::radians(drawRotation));
+    transform.rotate(radiansToDegrees(drawRotation));
 
     sf::Color teamColor = prime->getTeamColor();
     sf::Color mainPrimeColor(teamColor.r, teamColor.g, teamColor.b, alpha);
@@ -297,7 +297,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 
     oneSide.setFillColor(fillColorFaded);
     oneSide.setPosition(toSFVec(drawPos));
-    oneSide.setRotation(sf::radians(rotation));
+    oneSide.setRotation(radiansToDegrees(rotation));
 
     sf::Vector2f front = sf::Vector2f(12, 0);
     sf::Vector2f back = sf::Vector2f(-4, 0);
@@ -316,7 +316,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVec(drawPos));
-    transform.rotate(sf::radians(rotation));
+    transform.rotate(radiansToDegrees(rotation));
     window->draw(gunBarrelPoints, transform);
 
     gunBarrelPoints[0].position.y *= -1;
@@ -347,7 +347,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
 
     transform = sf::Transform();
     transform.translate(toSFVec(drawPos));
-    transform.rotate(sf::radians(rotation));
+    transform.rotate(radiansToDegrees(rotation));
     window->draw(lines, transform);
 }
 
@@ -551,11 +551,11 @@ void drawTargetCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color col
     sf::Transform transform;
     transform.translate(toSFVecF(mousePos));
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
 
     sf::RectangleShape rect(sf::Vector2f(2,2));
@@ -581,11 +581,11 @@ void drawBracketsCursor(sf::RenderWindow *window, vector2i mousePos, sf::Color c
     sf::Transform transform;
     transform.translate(toSFVecF(mousePos));
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
-    transform.rotate(sf::degrees(90));
+    transform.rotate(90);
     window->draw(lines, transform);
 }
 
@@ -754,11 +754,11 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             aboveText.setFillColor(topTextColor);
-            aboveText.setOrigin(textRec.getSize() / 2.f);
+            aboveText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
             aboveText.setPosition(toSFVec(textScreenPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.getSize() / 2.f);
+            drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
             drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
@@ -774,11 +774,11 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
 
             belowText.setFillColor(sf::Color(200, 200, 255));
-            belowText.setOrigin(textRec.getSize() / 2.f);
+            belowText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
             belowText.setPosition(toSFVec(textScreenPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.getSize() / 2.f);
+            drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
             drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
@@ -819,7 +819,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, option
             float healthBarLength = static_cast<float>(unit->getRadius()) * 2;
 
             sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
-            healthBar.setOrigin(healthBar.getLocalBounds().getSize() / 2.f);
+            healthBar.setOrigin(healthBar.getLocalBounds().width / 2.f, healthBar.getLocalBounds().height / 2.f);
             healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, healthBarPos))));
 
             healthBar.setOutlineColor(barColorOutline);
@@ -851,7 +851,7 @@ void drawArrow(sf::RenderWindow* window, GameUI* ui, vector2fp drawPos, bool poi
 
     if (!pointingUp)
     {
-        arrowPoint.setRotation(sf::degrees(180));
+        arrowPoint.setRotation(180);
     }
 
     window->draw(arrowPoint);
