@@ -89,7 +89,7 @@ def executePendingWithdrawals(w3, contract, ethAccount):
             withdrawCmdData = f.read().split(' ')
             (address, amount) = withdrawCmdData[0], int(withdrawCmdData[1])
         
-        tx = contract.functions.withdraw("0x3420AA70b2f23c9a299F92EBd05fbD6c4aA21164", 1).build_transaction({
+        tx = contract.functions.withdraw("0x3420AA70b2f23c9a299F92EBd05fbD6c4aA21164", amount).build_transaction({
             'gas': 6000000,
             'gasPrice': 48828125000,
             'nonce': nextNonce
