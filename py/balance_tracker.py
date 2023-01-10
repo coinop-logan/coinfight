@@ -1,17 +1,25 @@
 from time import sleep
 from web3 import Web3
 import json, os, requests
+from pprint import pprint
+from hacky_event_fetch import hackyEventFetch
 
-def loadApiKey():
-    with open("web3-api-key","r") as f:
-        return f.read()
+# def loadApiKey():
+#     with open("web3-api-key","r") as f:
+#         return f.read()
 
-apiKey = loadApiKey()
+# apiKey = loadApiKey()
 web3RequestSession = requests.Session()
-web3RequestSession.headers.update({'x-api-key': apiKey})
+# web3RequestSession.headers.update({'x-api-key': apiKey})
 
-CONTRACT_ADDRESS = "0x4b21628532624867ac62875Db99dbBE21b830626"
-WEB3_PROVIDER = Web3.HTTPProvider("https://gno.getblock.io/mainnet/", session = web3RequestSession)
+godwokenTestnetRpcUrl = "https://v1.testnet.godwoken.io/rpc"
+godwokenRpcUrl = "https://v1.mainnet.godwoken.io/rpc"
+
+CONTRACT_ADDRESS = "0xAa2bdef57638bF6c7d94Ed78455B84A4212b20BC"
+
+rpcUrl = godwokenTestnetRpcUrl
+
+WEB3_PROVIDER = Web3.HTTPProvider(rpcUrl, session = web3RequestSession)
 
 neededConfirmations = 1
 eventsToServerDir = "events_in/"
@@ -31,7 +39,7 @@ def loadEthAccount(w3):
         loadedMnemonic = f.read()
     return w3.eth.account.from_mnemonic(loadedMnemonic)
 
-def scanForAndRecordDeposits(w3, contract):
+def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
     lastBlockProcessed = getLastBlockProcessed()
     currentBlock = w3.eth.block_number
     (startBlock, endBlock) = (lastBlockProcessed + 1, currentBlock - neededConfirmations)
@@ -47,18 +55,24 @@ def scanForAndRecordDeposits(w3, contract):
     # which may result in skipping some events on the next pass
     try:
         filename = str(startBlock) + "-" + str(endBlock) + "deposits.dat"
-        depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
-        newDepositLogs = depositEventFilter.get_all_entries()
-        recordNewPlayerDeposits(newDepositLogs, filename)
+
+        # depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
+        # newDepositLogs = depositEventFilter.get_all_entries()
+        newDepositEvents = hackyEventFetch(rpcUrl, contractAbi, contractAddress, "DepositMade", startBlock, endBlock)
+
+        recordNewPlayerDeposits(newDepositEvents, filename)
     except ValueError as e:
         print("Exception when trying to use the player deposit event filter:", e)
         return
 
     try:
         filename = str(startBlock) + "-" + str(endBlock) + "honeypot.dat"
-        honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
-        newHoneypotLogs = honeypotEventFilter.get_all_entries()
-        recordNewHoneypotDeposits(newHoneypotLogs, filename)
+        
+        # honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
+        # newHoneypotLogs = honeypotEventFilter.get_all_entries()
+        newHoneypotEvents = hackyEventFetch(rpcUrl, contractAbi, contractAddress, "HoneypotAdded", startBlock, endBlock)
+
+        recordNewHoneypotDeposits(newHoneypotEvents, filename)
     except ValueError as e:
         print("Exception when trying to use the honeypot deposit event filter:", e)
         return
@@ -116,7 +130,7 @@ def main():
 
     while True:
         try:
-            scanForAndRecordDeposits(w3, contract)
+            scanForAndRecordDeposits(w3, address, abi)
         except Exception as e:
             print("exception when scanning for deposits:", e)
         try:
@@ -126,17 +140,17 @@ def main():
             
         sleep(10)
 
-def recordNewPlayerDeposits(newDepositLogs, filename):
-    if len(newDepositLogs) == 0:
+def recordNewPlayerDeposits(newDepositEvents, filename):
+    if len(newDepositEvents) == 0:
         print("no new Deposit events")
     
     else:
-        print("processing", len(newDepositLogs), "deposits")
+        print("processing", len(newDepositEvents), "deposits")
 
         fileLines = []
-        for log in newDepositLogs:
-            forAccount = log.args.forAccount
-            amountStr = str(log.args.amount)
+        for event in newDepositEvents:
+            forAccount = event['forAccount']
+            amountStr = str(event['amount'])
             fileLines.append(forAccount + " " + amountStr)
             
         print("writing player deposit events to file for game server")
@@ -145,16 +159,16 @@ def recordNewPlayerDeposits(newDepositLogs, filename):
         
         os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
 
-def recordNewHoneypotDeposits(newHoneypotLogs, filename):
-    if len(newHoneypotLogs) == 0:
+def recordNewHoneypotDeposits(newHoneypotEvents, filename):
+    if len(newHoneypotEvents) == 0:
         print("no new Honeypot events")
     
     else:
-        print("processing", len(newHoneypotLogs), "new honeypot adds")
+        print("processing", len(newHoneypotEvents), "new honeypot adds")
 
         fileLines = []
-        for log in newHoneypotLogs:
-            amountStr = str(log.args.amount)
+        for event in newHoneypotEvents:
+            amountStr = str(event['amount'])
             fileLines.append("honeypot " + amountStr)
             
         print("writing honeypot deposit events to file for game server")
