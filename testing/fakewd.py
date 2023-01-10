@@ -25,7 +25,7 @@ def main():
     amount = float(sys.argv[2])
     
     # convert to wei and add to cmdLine
-    weiAmount = math.floor(amount * (10**18))
+    weiAmount = math.floor(amount * (10**6))
     cmdLine += str(weiAmount)
 
     
