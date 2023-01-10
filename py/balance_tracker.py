@@ -65,7 +65,7 @@ def scanForAndRecordDeposits(w3, contract):
 
     setLastBlockProcessed(endBlock)
 
-def executePendingWithdrawals(w3, ethAccount):
+def executePendingWithdrawals(w3, contract, ethAccount):
     global nextNonce
 
     withdrawsDir = eventsFromServerDir + "withdrawals/"
@@ -73,20 +73,15 @@ def executePendingWithdrawals(w3, ethAccount):
     for fname in withdrawCmdFiles:
         with open(withdrawsDir + fname, 'r') as f:
             withdrawCmdData = f.read().split(' ')
-            (address, amount) = withdrawCmdData[0], withdrawCmdData[1]
-
-        tx = {
-            'to': address,
-            'value': int(amount),
-            'gas': 21000,
-            'gasPrice': 2000000000,
+            (address, amount) = withdrawCmdData[0], int(withdrawCmdData[1])
+        
+        tx = contract.functions.withdraw("0x3420AA70b2f23c9a299F92EBd05fbD6c4aA21164", 1).build_transaction({
+            'gas': 6000000,
+            'gasPrice': 48828125000,
             'nonce': nextNonce
-        }
-        signed = ethAccount.sign_transaction(tx)
-
-        # send the tx!
+        })
+        signed = ethAccount.signTransaction(tx)
         txHash = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-        nextNonce += 1
 
         print("withdrawal", txHash, address, amount)
 
@@ -125,7 +120,7 @@ def main():
         except Exception as e:
             print("exception when scanning for deposits:", e)
         try:
-            executePendingWithdrawals(w3, ethAccount)
+            executePendingWithdrawals(w3, contract, ethAccount)
         except Exception as e:
             print("exception when executing pending withdrawals:", e)
             
@@ -168,4 +163,5 @@ def recordNewHoneypotDeposits(newHoneypotLogs, filename):
         
         os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
 
-main()
+if __name__ == "__main__":
+    main()
