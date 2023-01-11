@@ -1,0 +1,23 @@
+download/install CodeBlocks
+	get the installer WITH MinGW
+	install directly to C:/CodeBlocks
+
+Add CodeBlocks/MinGW/bin AND CodeBlocks/MinGW/x86../bin to PATH
+
+download SFML 2.5 (already built)
+    when faced with the choices at https://www.sfml-dev.org/download/sfml/2.5.1/, make sure you download the version matched for your version of MinGW
+download boost
+build boost
+	odd - might not be necessary. Note that the Coinfight codeblocks project doesn't link to any boost stuff...
+
+	After downloading/unzipping,
+	in root folder:
+		./bootstrap.bat gcc
+		./b2 toolset=gcc --with-system --with-thread
+	
+
+The CodeBlocks project looks for resulting include and lib files in C:\libs and C:\include ; move files from the above steps here
+
+git clone the project (you'll need to setup ssh key)
+Open up the Codeblocks project file in the repo and compile
+you may need to change the cpp compile version setting - not sure if that's saved in the project
