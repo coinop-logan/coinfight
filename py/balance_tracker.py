@@ -15,7 +15,7 @@ web3RequestSession = requests.Session()
 godwokenTestnetRpcUrl = "https://v1.testnet.godwoken.io/rpc"
 godwokenRpcUrl = "https://v1.mainnet.godwoken.io/rpc"
 
-CONTRACT_ADDRESS = "0xAa2bdef57638bF6c7d94Ed78455B84A4212b20BC"
+CONTRACT_ADDRESS = "0x0c6b71d194974ae7B110f5A78ef0164445239b2E"
 
 rpcUrl = godwokenTestnetRpcUrl
 
