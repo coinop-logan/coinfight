@@ -87,7 +87,7 @@ def executePendingWithdrawals(w3, contract, ethAccount):
     for fname in withdrawCmdFiles:
         with open(withdrawsDir + fname, 'r') as f:
             withdrawCmdData = f.read().split(' ')
-            (address, amount) = withdrawCmdData[0], int(withdrawCmdData[1])
+            (address, amount) = w3.toChecksumAddress(withdrawCmdData[0]), int(withdrawCmdData[1])
         
         tx = contract.functions.withdraw(address, amount).build_transaction({
             'gas': 6000000,
