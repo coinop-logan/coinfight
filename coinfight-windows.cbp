@@ -65,15 +65,14 @@
 			<Add option="-DSFML_STATIC" />
 			<Add option="-DWIN32_LEAN_AND_MEAN" />
 			<Add option="-D_USE_MATH_DEFINES" />
-			<Add directory="C:/coinfight-build/SFML-2.5.1/include" />
-			<Add directory="C:/coinfight-build/boost_1_71_0" />
 			<Add directory="cpp/include" />
+			<Add directory="C:/include" />
 		</Compiler>
 		<Linker>
 			<Add option="-static-libstdc++" />
 			<Add option="-static-libgcc" />
 			<Add option="-static" />
-			<Add directory="C:/coinfight-build/SFML-2.5.1/lib" />
+			<Add directory="C:/lib" />
 		</Linker>
 		<Unit filename="cpp/include/nlohmann/json.hpp" />
 		<Unit filename="cpp/src/address.cpp" />
