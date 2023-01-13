@@ -435,6 +435,13 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
                 if (isCompletedUnit)
                 {
                     // We want to scuttle.
+                    // ... unless it's a Gateway - scuttling a GW is too serious a command to leave to right clicking!
+                    // if it's a GW, for now just do nothing
+                    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(entity))
+                    {
+                        return noCmd;
+                    }
+
                     // search through GWs to find the most appropriate one based on scuttle queue weight
                     coinsInt bestChoiceScore(0);
                     boost::shared_ptr<Gateway> bestChoice;
