@@ -45,7 +45,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     }
     else if (!fullscreen)
     {
-        chosenMode = sf::VideoMode(1280, 720, 24);
+        chosenMode = sf::VideoMode(1800, 1000, 24);
     }
     else
     {
