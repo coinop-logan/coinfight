@@ -1104,12 +1104,18 @@ void Beacon::cmdStop() {}
 // ------------------------------------------------------------------------------
 
 
-
 fixed32 Gateway::getRadius() const {return GATEWAY_RADIUS;}
 uint8_t Gateway::typechar() const { return GATEWAY_TYPECHAR; }
 string Gateway::getTypename() const { return "Gateway"; }
 coinsInt Gateway::getCost() const { return GATEWAY_COST; }
 uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
+
+// combat constants
+uint32_t Gateway::getShotRangeFloorsquared() const { return GATEWAY_SHOT_RANGE_FLOORSQUARED; }
+uint16_t Gateway::getShotCooldown() const { return GATEWAY_SHOT_COOLDOWN; }
+uint16_t Gateway::getShotDamage() const { return GATEWAY_SHOT_DAMAGE; }
+fixed32 Gateway::getShotRange() const { return GATEWAY_SHOT_RANGE; }
+fixed32 Gateway::getAggressionRange() const { return GATEWAY_SHOT_RANGE; }
 
 bool Gateway::isIdle() {
     return buildTargetQueue.size() == 0 && scuttleTargetQueue.size() == 0;
@@ -1432,6 +1438,7 @@ void Gateway::pack(Netpack::Builder* to)
 {
     packEntityAndUnitBasics(to);
     packBuildingBasics(to);
+    packCombatUnitBasics(to);
 
     to->packOptional<EntityRef>(maybeDepositingPrime, packEntityRef);
     to->packOptional<EntityRef>(maybeWithdrawingPrime, packEntityRef);
@@ -1455,6 +1462,7 @@ void Gateway::pack(Netpack::Builder* to)
 Gateway::Gateway(Netpack::Consumer* from)
     : Unit(from)
     , Building(from)
+    , CombatUnit(from)
 {
     maybeDepositingPrime = from->consumeOptional<EntityRef>(consumeEntityRef);
     maybeWithdrawingPrime = from->consumeOptional<EntityRef>(consumeEntityRef);
@@ -1613,6 +1621,9 @@ void Gateway::validateTargets()
 
 void Gateway::iterate()
 {
+    iterateCombatUnitBasics();
+    iterateBuildingBasics();
+
     validateTargets();
 
     // until proven otherwise

@@ -219,8 +219,33 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
     window->draw(innerRect);
 }
 
-void drawGateway(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
+void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, vector2fl drawPos, float drawRotation, sf::Color teamColor, unsigned int alpha)
 {
+    // if there's a combat target in range, draw guns
+    if (auto attackTarget = gateway->maybeAttackTarget)
+    {
+        // hacky solution: we only use the "unit's" transform for drawing the gun barrels.
+        // This only moves the gun barrels and not the Gateway.
+        
+        sf::Transform transform;
+        transform.translate(toSFVec(drawPos));
+        transform.rotate(radiansToDegrees(drawRotation));
+
+        sf::VertexArray gunBarrelPoints(sf::PrimitiveType::Triangles, 3);
+        gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
+        gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
+        gunBarrelPoints[2].position = toSFVec(COMBATUNIT_SHOT_OFFSET);
+        gunBarrelPoints[0].color = FIGHTER_BARREL_COLOR;
+        gunBarrelPoints[1].color = FIGHTER_BARREL_COLOR;
+        gunBarrelPoints[2].color = FIGHTER_BARREL_COLOR;
+        window->draw(gunBarrelPoints, transform);
+
+        gunBarrelPoints[0].position.y *= -1;
+        gunBarrelPoints[1].position.y *= -1;
+        gunBarrelPoints[2].position.y *= -1;
+        window->draw(gunBarrelPoints, transform);
+    }
+
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, alpha);
 
     sf::CircleShape outerHex(15, 6);
@@ -392,7 +417,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
-        drawGateway(window, drawPos, teamColor, fadedAlpha);
+        drawGateway(window, gateway, drawPos, drawRotation, teamColor, fadedAlpha);
     }
     else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
@@ -1223,7 +1248,7 @@ void displayGameAndUI(sf::RenderWindow *window, Game *game, GameUI* ui, optional
                         sf::Color color;
                         float width;
                         int lifetime;
-                        if (combatUnit->typechar() == TURRET_TYPECHAR)
+                        if (combatUnit->typechar() == TURRET_TYPECHAR || combatUnit->typechar() == GATEWAY_TYPECHAR)
                         {
                             color = sf::Color(200, 0, 200);
                             width = 5;
@@ -1234,6 +1259,10 @@ void displayGameAndUI(sf::RenderWindow *window, Game *game, GameUI* ui, optional
                             color = sf::Color(255, 0, 0);
                             width = 1;
                             lifetime = 8;
+                        }
+                        else
+                        {
+                            cout << "Error: I don't know how to draw that CombatUnit shot!" << endl;
                         }
 
                         boost::shared_ptr<LineParticle> line(new LineParticle(final, targetPos, color, width, lifetime));

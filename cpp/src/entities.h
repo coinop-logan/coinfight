@@ -281,9 +281,14 @@ const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
+const fixed32 GATEWAY_SHOT_RANGE(350);
+const uint32_t GATEWAY_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_SHOT_RANGE);
+const uint16_t GATEWAY_SHOT_COOLDOWN = 180;
+const uint16_t GATEWAY_SHOT_DAMAGE = 100;
+
 class Prime;
 
-class Gateway : public Building
+class Gateway : public Building, public CombatUnit
 {
 public:
     fixed32 getRadius() const;
@@ -291,6 +296,12 @@ public:
     string getTypename() const;
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
+
+    uint32_t getShotRangeFloorsquared() const;
+    uint16_t getShotCooldown() const;
+    uint16_t getShotDamage() const;
+    fixed32 getShotRange() const;
+    fixed32 getAggressionRange() const;
 
     optional<EntityRef> maybeDepositingPrime;
     optional<EntityRef> maybeWithdrawingPrime;
@@ -438,7 +449,7 @@ public:
 const coinsInt TURRET_COST = 60000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
-const fixed32 TURRET_SHOT_RANGE(400);
+const fixed32 TURRET_SHOT_RANGE(450);
 const uint32_t TURRET_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(TURRET_SHOT_RANGE);
 const uint8_t TURRET_SHOT_COOLDOWN = 50;
 const uint8_t TURRET_SHOT_DAMAGE = 100;
