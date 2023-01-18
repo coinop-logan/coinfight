@@ -20,7 +20,7 @@ abort-if-git-not-clean:
 		exit 1; \
 	fi
 
-release: abort-if-git-not-clean pre-build client-build package-client server-build
+release: abort-if-git-not-clean pre-build client-build package-client
 
 clean:
 	rm -f cpp/obj/*
