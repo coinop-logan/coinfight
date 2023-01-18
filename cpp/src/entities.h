@@ -282,8 +282,9 @@ const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 
 const fixed32 GATEWAY_SHOT_RANGE(350);
+const fixed32 GATEWAY_AGGRESSION_RANGE(400);
 const uint32_t GATEWAY_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_SHOT_RANGE);
-const uint16_t GATEWAY_SHOT_COOLDOWN = 180;
+const uint16_t GATEWAY_SHOT_COOLDOWN = 140;
 const uint16_t GATEWAY_SHOT_DAMAGE = 100;
 
 class Prime;

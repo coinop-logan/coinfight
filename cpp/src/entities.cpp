@@ -1115,7 +1115,7 @@ uint32_t Gateway::getShotRangeFloorsquared() const { return GATEWAY_SHOT_RANGE_F
 uint16_t Gateway::getShotCooldown() const { return GATEWAY_SHOT_COOLDOWN; }
 uint16_t Gateway::getShotDamage() const { return GATEWAY_SHOT_DAMAGE; }
 fixed32 Gateway::getShotRange() const { return GATEWAY_SHOT_RANGE; }
-fixed32 Gateway::getAggressionRange() const { return GATEWAY_SHOT_RANGE; }
+fixed32 Gateway::getAggressionRange() const { return GATEWAY_AGGRESSION_RANGE; }
 
 bool Gateway::isIdle() {
     return buildTargetQueue.size() == 0 && scuttleTargetQueue.size() == 0;
@@ -2865,6 +2865,7 @@ void CombatUnit::iterateCombatUnitBasics()
         break;
         case AttackingGeneral:
         {
+
             // try to find an attack target, ultimately updating this->maybeAttackTarget
             boost::shared_ptr<Unit> bestTarget;
             fixed32 bestTargetPriority;
@@ -2874,9 +2875,17 @@ void CombatUnit::iterateCombatUnitBasics()
             {
                 if (auto targetUnit = boost::dynamic_pointer_cast<Unit,Entity>(maybeEntityRefToPtrOrNull(*game, *attackTarget)))
                 {
-                    bestTarget = targetUnit;
-                    bestTargetPriority = this->calcAttackPriority(targetUnit);
-                    alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
+                    // Clear attackTarget if it's outside of the aggression range.
+                    if ((targetUnit->getPos() - this->getPos()).getRoughMagnitude() > this->getAggressionRange())
+                    {
+                        maybeAttackTarget = {};
+                    }
+                    else
+                    {
+                        bestTarget = targetUnit;
+                        bestTargetPriority = this->calcAttackPriority(targetUnit);
+                        alreadyHadTarget = true; // might be overridden by a higher priority unit nearby, but is sticky in the face of ties
+                    }
                 }
             }
 
