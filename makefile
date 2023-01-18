@@ -32,8 +32,6 @@ prep-server:
 	mkdir -p bin/events_in/deposits
 	mkdir -p bin/events_out/withdrawals
 	cp py/* bin/
-	cp secret.txt bin/secret.txt
-	cp web3-api-key bin/web3-api-key
 	cp assets/server/* bin/
 
 client: pre-build client-build
