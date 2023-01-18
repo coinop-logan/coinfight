@@ -2834,7 +2834,13 @@ void CombatUnit::iterateCombatUnitBasics()
     {
         case NotAttacking:
         {
-            if (isIdle())
+            // We want to be unable to shoot if the unit is moving.
+            bool tooBusyToShoot = false;
+            if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
+            {
+                tooBusyToShoot = !(mobileUnitSelf->mobileUnitIsIdle());
+            }
+            if (!tooBusyToShoot)
             {
                 auto entitiesInSight = game->entitiesWithinCircle(getPos(), getAggressionRange());
 
