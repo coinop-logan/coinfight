@@ -654,6 +654,11 @@ Unit::Unit(Netpack::Consumer* from)
     goldInvested = Coins(from);
 }
 
+void Unit::setHealthAssumingBuilt(uint16_t newHealth)
+{
+    healthAssumingBuilt = newHealth;
+}
+
 coinsInt Unit::build(coinsInt attemptedAmount, Coins *fromCoins)
 {
     return fromCoins->transferUpTo(attemptedAmount, &(this->goldInvested));
@@ -1026,10 +1031,10 @@ fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
 string Beacon::getTypename() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
-uint16_t Beacon::getMaxHealth() const { return GATEWAY_HEALTH; }
+uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
 Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
-    : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos)
+    : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
     , state(state)
 {}
 void Beacon::pack(Netpack::Builder* to)
@@ -1059,8 +1064,10 @@ void Beacon::iterate()
             if (isActive())
             {
                 // replace self with a Gateway
+                fixed32 healthRatio = fixed32(getEffectiveHealth()) / fixed32(getMaxHealth());
                 boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->getPos()));
                 gateway->completeBuildingInstantly(&this->goldInvested);
+                gateway->setHealthAssumingBuilt(uint16_t(healthRatio * fixed32(GATEWAY_HEALTH)));
                 this->die();
                 game->registerNewEntityIgnoringCollision(gateway);
             }

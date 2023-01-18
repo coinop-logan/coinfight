@@ -109,6 +109,7 @@ class Unit : public Entity
 {
     uint16_t healthAssumingBuilt;
 public:
+    void setHealthAssumingBuilt(uint16_t newHealth);
     uint8_t ownerId;
     Coins goldInvested;
 
@@ -247,7 +248,7 @@ protected:
 };
 
 const coinsInt BEACON_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
-// const uint16_t BEACON_HEALTH = 100;
+const uint16_t BEACON_HEALTH = 500;
 const fixed32 BEACON_RADIUS(10);
 
 class Beacon : public Building
