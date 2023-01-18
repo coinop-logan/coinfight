@@ -61,22 +61,9 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
                 break;
             }
         }
+
         if (!modeFound) // gotta lower our standards!
         {
-            for (unsigned int i = 0; i < modes.size(); i++)
-            {
-                if (modes[i].width <= 1920)
-                {
-                    modeFound = true;
-                    chosenMode = modes[i];
-                    break;
-                }
-            }
-        }
-        if (!modeFound)
-        {
-            // weird, but okay. Just choose the first mode found.
-            modeFound = true;
             chosenMode = modes[0];
         }
         chosenMode.bitsPerPixel = 24;
