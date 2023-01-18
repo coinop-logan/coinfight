@@ -1440,6 +1440,24 @@ void displayGameAndUI(sf::RenderWindow *window, Game *game, GameUI* ui, optional
         }
 
         drawCursorOrSelectionBox(window, ui, maybePlayerId);
+
+        if (ui->displayAllRadii)
+        {
+            for (unsigned int i=0; i<game->entities.size(); i++)
+            {
+                if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+                {
+                    drawUnitRadii(window, unit, gamePosToScreenPos(ui->camera, unit->getPos()));
+                }
+            }
+        }
+        else if (ui->mouseoverEntity)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(ui->mouseoverEntity))
+            {
+                drawUnitRadii(window, unit, gamePosToScreenPos(ui->camera, unit->getPos()));
+            }
+        }
     }
 
     if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))

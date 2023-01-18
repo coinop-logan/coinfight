@@ -18,6 +18,10 @@ bool isCtrlPressed()
 {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
 }
+bool isAltPressed()
+{
+    return sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt);
+}
 
 void printHi()
 {
@@ -33,6 +37,7 @@ GameUI::GameUI(sf::Font* font, bool online)
     cmdState = Default;
     minimapEnabled = false;
     maybeSelectionBoxStart = {};
+    displayAllRadii = false;
     unitInterfaceCmds = vector<boost::shared_ptr<UnitInterfaceCmd>>
     {
         boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
@@ -138,6 +143,7 @@ void GameUI::openInGameMenu()
 }
 void GameUI::iterate()
 {
+    displayAllRadii = isAltPressed();
     // remove dead or null units from selectedUnits
     for (unsigned int i=0; i<selectedUnits.size(); i++)
     {

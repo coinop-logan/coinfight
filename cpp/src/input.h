@@ -51,6 +51,7 @@ struct GameUI
     bool hideUX;
     bool showTutorial;
     bool online;
+    bool displayAllRadii;
     ParticlesContainer particles;
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
