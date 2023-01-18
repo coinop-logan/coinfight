@@ -118,7 +118,6 @@ public:
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
-    virtual fixed32 getRange() const;
     virtual bool isIdle();
 
     sf::Color getTeamOrPrimaryColor();
@@ -362,7 +361,6 @@ public:
     coinsInt getCost() const;
     uint16_t getMaxHealth() const;
     fixed32 getMaxSpeed() const;
-    fixed32 getRange() const;
 
     Coins heldGold;
 
@@ -423,7 +421,6 @@ class Fighter : public MobileUnit, public CombatUnit
 {
 public:
     fixed32 getMaxSpeed() const;
-    fixed32 getRange() const;
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;
     uint16_t getShotDamage() const;
@@ -463,7 +460,6 @@ public:
     uint16_t getShotCooldown() const;
     uint16_t getShotDamage() const;
     fixed32 getShotRange() const;
-    fixed32 getRange() const;
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;

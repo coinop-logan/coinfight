@@ -254,6 +254,7 @@ vector<boost::shared_ptr<Cmd>> GameUI::handlePossibleUnitInterfaceCmd(sf::Keyboa
         returnToDefaultState();
         cmdState = GameUI::SpawnBeacon;
         spawnBeaconInterfaceCmd.active = true;
+        ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
 
         return noCmds;
     }

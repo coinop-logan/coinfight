@@ -685,10 +685,6 @@ fixed32 Unit::getBuiltRatio()
 {
     return (fixed32)getBuilt() / getCost();
 }
-fixed32 Unit::getRange() const
-{
-    throw runtime_error("getRange has not been defined for '" + getTypename() + "'");
-}
 uint16_t Unit::getEffectiveHealth()
 {
     if (getBuilt() == 0) return 1;
@@ -1808,7 +1804,6 @@ void Gateway::iterate()
 
 fixed32 Prime::getRadius() const { return PRIME_RADIUS; }
 fixed32 Prime::getMaxSpeed() const { return PRIME_SPEED; }
-fixed32 Prime::getRange() const { return PRIME_TRANSFER_RANGE; }
 coinsInt Prime::getCost() const { return PRIME_COST; }
 uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
@@ -3016,7 +3011,7 @@ void CombatUnit::iterateCombatUnitBasics()
                     {
                         if (auto mobileUnitSelf = dynamic_cast<MobileUnit*>(this))
                         {
-                            mobileUnitSelf->setMoveTarget(*target, getRange());
+                            mobileUnitSelf->setMoveTarget(*target, getShotRange());
                         }
                         tryShootAt(targetUnit);
                     }
@@ -3100,7 +3095,6 @@ fixed32 Fighter::getShotRange() const { return FIGHTER_SHOT_RANGE; }
 fixed32 Fighter::getAggressionRange() const { return FIGHTER_AGGRESSION_RANGE; }
 fixed32 Fighter::getRadius() const { return FIGHTER_RADIUS; }
 fixed32 Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
-fixed32 Fighter::getRange() const { return FIGHTER_SHOT_RANGE; }
 coinsInt Fighter::getCost() const { return FIGHTER_COST; }
 uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 
@@ -3165,7 +3159,6 @@ uint16_t Turret::getShotCooldown() const { return TURRET_SHOT_COOLDOWN; }
 uint16_t Turret::getShotDamage() const { return TURRET_SHOT_DAMAGE; }
 fixed32 Turret::getShotRange() const { return TURRET_SHOT_RANGE; }
 fixed32 Turret::getRadius() const { return TURRET_RADIUS; }
-fixed32 Turret::getRange() const { return TURRET_SHOT_RANGE; }
 coinsInt Turret::getCost() const { return TURRET_COST; }
 uint16_t Turret::getMaxHealth() const { return TURRET_HEALTH; }
 fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }

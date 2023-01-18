@@ -436,6 +436,30 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
     }
 }
 
+void drawRadius(sf::RenderWindow* window, vector2fl drawPos, float radius, sf::Color color)
+{
+    sf::CircleShape circle(radius, 50);
+    circle.setPosition(drawPos.x, drawPos.y);
+    circle.setOutlineColor(color);
+    circle.setOutlineThickness(1);
+    circle.setFillColor(sf::Color::Transparent);
+    circle.setOrigin(sf::Vector2f(radius, radius));
+
+    window->draw(circle);
+}
+
+void drawUnitRadii(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
+{
+    if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit))
+    {
+        drawRadius(window, drawPos, float(combatUnit->getShotRange()), sf::Color(255, 0, 0, 100));
+    }
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        drawRadius(window, drawPos, float(GATEWAY_RANGE), sf::Color(255, 255, 0, 100));
+    }
+}
+
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vector2i drawPos)
 {
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
@@ -676,6 +700,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<uin
                 break;
             case GameUI::SpawnBeacon:
                 drawTargetCursor(window, mousePos, sf::Color::Yellow);
+                drawUnitRadii(window, ui->ghostBuilding, mousePos);
                 break;
             case GameUI::AttackAbsorb:
                 if (ui->mouseoverEntity)
@@ -723,6 +748,7 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<uin
                 break;
             case GameUI::Build:
                 drawGhostBuilding(window, ui, mousePos);
+                drawUnitRadii(window, ui->ghostBuilding, mousePos);
                 break;
         }
     }
