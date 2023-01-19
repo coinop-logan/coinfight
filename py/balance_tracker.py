@@ -123,7 +123,7 @@ def main():
 
     ethAccount = loadEthAccount(w3)
     print("loaded account", ethAccount.address)
-    # 0xC2da5397ba829F9C144fC46a4309e307366253F7
+    # 0x0c6b71d194974ae7B110f5A78ef0164445239b2E
     
     global nextNonce
     nextNonce = w3.eth.getTransactionCount(ethAccount.address)
