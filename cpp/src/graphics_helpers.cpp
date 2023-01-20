@@ -112,7 +112,7 @@ void GH::wrapAndRenderTextWithTransform(sf::RenderWindow* window, string text, s
     transform->translate(sf::Vector2f(0, fontSize + rendered.getLocalBounds().height));
 }
 
-unsigned int GH::wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2i drawPos)
+unsigned int GH::wrapAndRenderTextAtPos(sf::RenderWindow* window, string text, sf::Font* font, int fontSize, sf::Color color, int width, vector2fl drawPos)
 {
     auto rendered = wrapTextBlock(text, font, fontSize, width);
     unsigned int height = rendered.getLocalBounds().height;

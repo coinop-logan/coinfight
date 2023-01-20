@@ -326,11 +326,11 @@ vector2i gamePosToScreenPos(sf::RenderWindow* window, vector2fp gamePos)
     );
 }
 
-vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
+vector2i mouseEventVec(sf::Event::MouseButtonEvent mEvent)
 {
     return vector2i(mEvent.x, mEvent.y);
 }
-vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
+vector2i mouseEventVec(sf::Event::MouseMoveEvent mEvent)
 {
     return vector2i(mEvent.x, mEvent.y);
 }
@@ -730,15 +730,15 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                 {
                     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
                     {
-                        vector2i mousePos = mouseMoveToVec(event.mouseMove);
+                        vector2i mousePos = mouseEventVec(event.mouseMove);
                         vector2i moveVector = mousePos - ui->lastMousePos;
                         ui->cameraView.move(toSFVecF(moveVector * -1));
                     }
 
-                    Target target = getTargetAtScreenPos(window, game, mouseMoveToVec(event.mouseMove));
+                    Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseMove));
                     ui->mouseoverEntity = target.castToEntityPtr(*game);
 
-                    ui->lastMousePos = mouseMoveToVec(event.mouseMove);
+                    ui->lastMousePos = mouseEventVec(event.mouseMove);
                 }
                 break;
             case sf::Event::MouseButtonReleased:
@@ -752,7 +752,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     {
                         if (ui->maybeSelectionBoxStart)
                         {
-                            vector2fl mousePos = mouseButtonToVec(event.mouseButton);
+                            vector2fl mousePos = mouseEventVec(event.mouseButton);
                             if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
                             {
                                 vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
@@ -894,12 +894,12 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                         {
                             case GameUI::Default:
                             {
-                                ui->maybeSelectionBoxStart = {vector2i(mouseButtonToVec(event.mouseButton))};
+                                ui->maybeSelectionBoxStart = {vector2i(mouseEventVec(event.mouseButton))};
                             }
                             break;
                             case GameUI::SpawnBeacon:
                             {
-                                vector2fp spawnPos = screenPosToGamePos(window, mouseButtonToVec(event.mouseButton));
+                                vector2fp spawnPos = screenPosToGamePos(window, mouseEventVec(event.mouseButton));
 
                                 cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
                                 if (!isShiftPressed())
@@ -910,7 +910,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::AttackAbsorb:
                             {
-                                Target target = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
+                                Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
 
                                 if (ui->selectionHasGateways())
                                 {
@@ -943,7 +943,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::Deposit:
                             {
-                                Target target = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
+                                Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
 
                                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                                 vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
@@ -962,7 +962,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::Fetch:
                             {
-                                Target clickTarget = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
+                                Target clickTarget = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
                                 if (auto targetEntity = clickTarget.castToEntityPtr(*game))
                                 {
                                     if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -1035,7 +1035,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             case GameUI::Build:
                             {
                                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                vector2fl buildPos(screenPosToGamePos(window, mouseButtonToVec(event.mouseButton)));
+                                vector2fl buildPos(screenPosToGamePos(window, mouseEventVec(event.mouseButton)));
                                 cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
                                 if (!isShiftPressed())
                                 {
@@ -1052,7 +1052,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             if (ui->selectedUnits.size() > 0)
                             {
                                 if (playerId)
-                                    cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton))));
+                                    cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton))));
                             }
                         }
                         else
