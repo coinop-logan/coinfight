@@ -32,7 +32,7 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
-    lastMousePos = vector2i(0, 0);
+    lastMousePos = getScreenDimensions(window) / 2;
     debugInt = 0;
     cmdState = Default;
     minimapEnabled = false;
