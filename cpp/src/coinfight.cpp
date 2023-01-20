@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        window->setView(window->getDefaultView());
         window->clear();
         displayTitle(window, &mainFont);
         mainMenu.draw(window);
@@ -614,8 +615,9 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
 optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler* connectionHandler, string sigChallenge)
 {
-    vector2i fakeCenter(100, 100);
-    LoginWindow loginWindow(fakeCenter, sigChallenge, &mainFont);
+    vector2i center = getScreenDimensions(mainWindow) / 2;
+
+    LoginWindow loginWindow(center, sigChallenge, &mainFont);
 
     while (mainWindow->isOpen())
     {

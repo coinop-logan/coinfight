@@ -241,8 +241,9 @@ bool NoticeWindow::processEvent(sf::Event event)
 
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
 {
-    vector2i fakeCenter(100, 100);
-    NoticeWindow noticeWindow(fakeCenter, message, font);
+    vector2i center = getScreenDimensions(window) / 2;
+
+    NoticeWindow noticeWindow(center, message, font);
 
     while (window->isOpen())
     {

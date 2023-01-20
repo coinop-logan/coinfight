@@ -10,6 +10,11 @@ using json = nlohmann::json;
 
 using namespace std;
 
+void debugOutputVector(const char *label, vector2i v)
+{
+    fprintf(stdout, "%s: ", label);
+    cout << v.x << "," << v.y << endl;
+}
 void debugOutputVector(const char *label, vector2fp v)
 {
     fprintf(stdout, "%s: ", label);
@@ -175,4 +180,9 @@ optional<Address> validateAddress(string addrStr)
 double radiansToDegrees(double radians)
 {
     return (radians / M_PI) * 180;
+}
+
+vector2i getScreenDimensions(sf::RenderWindow* window)
+{
+    return fromSFVec(window->getSize());
 }

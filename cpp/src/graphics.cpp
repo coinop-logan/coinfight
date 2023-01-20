@@ -1483,6 +1483,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
     }
 
     window->display();
+    
+    window->setView(ui->cameraView);
 }
 
 void cleanupGraphics(sf::RenderWindow* window)
@@ -1515,17 +1517,17 @@ void displayTitle(sf::RenderWindow* window, sf::Font* font)
     sf::Text rendered(sf::String(srcText), *font, 20);
 
     unsigned int width = rendered.getLocalBounds().width;
-    vector2i fakeCenter(100, 100);
+    
+    // need a new center. Can't access the function to get the dimensions from window...
+    // find it and move it into common?
+
+    vector2i center = getScreenDimensions(window) / 2;
+
     vector2i drawPos(
-        (fakeCenter.x - (width / 2)),
+        (center.x - (width / 2)),
         TITLE_POS_Y
     );
     rendered.setPosition(toSFVecF(drawPos));
 
     window->draw(rendered);
-}
-
-vector2i getScreenDimensions(sf::RenderWindow* window)
-{
-    return fromSFVec(window->getSize());
 }

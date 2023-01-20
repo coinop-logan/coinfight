@@ -14,6 +14,7 @@ using namespace std;
 
 const int EXPECTED_SIGNATURE_LENGTH = 130;
 
+void debugOutputVector(const char *,vector2i);
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
@@ -93,5 +94,6 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str);
 optional<Address> validateAddress(string addrStr);
 
 double radiansToDegrees(double radians);
+vector2i getScreenDimensions(sf::RenderWindow* window);
 
 #endif // COMMON_H

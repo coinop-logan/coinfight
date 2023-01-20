@@ -306,6 +306,8 @@ bool GameUI::selectionWouldStaySegregated(uint8_t typechar)
 
 vector2fp screenPosToGamePos(sf::RenderWindow* window, vector2i screenPos)
 {
+    debugOutputVector("screenpos", screenPos);
+    debugOutputVector("mapped", fromSFVec(window->mapPixelToCoords(toSFVecI(screenPos))));
     return vector2fp(
         fromSFVec(
             window->mapPixelToCoords(
@@ -336,6 +338,8 @@ vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
 Target getTargetAtScreenPos(sf::RenderWindow* window, Game *game, vector2i screenPos)
 {
     vector2fp gamePos = screenPosToGamePos(window, screenPos);
+
+    debugOutputVector("gamepos", gamePos);
 
     vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, fixed32(100));
 
@@ -678,8 +682,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     }
                     case GiftUnits:
                     {
-                        vector2i fakeCenter(100, 100);
-                        ui->giftUnitsWindow = GiftUnitsWindow(fakeCenter, ui->font);
+                        vector2i center = getScreenDimensions(window) / 2;
+
+                        ui->giftUnitsWindow = GiftUnitsWindow(center, ui->font);
                         break;
                     }
                     case Withdraw:
