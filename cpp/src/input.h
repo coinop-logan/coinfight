@@ -9,6 +9,7 @@
 #define INPUT_H
 
 const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
+const float ZOOM_AMOUNT = 1.2;
 
 class Tutorial; // defined in tutorial.h
 

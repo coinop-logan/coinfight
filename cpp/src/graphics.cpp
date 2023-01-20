@@ -748,7 +748,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
         if (!game->entities[i])
             continue;
         Coins *displayAboveCoins = NULL;
-        Coins *displayBelowCoins = NULL;
+        // Coins *displayBelowCoins = NULL;
 
         sf::Color topTextColor;
         switch (getAllianceType(maybePlayerId, game->entities[i]))

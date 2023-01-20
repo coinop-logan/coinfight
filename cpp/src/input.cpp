@@ -1055,6 +1055,18 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     }
                 }
                 break;
+            case sf::Event::MouseWheelMoved:
+                {
+                    bool zoomIn = event.mouseWheel.delta > 0;
+                    float zoomFactor = zoomIn ? (1 / ZOOM_AMOUNT) : (ZOOM_AMOUNT) ;
+
+                    unsigned int zoomAmount = abs(event.mouseWheel.delta);
+
+                    for (unsigned int i=0; i<zoomAmount; i++)
+                    {
+                        ui->cameraView.zoom(zoomFactor);
+                    }
+                }
             case sf::Event::KeyPressed:
                 switch (event.key.code)
                 {
