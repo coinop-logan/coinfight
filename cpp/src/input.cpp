@@ -727,7 +727,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     {
                         vector2i mousePos = mouseMoveToVec(event.mouseMove);
                         vector2i moveVector = mousePos - ui->lastMousePos;
-                        ui->cameraView.move(toSFVecF(moveVector));
+                        ui->cameraView.move(toSFVecF(moveVector * -1));
                     }
 
                     Target target = getTargetAtScreenPos(window, game, mouseMoveToVec(event.mouseMove));
