@@ -380,7 +380,7 @@ void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf:
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
 {
     sf::Color teamColor = unit->getTeamColor(); // may be modified later if unit is not yet active
-    float drawRotation = -unit->angle_view;
+    float drawRotation = unit->angle_view;
 
     unsigned int fadedAlpha;
     if (!unit->isActive())
