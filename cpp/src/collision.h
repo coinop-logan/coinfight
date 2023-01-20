@@ -1,3 +1,6 @@
+#include <boost/shared_ptr.hpp>
+
+#include "entities.h"
 #include "myvectors.h"
 
 /*
