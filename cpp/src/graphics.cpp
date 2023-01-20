@@ -68,7 +68,6 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
         }
         chosenMode.bitsPerPixel = 24;
     }
-    updateScreenDimensions(vector2i(chosenMode.width, chosenMode.height));
 
     auto flags =
         fullscreen ? sf::Style::Close | sf::Style::Fullscreen
@@ -80,7 +79,7 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     return window;
 }
 
-void drawGameBackground(sf::RenderWindow *window, CameraState camera)
+void drawGameBackground(sf::RenderWindow *window)
 {
     sf::Color backgroundColor(0, 0, 50);
     window->clear(backgroundColor);
@@ -88,13 +87,12 @@ void drawGameBackground(sf::RenderWindow *window, CameraState camera)
     sf::Color backgroundCirclesColor(60, 0, 150);
     sf::Color backgroundSpokeEndColor(backgroundCirclesColor);
     backgroundSpokeEndColor.a = 50;
-    vector2fl centerOfMapScreenPos = gamePosToScreenPos(camera, vector2fp::zero);
 
     sf::CircleShape circle(1, 40);
     circle.setFillColor(sf::Color::Transparent);
     circle.setOutlineColor(backgroundCirclesColor);
     circle.setOutlineThickness(1);
-    circle.setPosition(toSFVec(centerOfMapScreenPos));
+    circle.setPosition(sf::Vector2f(0,0));
 
     for (unsigned int i=0; i<10; i++)
     {
@@ -116,11 +114,11 @@ void drawGameBackground(sf::RenderWindow *window, CameraState camera)
             for (unsigned int i=0; i<numSpokes; i++)
             {
                 float angle = ((float)i / numSpokes) * 2 * M_PI;
-                vector2fl from = gamePosToScreenPos(camera, vector2fp(composeVector2fl(angle, radius)));
-                vector2fl to = gamePosToScreenPos(camera, vector2fp(composeVector2fl(angle, nextRadius)));
+                vector2fl from = composeVector2fl(angle, radius);
+                vector2fl to = composeVector2fl(angle, nextRadius);
 
-                lines[i*2].position = toSFVec(from);
-                lines[i*2+1].position = toSFVec(to);
+                lines[i*2].position = toSFVecF(from);
+                lines[i*2+1].position = toSFVecF(to);
                 lines[i*2].color = backgroundCirclesColor;
                 lines[i*2+1].color = backgroundSpokeEndColor;
             }
@@ -130,11 +128,8 @@ void drawGameBackground(sf::RenderWindow *window, CameraState camera)
     }
 }
 
-void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp fromGamePos, vector2fp toGamePos, sf::Color color)
+void drawEnergyLine(sf::RenderWindow *window, vector2fl from, vector2fl to, sf::Color color)
 {
-    vector2fl from = gamePosToScreenPos(camera, fromGamePos);
-    vector2fl to = gamePosToScreenPos(camera, toGamePos);
-
     vector2fl lineVec = (to - from);
     float length = lineVec.getMagnitude();
 
@@ -144,7 +139,7 @@ void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp from
 
     sf::VertexArray lines(sf::PrimitiveType::LineStrip, numNonEndPoints + 2);
 
-    lines[0].position = toSFVec(from);
+    lines[0].position = toSFVecF(from);
     lines[0].color = color;
     for (int i=0; i<numNonEndPoints; i++)
     {
@@ -153,10 +148,10 @@ void drawEnergyLine(sf::RenderWindow *window, CameraState camera, vector2fp from
         vector2fl pointOnLine = from + (lineVec * relativeLinePosition);
         vector2fl perturbed = pointOnLine + randomVectorWithMagnitude(ENERGY_LINE_PERTURB_AMOUNT);
 
-        lines[vertexI].position = toSFVec(perturbed);
+        lines[vertexI].position = toSFVecF(perturbed);
         lines[vertexI].color = color;
     }
-    lines[numNonEndPoints + 1].position = toSFVec(to);
+    lines[numNonEndPoints + 1].position = toSFVecF(to);
     lines[numNonEndPoints + 1].color = color;
 
     window->draw(lines);
@@ -182,7 +177,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
         diamond[3].color = goldBottomColor;
 
         sf::Transform transform;
-        transform.translate(toSFVec(drawPos + vector2fl(0, height/2)));
+        transform.translate(toSFVecF(drawPos + vector2fl(0, height/2)));
 
         window->draw(diamond, transform);
     }
@@ -201,7 +196,7 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
     innerRect.setOutlineColor(teamColor);
     innerRect.setOutlineThickness(1.5);
     innerRect.setRotation(45);
-    innerRect.setPosition(toSFVec(drawPos));
+    innerRect.setPosition(toSFVecF(drawPos));
 
     window->draw(innerRect);
 }
@@ -215,13 +210,13 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
         // This only moves the gun barrels and not the Gateway.
         
         sf::Transform transform;
-        transform.translate(toSFVec(drawPos));
+        transform.translate(toSFVecF(drawPos));
         transform.rotate(radiansToDegrees(drawRotation));
 
         sf::VertexArray gunBarrelPoints(sf::PrimitiveType::Triangles, 3);
         gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
         gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
-        gunBarrelPoints[2].position = toSFVec(COMBATUNIT_SHOT_OFFSET);
+        gunBarrelPoints[2].position = toSFVecF(COMBATUNIT_SHOT_OFFSET);
         gunBarrelPoints[0].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[1].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[2].color = FIGHTER_BARREL_COLOR;
@@ -240,7 +235,7 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
     outerHex.setFillColor(fillColorFaded);
     outerHex.setOutlineColor(UNIT_OUTLINE_COLOR);
     outerHex.setOutlineThickness(1);
-    outerHex.setPosition(toSFVec(drawPos));
+    outerHex.setPosition(toSFVecF(drawPos));
     outerHex.setRotation(90);
 
     window->draw(outerHex);
@@ -248,10 +243,10 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
     drawBeacon(window, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl drawPos, float drawRotation, unsigned int alpha)
+void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl pos, float drawRotation, unsigned int alpha)
 {
     sf::Transform transform = sf::Transform();
-    transform.translate(toSFVec(drawPos));
+    transform.translate(toSFVecF(pos));
     transform.rotate(radiansToDegrees(drawRotation));
 
     sf::Color teamColor = prime->getTeamColor();
@@ -263,7 +258,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     sf::VertexArray wingPoints(sf::PrimitiveType::Triangles, 3);
     wingPoints[0].position = sf::Vector2f(0, static_cast<float>(PRIME_RADIUS));
     wingPoints[1].position = sf::Vector2f(-static_cast<float>(PRIME_RADIUS)*1.4, static_cast<float>(PRIME_RADIUS));
-    wingPoints[2].position = toSFVec(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
+    wingPoints[2].position = toSFVecF(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
     wingPoints[0].color = wingPoints[1].color = wingPoints[2].color = mainPrimeColor;
     window->draw(wingPoints, transform);
 
@@ -293,7 +288,7 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
 
         sf::CircleShape heldGoldCircle(innerGoldRadius);
         heldGoldCircle.setOrigin(sf::Vector2f(innerGoldRadius, innerGoldRadius));
-        heldGoldCircle.setPosition(toSFVec(drawPos));
+        heldGoldCircle.setPosition(toSFVecF(pos));
         heldGoldCircle.setFillColor(sf::Color::Yellow);
 
         window->draw(heldGoldCircle);
@@ -308,7 +303,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     oneSide.setPointCount(3);
 
     oneSide.setFillColor(fillColorFaded);
-    oneSide.setPosition(toSFVec(drawPos));
+    oneSide.setPosition(toSFVecF(drawPos));
     oneSide.setRotation(radiansToDegrees(rotation));
 
     sf::Vector2f front = sf::Vector2f(12, 0);
@@ -321,13 +316,13 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     sf::VertexArray gunBarrelPoints(sf::PrimitiveType::Triangles, 3);
     gunBarrelPoints[0].position = sf::Vector2f(-8, 8);
     gunBarrelPoints[1].position = sf::Vector2f(-12, 16);
-    gunBarrelPoints[2].position = toSFVec(COMBATUNIT_SHOT_OFFSET);
+    gunBarrelPoints[2].position = toSFVecF(COMBATUNIT_SHOT_OFFSET);
     gunBarrelPoints[0].color = fadedBarrelColor;
     gunBarrelPoints[1].color = fadedBarrelColor;
     gunBarrelPoints[2].color = fadedBarrelColor;
 
     sf::Transform transform = sf::Transform();
-    transform.translate(toSFVec(drawPos));
+    transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
     window->draw(gunBarrelPoints, transform);
 
@@ -358,7 +353,7 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     lines[4].color = UNIT_OUTLINE_COLOR;
 
     transform = sf::Transform();
-    transform.translate(toSFVec(drawPos));
+    transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
     window->draw(lines, transform);
 }
@@ -375,7 +370,7 @@ void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf:
     box.setFillColor(fillColorFaded);
     box.setOutlineColor(UNIT_OUTLINE_COLOR);
     box.setOutlineThickness(1);
-    box.setPosition(toSFVec(drawPos));
+    box.setPosition(toSFVecF(drawPos));
 
     window->draw(box);
 
@@ -447,7 +442,7 @@ void drawUnitRadii(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, vecto
     }
 }
 
-void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vector2i drawPos)
+void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vector2fl drawPos)
 {
     if (boost::shared_ptr<GoldPile> goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
     {
@@ -477,19 +472,19 @@ vector2i scaledDownGamePosWithZCorrection(vector2fl gamePos, float scaleDownFact
     );
 }
 
-void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, optional<uint8_t> maybeViewingPlayerId, float zoomOutFactor)
-{
-    vector2i minimapPos = scaledDownGamePosWithZCorrection(vector2fl(entity->getPos()), zoomOutFactor);
-    minimapPos.y *= -1;
+// void drawEntitySymbolOnMinimap(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, optional<uint8_t> maybeViewingPlayerId, float zoomOutFactor)
+// {
+//     vector2i minimapPos = scaledDownGamePosWithZCorrection(vector2fl(entity->getPos()), zoomOutFactor);
+//     minimapPos.y *= -1;
 
-    sf::RectangleShape pixel(sf::Vector2f(1,1));
+//     sf::RectangleShape pixel(sf::Vector2f(1,1));
 
-    pixel.setOrigin(sf::Vector2f(0.5, 0.5));
-    pixel.setPosition(sf::Vector2f(toSFVec(minimapPos + screenCenter)));
-    pixel.setFillColor(entity->getTeamOrPrimaryColor());
+//     pixel.setOrigin(sf::Vector2f(0.5, 0.5));
+//     pixel.setPosition(sf::Vector2f(toSFVecF(minimapPos + screenCenter)));
+//     pixel.setFillColor(entity->getTeamOrPrimaryColor());
 
-    window->draw(pixel);
-}
+//     window->draw(pixel);
+// }
 
 void drawAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool drawWalletHints)
 {
@@ -555,10 +550,10 @@ void drawOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf:
     }
 }
 
-void drawCircleAround(sf::RenderWindow *window, vector2i screenPos, unsigned int radius, unsigned int thickness, sf::Color color)
+void drawCircleAround(sf::RenderWindow *window, vector2fl pos, unsigned int radius, unsigned int thickness, sf::Color color)
 {
     sf::Transform mouseTransform;
-    mouseTransform.translate(toSFVecF(screenPos));
+    mouseTransform.translate(toSFVecF(pos));
 
     sf::CircleShape circle(radius);
     circle.setOrigin(sf::Vector2f(radius, radius));
@@ -741,9 +736,9 @@ void drawCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<uin
     }
 }
 
-void drawSelectionCircleAroundEntity(sf::RenderWindow *window, CameraState camera, boost::shared_ptr<Entity> entity)
+void drawSelectionCircleAroundEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity)
 {
-    drawCircleAround(window, gamePosToScreenPos(camera, entity->getPos()), 15, 1, sf::Color::Green);
+    drawCircleAround(window, vector2fl(entity->getPos()), 15, 1, sf::Color::Green);
 }
 
 void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
@@ -788,16 +783,15 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             sf::Text aboveText(displayAboveCoins->getDollarString(), font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
-            vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(30));
-            vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
+            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(30)));
 
             aboveText.setFillColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            aboveText.setPosition(toSFVec(textScreenPos));
+            aboveText.setPosition(toSFVecF(textPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
             drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
+            drawRect.setPosition(toSFVecF(textPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
@@ -808,16 +802,15 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             sf::Text belowText(displayBelowCoins->getDollarString(), font, 16);
             sf::FloatRect textRec = belowText.getLocalBounds();
 
-            vector2fp textGamePos = entityPos + vector2fp(fixed32(0), fixed32(-20));
-            vector2fl textScreenPos = gamePosToScreenPos(ui->camera, textGamePos);
+            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-20)));
 
             belowText.setFillColor(sf::Color(200, 200, 255));
             belowText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            belowText.setPosition(toSFVec(textScreenPos));
+            belowText.setPosition(toSFVecF(textPos));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
             drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            drawRect.setPosition(toSFVec(textScreenPos + vector2fl(0, 3)));
+            drawRect.setPosition(toSFVecF(textPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
@@ -858,7 +851,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, option
 
             sf::RectangleShape healthBar(sf::Vector2f(healthBarLength, 6)); // will be used to draw both outline and fill
             healthBar.setOrigin(healthBar.getLocalBounds().width / 2.f, healthBar.getLocalBounds().height / 2.f);
-            healthBar.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, healthBarPos))));
+            healthBar.setPosition(toSFVecF(healthBarPos));
 
             healthBar.setOutlineColor(barColorOutline);
             healthBar.setFillColor(sf::Color(100, 100, 100));
@@ -885,7 +878,7 @@ void drawArrow(sf::RenderWindow* window, GameUI* ui, vector2fp drawPos, bool poi
     arrowPoint.setPoint(2, sf::Vector2f(5, 4));
 
     arrowPoint.setFillColor(color);
-    arrowPoint.setPosition(sf::Vector2f(toSFVec(gamePosToScreenPos(ui->camera, drawPos))));
+    arrowPoint.setPosition(toSFVecF(drawPos));
 
     if (!pointingUp)
     {
@@ -928,7 +921,7 @@ void drawHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd 
         sf::Color::Transparent ;
 
     sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
-    rectShape.setPosition(toSFVec(drawPos));
+    rectShape.setPosition(toSFVecF(drawPos));
     rectShape.setFillColor(backgroundColor);
     rectShape.setOutlineColor(mainOutlineColor);
     rectShape.setOutlineThickness(1);
@@ -954,7 +947,7 @@ void drawHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd 
     hotkeyText.setPosition(sf::Vector2f(drawPos.x + xOffset , drawPos.y-1));
 
     sf::RectangleShape hotkeyBackground(sf::Vector2f(16, 18));
-    hotkeyBackground.setPosition(toSFVec(drawPos));
+    hotkeyBackground.setPosition(toSFVecF(drawPos));
     hotkeyBackground.setFillColor(hotkeyBackgroundColor);
     hotkeyBackground.setOutlineColor(hotkeyOutlineColor);
     hotkeyBackground.setOutlineThickness(1);
@@ -994,7 +987,7 @@ void drawHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd 
 
 void drawSpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font font)
 {
-    vector2i drawPos(HOTKEY_BOX_SPACING, screenDimensions.y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
+    vector2i drawPos(HOTKEY_BOX_SPACING, getScreenDimensions(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
     drawHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
 }
 
@@ -1002,7 +995,7 @@ void drawUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
 {
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, screenDimensions.y - (hotkeyHelpBoxHeight + 10));
+    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getScreenDimensions(window).y - (hotkeyHelpBoxHeight + 10));
 
     sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
     hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
@@ -1061,28 +1054,28 @@ void drawEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdo
     }
 }
 
-void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
-{
-    sf::Color backgroundColor(0, 0, 50);
-    window->clear(backgroundColor);
+// void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
+// {
+//     sf::Color backgroundColor(0, 0, 50);
+//     window->clear(backgroundColor);
 
-    float zoomOutFactor = 10;
+//     float zoomOutFactor = 10;
 
-    for (unsigned int i = 0; i < game->entities.size(); i++)
-    {
-        if (game->entities[i])
-        {
-            drawEntitySymbolOnMinimap(window, game->entities[i], maybePlayerId, zoomOutFactor);
-        }
-    }
-}
+//     for (unsigned int i = 0; i < game->entities.size(); i++)
+//     {
+//         if (game->entities[i])
+//         {
+//             drawEntitySymbolOnMinimap(window, game->entities[i], maybePlayerId, zoomOutFactor);
+//         }
+//     }
+// }
 
 void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font font)
 {
     sf::Transform transform;
     transform.translate(
         sf::Vector2f(
-            screenDimensions.x - boxWidth - 10,
+            getScreenDimensions(window).x - boxWidth - 10,
             10
         )
     );
@@ -1135,8 +1128,8 @@ void drawUnits(sf::RenderWindow* window, Game* game, GameUI* ui)
     {
         if (game->entities[i])
         {
-            vector2i drawPos = gamePosToScreenPos(ui->camera, vector2i(game->entities[i]->getPos()));
-            drawEntity(window, game->entities[i], drawPos);
+            vector2fl pos (game->entities[i]->getPos());
+            drawEntity(window, game->entities[i], pos);
         }
     }
 }
@@ -1162,7 +1155,7 @@ void drawBuildRelatedEffects(sf::RenderWindow* window, Game* game, GameUI* ui)
                         bool scuttling = get<1>(prime->goldFlowFrom_view);
                         if (scuttling)
                         {
-                            drawEnergyLine(window, ui->camera, flowFromEntity->getPos(), prime->getPos(), sf::Color::Red);
+                            drawEnergyLine(window, vector2fl(flowFromEntity->getPos()), vector2fl(prime->getPos()), sf::Color::Red);
                         }
                     }
                     if (auto flowToEntity = get<0>(prime->goldFlowTo_view)) 
@@ -1175,7 +1168,7 @@ void drawBuildRelatedEffects(sf::RenderWindow* window, Game* game, GameUI* ui)
                         bool building = get<1>(prime->goldFlowTo_view);
                         if (building)
                         {
-                            drawEnergyLine(window, ui->camera, flowToEntity->getPos(), prime->getPos(), sf::Color::Blue);
+                            drawEnergyLine(window, vector2fl(flowToEntity->getPos()), vector2fl(prime->getPos()), sf::Color::Blue);
                         }
                     }
                 }
@@ -1195,7 +1188,7 @@ void drawBuildRelatedEffects(sf::RenderWindow* window, Game* game, GameUI* ui)
                         bool scuttling = get<1>(gateway->goldFlowFrom_view);
                         if (scuttling)
                         {
-                            drawEnergyLine(window, ui->camera, flowFromEntity->getPos(), gateway->getPos(), sf::Color::Red);
+                            drawEnergyLine(window, vector2fl(flowFromEntity->getPos()), vector2fl(gateway->getPos()), sf::Color::Red);
                         }
                     }
                     if (auto flowToEntity = get<0>(gateway->goldFlowTo_view)) 
@@ -1208,7 +1201,7 @@ void drawBuildRelatedEffects(sf::RenderWindow* window, Game* game, GameUI* ui)
                         bool building = get<1>(gateway->goldFlowTo_view);
                         if (building)
                         {
-                            drawEnergyLine(window, ui->camera, flowToEntity->getPos(), gateway->getPos(), sf::Color::Blue);
+                            drawEnergyLine(window, vector2fl(flowToEntity->getPos()), vector2fl(gateway->getPos()), sf::Color::Blue);
                         }
                     }
                 }
@@ -1272,13 +1265,14 @@ void drawCombatUnitShots(sf::RenderWindow* window, Game* game, GameUI* ui)
 
 void displayGame(sf::RenderWindow* window, Game* game, GameUI* ui)
 {
-    drawGameBackground(window, ui->camera);
+    window->setView(ui->cameraView);
+    drawGameBackground(window);
 
     drawBuildRelatedEffects(window, game, ui);
     drawCombatUnitShots(window, game, ui);
     drawUnits(window, game, ui);
 
-    ui->particles.drawParticles(window, ui->camera);
+    ui->particles.drawParticles(window);
     ui->particles.iterateParticles(*game);
 }
 
@@ -1300,11 +1294,7 @@ void drawQueueLinesForSelectedUnits(sf::RenderWindow* window, Game* game, GameUI
                 {
                     auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
                     auto toPoint = entity->getPos();
-                    dashedLinesOutflow.pushLine(
-                        gamePosToScreenPos(ui->camera, fromPoint),
-                        gamePosToScreenPos(ui->camera, toPoint),
-                        BUILD_JOB_LINE_COLOR
-                    );
+                    dashedLinesOutflow.pushLine(vector2fl(fromPoint), vector2fl(toPoint), BUILD_JOB_LINE_COLOR);
                     lastToPoint = toPoint;
                 }
             }
@@ -1314,29 +1304,17 @@ void drawQueueLinesForSelectedUnits(sf::RenderWindow* window, Game* game, GameUI
                 if (auto point = prime->scavengeTargetQueue[j].getPointUnlessTargetDeleted(*game))
                 {
                     auto fromPoint = lastToPoint ? *lastToPoint : prime->getPos();
-                    dashedLinesOutflow.pushLine(
-                        gamePosToScreenPos(ui->camera, fromPoint),
-                        gamePosToScreenPos(ui->camera, *point),
-                        SCUTTLE_JOB_LINE_COLOR
-                    );
+                    dashedLinesOutflow.pushLine(vector2fl(fromPoint), vector2fl(*point), SCUTTLE_JOB_LINE_COLOR);
                     lastToPoint = point;
                 }
             }
             if (prime->fundsSource && game->entities[*prime->fundsSource])
             {
-                dashedLinesInflow.pushLine(
-                    gamePosToScreenPos(ui->camera, prime->getPos()),
-                    gamePosToScreenPos(ui->camera, game->entities[*prime->fundsSource]->getPos()),
-                    FUNDS_LINE_COLOR
-                );
+                dashedLinesInflow.pushLine(vector2fl(prime->getPos()), vector2fl(game->entities[*prime->fundsSource]->getPos()), FUNDS_LINE_COLOR);
             }
             if (prime->fundsDest && game->entities[*prime->fundsDest])
             {
-                dashedLinesOutflow.pushLine(
-                    gamePosToScreenPos(ui->camera, prime->getPos()),
-                    gamePosToScreenPos(ui->camera, game->entities[*prime->fundsDest]->getPos()),
-                    FUNDS_LINE_COLOR
-                );
+                dashedLinesOutflow.pushLine(vector2fl(prime->getPos()), vector2fl(game->entities[*prime->fundsDest]->getPos()), FUNDS_LINE_COLOR);
             }
         }
         if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui->selectedUnits[i]))
@@ -1346,22 +1324,14 @@ void drawQueueLinesForSelectedUnits(sf::RenderWindow* window, Game* game, GameUI
             {
                 if (auto entity = game->entities[gateway->buildTargetQueue[j]])
                 {
-                    dashedLinesOutflow.pushLine(
-                        gamePosToScreenPos(ui->camera, gateway->getPos()),
-                        gamePosToScreenPos(ui->camera, entity->getPos()),
-                        BUILD_JOB_LINE_COLOR
-                    );
+                    dashedLinesOutflow.pushLine(vector2fl(gateway->getPos()), vector2fl(entity->getPos()), BUILD_JOB_LINE_COLOR);
                 }
             }
             for (unsigned int j = 0; j<gateway->scuttleTargetQueue.size(); j++)
             {
                 if (auto entity = game->entities[gateway->scuttleTargetQueue[j]])
                 {
-                    dashedLinesInflow.pushLine(
-                        gamePosToScreenPos(ui->camera, gateway->getPos()),
-                        gamePosToScreenPos(ui->camera, entity->getPos()),
-                        SCUTTLE_JOB_LINE_COLOR
-                    );
+                    dashedLinesInflow.pushLine(vector2fl(gateway->getPos()), vector2fl(entity->getPos()), SCUTTLE_JOB_LINE_COLOR);
                 }
             }
         }
@@ -1377,7 +1347,7 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
 
     for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
     {
-        drawSelectionCircleAroundEntity(window, ui->camera, ui->selectedUnits[i]);
+        drawSelectionCircleAroundEntity(window, ui->selectedUnits[i]);
     }
 }
 
@@ -1389,7 +1359,7 @@ void drawAppropriateRadii(sf::RenderWindow* window, Game* game, GameUI* ui)
         {
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
             {
-                drawUnitRadii(window, unit, gamePosToScreenPos(ui->camera, unit->getPos()));
+                drawUnitRadii(window, unit, vector2fl(unit->getPos()));
             }
         }
     }
@@ -1397,13 +1367,14 @@ void drawAppropriateRadii(sf::RenderWindow* window, Game* game, GameUI* ui)
     {
         if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(ui->mouseoverEntity))
         {
-            drawUnitRadii(window, unit, gamePosToScreenPos(ui->camera, unit->getPos()));
+            drawUnitRadii(window, unit, vector2fl(unit->getPos()));
         }
     }
 }
 
 void displayGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font mainFont)
 {
+    window->setView(ui->cameraView);
     if (!ui->cleanDrawEnabled)
     {
         drawUnitDroppableValues(window, game, ui, maybePlayerId, mainFont);
@@ -1488,7 +1459,7 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
 
     if (ui->minimapEnabled)
     {
-        displayMinimap(window, game, maybePlayerId, screenDimensions);
+        // displayMinimap(window, game, maybePlayerId, screenDimensions);
     }
     else
     {
@@ -1544,11 +1515,17 @@ void drawTitle(sf::RenderWindow* window, sf::Font* font)
     sf::Text rendered(sf::String(srcText), *font, 20);
 
     unsigned int width = rendered.getLocalBounds().width;
+    vector2i fakeCenter(100, 100);
     vector2i drawPos(
-        (screenCenter.x - (width / 2)),
+        (fakeCenter.x - (width / 2)),
         TITLE_POS_Y
     );
     rendered.setPosition(toSFVecF(drawPos));
 
     window->draw(rendered);
+}
+
+vector2i getScreenDimensions(sf::RenderWindow* window)
+{
+    return fromSFVec(window->getSize());
 }

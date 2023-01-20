@@ -55,21 +55,20 @@ void Particle::iterate(const Game &game)
         dead = true;
 
 }
-void Particle::drawWithColor(sf::RenderWindow *window, CameraState camera, sf::Color whichColor)
+void Particle::drawWithColor(sf::RenderWindow *window, sf::Color whichColor)
 {
     sf::RectangleShape pixel(sf::Vector2f(2,2));
     pixel.setOrigin(sf::Vector2f(1,1));
-    vector2fl drawPos = gamePosToScreenPos(camera, vector2fp(pos));
-    pixel.setPosition(toSFVec(drawPos));
+    pixel.setPosition(toSFVecF(pos));
     pixel.setFillColor(whichColor);
 
     window->draw(pixel);
 }
-void Particle::draw(sf::RenderWindow *window, CameraState camera)
+void Particle::draw(sf::RenderWindow *window)
 {
-    drawWithColor(window, camera, this->color);
+    drawWithColor(window, this->color);
 }
-void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
+void FadingParticle::draw(sf::RenderWindow *window)
 {
     if (auto targetPoint = target.castToPoint())
     {
@@ -79,7 +78,7 @@ void FadingParticle::draw(sf::RenderWindow *window, CameraState camera)
 
         sf::Color fadedColor(this->color);
         fadedColor.a = alphaInt;
-        drawWithColor(window, camera, fadedColor);
+        drawWithColor(window, fadedColor);
     }
     else
     {
@@ -96,14 +95,11 @@ void LineParticle::iterate()
     if (timeLeft <= 0)
         dead = true;
 }
-void LineParticle::draw(sf::RenderWindow *window, CameraState camera)
+void LineParticle::draw(sf::RenderWindow *window)
 {
-    vector2i drawFrom = gamePosToScreenPos(camera, vector2fp(from));
-    vector2i drawTo = gamePosToScreenPos(camera, vector2fp(to));
-
     color.a = ((float)timeLeft / lifetime) * 255;
 
-    sfLine line(sf::Vector2f(drawFrom.x, drawFrom.y), sf::Vector2f(drawTo.x, drawTo.y), color, width);
+    sfLine line(toSFVecF(from), toSFVecF(to), color, width);
 
     window->draw(line);
 }
@@ -131,15 +127,15 @@ void ParticlesContainer::iterateParticles(const Game &game)
         }
     }
 }
-void ParticlesContainer::drawParticles(sf::RenderWindow *window, CameraState camera)
+void ParticlesContainer::drawParticles(sf::RenderWindow *window)
 {
     for (unsigned int i=0; i<particles.size(); i++)
     {
-        particles[i]->draw(window, camera);
+        particles[i]->draw(window);
     }
     for (unsigned int i=0; i<lineParticles.size(); i++)
     {
-        lineParticles[i]->draw(window, camera);
+        lineParticles[i]->draw(window);
     }
 }
 void ParticlesContainer::addParticle(boost::shared_ptr<Particle> particle)

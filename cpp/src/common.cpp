@@ -86,11 +86,11 @@ vector2fl randomVectorWithMagnitudeRange(float min, float max)
     return randomVectorWithMagnitude(magnitude);
 }
 
-sf::Vector2f toSFVec(vector2fl v)
+sf::Vector2f toSFVecF(vector2fl v)
 {
     return sf::Vector2f(v.x, v.y);
 }
-sf::Vector2i toSFVec(vector2i v)
+sf::Vector2i toSFVecI(vector2i v)
 {
     return sf::Vector2i(v.x, v.y);
 }
@@ -103,6 +103,10 @@ vector2fl fromSFVec(sf::Vector2f v)
     return vector2fl(v.x, v.y);
 }
 vector2i fromSFVec(sf::Vector2i v)
+{
+    return vector2i(v.x, v.y);
+}
+vector2i fromSFVec(sf::Vector2u v)
 {
     return vector2i(v.x, v.y);
 }

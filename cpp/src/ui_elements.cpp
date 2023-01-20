@@ -87,8 +87,8 @@ bool Button::registerRelease()
 }
 void Button::draw(sf::RenderWindow* window)
 {
-    sf::RectangleShape buttonRect(toSFVec(vector2fl(p2 - p1)));
-    buttonRect.setPosition(toSFVec(vector2fl(p1)));
+    sf::RectangleShape buttonRect(toSFVecF(vector2fl(p2 - p1)));
+    buttonRect.setPosition(toSFVecF(vector2fl(p1)));
 
     buttonRect.setOutlineThickness(1);
     if (!mouseover)
@@ -129,7 +129,7 @@ void TextButton::drawContent(sf::RenderWindow* window)
     int leftoverSpace = spaceForText - textWidth;
     int offsetX = leftoverSpace / 2;
 
-    renderedText.setPosition(toSFVec(vector2fl(p1 + vector2i(offsetX, textOffsetY))));
+    renderedText.setPosition(toSFVecF(vector2fl(p1 + vector2i(offsetX, textOffsetY))));
     renderedText.setFillColor(sf::Color::White);
 
     window->draw(renderedText);
@@ -149,7 +149,7 @@ void ImageButton::drawContent(sf::RenderWindow* window)
 
     vector2i pos = buttonCenter - halfDims;
 
-    sprite.setPosition(toSFVec(vector2fl(pos)));
+    sprite.setPosition(toSFVecF(vector2fl(pos)));
     window->draw(sprite);
 }
 
@@ -164,8 +164,8 @@ Window::Window(vector2i p1, vector2i p2)
 
 void Window::draw(sf::RenderWindow* window)
 {
-    sf::RectangleShape mainBox(toSFVec(vector2fl(p2 - p1)));
-    mainBox.setPosition(toSFVec(vector2fl(p1)));
+    sf::RectangleShape mainBox(toSFVecF(vector2fl(p2 - p1)));
+    mainBox.setPosition(toSFVecF(vector2fl(p1)));
     mainBox.setFillColor(sf::Color::Black);
     mainBox.setOutlineThickness(1);
     mainBox.setOutlineColor(sf::Color(0, 0, 255));
@@ -241,7 +241,8 @@ bool NoticeWindow::processEvent(sf::Event event)
 
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font* font)
 {
-    NoticeWindow noticeWindow(screenCenter, message, font);
+    vector2i fakeCenter(100, 100);
+    NoticeWindow noticeWindow(fakeCenter, message, font);
 
     while (window->isOpen())
     {

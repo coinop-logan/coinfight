@@ -64,9 +64,9 @@ void GH::DashedLineGroup::render(sf::RenderWindow* window)
     sf::VertexArray lines(sf::PrimitiveType::Lines, allDashes.size() * 2);
     for (unsigned int i=0; i<allDashes.size(); i++)
     {
-        lines[i*2].position = toSFVec(allDashes[i].p1);
+        lines[i*2].position = toSFVecF(allDashes[i].p1);
         lines[i*2].color = allDashes[i].color;
-        lines[i*2 + 1].position = toSFVec(allDashes[i].p2);
+        lines[i*2 + 1].position = toSFVecF(allDashes[i].p2);
         lines[i*2 + 1].color = allDashes[i].color;
     }
     window->draw(lines);

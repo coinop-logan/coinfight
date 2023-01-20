@@ -50,7 +50,7 @@ public:
         TutorialStep("camera", false, game, ui)
     {
         distanceMoved = 0;
-        lastCameraPos = ui->camera.gamePos;
+        lastCameraPos = fromSFVec(ui->cameraView.getCenter());
     }
 
     tuple<vector<string>, vector<string>> getText(Game* game, GameUI* ui)
@@ -71,8 +71,8 @@ public:
 
     void update(Game* game, GameUI* ui)
     {
-        distanceMoved += (lastCameraPos - ui->camera.gamePos).getMagnitude();
-        lastCameraPos = ui->camera.gamePos;
+        distanceMoved += (lastCameraPos - fromSFVec(ui->cameraView.getCenter())).getMagnitude();
+        lastCameraPos = fromSFVec(ui->cameraView.getCenter());
     }
 
     void ping(int num)
@@ -617,7 +617,7 @@ public:
                 "Next wave countdown:"
             },
             {
-                "Tab will toggle a (really minimal) view of the map!"
+                // "Tab will toggle a (really minimal) view of the map!"
             }
         };
     }

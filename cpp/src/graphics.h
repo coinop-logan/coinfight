@@ -9,7 +9,6 @@
 #include <boost/shared_ptr.hpp>
 #include "engine.h"
 #include "input.h"
-#include "interface.h"
 #include "tutorial.h"
 
 #ifndef GRAPHICS_H
@@ -24,5 +23,6 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont);
 void cleanupGraphics(sf::RenderWindow* window);
 void drawTitle(sf::RenderWindow*, sf::Font*);
+vector2i getScreenDimensions(sf::RenderWindow* window);
 
 #endif // GRAPHICS_H

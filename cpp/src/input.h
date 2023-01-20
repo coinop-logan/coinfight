@@ -2,7 +2,6 @@
 #include "common.h"
 #include "cmds.h"
 #include "unit_interface_cmds.h"
-#include "interface.h"
 #include "ui_elements.h"
 #include "particles.h"
 
@@ -23,7 +22,6 @@ enum InGameMenuMsg {
 
 struct GameUI
 {
-    GameUI(sf::Font* font, bool online);
     sf::Font* font;
     optional<MainMenu<InGameMenuMsg>> inGameMenu;
     optional<GiftUnitsWindow> giftUnitsWindow;
@@ -42,7 +40,7 @@ struct GameUI
     vector2i lastMousePos;
     optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;
-    CameraState camera;
+    sf::View cameraView;
     vector<boost::shared_ptr<UnitInterfaceCmd>> unitInterfaceCmds;
     SpawnBeaconInterfaceCmd spawnBeaconInterfaceCmd;
     bool quitNow;
@@ -53,19 +51,20 @@ struct GameUI
     bool online;
     bool displayAllRadii;
     ParticlesContainer particles;
+    GameUI(sf::RenderWindow*, sf::Font* font, bool online);
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     bool selectionHasGateways();
     bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others
-    void openInGameMenu();
+    void openInGameMenu(sf::RenderWindow*);
     void iterate();
     void removeDuplicatesFromSelection();
     void returnToDefaultState();
 };
-vector2fp screenPosToGamePos(CameraState, vector2i);
-vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos);
-Target getTargetAtScreenPos(Game *, const CameraState &, vector2i);
+vector2fp screenPosToGamePos(sf::RenderWindow*, vector2i);
+vector2i gamePosToScreenPos(sf::RenderWindow*, vector2fp);
+Target getTargetAtScreenPos(sf::RenderWindow*, Game *, vector2i);
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, GameUI ui, Target target);
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent);
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial);

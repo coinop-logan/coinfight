@@ -1,6 +1,5 @@
 #include "input.h"
 #include "config.h"
-#include "interface.h"
 #include "tutorial.h"
 #include "cmds.h"
 
@@ -28,11 +27,12 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::Font* font, bool online)
+GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
     : font(font), online(online)
 {
-    camera.gamePos = vector2fl(0, 0);
-    lastMousePos = screenCenter;
+    cameraView = window->getDefaultView();
+    cameraView.setCenter(sf::Vector2f(0, 0));
+    lastMousePos = vector2i(0, 0);
     debugInt = 0;
     cmdState = Default;
     minimapEnabled = false;
@@ -91,9 +91,11 @@ void GameUI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 
 void GameUI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
 {
-    vector2i halfScreenDimensions = screenDimensions / 2;
-    vector2fp corner1 = this->camera.gamePos - vector2fp(halfScreenDimensions);
-    vector2fp corner2 = this->camera.gamePos + vector2fp(halfScreenDimensions);
+    auto visibleRect = cameraView.getViewport();
+    cout << "viewport x: " << visibleRect.width << endl;
+    
+    vector2fp corner1(fixed32(visibleRect.left), fixed32(visibleRect.top));
+    vector2fp corner2 = corner1 + vector2fp(fixed32(visibleRect.width), fixed32(visibleRect.height));
 
     auto visibleEntities = game->entitiesWithinRect(corner1, corner2);
     auto visibleUnits = filterForType<Unit, Entity>(visibleEntities);
@@ -124,7 +126,7 @@ void GameUI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<U
     set_union(selectedUnitsCopy.begin(), selectedUnitsCopy.end(), ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end(), back_inserter(this->selectedUnits));
 }
 
-void GameUI::openInGameMenu()
+void GameUI::openInGameMenu(sf::RenderWindow* window)
 {
     vector<tuple<string, InGameMenuMsg>> menuOptions;
     
@@ -139,7 +141,7 @@ void GameUI::openInGameMenu()
     menuOptions.push_back({"Disconnect", Disconnect});
     if (online) menuOptions.push_back({"Disconnect and Withdraw Wallet Balance", WithdrawAndDisconnect});
 
-    inGameMenu = MainMenu(menuOptions, font);
+    inGameMenu = MainMenu(window, menuOptions, font);
 }
 void GameUI::iterate()
 {
@@ -302,20 +304,24 @@ bool GameUI::selectionWouldStaySegregated(uint8_t typechar)
     return ((selectedUnits[0]->typechar() == GATEWAY_TYPECHAR) == (typechar == GATEWAY_TYPECHAR));
 }
 
-vector2fp screenPosToGamePos(CameraState cameraState, vector2i screenPos)
+vector2fp screenPosToGamePos(sf::RenderWindow* window, vector2i screenPos)
 {
-    vector2i screenPosFromCenter = screenPos - screenCenter;
-    vector2fp result = cameraState.gamePos + vector2fl(screenPosFromCenter.x, -screenPosFromCenter.y);
-
-    return result;
+    return vector2fp(
+        fromSFVec(
+            window->mapPixelToCoords(
+                toSFVecI(screenPos)
+            )
+        )
+    );
 }
 
-vector2i gamePosToScreenPos(CameraState cameraState, vector2fp gamePos)
+vector2i gamePosToScreenPos(sf::RenderWindow* window, vector2fp gamePos)
 {
-    vector2fl subtractedFromCamera = vector2fl(gamePos) - cameraState.gamePos;
-    subtractedFromCamera.y *= -1;
-    vector2i result = subtractedFromCamera + screenCenter;
-    return result;
+    return fromSFVec(
+        window->mapCoordsToPixel(
+            toSFVecF(gamePos)
+        )
+    );
 }
 
 vector2i mouseButtonToVec(sf::Event::MouseButtonEvent mEvent)
@@ -327,9 +333,9 @@ vector2i mouseMoveToVec(sf::Event::MouseMoveEvent mEvent)
     return vector2i(mEvent.x, mEvent.y);
 }
 
-Target getTargetAtScreenPos(Game *game, const CameraState &cameraState, vector2i screenPos)
+Target getTargetAtScreenPos(sf::RenderWindow* window, Game *game, vector2i screenPos)
 {
-    vector2fp gamePos = screenPosToGamePos(cameraState, screenPos);
+    vector2fp gamePos = screenPosToGamePos(window, screenPos);
 
     vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, fixed32(100));
 
@@ -672,7 +678,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     }
                     case GiftUnits:
                     {
-                        ui->giftUnitsWindow = GiftUnitsWindow(screenCenter, ui->font);
+                        vector2i fakeCenter(100, 100);
+                        ui->giftUnitsWindow = GiftUnitsWindow(fakeCenter, ui->font);
                         break;
                     }
                     case Withdraw:
@@ -720,11 +727,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     {
                         vector2i mousePos = mouseMoveToVec(event.mouseMove);
                         vector2i moveVector = mousePos - ui->lastMousePos;
-                        moveVector.y *= -1;
-                        ui->camera.gamePos -= moveVector;
+                        ui->cameraView.move(toSFVecF(moveVector));
                     }
 
-                    Target target = getTargetAtScreenPos(game, ui->camera, mouseMoveToVec(event.mouseMove));
+                    Target target = getTargetAtScreenPos(window, game, mouseMoveToVec(event.mouseMove));
                     ui->mouseoverEntity = target.castToEntityPtr(*game);
 
                     ui->lastMousePos = mouseMoveToVec(event.mouseMove);
@@ -745,7 +751,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
                             {
                                 vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
-                                if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(game, ui->camera, averagedClick).castToEntityPtr(*game))
+                                if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(window, game, averagedClick).castToEntityPtr(*game))
                                 {
                                     if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
                                     {
@@ -793,8 +799,8 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             {
                                 tuple<vector2i, vector2i> corners =
                                 {
-                                    screenPosToGamePos(ui->camera, *ui->maybeSelectionBoxStart),
-                                    screenPosToGamePos(ui->camera, mousePos)
+                                    screenPosToGamePos(window, *ui->maybeSelectionBoxStart),
+                                    screenPosToGamePos(window, mousePos)
                                 };
                                 int rectLeft = min(get<0>(corners).x, get<1>(corners).x);
                                 int rectRight = max(get<0>(corners).x, get<1>(corners).x);
@@ -888,7 +894,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::SpawnBeacon:
                             {
-                                vector2fp spawnPos = screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton));
+                                vector2fp spawnPos = screenPosToGamePos(window, mouseButtonToVec(event.mouseButton));
 
                                 cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
                                 if (!isShiftPressed())
@@ -899,7 +905,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::AttackAbsorb:
                             {
-                                Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                                Target target = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
 
                                 if (ui->selectionHasGateways())
                                 {
@@ -932,7 +938,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::Deposit:
                             {
-                                Target target = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                                Target target = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
 
                                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                                 vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
@@ -951,7 +957,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                             case GameUI::Fetch:
                             {
-                                Target clickTarget = getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton));
+                                Target clickTarget = getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton));
                                 if (auto targetEntity = clickTarget.castToEntityPtr(*game))
                                 {
                                     if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
@@ -1024,7 +1030,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             case GameUI::Build:
                             {
                                 vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                vector2fl buildPos(screenPosToGamePos(ui->camera, mouseButtonToVec(event.mouseButton)));
+                                vector2fl buildPos(screenPosToGamePos(window, mouseButtonToVec(event.mouseButton)));
                                 cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
                                 if (!isShiftPressed())
                                 {
@@ -1041,7 +1047,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             if (ui->selectedUnits.size() > 0)
                             {
                                 if (playerId)
-                                    cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(game, ui->camera, mouseButtonToVec(event.mouseButton))));
+                                    cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(window, game, mouseButtonToVec(event.mouseButton))));
                             }
                         }
                         else
@@ -1070,7 +1076,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     case sf::Keyboard::F10:
                         if (!ui->inGameMenu)
                         {
-                            ui->openInGameMenu();
+                            ui->openInGameMenu(window);
                         }
                         break;
                     case sf::Keyboard::Escape:
@@ -1084,7 +1090,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                         }
                         else
                         {
-                            ui->openInGameMenu();
+                            ui->openInGameMenu(window);
                         }
                         break;
                     case sf::Keyboard::H:
@@ -1111,26 +1117,28 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
             }
         }
 
-        if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
-        {
-            // mouse-edge camera move
-            vector2i screenEdgeCameraMove;
-            screenEdgeCameraMove.x =
-                (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-                (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
-                0;
-            screenEdgeCameraMove.y =
-                (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
-                (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-                0;
+        // if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+        // {
+        //     // mouse-edge camera move
+        //     vector2i screenEdgeCameraMove;
+        //     screenEdgeCameraMove.x =
+        //         (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+        //         (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
+        //         0;
+        //     screenEdgeCameraMove.y =
+        //         (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
+        //         (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+        //         0;
 
-            ui->camera.gamePos += screenEdgeCameraMove;
-        }
+        //     ui->cameraView.move(toSFVecF(screenEdgeCameraMove));
+        // }
 
         // constrain camera
-        if (ui->camera.gamePos.getMagnitude() > 4500)
+        if (fromSFVec(ui->cameraView.getCenter()).getMagnitude() > 4500)
         {
-            ui->camera.gamePos = composeVector2i(ui->camera.gamePos.getAngle(), 4500);
+            float angle = fromSFVec(ui->cameraView.getCenter()).getAngle();
+            vector2i newCameraCenter = composeVector2i(angle, 4500);
+            ui->cameraView.setCenter(toSFVecF(newCameraCenter));
         }
     }
 

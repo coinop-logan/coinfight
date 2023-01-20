@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         menuOptions.push_back({"Connect to Local Server", StartClientWithLocalhost});
     menuOptions.push_back({"Quit", Quit});
 
-    MainMenu mainMenu(menuOptions, &mainFont);
+    MainMenu mainMenu(window, menuOptions, &mainFont);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
 
@@ -194,7 +194,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
         firstEvents[i]->execute(&game);
     }
 
-    GameUI ui(&mainFont, false);
+    GameUI ui(window, &mainFont, false);
     uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmds;
@@ -351,7 +351,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 void runTutorial(sf::RenderWindow* window)
 {
     Game game;
-    GameUI ui(&mainFont, false);
+    GameUI ui(window, &mainFont, false);
 
     setupTutorialScenario(&game);
 
@@ -500,7 +500,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
         }
     }
 
-    GameUI ui(&mainFont, true);
+    GameUI ui(window, &mainFont, true);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())
@@ -614,7 +614,8 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
 optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler* connectionHandler, string sigChallenge)
 {
-    LoginWindow loginWindow(screenCenter, sigChallenge, &mainFont);
+    vector2i fakeCenter(100, 100);
+    LoginWindow loginWindow(fakeCenter, sigChallenge, &mainFont);
 
     while (mainWindow->isOpen())
     {

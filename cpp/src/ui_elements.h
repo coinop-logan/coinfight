@@ -3,7 +3,6 @@
 #include <boost/shared_ptr.hpp>
 #include "myvectors.h"
 #include "common.h"
-#include "interface.h"
 
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
@@ -88,7 +87,7 @@ class MainMenu : public Window
 {
     vector<BoundButton<EventMsg>> boundButtons;
 public:
-    MainMenu(vector<tuple<string, EventMsg>> buttonInfos, sf::Font* font)
+    MainMenu(sf::RenderWindow* window, vector<tuple<string, EventMsg>> buttonInfos, sf::Font* font)
     {
         // Window::p1 and p2 will be set a bit later
 
@@ -98,12 +97,14 @@ public:
                 MAIN_MENU_BUTTON_HEIGHT
             );
 
+        auto viewRect = window->getViewport(window->getView());
+        vector2i screenDimensions (viewRect.width, viewRect.height);
         vector2i centerPos = screenDimensions / 2;
 
         int height =
             (buttonInfos.size() * MAIN_MENU_BUTTON_HEIGHT) // total button height
-        + (buttonInfos.size() == 0 ? 0 : (buttonInfos.size() - 1) * MAIN_MENU_BUTTON_SPACING)
-        + (WINDOW_PADDING * 2);
+          + (buttonInfos.size() == 0 ? 0 : (buttonInfos.size() - 1) * MAIN_MENU_BUTTON_SPACING)
+          + (WINDOW_PADDING * 2);
 
         int width = MAIN_MENU_WIDTH;
 
@@ -117,11 +118,8 @@ public:
         {
             vector2i buttonP1 =
                 p1
-            + vector2i(WINDOW_PADDING, WINDOW_PADDING)
-            + vector2i
-                    ( 0,
-                    (i * (MAIN_MENU_BUTTON_HEIGHT + MAIN_MENU_BUTTON_SPACING))
-                    );
+              + vector2i(WINDOW_PADDING, WINDOW_PADDING)
+              + vector2i( 0, (i * (MAIN_MENU_BUTTON_HEIGHT + MAIN_MENU_BUTTON_SPACING)));
 
             boost::shared_ptr<Button> newButton(new TextButton
             ( buttonP1,
