@@ -1117,29 +1117,32 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
             }
         }
 
-        // if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
-        // {
-        //     // mouse-edge camera move
-        //     vector2i screenEdgeCameraMove;
-        //     screenEdgeCameraMove.x =
-        //         (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-        //         (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
-        //         0;
-        //     screenEdgeCameraMove.y =
-        //         (ui->lastMousePos.y == 0)                       ?    SCREEN_EDGE_SCROLL_AMOUNT :
-        //         (screenDimensions.y - ui->lastMousePos.y == 1)  ?  - SCREEN_EDGE_SCROLL_AMOUNT :
-        //         0;
+    }
 
-        //     ui->cameraView.move(toSFVecF(screenEdgeCameraMove));
-        // }
+    if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+    {
+        // mouse-edge camera move
+        vector2i screenDimensions = getScreenDimensions(window);
 
-        // constrain camera
-        if (fromSFVec(ui->cameraView.getCenter()).getMagnitude() > 4500)
-        {
-            float angle = fromSFVec(ui->cameraView.getCenter()).getAngle();
-            vector2i newCameraCenter = composeVector2i(angle, 4500);
-            ui->cameraView.setCenter(toSFVecF(newCameraCenter));
-        }
+        vector2i screenEdgeCameraMove;
+        screenEdgeCameraMove.x =
+            (ui->lastMousePos.x == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+            (screenDimensions.x - ui->lastMousePos.x == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
+            0;
+        screenEdgeCameraMove.y =
+            (ui->lastMousePos.y == 0)                       ?  - SCREEN_EDGE_SCROLL_AMOUNT :
+            (screenDimensions.y - ui->lastMousePos.y == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
+            0;
+
+        ui->cameraView.move(toSFVecF(screenEdgeCameraMove));
+    }
+
+    // constrain camera
+    if (fromSFVec(ui->cameraView.getCenter()).getMagnitude() > 4500)
+    {
+        float angle = fromSFVec(ui->cameraView.getCenter()).getAngle();
+        vector2i newCameraCenter = composeVector2i(angle, 4500);
+        ui->cameraView.setCenter(toSFVecF(newCameraCenter));
     }
 
     return cmdsToSend;
