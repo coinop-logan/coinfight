@@ -1520,9 +1520,6 @@ void displayTitle(sf::RenderWindow* window, sf::Font* font)
     sf::Text rendered(sf::String(srcText), *font, 20);
 
     unsigned int width = rendered.getLocalBounds().width;
-    
-    // need a new center. Can't access the function to get the dimensions from window...
-    // find it and move it into common?
 
     vector2i center = getScreenDimensions(window) / 2;
 
