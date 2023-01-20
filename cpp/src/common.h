@@ -94,6 +94,7 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str);
 optional<Address> validateAddress(string addrStr);
 
 double radiansToDegrees(double radians);
-vector2i getScreenDimensions(sf::RenderWindow* window);
+vector2i getScreenSize(sf::RenderWindow* window);
+vector2fl getViewSize(sf::RenderWindow* window);
 
 #endif // COMMON_H

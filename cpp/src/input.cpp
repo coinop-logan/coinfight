@@ -32,7 +32,7 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
-    lastMousePos = getScreenDimensions(window) / 2;
+    lastMousePos = getScreenSize(window) / 2;
     debugInt = 0;
     cmdState = Default;
     minimapEnabled = false;
@@ -92,7 +92,7 @@ void GameUI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
 void GameUI::selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow* window, Game* game, boost::shared_ptr<Unit> targetUnit)
 {
     vector2fp corner1 = screenPosToGamePos(window, vector2i(0,0));
-    vector2fp corner2 = screenPosToGamePos(window, getScreenDimensions(window));
+    vector2fp corner2 = screenPosToGamePos(window, getScreenSize(window));
 
     auto visibleEntities = game->entitiesWithinRect(corner1, corner2);
     auto visibleUnits = filterForType<Unit, Entity>(visibleEntities);
@@ -675,7 +675,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     }
                     case GiftUnits:
                     {
-                        vector2i center = getScreenDimensions(window) / 2;
+                        vector2i center = getScreenSize(window) / 2;
 
                         ui->giftUnitsWindow = GiftUnitsWindow(center, ui->font);
                         break;
@@ -1120,7 +1120,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
     if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
     {
         // mouse-edge camera move
-        vector2i screenDimensions = getScreenDimensions(window);
+        vector2i screenDimensions = getScreenSize(window);
 
         vector2i screenEdgeCameraMove;
         screenEdgeCameraMove.x =

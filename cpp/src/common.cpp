@@ -182,7 +182,11 @@ double radiansToDegrees(double radians)
     return (radians / M_PI) * 180;
 }
 
-vector2i getScreenDimensions(sf::RenderWindow* window)
+vector2i getScreenSize(sf::RenderWindow* window)
 {
     return fromSFVec(window->getSize());
+}
+vector2fl getViewSize(sf::RenderWindow* window)
+{
+    return fromSFVec(window->getView().getSize());
 }

@@ -615,7 +615,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString)
 
 optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler* connectionHandler, string sigChallenge)
 {
-    vector2i center = getScreenDimensions(mainWindow) / 2;
+    vector2i center = getScreenSize(mainWindow) / 2;
 
     LoginWindow loginWindow(center, sigChallenge, &mainFont);
 

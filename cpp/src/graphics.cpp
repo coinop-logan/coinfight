@@ -542,7 +542,7 @@ void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, 
 
         float width = text.getLocalBounds().width;
         int x, y;
-        x = window->getSize().x - width - 10;
+        x = getViewSize(window).x - width - 10;
         y = 6 + i * 20;
         text.setPosition(sf::Vector2f(x, y));
 
@@ -1011,7 +1011,7 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
 
 void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font font)
 {
-    vector2i drawPos(HOTKEY_BOX_SPACING, getScreenDimensions(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
+    vector2i drawPos(HOTKEY_BOX_SPACING, getViewSize(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
     displayHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
 }
 
@@ -1019,7 +1019,7 @@ void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
 {
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getScreenDimensions(window).y - (hotkeyHelpBoxHeight + 10));
+    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getViewSize(window).y - (hotkeyHelpBoxHeight + 10));
 
     sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
     hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
@@ -1044,40 +1044,6 @@ void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
     }
 }
 
-void displayEscapeQuitText(sf::RenderWindow* window, unsigned int escapeTextCountdown, int countdownToQuitOrNeg1, sf::Font font)
-{
-    sf::Text escapeQuitText("Hold Escape to quit.", font, 40);
-
-    int alpha = ((float)escapeTextCountdown / ESCAPE_TO_QUIT_TEXT_LIFE) * 255;
-    escapeQuitText.setFillColor(sf::Color(255, 255, 255, alpha));
-
-    escapeQuitText.setPosition(sf::Vector2f(30, 100));
-
-    window->draw(escapeQuitText);
-
-    if (countdownToQuitOrNeg1 >= 0)
-    {
-        float fractionLeft = (1 - ((float)countdownToQuitOrNeg1 / ESCAPE_TO_QUIT_TICKS));
-        float progressBarMaxWidth = escapeQuitText.getGlobalBounds().width;
-        float progressBarWidth = fractionLeft * progressBarMaxWidth;
-        sf::RectangleShape progressBar(sf::Vector2f(progressBarWidth, 10));
-        sf::RectangleShape maxProgressBar(sf::Vector2f(progressBarMaxWidth, 10));
-
-        progressBar.setPosition(sf::Vector2f(30, 150));
-        maxProgressBar.setPosition(sf::Vector2f(30, 150));
-
-        int white = ((1-fractionLeft) * 255);
-        sf::Color fillColor(255, white, white);
-
-        progressBar.setFillColor(fillColor);
-        maxProgressBar.setOutlineColor(sf::Color::White);
-        maxProgressBar.setOutlineThickness(1);
-        maxProgressBar.setFillColor(sf::Color::Transparent);
-        window->draw(progressBar);
-        window->draw(maxProgressBar);
-    }
-}
-
 // void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
 // {
 //     sf::Color backgroundColor(0, 0, 50);
@@ -1099,7 +1065,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
     sf::Transform transform;
     transform.translate(
         sf::Vector2f(
-            getScreenDimensions(window).x - boxWidth - 10,
+            getViewSize(window).x - boxWidth - 10,
             10
         )
     );
@@ -1450,6 +1416,15 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
 
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool displayWalletHints)
 {
+    sf::View gameView = ui->cameraView;
+    sf::View screenView = window->getDefaultView();
+
+    sf::View uxView; // as a quick fix for big default resolutions, we double the UX size if the screen is large.
+    if (getScreenSize(window).x > 2000)
+        uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
+    else
+        uxView = screenView;
+
     window->clear();
 
     optional<uint8_t> maybePlayerId;
@@ -1464,18 +1439,21 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
     }
     else
     {
-        window->setView(ui->cameraView);
+        window->setView(gameView);
         drawGame(window, game, ui);
         drawGameOverlay(window, game, ui, maybePlayerId, mainFont);
-        window->setView(window->getDefaultView());
-        displayGameHUD(window, game, ui, maybePlayerId, mainFont, displayWalletHints);
+        window->setView(screenView);
         displayCursorOrSelectionBox(window, ui, maybePlayerId);
+        window->setView(uxView);
+        displayGameHUD(window, game, ui, maybePlayerId, mainFont, displayWalletHints);
     }
     if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))
     {
+        window->setView(uxView);
         displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
     }
 
+    window->setView(screenView);
     if (ui->inGameMenu)
     {
         ui->inGameMenu->draw(window);
@@ -1487,7 +1465,7 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
 
     window->display();
     
-    window->setView(ui->cameraView);
+    window->setView(gameView);
 }
 
 void cleanupGraphics(sf::RenderWindow* window)
@@ -1521,7 +1499,7 @@ void displayTitle(sf::RenderWindow* window, sf::Font* font)
 
     unsigned int width = rendered.getLocalBounds().width;
 
-    vector2i center = getScreenDimensions(window) / 2;
+    vector2i center = getScreenSize(window) / 2;
 
     vector2i drawPos(
         (center.x - (width / 2)),

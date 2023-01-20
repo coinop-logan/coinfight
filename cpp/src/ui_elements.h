@@ -97,7 +97,7 @@ public:
                 MAIN_MENU_BUTTON_HEIGHT
             );
 
-        vector2i centerPos = getScreenDimensions(window) / 2;
+        vector2i centerPos = getScreenSize(window) / 2;
 
         int height =
             (buttonInfos.size() * MAIN_MENU_BUTTON_HEIGHT) // total button height
