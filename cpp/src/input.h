@@ -53,7 +53,7 @@ struct GameUI
     ParticlesContainer particles;
     GameUI(sf::RenderWindow*, sf::Font* font, bool online);
     void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
-    void selectAllUnitsOfSimilarTypeOnScreen(Game*, boost::shared_ptr<Unit>);
+    void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
     vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     bool selectionHasGateways();
     bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others

@@ -89,13 +89,10 @@ void GameUI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
     }
 }
 
-void GameUI::selectAllUnitsOfSimilarTypeOnScreen(Game* game, boost::shared_ptr<Unit> targetUnit)
+void GameUI::selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow* window, Game* game, boost::shared_ptr<Unit> targetUnit)
 {
-    auto visibleRect = cameraView.getViewport();
-    cout << "viewport x: " << visibleRect.width << endl;
-    
-    vector2fp corner1(fixed32(visibleRect.left), fixed32(visibleRect.top));
-    vector2fp corner2 = corner1 + vector2fp(fixed32(visibleRect.width), fixed32(visibleRect.height));
+    vector2fp corner1 = screenPosToGamePos(window, vector2i(0,0));
+    vector2fp corner2 = screenPosToGamePos(window, getScreenDimensions(window));
 
     auto visibleEntities = game->entitiesWithinRect(corner1, corner2);
     auto visibleUnits = filterForType<Unit, Entity>(visibleEntities);
@@ -769,7 +766,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                                             {
                                                 if (isCtrlPressed() || isDoubleClick)
                                                 {
-                                                    ui->selectAllUnitsOfSimilarTypeOnScreen(game, clickedUnit);
+                                                    ui->selectAllUnitsOfSimilarTypeOnScreen(window, game, clickedUnit);
                                                 }
                                                 else
                                                 {
