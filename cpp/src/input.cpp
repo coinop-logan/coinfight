@@ -306,8 +306,6 @@ bool GameUI::selectionWouldStaySegregated(uint8_t typechar)
 
 vector2fp screenPosToGamePos(sf::RenderWindow* window, vector2i screenPos)
 {
-    debugOutputVector("screenpos", screenPos);
-    debugOutputVector("mapped", fromSFVec(window->mapPixelToCoords(toSFVecI(screenPos))));
     return vector2fp(
         fromSFVec(
             window->mapPixelToCoords(
