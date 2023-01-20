@@ -783,39 +783,42 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
             sf::Text aboveText(displayAboveCoins->getDollarString(), font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
-            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(30)));
+            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-30)));
 
             aboveText.setFillColor(topTextColor);
             aboveText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
             aboveText.setPosition(toSFVecF(textPos));
 
-            sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
+            sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 4, textRec.height + 4));
+            drawRect.setOrigin((textRec.width / 2.f) + 2, (textRec.height / 2.f) + 2);
             drawRect.setPosition(toSFVecF(textPos + vector2fl(0, 3)));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
             window->draw(aboveText);
         }
-        if (displayBelowCoins && displayBelowCoins->getInt() > 0)
-        {
-            sf::Text belowText(displayBelowCoins->getDollarString(), font, 16);
-            sf::FloatRect textRec = belowText.getLocalBounds();
+        // the below was not being used - so I commented it out for now.
+        // To use this you'll have to invert some of the y vals (this code is from before sf::View was used)
+        // 
+        // if (displayBelowCoins && displayBelowCoins->getInt() > 0)
+        // {
+        //     sf::Text belowText(displayBelowCoins->getDollarString(), font, 16);
+        //     sf::FloatRect textRec = belowText.getLocalBounds();
 
-            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-20)));
+        //     vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(20)));
 
-            belowText.setFillColor(sf::Color(200, 200, 255));
-            belowText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            belowText.setPosition(toSFVecF(textPos));
+        //     belowText.setFillColor(sf::Color(200, 200, 255));
+        //     belowText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
+        //     belowText.setPosition(toSFVecF(textPos));
 
-            sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
-            drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            drawRect.setPosition(toSFVecF(textPos + vector2fl(0, 3)));
-            drawRect.setFillColor(sf::Color(0, 0, 0, 150));
+        //     sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 3, textRec.height + 3));
+        //     drawRect.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
+        //     drawRect.setPosition(toSFVecF(textPos + vector2fl(0, -3)));
+        //     drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
-            window->draw(drawRect);
-            window->draw(belowText);
-        }
+        //     window->draw(drawRect);
+        //     window->draw(belowText);
+        // }
     }
 }
 
@@ -845,7 +848,7 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, option
                     break;
             }
 
-            vector2fp healthBarPos = unit->getPos() - vector2fp(fixed32(0), unit->getRadius() + 8);
+            vector2fp healthBarPos = unit->getPos() + vector2fp(fixed32(0), unit->getRadius() + 8);
 
             float healthBarLength = static_cast<float>(unit->getRadius()) * 2;
 
@@ -865,6 +868,27 @@ void drawUnitHealthBars(sf::RenderWindow* window, Game* game, GameUI* ui, option
             healthBar.setSize(sf::Vector2f(healthRatio * healthBarLength, 6));
 
             window->draw(healthBar);
+        }
+    }
+}
+
+void drawAppropriateRadii(sf::RenderWindow* window, Game* game, GameUI* ui)
+{
+    if (ui->displayAllRadii)
+    {
+        for (unsigned int i=0; i<game->entities.size(); i++)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+            {
+                drawUnitRadii(window, unit, vector2fl(unit->getPos()));
+            }
+        }
+    }
+    else if (ui->mouseoverEntity)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(ui->mouseoverEntity))
+        {
+            drawUnitRadii(window, unit, vector2fl(unit->getPos()));
         }
     }
 }
@@ -1347,27 +1371,6 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
     for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
     {
         drawSelectionCircleAroundEntity(window, ui->selectedUnits[i]);
-    }
-}
-
-void drawAppropriateRadii(sf::RenderWindow* window, Game* game, GameUI* ui)
-{
-    if (ui->displayAllRadii)
-    {
-        for (unsigned int i=0; i<game->entities.size(); i++)
-        {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
-            {
-                drawUnitRadii(window, unit, vector2fl(unit->getPos()));
-            }
-        }
-    }
-    else if (ui->mouseoverEntity)
-    {
-        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(ui->mouseoverEntity))
-        {
-            drawUnitRadii(window, unit, vector2fl(unit->getPos()));
-        }
     }
 }
 
