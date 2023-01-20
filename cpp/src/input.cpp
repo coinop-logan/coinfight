@@ -334,8 +334,6 @@ Target getTargetAtScreenPos(sf::RenderWindow* window, Game *game, vector2i scree
 {
     vector2fp gamePos = screenPosToGamePos(window, screenPos);
 
-    debugOutputVector("gamepos", gamePos);
-
     vector<EntityRef> nearbyEntities = game->searchGrid.nearbyEntitiesSloppyIncludingEmpty(gamePos, fixed32(100));
 
     boost::shared_ptr<Entity> closestValidEntity;
