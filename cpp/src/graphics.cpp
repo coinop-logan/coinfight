@@ -684,7 +684,7 @@ void displayCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<
                 displayTargetCursor(window, mousePos, sf::Color::Yellow);
                 drawUnitRadii(window, ui->ghostBuilding, mousePos);
                 break;
-            case GameUI::AttackAbsorb:
+            case GameUI::AttackScuttle:
                 if (ui->mouseoverEntity)
                 {
                     displayBracketsCursor(window, mousePos, sf::Color::Red);

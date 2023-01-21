@@ -1178,7 +1178,7 @@ bool Gateway::isInScuttleTargetQueue(EntityRef entityRef)
     return false;
 }
 
-optional<tuple<EntityRef, bool>> Gateway::getMaybeAbsorbTarget()
+optional<tuple<EntityRef, bool>> Gateway::getMaybeScuttleTarget()
 {
     if (maybeDepositingPrime)
     {
@@ -1635,16 +1635,16 @@ void Gateway::iterate()
 
     Game *game = getGameOrThrow();
 
-    auto maybeAbsorbTargetInfo = getMaybeAbsorbTarget();
+    auto maybeScuttleTargetInfo = getMaybeScuttleTarget();
     auto maybeDepositTargetInfo = getMaybeDepositTarget();
 
     // maybe there's something to scuttle
-    if (maybeAbsorbTargetInfo)
+    if (maybeScuttleTargetInfo)
     {
-        EntityRef absorbTarget = get<0>(*maybeAbsorbTargetInfo);
-        bool tryingToScuttle = get<1>(*maybeAbsorbTargetInfo);
+        EntityRef scuttleTarget = get<0>(*maybeScuttleTargetInfo);
+        bool tryingToScuttle = get<1>(*maybeScuttleTargetInfo);
 
-        auto entity = game->entities[absorbTarget];
+        auto entity = game->entities[scuttleTarget];
 
         // check it's in range
         if ((this->getPos() - entity->getPos()).getFloorMagnitudeSquared() <= GATEWAY_RANGE_FLOORSQUARED)

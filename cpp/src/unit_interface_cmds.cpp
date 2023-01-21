@@ -36,9 +36,9 @@ const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> PrimeBu
 {
     return {sf::Keyboard::R, 'R', {"Build", "Turret"}, {TURRET_COST}};
 }
-const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> AttackAbsorbInterfaceCmd::getHotkeyInfo() const
+const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> AttackScuttleInterfaceCmd::getHotkeyInfo() const
 {
-    return {sf::Keyboard::A, 'A', {"Attack/", "Absorb"}, {}};
+    return {sf::Keyboard::A, 'A', {"Attack/", "Scuttle"}, {}};
 }
 const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> StopInterfaceCmd::getHotkeyInfo() const
 {
@@ -72,11 +72,11 @@ const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> UnitInt
 
 
 
-sf::Keyboard::Key AttackAbsorbInterfaceCmd::getKey()
+sf::Keyboard::Key AttackScuttleInterfaceCmd::getKey()
 {
     return sf::Keyboard::A;
 }
-bool AttackAbsorbInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
+bool AttackScuttleInterfaceCmd::isUnitEligible(boost::shared_ptr<Unit> unit)
 {
     return (unit->typechar() == FIGHTER_TYPECHAR || unit->typechar() == PRIME_TYPECHAR || unit->typechar() == GATEWAY_TYPECHAR);
 }

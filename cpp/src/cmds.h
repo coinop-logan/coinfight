@@ -13,7 +13,7 @@ using namespace std;
 const uint8_t CMD_SPAWNBEACON_CHAR = 1;
 const uint8_t CMD_WITHDRAW_CHAR = 2;
 const uint8_t CMD_MOVE_CHAR = 3;
-const uint8_t CMD_ATTACKABSORB_CHAR = 4;
+const uint8_t CMD_ATTACKSCUTTLE_CHAR = 4;
 const uint8_t CMD_STOP_CHAR = 5;
 const uint8_t CMD_FETCH_CHAR = 6;
 const uint8_t CMD_DEPOSIT_CHAR = 7;
@@ -99,7 +99,7 @@ struct MoveCmd : public UnitCmd
     MoveCmd(Netpack::Consumer* from);
 };
 
-struct AttackAbsorbCmd : public UnitCmd
+struct AttackScuttleCmd : public UnitCmd
 {
     Target target;
     bool asap;
@@ -107,9 +107,9 @@ struct AttackAbsorbCmd : public UnitCmd
     uint8_t getTypechar();
     string getTypename();
 
-    AttackAbsorbCmd(vector<EntityRef>, Target, bool);
+    AttackScuttleCmd(vector<EntityRef>, Target, bool);
     void pack(Netpack::Builder* to);
-    AttackAbsorbCmd(Netpack::Consumer* from);
+    AttackScuttleCmd(Netpack::Consumer* from);
 
     void executeOnUnit(boost::shared_ptr<Unit>);
 };

@@ -313,7 +313,7 @@ public:
     bool isInBuildTargetQueue(EntityRef);
     bool isInScuttleTargetQueue(EntityRef);
     
-    optional<tuple<EntityRef, bool>> getMaybeAbsorbTarget();
+    optional<tuple<EntityRef, bool>> getMaybeScuttleTarget();
     optional<tuple<EntityRef, bool>> getMaybeDepositTarget();
 
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;

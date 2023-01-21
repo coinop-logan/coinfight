@@ -31,7 +31,7 @@ struct UnitInterfaceCmd : public InterfaceCmd
     virtual const tuple<sf::Keyboard::Key, char, vector<string>, optional<coinsInt>> getHotkeyInfo() const;
 };
 
-struct AttackAbsorbInterfaceCmd : public UnitInterfaceCmd
+struct AttackScuttleInterfaceCmd : public UnitInterfaceCmd
 {
     sf::Keyboard::Key getKey();
     bool isUnitEligible(boost::shared_ptr<Unit> unit);

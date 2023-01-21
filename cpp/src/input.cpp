@@ -44,7 +44,7 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
         boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new AttackAbsorbInterfaceCmd()),
+        boost::shared_ptr<UnitInterfaceCmd>(new AttackScuttleInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new StopInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
         boost::shared_ptr<UnitInterfaceCmd>(new FetchInterfaceCmd())
@@ -171,10 +171,10 @@ void GameUI::removeDuplicatesFromSelection()
 
 vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInterfaceCmd> unitInterfaceCmd, GameUI* ui)
 {
-    if (boost::dynamic_pointer_cast<AttackAbsorbInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
+    if (boost::dynamic_pointer_cast<AttackScuttleInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
     {
         ui->returnToDefaultState();
-        ui->cmdState = GameUI::AttackAbsorb;
+        ui->cmdState = GameUI::AttackScuttle;
         unitInterfaceCmd->active = true;
 
         return noCmds;
@@ -526,7 +526,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
             if (getAllianceType(playerID, entity) == Foreign)
             {
                 auto selectedCombatUnits = filterForTypeKeepContainer<CombatUnit, Unit>(ui.selectedUnits);
-                return boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow(), asap));
+                return boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow(), asap));
             }
             else
             {
@@ -904,7 +904,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                                 }
                             }
                             break;
-                            case GameUI::AttackAbsorb:
+                            case GameUI::AttackScuttle:
                             {
                                 Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
 
@@ -928,7 +928,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
 
                                     if (fightersAndPrimes.size() > 0)
                                     {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackAbsorbCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
                                         if (!isShiftPressed())
                                         {
                                             ui->returnToDefaultState();

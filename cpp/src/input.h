@@ -32,7 +32,7 @@ struct GameUI
     enum CmdState {
         Default,
         SpawnBeacon,
-        AttackAbsorb,
+        AttackScuttle,
         Deposit,
         Fetch,
         Build

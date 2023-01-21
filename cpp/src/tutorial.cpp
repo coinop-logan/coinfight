@@ -432,12 +432,12 @@ public:
         {
             {
                 "When you're ready to get out of the game (hopefully at a profit!), you'll want to recover the money you invested in your army.",
-                "Both Gateways and Primes can \"absorb\" friendly units, deconstructing them to recover their investment cost.",
-                "Absorb one Prime with another by selecting one Prime, hitting A, and clicking on the other.",
+                "Both Gateways and Primes can \"scuttle\" friendly units, deconstructing them to recover their investment cost.",
+                "Scuttle one Prime with another by selecting one Prime, hitting A, and clicking on the other.",
                 "Once again, holding shift will delay the job; otherwise it will be done immediately."
             },
             {
-                "Gateways can also absorb units in this way, and will send the money directly to your wallet. But they can only take in one source of gold at a time, and will prioritize bringing in raw gold over absorbing functional units.",
+                "Gateways can also scuttle units in this way, and will send the money directly to your wallet. But they can only take in one source of gold at a time, and will prioritize bringing in raw gold over scuttling functional units.",
                 "If you want, you can try this out by selecting the Gateway and right-clicking on one of your Primes."
             }
         };

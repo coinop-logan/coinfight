@@ -17,8 +17,8 @@ boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new WithdrawCmd(from));
     case CMD_MOVE_CHAR:
         return boost::shared_ptr<Cmd>(new MoveCmd(from));
-    case CMD_ATTACKABSORB_CHAR:
-        return boost::shared_ptr<Cmd>(new AttackAbsorbCmd(from));
+    case CMD_ATTACKSCUTTLE_CHAR:
+        return boost::shared_ptr<Cmd>(new AttackScuttleCmd(from));
     case CMD_STOP_CHAR:
         return boost::shared_ptr<Cmd>(new StopCmd(from));
     case CMD_DEPOSIT_CHAR:
@@ -238,32 +238,32 @@ MoveCmd::MoveCmd(Netpack::Consumer* from)
 }
 
 
-uint8_t AttackAbsorbCmd::getTypechar()
+uint8_t AttackScuttleCmd::getTypechar()
 {
-    return CMD_ATTACKABSORB_CHAR;
+    return CMD_ATTACKSCUTTLE_CHAR;
 }
-string AttackAbsorbCmd::getTypename()
+string AttackScuttleCmd::getTypename()
 {
-    return "AttackAbsorbCmd";
+    return "AttackScuttleCmd";
 }
 
-AttackAbsorbCmd::AttackAbsorbCmd(vector<EntityRef> units, Target target, bool asap)
+AttackScuttleCmd::AttackScuttleCmd(vector<EntityRef> units, Target target, bool asap)
     : UnitCmd(units), target(target), asap(asap)
 {}
-void AttackAbsorbCmd::pack(Netpack::Builder* to)
+void AttackScuttleCmd::pack(Netpack::Builder* to)
 {
     packUnitCmdBasics(to);
     target.pack(to);
     to->packBool(asap);
 }
-AttackAbsorbCmd::AttackAbsorbCmd(Netpack::Consumer* from)
+AttackScuttleCmd::AttackScuttleCmd(Netpack::Consumer* from)
     : UnitCmd(from), target((EntityRef)0)
 {
     target = Target(from);
     asap = from->consumeBool();
 }
 
-void AttackAbsorbCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+void AttackScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
 {
     if (unit->getRefOrThrow() == target.castToEntityRef())
         return;
