@@ -12,7 +12,7 @@ esac
 rm -f coinfight-${machineName}.zip
 
 mkdir coinfight-${machineName}
-cp install.sh coinfight-${machineName}/
+#cp install.sh coinfight-${machineName}/
 cp ../../bin/* coinfight-${machineName}/
 
 zip -r coinfight-${machineName}.zip coinfight-${machineName}
