@@ -160,14 +160,6 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/interface.cpp">
-			<Option target="Coinfight" />
-			<Option target="Coinfight - Debug" />
-		</Unit>
-		<Unit filename="cpp/src/interface.h">
-			<Option target="Coinfight" />
-			<Option target="Coinfight - Debug" />
-		</Unit>
 		<Unit filename="cpp/src/myvectors.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
