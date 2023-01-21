@@ -724,7 +724,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
                     {
                         vector2i mousePos = mouseEventVec(event.mouseMove);
-                        vector2i moveVector = mousePos - ui->lastMousePos;
+
+                        float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
+
+                        vector2fl moveVector = vector2fl(mousePos - ui->lastMousePos) * zoomFactor;
                         ui->cameraView.move(toSFVecF(moveVector * -1));
                     }
 
@@ -1056,17 +1059,18 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                 }
                 break;
             case sf::Event::MouseWheelMoved:
+            {
+                bool zoomIn = event.mouseWheel.delta > 0;
+                float zoomFactor = zoomIn ? (1 / ZOOM_AMOUNT) : (ZOOM_AMOUNT) ;
+
+                unsigned int zoomAmount = abs(event.mouseWheel.delta);
+
+                for (unsigned int i=0; i<zoomAmount; i++)
                 {
-                    bool zoomIn = event.mouseWheel.delta > 0;
-                    float zoomFactor = zoomIn ? (1 / ZOOM_AMOUNT) : (ZOOM_AMOUNT) ;
-
-                    unsigned int zoomAmount = abs(event.mouseWheel.delta);
-
-                    for (unsigned int i=0; i<zoomAmount; i++)
-                    {
-                        ui->cameraView.zoom(zoomFactor);
-                    }
+                    ui->cameraView.zoom(zoomFactor);
                 }
+                break;
+            }
             case sf::Event::KeyPressed:
                 switch (event.key.code)
                 {
@@ -1144,7 +1148,9 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
             (screenDimensions.y - ui->lastMousePos.y == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
             0;
 
-        ui->cameraView.move(toSFVecF(screenEdgeCameraMove));
+        float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
+
+        ui->cameraView.move(toSFVecF(screenEdgeCameraMove * zoomFactor));
     }
 
     // constrain camera
