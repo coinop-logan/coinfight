@@ -56,6 +56,9 @@ package-client:
 cpp/obj/coinfight.o: cpp/src/coinfight.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
 
+cpp/obj/server.o: cpp/src/server.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
+
 cpp/obj/%.o: cpp/src/%.cpp cpp/src/%.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
 
