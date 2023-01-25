@@ -91,9 +91,9 @@ bool SearchGrid::cellIsValid(vector2i cell)
     return (!
         (
             cell.x < 0 ||
-            cell.x >= SEARCH_GRID_NUM_ROWS ||
+            (unsigned int)(cell.x) >= getNumCellRows() ||
             cell.y < 0 ||
-            cell.y >= SEARCH_GRID_NUM_ROWS
+            (unsigned int)(cell.y) >= getNumCellRows()
         )
     );
 }
@@ -126,27 +126,39 @@ void SearchGrid::deregisterEntityFromCellOrThrow(vector2i cell, EntityRef entity
 
 vector2fp SearchGrid::gamePosToCellSpace(vector2fp gamePos)
 {
-    // since map center is (0,0), search grid should be centered on (0,0)
-    fixed32 halfSearchGridWidth = fixed32(SEARCH_GRID_TOTAL_WIDTH/2);
-    vector2fp searchGridOriginInGameSpace(-halfSearchGridWidth, -halfSearchGridWidth);
-    return (gamePos - searchGridOriginInGameSpace) / SEARCH_GRID_CELL_WIDTH;
+    return (gamePos - originInGameSpace) / SEARCH_GRID_CELL_WIDTH;
 }
 
 vector2i SearchGrid::gamePosToCellConstrained(vector2fp gamePos)
 {
     vector2fp cellSpacePos = gamePosToCellSpace(gamePos);
-    cellSpacePos.x = min((fixed32)SEARCH_GRID_NUM_ROWS-1, max(fixed32(0), cellSpacePos.x));
-    cellSpacePos.y = min((fixed32)SEARCH_GRID_NUM_ROWS-1, max(fixed32(0), cellSpacePos.y));
+    cellSpacePos.x = min((fixed32)getNumCellRows()-1, max(fixed32(0), cellSpacePos.x));
+    cellSpacePos.y = min((fixed32)getNumCellRows()-1, max(fixed32(0), cellSpacePos.y));
     return cellSpacePos;
 }
 
-SearchGrid::SearchGrid()
+SearchGrid::SearchGrid(fixed32 mapRadius)
 {
-    cells.resize(SEARCH_GRID_NUM_ROWS);
-    for (unsigned int i=0; i<SEARCH_GRID_NUM_ROWS; i++)
+    originInGameSpace = vector2fp(-fixed32(mapRadius + 10), -fixed32(mapRadius + 10));
+
+    vector2fp rightmostPlausibleGamePoint(mapRadius + fixed32(10), fixed32(0));
+    vector2fp rightmostPlausibleCellPoint = gamePosToCellSpace(rightmostPlausibleGamePoint);
+    debugOutputVector("vec", rightmostPlausibleCellPoint);
+    int rowsNeeded = rightmostPlausibleCellPoint.floored().x + 1;
+
+    cells.resize(rowsNeeded);
+    for (unsigned int i=0; i<rowsNeeded; i++)
     {
-        cells[i].resize(SEARCH_GRID_NUM_ROWS);
+        cells[i].resize(rowsNeeded);
     }
+}
+unsigned int SearchGrid::getNumCellRows()
+{
+    return cells.size();
+}
+vector2fp SearchGrid::getOriginInGameSpace()
+{
+    return originInGameSpace;
 }
 set<EntityRef> SearchGrid::getCell(vector2i cell)
 {
@@ -159,9 +171,9 @@ optional<vector2i> SearchGrid::gamePosToCell(vector2fp gamePos)
     vector2fl test(gamePosInSearchGridSpace);
 
     if (gamePosInSearchGridSpace.x < fixed32(0) ||
-        gamePosInSearchGridSpace.x >= fixed32(SEARCH_GRID_NUM_ROWS) ||
+        gamePosInSearchGridSpace.x >= fixed32(getNumCellRows()) ||
         gamePosInSearchGridSpace.y < fixed32(0) ||
-        gamePosInSearchGridSpace.y >= fixed32(SEARCH_GRID_NUM_ROWS))
+        gamePosInSearchGridSpace.y >= fixed32(getNumCellRows()))
     {
         return {};
     }
@@ -363,13 +375,9 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 
 
 Game::Game()
-    : frame(0)
+    : frame(0), searchGrid(calculateMapRadius())
 {
     mapRadius = calculateMapRadius();
-    if (mapRadius * 2 > fixed32(SEARCH_GRID_TOTAL_WIDTH))
-    {
-        throw "Map radius is too large for search grid to accomodate";
-    }
 }
 
 void Game::pack(Netpack::Builder* to)
@@ -395,6 +403,7 @@ void Game::pack(Netpack::Builder* to)
     }
 }
 Game::Game(Netpack::Consumer* from)
+    : searchGrid(calculateMapRadius())
 {
     frame = from->consumeUint64_t();
     uint8_t playersSize = from->consumeUint8_t();

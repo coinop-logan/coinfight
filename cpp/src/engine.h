@@ -18,11 +18,9 @@
 
 using namespace std;
 
-const int SEARCH_GRID_NUM_ROWS = 205;
-const int SEARCH_GRID_CELL_WIDTH = 205;
-const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
+const int SEARCH_GRID_CELL_WIDTH = 200;
 
-const int NUM_MAP_RINGS = 10;
+const int NUM_MAP_RINGS = 9;
 
 fixed32 calculateMapRadius();
 fixed32 calculateMapRingRadius(int ringNum);
@@ -51,6 +49,7 @@ struct SearchGridRect
 
 class SearchGrid
 {
+    vector2fp originInGameSpace;
     vector<vector<set<EntityRef>>> cells;
     bool cellIsValid(vector2i cell);
     void registerEntityForCellOrThrow(vector2i cell, EntityRef entityRef);
@@ -58,7 +57,9 @@ class SearchGrid
     vector2fp gamePosToCellSpace(vector2fp gamePos);
     vector2i gamePosToCellConstrained(vector2fp gamePos);
 public:
-    SearchGrid();
+    SearchGrid(fixed32 mapRadius);
+    unsigned int getNumCellRows();
+    vector2fp getOriginInGameSpace();
     set<EntityRef> getCell(vector2i cell);
     optional<vector2i> gamePosToCell(vector2fp gamePos);
     optional<vector2i> registerEntityRefToCell(boost::shared_ptr<Entity> entity, EntityRef ref);

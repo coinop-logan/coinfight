@@ -5,6 +5,7 @@
 #include <optional>
 #include "graphics_helpers.h"
 #include "fpm/math.hpp"
+#include "fpm/ios.hpp"
 #include "myvectors.h"
 
 using namespace std;
@@ -29,9 +30,8 @@ void pr(C c) {
 
 int main()
 {
-    vector2fp a(fixed32(20000), fixed32(2000));
-    vector2fl b(a);
-    float aMag(a.getRoughMagnitude());
-    float bMag(b.getMagnitude());
-    cout << "hi" << endl;
+    fixed32 a(20490);
+    fixed32 b(-24556);
+    fixed32 c = a - b;
+    cout << c << endl;
 }

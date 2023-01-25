@@ -1423,6 +1423,25 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
     displayHotkeyHelp(window, game, ui, maybePlayerId, font);
 }
 
+void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
+{
+    sf::RectangleShape cellBox(sf::Vector2f(SEARCH_GRID_CELL_WIDTH, SEARCH_GRID_CELL_WIDTH));
+    for (unsigned int x=0; x < game->searchGrid.getNumCellRows(); x++)
+    {
+        for (unsigned int y=0; y < game->searchGrid.getNumCellRows(); y++)
+        {
+            cellBox.setFillColor(
+                ((x + y) % 2 == 0) ?
+                sf::Color(0, 255, 0, 20) :
+                sf::Color(0, 0, 255, 20)
+            );
+            vector2fl boxPos = vector2fl(game->searchGrid.getOriginInGameSpace()) + (vector2fl(x, y) * SEARCH_GRID_CELL_WIDTH);
+            cellBox.setPosition(toSFVecF(boxPos));
+            window->draw(cellBox);
+        }
+    }
+}
+
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool displayWalletHints)
 {
     sf::View gameView = ui->cameraView;
@@ -1451,6 +1470,7 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
         window->setView(gameView);
         drawGame(window, game, ui);
         drawGameOverlay(window, game, ui, maybePlayerId, mainFont);
+        // drawSearchGridOverlay(window, game);
         window->setView(screenView);
         displayCursorOrSelectionBox(window, ui, maybePlayerId);
         window->setView(uxView);
