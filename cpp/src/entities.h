@@ -18,9 +18,8 @@ struct RegInfo {
 class Entity
 {
     vector2fp pos;
-protected:
-    void setPosAndUpdateCell(vector2fp newPos);
 public:
+    void setPosAndUpdateCell(vector2fp newPos);
     bool dead;
     optional<RegInfo> maybeRegInfo;
     vector2fp getPos() const;

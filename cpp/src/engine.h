@@ -18,9 +18,14 @@
 
 using namespace std;
 
-const int SEARCH_GRID_NUM_ROWS = 200;
-const int SEARCH_GRID_CELL_WIDTH = 200;
+const int SEARCH_GRID_NUM_ROWS = 205;
+const int SEARCH_GRID_CELL_WIDTH = 205;
 const int SEARCH_GRID_TOTAL_WIDTH = SEARCH_GRID_NUM_ROWS * SEARCH_GRID_CELL_WIDTH;
+
+const int NUM_MAP_RINGS = 10;
+
+fixed32 calculateMapRadius();
+fixed32 calculateMapRingRadius(int ringNum);
 
 class Game;
 
@@ -70,9 +75,11 @@ public:
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
     SearchGrid searchGrid;
+    fixed32 mapRadius;
 
-    bool registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity);
-    void registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity);
+    bool registerNewEntityIfInMapAndNoCollision(boost::shared_ptr<Entity> newEntity);
+    bool registerNewEntityIfInMapIgnoringCollision(boost::shared_ptr<Entity> newEntity);
+    void registerNewEntityIgnoringConstraints(boost::shared_ptr<Entity> newEntity);
 
     optional<uint8_t> playerAddressToMaybeId(Address address);
     uint8_t getPlayerId_createIfNone(Address userAddress);

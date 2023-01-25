@@ -1154,10 +1154,10 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
     }
 
     // constrain camera
-    if (fromSFVec(ui->cameraView.getCenter()).getMagnitude() > 4500)
+    if (fromSFVec(ui->cameraView.getCenter()).getMagnitude() > float(game->mapRadius))
     {
         float angle = fromSFVec(ui->cameraView.getCenter()).getAngle();
-        vector2i newCameraCenter = composeVector2i(angle, 4500);
+        vector2i newCameraCenter = composeVector2i(angle, float(game->mapRadius));
         ui->cameraView.setCenter(toSFVecF(newCameraCenter));
     }
 

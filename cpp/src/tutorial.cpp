@@ -256,7 +256,7 @@ public:
 
         boost::shared_ptr<GoldPile> gp1 = boost::shared_ptr<GoldPile>(new GoldPile(gpPos));
         gp1->gold.createMoreByFiat(dollarsToCoinsIntND(0.3));
-        game->registerNewEntityIgnoringCollision(gp1);
+        game->registerNewEntityIgnoringConstraints(gp1);
     }
 
     void update(Game* game, GameUI* ui)
@@ -379,7 +379,7 @@ public:
                 boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(pos));
                 gp->gold.createMoreByFiat(dollarsToCoinsIntND(gold));
 
-                if (game->registerNewEntityIfNoCollision(gp))
+                if (game->registerNewEntityIfInMapAndNoCollision(gp))
                 {
                     gpCreated = true;
                 }
@@ -657,7 +657,7 @@ public:
 
             vector2fp fighterPos = groupPos + vector2fp(randomVectorWithMagnitude(numCreatedThisGroup*2)); // for now a hacky way to avoid collision.cpp failing on too-close units
             auto fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
-            game->registerNewEntityIgnoringCollision(fighter);
+            game->registerNewEntityIfInMapIgnoringCollision(fighter);
 
             game->players[1].credit.createMoreByFiat(FIGHTER_COST);
             fighter->completeBuildingInstantly(&game->players[1].credit);

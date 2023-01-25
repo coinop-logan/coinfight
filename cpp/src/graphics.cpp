@@ -82,21 +82,30 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 void drawGameBackground(sf::RenderWindow *window)
 {
     sf::Color backgroundColor(0, 0, 50);
-    window->clear(backgroundColor);
+    sf::Color circlesOutlineColor(60, 0, 150);
 
-    sf::Color backgroundCirclesColor(60, 0, 150);
-    sf::Color backgroundSpokeEndColor(backgroundCirclesColor);
+    float mapRadius(calculateMapRadius());
+
+    sf::CircleShape biggestCircle(mapRadius, 300);
+    biggestCircle.setFillColor(backgroundColor);
+    biggestCircle.setOutlineColor(circlesOutlineColor);
+    biggestCircle.setOutlineThickness(1);
+    biggestCircle.setOrigin(mapRadius, mapRadius);
+    biggestCircle.setPosition(sf::Vector2f(0,0));
+    window->draw(biggestCircle);
+
+    sf::Color backgroundSpokeEndColor(circlesOutlineColor);
     backgroundSpokeEndColor.a = 50;
 
     sf::CircleShape circle(1, 40);
     circle.setFillColor(sf::Color::Transparent);
-    circle.setOutlineColor(backgroundCirclesColor);
+    circle.setOutlineColor(circlesOutlineColor);
     circle.setOutlineThickness(1);
     circle.setPosition(sf::Vector2f(0,0));
 
-    for (unsigned int i=0; i<10; i++)
+    for (unsigned int i=0; i<NUM_MAP_RINGS; i++)
     {
-        float radius = 10 * pow(2, i+1);
+        float radius(calculateMapRingRadius(i));
         float nextRadius = 10 * pow(2, i+2);
 
         // draw circle
@@ -119,7 +128,7 @@ void drawGameBackground(sf::RenderWindow *window)
 
                 lines[i*2].position = toSFVecF(from);
                 lines[i*2+1].position = toSFVecF(to);
-                lines[i*2].color = backgroundCirclesColor;
+                lines[i*2].color = circlesOutlineColor;
                 lines[i*2+1].color = backgroundSpokeEndColor;
             }
 

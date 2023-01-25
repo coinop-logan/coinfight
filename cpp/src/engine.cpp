@@ -15,47 +15,58 @@
 
 using namespace std;
 
-bool Game::registerNewEntityIfNoCollision(boost::shared_ptr<Entity> newEntity)
+bool Game::registerNewEntityIfInMapAndNoCollision(boost::shared_ptr<Entity> newEntity)
 {
     if (this->unitsCollidingWithCircle(newEntity->getPos(), newEntity->getRadius()).size() > 0)
     {
         return false;
     }
-    else
-    {
-        registerNewEntityIgnoringCollision(newEntity);
-        return true;
-    }
+    
+    return registerNewEntityIfInMapIgnoringCollision(newEntity);
 }
-void Game::registerNewEntityIgnoringCollision(boost::shared_ptr<Entity> newEntity)
+bool Game::registerNewEntityIfInMapIgnoringCollision(boost::shared_ptr<Entity> newEntity)
 {
+    if (newEntity && newEntity->getPos().getRoughMagnitude() > mapRadius)
+    {
+        return false;
+    }
+
     // if registering a null entity, just add the empty pointer to the list but don't do anything else
     if (!newEntity)
     {
         entities.push_back(newEntity);
-        return;
+        return true;
     }
 
-    // * register the entity on the search grid
-    // * provide pointer to Game
-    // * provide EntityRef ref
-    // * add to Game::entities
+    registerNewEntityIgnoringConstraints(newEntity);
 
+    return true;
+}
+
+void Game::registerNewEntityIgnoringConstraints(boost::shared_ptr<Entity> newEntity)
+{
     EntityRef ref = this->entities.size();
-    optional<vector2i> maybeCell = searchGrid.registerEntityRefToCell(newEntity, ref);
 
-    if (auto cell = maybeCell)
-    {
-        RegInfo regInfo(this, ref, *cell);
-        newEntity->maybeRegInfo = {regInfo};
-        entities.push_back(newEntity);
-    }
-    else
+    optional<vector2i> maybeCell = searchGrid.registerEntityRefToCell(newEntity, ref);
+    if (!maybeCell)
     {
         throw runtime_error("Entity can't be registered on the search grid - probably out of bounds.\n");
     }
+
+    RegInfo regInfo(this, ref, *maybeCell);
+    newEntity->maybeRegInfo = {regInfo};
+
+    entities.push_back(newEntity);
 }
 
+fixed32 calculateMapRadius()
+{
+    return calculateMapRingRadius(NUM_MAP_RINGS);
+}
+fixed32 calculateMapRingRadius(int ringNum)
+{
+    return 10 * pow(fixed32(2), fixed32(ringNum + 1));
+}
 
 Player::Player(Address address)
     : address(address), credit(), beaconAvailable(true) {}
@@ -352,7 +363,15 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 
 
 Game::Game()
-    : frame(0) {}
+    : frame(0)
+{
+    mapRadius = calculateMapRadius();
+    if (mapRadius * 2 > fixed32(SEARCH_GRID_TOTAL_WIDTH))
+    {
+        throw "Map radius is too large for search grid to accomodate";
+    }
+}
+
 void Game::pack(Netpack::Builder* to)
 {
     to->packUint64_t(frame);
@@ -391,7 +410,11 @@ Game::Game(Netpack::Consumer* from)
     entities.clear();
     for (unsigned int i = 0; i < entitiesSize; i++)
     {
-        registerNewEntityIgnoringCollision(consumeEntity(from));
+        bool registerSuccess = registerNewEntityIfInMapIgnoringCollision(consumeEntity(from));
+        if (!registerSuccess)
+        {
+            throw "Error registering entity as encoded: it's beyond map bounds.";
+        }
     }
 }
 void Game::reassignEntityGamePointers()
@@ -478,7 +501,8 @@ void Game::iterate()
                 // but only add it if there was more than 0 gold added
                 if (goldPile->gold.getInt() > 0)
                 {
-                    registerNewEntityIgnoringCollision(goldPile);
+                    // We call the 'ignoreConstraints' verison, knowing that at the end of Game::iterate, map bounds are directly enforced
+                    registerNewEntityIgnoringConstraints(goldPile);
                 }
                 entities[i].reset();
             }
@@ -539,6 +563,23 @@ void Game::iterate()
         {
             // no reference found, so we delete it from the entities list.
             entities[goldpileRef].reset();
+        }
+    }
+
+    // hard-constrain units to mapRadius
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        if (auto entity = entities[i])
+        {
+            fixed32 roughMagnitude = entity->getPos().getRoughMagnitude();
+            if (roughMagnitude > mapRadius)
+            {
+                fixed32 correctionRatio = mapRadius / roughMagnitude;
+                debugOutputVector("   pos",entity->getPos());
+                vector2fp newPos(entity->getPos().x * correctionRatio, entity->getPos().y * correctionRatio);
+                debugOutputVector("newpos",newPos);
+                entity->setPosAndUpdateCell(newPos);
+            }
         }
     }
 

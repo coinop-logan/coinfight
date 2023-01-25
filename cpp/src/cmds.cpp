@@ -85,7 +85,7 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
     if (game->getPlayerBeaconAvailable(playerId))
     {
         boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning));
-        if (game->registerNewEntityIfNoCollision(beacon)) // will fail in case of collision with other unit
+        if (game->registerNewEntityIfInMapAndNoCollision(beacon))
         {
             game->setPlayerBeaconAvailable(playerId, false);
         }
@@ -344,7 +344,7 @@ void DepositCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
     {
         entityToDepositTo = boost::shared_ptr<GoldPile>(new GoldPile(*point));
 
-        if (! game->registerNewEntityIfNoCollision(entityToDepositTo))
+        if (! game->registerNewEntityIfInMapIgnoringCollision(entityToDepositTo))
         {
             entityToDepositTo.reset();
         }
@@ -493,7 +493,7 @@ void PrimeBuildCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
     }
     if (unitToBuild)
     {
-        if (! game->registerNewEntityIfNoCollision(unitToBuild))
+        if (! game->registerNewEntityIfInMapAndNoCollision(unitToBuild))
         {
             unitToBuild.reset();
         }

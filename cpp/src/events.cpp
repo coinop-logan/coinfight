@@ -100,7 +100,7 @@ void HoneypotAddedEvent::execute(Game *game)
 {
     boost::shared_ptr<GoldPile> gp(new GoldPile(vector2fp::zero));
     gp->gold.createMoreByFiat(honeypotAmount);
-    game->registerNewEntityIgnoringCollision(gp);
+    game->registerNewEntityIgnoringConstraints(gp);
 }
 
 HoneypotAddedEvent::HoneypotAddedEvent(coinsInt honeypotAmount)

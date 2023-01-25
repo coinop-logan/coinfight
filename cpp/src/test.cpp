@@ -1,8 +1,11 @@
+#include <cmath>
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <optional>
 #include "graphics_helpers.h"
+#include "fpm/math.hpp"
+#include "myvectors.h"
 
 using namespace std;
 
@@ -26,8 +29,9 @@ void pr(C c) {
 
 int main()
 {
-    // GH::beginDashedLines(5);
-    // GH::pushLine(vector2fl(0, 0), vector2fl(20, 20), sf::Color::Red);
-    // GH::pushLine(vector2fl(0, 0), vector2fl(50, 50), sf::Color::Red);
-    // GH::endDashedLines();
+    vector2fp a(fixed32(20000), fixed32(2000));
+    vector2fl b(a);
+    float aMag(a.getRoughMagnitude());
+    float bMag(b.getMagnitude());
+    cout << "hi" << endl;
 }

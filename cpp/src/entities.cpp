@@ -1065,7 +1065,7 @@ void Beacon::iterate()
                 gateway->completeBuildingInstantly(&this->goldInvested);
                 gateway->setHealthAssumingBuilt(uint16_t(healthRatio * fixed32(GATEWAY_HEALTH)));
                 this->die();
-                game->registerNewEntityIgnoringCollision(gateway);
+                game->registerNewEntityIgnoringConstraints(gateway);
             }
         }
         break;
@@ -1296,8 +1296,11 @@ void Gateway::cmdBuildUnit(uint8_t unitTypechar)
         }
         if (littleBabyUnitAwwwwSoCute)
         {
-            getGameOrThrow()->registerNewEntityIgnoringCollision(littleBabyUnitAwwwwSoCute);
-            this->buildTargetQueue.push_back(littleBabyUnitAwwwwSoCute->getRefOrThrow());
+            bool registerSuccess = getGameOrThrow()->registerNewEntityIfInMapIgnoringCollision(littleBabyUnitAwwwwSoCute);
+            if (registerSuccess)
+            {
+                this->buildTargetQueue.push_back(littleBabyUnitAwwwwSoCute->getRefOrThrow());
+            }
         }
     }
 }
@@ -1323,7 +1326,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
             boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
-            game->registerNewEntityIgnoringCollision(beacon);
+            game->registerNewEntityIgnoringConstraints(beacon);
         }
         else
         {
@@ -2448,8 +2451,11 @@ void Prime::tryTransferAndMaybeMoveOn()
                                         {
                                             vector2fp gpPos = (gateway->getPos() + this->getPos()) / 2;
                                             gpToDepositTo = boost::shared_ptr<GoldPile>(new GoldPile(gpPos));
-                                            game->registerNewEntityIgnoringCollision(gpToDepositTo);
-                                            gateway->scuttleTargetQueue.push_back(gpToDepositTo->getRefOrThrow());
+                                            bool success = game->registerNewEntityIfInMapIgnoringCollision(gpToDepositTo);
+                                            if (success)
+                                            {
+                                                gateway->scuttleTargetQueue.push_back(gpToDepositTo->getRefOrThrow());
+                                            }
                                         }
 
                                         amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &gpToDepositTo->gold);
