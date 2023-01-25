@@ -20,7 +20,7 @@ sf::Font mainFont, tutorialFont;
 
 void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float playerStartDollars, bool checkNetpack);
 void runTutorial(sf::RenderWindow* window);
-void runClient(sf::RenderWindow* window, string serverIP);
+void runClient(sf::RenderWindow* window, string serverIP, sf::Font* font);
 
 enum MainMenuEvent
 {
@@ -136,12 +136,12 @@ int main(int argc, char *argv[])
                 }
                 case StartClient:
                 {
-                    runClient(window, serverIP);
+                    runClient(window, serverIP, &mainFont);
                     break;
                 }
                 case StartClientWithLocalhost:
                 {
-                    runClient(window, "localhost");
+                    runClient(window, "localhost", &mainFont);
                     break;
                 }
                 case Quit:
@@ -422,20 +422,32 @@ using namespace boost::asio::ip;
 
 optional<Address> runLoginScreen(sf::RenderWindow* window, ConnectionHandler* connectionHandler, string sigChallenge);
 
-void runClient(sf::RenderWindow* window, string serverAddressString)
+void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* font)
 {
     unsigned int latencyAllowance = 10;
 
     boost::asio::io_service io_service;
     tcp::socket socket(io_service);
 
-    if (serverAddressString == "localhost")
+    try
     {
-        socket.connect(tcp::endpoint(tcp::v4(), MAIN_PORT));
+        if (serverAddressString == "localhost")
+        {
+            socket.connect(tcp::endpoint(tcp::v4(), MAIN_PORT));
+        }
+        else
+        {
+            socket.connect(tcp::endpoint(address::from_string(serverAddressString), MAIN_PORT));
+        }
     }
-    else
+    catch (const boost::wrapexcept<boost::system::system_error>& e)
     {
-        socket.connect(tcp::endpoint(address::from_string(serverAddressString), MAIN_PORT));
+        string message =
+            (e.code() == boost::asio::error::connection_refused) ?
+            "Server is not respoding." :
+            "Connection error: " + string(e.what());
+        runNoticeWindow(window, message, font);
+        return;
     }
 
     // socket will now have its own local port.
