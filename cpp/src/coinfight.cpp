@@ -275,6 +275,10 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
                     Netpack::Consumer source(packages[i]->begin() + 2); // we're looking past the size specifier, because in this case we already know...
 
                     boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
+                    if (!cmd)
+                    {
+                        throw runtime_error("Unrecognized command");
+                    }
                     boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, game.playerIdToAddress(currentPlayerId)));
 
                     authdCmds.push_back(authdCmd);

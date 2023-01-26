@@ -56,6 +56,10 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
     {
         Address playerAddress(from);
         boost::shared_ptr<Cmd> unauthdCmd = consumeCmd(from);
+        if (!unauthdCmd)
+        {
+            throw runtime_error("Unrecognized command in FEP");
+        }
 
         authdCmds.push_back(boost::shared_ptr<AuthdCmd>(new AuthdCmd(unauthdCmd, playerAddress)));
     }
@@ -63,6 +67,11 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
     events.clear();
     for (unsigned int i = 0; i < numEvents; i++)
     {
+        auto event = consumeEvent(from);
+        if (!event)
+        {
+            throw runtime_error("Trying to unpack an unrecognized event");
+        }
         events.push_back(consumeEvent(from));
     }
 }

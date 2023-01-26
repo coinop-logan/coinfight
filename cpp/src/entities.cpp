@@ -500,7 +500,7 @@ bool Entity::isWithinRangeOfActiveGatewayOwnedBy(uint8_t targetOwnerId) {
 
 void Entity::iterate()
 {
-    throw runtime_error("go() has not been defined for " + getTypename() + ".\n");
+    throw runtime_error("iterate() has not been defined for " + getTypename() + ".\n");
 }
 sf::Color Entity::getTeamOrPrimaryColor()
 {
@@ -698,9 +698,6 @@ uint16_t Unit::getEffectiveHealth()
     }
 
     return healthAssumingBuilt - healthDeduction;
-}
-bool Unit::isIdle() {
-    throw runtime_error("isIdle has not been defined for '" + getTypename() + "'");
 }
 
 bool Unit::isActive()
@@ -1120,9 +1117,6 @@ uint16_t Gateway::getShotDamage() const { return GATEWAY_SHOT_DAMAGE; }
 fixed32 Gateway::getShotRange() const { return GATEWAY_SHOT_RANGE; }
 fixed32 Gateway::getAggressionRange() const { return GATEWAY_AGGRESSION_RANGE; }
 
-bool Gateway::isIdle() {
-    return buildTargetQueue.size() == 0 && scuttleTargetQueue.size() == 0;
-}
 void Gateway::cmdStop()
 {
     // press stop twice to stop all activity if both building and scuttling
@@ -2118,13 +2112,6 @@ void Prime::cmdStop()
     this->fetchToImmediateTarget = {};
 }
 
-bool Prime::isIdle()
-{
-    bool hasSourceAndDest = (bool(getMaybeFetchTarget() && bool(getMaybeDepositTarget())));
-
-    return mobileUnitIsIdle() && !hasSourceAndDest;
-}
-
 void Prime::onMoveCmd(vector2fp moveTo)
 {
     this->fetchToImmediateTarget = {};
@@ -3108,10 +3095,6 @@ uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 uint8_t Fighter::typechar() const { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() const { return "Fighter"; }
 
-bool Fighter::isIdle()
-{
-    return (mobileUnitIsIdle() && combatUnitIsIdle());
-}
 void Fighter::cmdStop()
 {
     mobileUnitStop();
@@ -3173,10 +3156,6 @@ fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }
 uint8_t Turret::typechar() const { return TURRET_TYPECHAR; }
 string Turret::getTypename() const { return "Fighter"; }
 
-bool Turret::isIdle()
-{
-    return (combatUnitIsIdle());
-}
 void Turret::cmdStop()
 {
     combatUnitStop();
@@ -3234,5 +3213,5 @@ boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from)
         return boost::shared_ptr<Entity>(new Turret(from));
         break;
     }
-    throw runtime_error("Trying to unpack an unrecognized entity");
+    return boost::shared_ptr<Entity>();
 }

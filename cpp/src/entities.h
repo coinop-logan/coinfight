@@ -117,7 +117,6 @@ public:
     vector<Coins*> getDroppableCoins();
     virtual coinsInt getCost() const;
     virtual uint16_t getMaxHealth() const;
-    virtual bool isIdle();
 
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
@@ -270,8 +269,6 @@ public:
     void cmdStop();
 
     void iterate();
-
-    bool isIdle() { return false; }
 };
 
 const coinsInt GATEWAY_COST = 40000;
@@ -337,7 +334,6 @@ public:
     void validateTargets();
     void iterate();
 
-    bool isIdle();
     coinsInt buildQueueWeight();
     coinsInt scuttleQueueWeight();
 };
@@ -401,7 +397,6 @@ public:
     void tryTransferAndMaybeMoveOn();
     void iterate();
 
-    bool isIdle();
     fixed32 getHeldGoldRatio();
     vector<Coins*> getDroppableCoins();
 };
@@ -440,8 +435,6 @@ public:
     void onMoveFinished(Target target);
 
     void iterate();
-
-    bool isIdle();
 };
 
 const coinsInt TURRET_COST = 60000;
@@ -473,8 +466,6 @@ public:
     void cmdStop();
 
     void iterate();
-
-    bool isIdle();
 };
 
 boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);

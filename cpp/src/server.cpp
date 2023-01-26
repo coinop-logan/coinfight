@@ -329,18 +329,24 @@ public:
             cout << "Error receiving cmd body from " << connectionAuthdUserAddress.getString() << ": " << error.message() << endl;
             cout << "Kicking." << endl;
             state = Closed;
+            return;
         }
-        else
+
+        Netpack::Consumer source(receivedBytes.begin());
+
+        boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
+        if (!cmd)
         {
-            Netpack::Consumer source(receivedBytes.begin());
-
-            boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
-            boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, this->connectionAuthdUserAddress));
-
-            pendingCmds.push_back(authdCmd);
-
-            clearVchAndReceiveNextCmd();
+            cout << "Unrecognized command from user " << connectionAuthdUserAddress.getString() << ". Kicking." << endl;
+            state = Closed;
+            return;
         }
+    
+        boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, this->connectionAuthdUserAddress));
+
+        pendingCmds.push_back(authdCmd);
+
+        clearVchAndReceiveNextCmd();
     }
 };
 
@@ -348,7 +354,7 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
 {
     if (error)
     {
-        throw("Listener error accepting:" + error.value());
+        cout << "Listener error accepting:" << error.value() << endl;
     }
     else
     {

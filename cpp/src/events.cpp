@@ -22,7 +22,7 @@ boost::shared_ptr<Event> consumeEvent(Netpack::Consumer* from)
     case EVENT_RESETBEACONS_CHAR:
         return boost::shared_ptr<Event>(new ResetBeaconsEvent(from));
     }
-    throw runtime_error("Trying to unpack an unrecognized event");
+    return boost::shared_ptr<Event>();
 }
 
 uint8_t Event::typechar()
