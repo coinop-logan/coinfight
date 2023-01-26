@@ -387,7 +387,7 @@ void actuateWithdrawal(Address userAddress, coinsInt amount)
     filesystem::rename(filename, "./events_out/withdrawals/" + filename);
 }
 
-vector<boost::shared_ptr<Event>> pollPendingEvents()
+tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
 {
     vector<boost::shared_ptr<Event>> events;
 
@@ -440,22 +440,43 @@ vector<boost::shared_ptr<Event>> pollPendingEvents()
     directoryEndIter = boost::filesystem::directory_iterator(); // default constructor makes it an end_iter
 
     bool resetBeacons = false;
+    bool quitNow = false;
     for (boost::filesystem::directory_iterator dirIter(eventsDirPath); dirIter != directoryEndIter; dirIter++)
     {
-        // right now just consumes ANY REGULAR FILE in this dir as a beacon reset
-        // once more events are at play, we should check the name. Python already renames this type of file simply "reset_beacons".
-        if (boost::filesystem::is_regular_file(dirIter->path())) {
-            resetBeacons = true;
+        if (boost::filesystem::is_regular_file(dirIter->path()))
+        {
+            bool consumeFile = true;
 
-            boost::filesystem::remove(dirIter->path());
+            string fileName = dirIter->path().filename().string();
+            if (fileName == "reset_beacons")
+            {
+                resetBeacons = true;
+                break;
+            }
+            else if (fileName == "halt")
+            {
+                quitNow = true;
+            }
+            else
+            {
+                cout << "unrecognized file: " << fileName << endl;
+                consumeFile = false;
+            }
+            
+
+            if (consumeFile)
+            {
+                boost::filesystem::remove(dirIter->path());
+            }
         }
     }
+
     if (resetBeacons)
     {
         events.push_back(boost::shared_ptr<Event>(new ResetBeaconsEvent()));
     }
 
-    return events;
+    return {quitNow, events};
 }
 
 string getCodeVersionTag()
@@ -651,7 +672,16 @@ int main(int argc, char *argv[])
         pendingWithdrawEvents.clear();
 
         // scan for any pending deposits or honeypotAdd events
-        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = pollPendingEvents();
+        auto quitNowAndEvents = pollPendingEvents();
+        bool quitNow = get<0>(quitNowAndEvents);
+        vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = get<1>(quitNowAndEvents);
+
+        if (quitNow)
+        {
+            sessionSaver.saveStateAsRecent(&game);
+            return 0;
+        }
+
         pendingEvents.insert(pendingEvents.end(), depositAndHoneypotEvents.begin(), depositAndHoneypotEvents.end());
 
         // build FrameEventsPacket for this frame
@@ -740,8 +770,6 @@ int main(int argc, char *argv[])
 
         game.iterate();
     }
-
-    cout << "oohhhhh Logan you done did it this time" << endl;
 
     return 0;
 }
