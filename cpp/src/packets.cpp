@@ -72,7 +72,7 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
         {
             throw runtime_error("Trying to unpack an unrecognized event");
         }
-        events.push_back(consumeEvent(from));
+        events.push_back(event);
     }
 }
 
