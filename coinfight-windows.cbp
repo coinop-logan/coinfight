@@ -142,6 +142,8 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
+		<Unit filename="cpp/src/exec.cpp" />
+		<Unit filename="cpp/src/exec.h" />
 		<Unit filename="cpp/src/graphics.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
