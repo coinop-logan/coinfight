@@ -13,8 +13,11 @@
 #include "packets.h"
 #include "sigWrapper.h"
 #include "events.h"
+#include "exec.h"
 
 const bool SEND_REGULAR_RESYNC_CHECKS = true;
+
+const unsigned int RECENT_BACKUP_INTERVAL_IN_FRAMES = 60; // every second
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -44,7 +47,6 @@ public:
     void handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::system::error_code &error);
 };
 
-Game game;
 
 void testHandler(const boost::system::error_code &error, size_t numSent)
 {
@@ -224,11 +226,11 @@ public:
         }
     }
 
-    void sendResyncPacket()
+    void sendResyncPacket(Game* game)
     {
         packetsToSend.push_back(new vch);
 
-        clearVchAndBuildResyncPacket(packetsToSend.back(), &game);
+        clearVchAndBuildResyncPacket(packetsToSend.back(), game);
 
         sendNextPacketIfNotBusy();
     }
@@ -456,9 +458,123 @@ vector<boost::shared_ptr<Event>> pollPendingEvents()
     return events;
 }
 
+string getCodeVersionTag()
+{
+    string result = exec("git describe --tags");
+    result.pop_back(); // remove trailing \n
+    return result;
+}
+
+const boost::filesystem::path SESSIONS_DATA_PATH("./sessions");
+
+class SessionSaver
+{
+    boost::filesystem::path rootDir, stateDir, stateBackupsDir, recentStateFile;
+    void setupSessionDirectory()
+    {
+        string codeVersionTag = getCodeVersionTag();
+        int sessionNumForVersion = 0;
+        boost::filesystem::path attemptedSessionDirPath;
+        do
+        {
+            stringstream sessionNameSS;
+            sessionNameSS << codeVersionTag << "_" << sessionNumForVersion;
+
+            attemptedSessionDirPath = SESSIONS_DATA_PATH / sessionNameSS.str();
+
+            sessionNumForVersion ++;
+        }
+        while (boost::filesystem::exists(attemptedSessionDirPath));
+
+        rootDir = attemptedSessionDirPath;
+        stateDir = rootDir / "state";
+        recentStateFile = stateDir / "recent.cfs";
+        stateBackupsDir = stateDir / "backups";
+
+        boost::filesystem::create_directory(rootDir);
+        boost::filesystem::create_directory(stateDir);
+        boost::filesystem::create_directory(stateBackupsDir);
+    }
+
+    Netpack::vch dataBuffer;
+public:
+    SessionSaver()
+    {
+        setupSessionDirectory();
+    }
+    void saveState(boost::filesystem::path path, Game* game)
+    {
+        // cout << "saving " << dataBuffer.size() << " bytes to " << path << endl;
+
+        dataBuffer.clear();
+        Netpack::Builder b(&dataBuffer);
+        game->pack(&b);
+
+        boost::filesystem::ofstream fstream(path, ios::out | ios::binary);
+        fstream.write((char*)(&dataBuffer[0]), dataBuffer.size());
+        fstream.close();
+    }
+    void saveStateAsRecent(Game* game)
+    {
+        saveState(recentStateFile, game);
+    }
+};
+
+bool loadState(boost::filesystem::path path, Game* game)
+{
+    if (! boost::filesystem::exists(path))
+    {
+        return false;
+    }
+    boost::filesystem::ifstream ifstream(path, ios::in | ios::binary);
+    Netpack::vch dataBuffer = Netpack::vch(istreambuf_iterator<char>(ifstream), istreambuf_iterator<char>());
+    ifstream.close();
+    
+    Netpack::vchIter iter = dataBuffer.begin();
+    Netpack::Consumer c(iter);
+    *game = Game(&c);
+    game->reassignEntityGamePointers();
+
+    return true;
+}
+
+boost::filesystem::path restoreLabelToStateFile(string restoreLabel)
+{
+    return SESSIONS_DATA_PATH / restoreLabel / "state" / "recent.cfs";
+}
+
 int main(int argc, char *argv[])
 {
+    optional<string> restoreLabel;
+
+    int c;
+    while ((c = getopt(argc, argv, "r:")) != -1)
+    {
+        switch (c)
+        {
+            case 'r':
+            {
+                restoreLabel = string(optarg);
+                boost::trim(*restoreLabel);
+                break;
+            }
+        }
+    }
+
+    Game game;
+    if (restoreLabel)
+    {
+        boost::filesystem::path statePath = restoreLabelToStateFile(*restoreLabel);
+        cout << "restoring game state from " << statePath << endl;
+        if (! loadState(statePath, &game))
+        {
+            throw runtime_error("Game state file not found");
+        }
+    }
+    
     srand(time(0));
+
+    SessionSaver sessionSaver;
 
     boost::asio::io_service io_service;
 
@@ -475,6 +591,10 @@ int main(int argc, char *argv[])
 
     while (true)
     {
+        if (game.frame != 0 && game.frame % RECENT_BACKUP_INTERVAL_IN_FRAMES == 0)
+        {
+            sessionSaver.saveStateAsRecent(&game);
+        }
         // poll io_service, which will populate pendingCmds with anything the ClientChannels have received
         io_service.poll();
 
@@ -537,7 +657,7 @@ int main(int argc, char *argv[])
             bool sendResync = SEND_REGULAR_RESYNC_CHECKS ? (game.frame % 100 == 0) : false;
             if (clientChannels[i]->state == ClientChannel::ReadyForFirstSync || sendResync)
             {
-                clientChannels[i]->sendResyncPacket();
+                clientChannels[i]->sendResyncPacket(&game);
                 clientChannels[i]->state = ClientChannel::UpToDate;
             }
 

@@ -2732,6 +2732,7 @@ void CombatUnit::packCombatUnitBasics(Netpack::Builder* to)
     to->packUint16_t(shootCooldown);
 }
 CombatUnit::CombatUnit(Netpack::Consumer* from)
+    : animateShot_view(None), lastShot_view(None), lastShotTargetPos_view()
 {
     state = from->consumeEnum<State>();
     maybeAttackObjective = from->consumeOptional(consumeTarget);

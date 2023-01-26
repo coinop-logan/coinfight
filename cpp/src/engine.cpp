@@ -143,8 +143,8 @@ SearchGrid::SearchGrid(fixed32 mapRadius)
 
     vector2fp rightmostPlausibleGamePoint(mapRadius + fixed32(10), fixed32(0));
     vector2fp rightmostPlausibleCellPoint = gamePosToCellSpace(rightmostPlausibleGamePoint);
-    debugOutputVector("vec", rightmostPlausibleCellPoint);
-    int rowsNeeded = rightmostPlausibleCellPoint.floored().x + 1;
+    
+    unsigned int rowsNeeded = rightmostPlausibleCellPoint.floored().x + 1;
 
     cells.resize(rowsNeeded);
     for (unsigned int i=0; i<rowsNeeded; i++)
@@ -404,6 +404,7 @@ void Game::pack(Netpack::Builder* to)
 }
 Game::Game(Netpack::Consumer* from)
     : searchGrid(calculateMapRadius())
+    , mapRadius(calculateMapRadius())
 {
     frame = from->consumeUint64_t();
     uint8_t playersSize = from->consumeUint8_t();
