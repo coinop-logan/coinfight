@@ -469,7 +469,7 @@ const boost::filesystem::path SESSIONS_DATA_PATH("./sessions");
 
 class SessionSaver
 {
-    boost::filesystem::path rootDir, stateDir, stateBackupsDir, recentStateFile;
+    boost::filesystem::path rootDir, stateDir, fepsDir, stateBackupsDir, recentStateFile;
     void setupSessionDirectory()
     {
         string codeVersionTag = getCodeVersionTag();
@@ -488,15 +488,24 @@ class SessionSaver
 
         rootDir = attemptedSessionDirPath;
         stateDir = rootDir / "state";
+        fepsDir = rootDir / "feps";
         recentStateFile = stateDir / "recent.cfs";
         stateBackupsDir = stateDir / "backups";
 
         boost::filesystem::create_directory(rootDir);
         boost::filesystem::create_directory(stateDir);
         boost::filesystem::create_directory(stateBackupsDir);
+        boost::filesystem::create_directory(fepsDir);
     }
 
     Netpack::vch dataBuffer;
+
+    void writeBufferToFile(boost::filesystem::path path)
+    {
+        boost::filesystem::ofstream fstream(path, ios::out | ios::binary);
+        fstream.write((char*)(&dataBuffer[0]), dataBuffer.size());
+        fstream.close();
+    }
 public:
     SessionSaver()
     {
@@ -510,13 +519,23 @@ public:
         Netpack::Builder b(&dataBuffer);
         game->pack(&b);
 
-        boost::filesystem::ofstream fstream(path, ios::out | ios::binary);
-        fstream.write((char*)(&dataBuffer[0]), dataBuffer.size());
-        fstream.close();
+        writeBufferToFile(path);
     }
     void saveStateAsRecent(Game* game)
     {
         saveState(recentStateFile, game);
+    }
+    void saveFep(FrameEventsPacket* fep)
+    {
+        stringstream ss;
+        ss << fep->frame << ".fep";
+        boost::filesystem::path path = fepsDir / ss.str();
+
+        dataBuffer.clear();
+        Netpack::Builder b(&dataBuffer);
+        fep->pack(&b);
+
+        writeBufferToFile(path);
     }
 };
 
@@ -638,6 +657,12 @@ int main(int argc, char *argv[])
         // build FrameEventsPacket for this frame
         // includes all cmds we've received from clients since last time and all new events
         FrameEventsPacket fep(game.frame, pendingCmds, pendingEvents);
+
+        // If non-empty, save fep locally
+        if (fep.events.size() > 0 || fep.authdCmds.size() > 0)
+        {
+            sessionSaver.saveFep(&fep);
+        }
 
         // send the packet out to all clients
         for (unsigned int i = 0; i < clientChannels.size(); i++)
