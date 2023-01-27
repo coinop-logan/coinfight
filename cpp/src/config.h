@@ -10,9 +10,6 @@ using coinsInt = uint32_t;
 const std::string SERVER_IP_DEFAULT = "18.206.114.77";
 const unsigned int MAIN_PORT = 8473;
 
-const unsigned int ESCAPE_TO_QUIT_TICKS = 70;
-const unsigned int ESCAPE_TO_QUIT_TEXT_LIFE = 30;
-
 const coinsInt MAX_COINS = UINT32_MAX;
 
 const fixed32 EPSILON(0.001);
@@ -46,6 +43,6 @@ const fixed32 COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH(50);
 const bool HYPERSPEED = false;
 const int HYPERSPEED_TRANSFER_MULTIPLIER = (HYPERSPEED ? 10 : 1);
 
-const coinsInt GOLD_TRANSFER_RATE = 8 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt GOLD_TRANSFER_RATE = 6 * HYPERSPEED_TRANSFER_MULTIPLIER;
 
 #endif // CONFIG_H

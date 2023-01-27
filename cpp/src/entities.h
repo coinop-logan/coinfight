@@ -244,7 +244,7 @@ protected:
     void iterateCombatUnitBasics();
 };
 
-const coinsInt BEACON_BUILD_RATE = 40 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt BEACON_BUILD_RATE = 35 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const uint16_t BEACON_HEALTH = 500;
 const fixed32 BEACON_RADIUS(10);
 
@@ -340,7 +340,7 @@ public:
 
 const coinsInt PRIME_COST = 5000;
 const uint16_t PRIME_HEALTH = 100;
-const fixed32 PRIME_SPEED(2);
+const fixed32 PRIME_SPEED(1.3);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
@@ -403,7 +403,7 @@ public:
 
 const coinsInt FIGHTER_COST = 15000;
 const uint16_t FIGHTER_HEALTH = 300;
-const fixed32 FIGHTER_SPEED(3);
+const fixed32 FIGHTER_SPEED(2);
 const fixed32 FIGHTER_SHOT_RANGE(200);
 const uint32_t FIGHTER_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(FIGHTER_SHOT_RANGE);
 const fixed32 FIGHTER_AGGRESSION_RANGE(250);
