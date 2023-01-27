@@ -334,15 +334,15 @@ public:
 
         Netpack::Consumer source(receivedBytes.begin());
 
-        boost::shared_ptr<Cmd> cmd = consumeCmd(&source);
-        if (!cmd)
+        optional<boost::shared_ptr<Cmd>> maybeCmd = consumeCmd(&source);
+        if (!maybeCmd)
         {
             cout << "Unrecognized command from user " << connectionAuthdUserAddress.getString() << ". Kicking." << endl;
             state = Closed;
             return;
         }
     
-        boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(cmd, this->connectionAuthdUserAddress));
+        boost::shared_ptr<AuthdCmd> authdCmd = boost::shared_ptr<AuthdCmd>(new AuthdCmd(*maybeCmd, this->connectionAuthdUserAddress));
 
         pendingCmds.push_back(authdCmd);
 

@@ -7,7 +7,7 @@
 
 using namespace std;
 
-boost::shared_ptr<Event> consumeEvent(Netpack::Consumer* from)
+optional<boost::shared_ptr<Event>> consumeEvent(Netpack::Consumer* from)
 {
     uint8_t typechar = consumeTypechar(from);
 
@@ -22,7 +22,8 @@ boost::shared_ptr<Event> consumeEvent(Netpack::Consumer* from)
     case EVENT_RESETBEACONS_CHAR:
         return boost::shared_ptr<Event>(new ResetBeaconsEvent(from));
     }
-    return boost::shared_ptr<Event>();
+    
+    return {};
 }
 
 uint8_t Event::typechar()

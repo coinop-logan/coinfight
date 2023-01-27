@@ -35,7 +35,7 @@ struct Cmd
     Cmd(Netpack::Consumer*);
 };
 
-boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from);
+optional<boost::shared_ptr<Cmd>> consumeCmd(Netpack::Consumer* from);
 
 struct AuthdCmd
 {

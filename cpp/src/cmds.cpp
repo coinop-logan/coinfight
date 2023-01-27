@@ -5,7 +5,7 @@
 
 using namespace std;
 
-boost::shared_ptr<Cmd> consumeCmd(Netpack::Consumer* from)
+optional<boost::shared_ptr<Cmd>> consumeCmd(Netpack::Consumer* from)
 {
     uint8_t typechar = consumeTypechar(from);
 

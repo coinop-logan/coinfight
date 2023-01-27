@@ -44,9 +44,13 @@ public:
     boost::shared_ptr<TutorialStep> currentStep()
     {
         if (stepIter < steps.size())
+        {
             return steps[stepIter];
+        }
         else
-            throw "Trying get a step from the tutorial, but the tutorial is finished!";
+        {
+            throw runtime_error("Trying get a step from the tutorial, but the tutorial is finished!");
+        }
     }
 };
 
