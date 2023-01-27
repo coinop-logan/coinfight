@@ -470,7 +470,7 @@ public:
 
 boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);
 
-boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from);
+optional<boost::shared_ptr<Entity>> consumeEntity(Netpack::Consumer* from);
 
 bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, boost::shared_ptr<Entity> entity2);
 

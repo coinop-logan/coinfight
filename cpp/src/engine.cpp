@@ -420,12 +420,12 @@ Game::Game(Netpack::Consumer* from)
     entities.clear();
     for (unsigned int i = 0; i < entitiesSize; i++)
     {
-        auto entity = consumeEntity(from);
-        if (!entity)
+        optional<boost::shared_ptr<Entity>> maybeEntity = consumeEntity(from);
+        if (!maybeEntity)
         {
             throw runtime_error("Trying to unpack unrecognized entity");
         }
-        bool registerSuccess = registerNewEntityIfInMapIgnoringCollision(entity);
+        bool registerSuccess = registerNewEntityIfInMapIgnoringCollision(*maybeEntity);
         if (!registerSuccess)
         {
             throw "Error registering entity as encoded: it's beyond map bounds.";

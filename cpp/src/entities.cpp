@@ -3185,7 +3185,7 @@ void Turret::cmdStop()
 
 
 
-boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from)
+optional<boost::shared_ptr<Entity>> consumeEntity(Netpack::Consumer* from)
 {
     uint8_t typechar = consumeTypechar(from);
     
@@ -3213,5 +3213,5 @@ boost::shared_ptr<Entity> consumeEntity(Netpack::Consumer* from)
         return boost::shared_ptr<Entity>(new Turret(from));
         break;
     }
-    return boost::shared_ptr<Entity>();
+    return {};
 }

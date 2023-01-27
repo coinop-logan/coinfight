@@ -67,12 +67,12 @@ FrameEventsPacket::FrameEventsPacket(Netpack::Consumer* from)
     events.clear();
     for (unsigned int i = 0; i < numEvents; i++)
     {
-        auto event = consumeEvent(from);
-        if (!event)
+        optional<boost::shared_ptr<Event>> maybeEvent = consumeEvent(from);
+        if (!maybeEvent)
         {
             throw runtime_error("Trying to unpack an unrecognized event");
         }
-        events.push_back(event);
+        events.push_back(*maybeEvent);
     }
 }
 

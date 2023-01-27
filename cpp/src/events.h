@@ -14,7 +14,7 @@ const uint8_t EVENT_RESETBEACONS_CHAR = 3;
 
 struct Event;
 
-boost::shared_ptr<Event> consumeEvent(Netpack::Consumer*);
+optional<boost::shared_ptr<Event>> consumeEvent(Netpack::Consumer*);
 
 struct Event
 {
