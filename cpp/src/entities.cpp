@@ -2867,7 +2867,6 @@ void CombatUnit::iterateCombatUnitBasics()
         break;
         case AttackingGeneral:
         {
-
             // try to find an attack target, ultimately updating this->maybeAttackTarget
             boost::shared_ptr<Unit> bestTarget;
             fixed32 bestTargetPriority;
@@ -2877,8 +2876,13 @@ void CombatUnit::iterateCombatUnitBasics()
             {
                 if (auto targetUnit = boost::dynamic_pointer_cast<Unit,Entity>(maybeEntityRefToPtrOrNull(*game, *attackTarget)))
                 {
-                    // Clear attackTarget if it's outside of the aggression range.
-                    if ((targetUnit->getPos() - this->getPos()).getRoughMagnitude() > this->getAggressionRange())
+                    // Clear attackTarget if it's too far - outside of aggression range for mobile untis, shot range otherwise.
+                    fixed32 rangeThreshold =
+                        (bool)(dynamic_cast<MobileUnit*>(this)) ?
+                        this->getAggressionRange() :
+                        this->getShotRange() ;
+
+                    if ((targetUnit->getPos() - this->getPos()).getRoughMagnitude() > rangeThreshold)
                     {
                         maybeAttackTarget = {};
                     }
