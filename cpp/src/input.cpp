@@ -381,7 +381,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
         {
             if (getAllianceType(playerID, entity) == Foreign)
             {
-                return noCmd;
+                return boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), target, true));
             }
 
             // We have to handle a right click on an entity, with possibly multiple GWs selected.

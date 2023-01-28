@@ -107,7 +107,7 @@ struct AttackScuttleCmd : public UnitCmd
     uint8_t getTypechar();
     string getTypename();
 
-    AttackScuttleCmd(vector<EntityRef>, Target, bool);
+    AttackScuttleCmd(vector<EntityRef>, Target target, bool asap);
     void pack(Netpack::Builder* to);
     AttackScuttleCmd(Netpack::Consumer* from);
 
