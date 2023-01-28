@@ -437,7 +437,7 @@ public:
     void iterate();
 };
 
-const coinsInt TURRET_COST = 60000;
+const coinsInt TURRET_COST = 70000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(450);
