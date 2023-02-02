@@ -1447,7 +1447,8 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
     sf::View gameView = ui->cameraView;
     sf::View screenView = window->getDefaultView();
 
-    sf::View uxView; // as a quick fix for big default resolutions, we double the UX size if the screen is large.
+    // as a quick fix for big resolutions, we double the UX size if the screen is large.
+    sf::View uxView;
     if (getScreenSize(window).x > 2000)
         uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
     else
