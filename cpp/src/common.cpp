@@ -190,3 +190,9 @@ vector2fl getViewSize(sf::RenderWindow* window)
 {
     return fromSFVec(window->getView().getSize());
 }
+
+string uint16ToString(uint16_t x) {
+    stringstream ss;
+    ss << (unsigned int)x;
+    return ss.str();
+}

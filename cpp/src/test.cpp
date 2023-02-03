@@ -4,6 +4,7 @@
 #include <boost/function.hpp>
 #include <optional>
 #include "graphics_helpers.h"
+#include "common.h"
 #include "fpm/math.hpp"
 #include "fpm/ios.hpp"
 #include "myvectors.h"
@@ -30,8 +31,5 @@ void pr(C c) {
 
 int main()
 {
-    fixed32 a(20490);
-    fixed32 b(-24556);
-    fixed32 c = a - b;
-    cout << c << endl;
+    cout << uint16ToString(5) << "hi" << endl;
 }

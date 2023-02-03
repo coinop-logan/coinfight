@@ -96,5 +96,6 @@ optional<Address> validateAddress(string addrStr);
 double radiansToDegrees(double radians);
 vector2i getScreenSize(sf::RenderWindow* window);
 vector2fl getViewSize(sf::RenderWindow* window);
+string uint16ToString(uint16_t x);
 
 #endif // COMMON_H
