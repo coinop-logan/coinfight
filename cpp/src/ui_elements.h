@@ -25,6 +25,15 @@ const vector2i GIFT_WINDOW_DIMENSIONS(600, 300);
 
 const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
 
+const vector2i UX_ELEMENT_SPACING(5, 5);
+const vector2i UX_BOX_PADDING(10, 10);
+const sf::Color UX_BOX_BORDER_COLOR(150, 150, 200);
+const sf::Color UX_BOX_BACKGROUND_COLOR(0, 0, 0, 200);
+
+const vector2i KEYBUTTON_SIZE(60, 60);
+const vector2i KEYBUTTONBOX_SIZE(400, 300);
+const vector2i KEYBUTTON_PADDING(3, 3);
+
 void loadIcons();
 
 class Button
@@ -70,7 +79,7 @@ struct BoundButton
 {
     boost::shared_ptr<Button> button;
     EventMsg eventMsg;
-};
+};;
 
 class Window
 {
@@ -235,5 +244,51 @@ public:
 };
 
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);
+
+struct KeyButtonHintInfo
+{};
+
+enum KeyButtonMsg
+{
+    WarpInGateway,
+    RecallWarp
+};
+
+struct KeyButtonActionInfo
+{
+    sf::Sprite sprite;
+    KeyButtonHintInfo hintInfo;
+    KeyButtonMsg keyButtonMsg;
+};
+
+class KeyButton : public Button
+{
+public:
+    sf::Keyboard::Key key;
+    sf::Text keyCharText;
+    optional<KeyButtonActionInfo> maybeActionInfo;
+    KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText);
+    void setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo);
+    void draw(sf::RenderWindow*);
+    void drawContent(sf::RenderWindow*);
+};
+
+class UXBox
+{
+public:
+    vector2i upperLeft, size;
+    UXBox(vector2i upperLeft, vector2i size);
+    virtual void drawContent(sf::RenderWindow* window, vector2i upperLeft) {}
+    void draw(sf::RenderWindow* window);
+};
+
+class KeyButtonUXBox : public UXBox
+{
+    vector<KeyButton> keyButtons;
+    sf::RenderTexture t;
+public:
+    KeyButtonUXBox(vector2i upperLeft, sf::Font* font);
+    void drawContent(sf::RenderWindow* window, vector2i upperLeft);
+};
 
 #endif // UI_ELEMENTS_H

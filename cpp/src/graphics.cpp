@@ -495,13 +495,13 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vect
 //     window->draw(pixel);
 // }
 
-void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool displayWalletHints)
+void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font* font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool displayWalletHints)
 {
     if (displayWalletHints)
     {
         vector<sf::Text> hints
-            {sf::Text(sf::String("This can be spent or captured via Gateways"), font, 16),
-            sf::Text(sf::String("and withdraws/deposits into xDai."), font, 16)
+            {sf::Text(sf::String("This can be spent or captured via Gateways"), *font, 16),
+            sf::Text(sf::String("and withdraws/deposits into xDai."), *font, 16)
             };
 
         sf::Transform hintsTransform;
@@ -517,9 +517,9 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
 
     int textSpacing = 10;
 
-    sf::Text title(sf::String("Wallet"), font, 24);
+    sf::Text title(sf::String("Wallet"), *font, 24);
 
-    sf::Text balance(sf::String(playerBalance->getDollarString()), font, 30);
+    sf::Text balance(sf::String(playerBalance->getDollarString()), *font, 30);
     balance.setFillColor(balanceTextColor);
 
     sf::Transform transform;
@@ -542,11 +542,11 @@ void displayDepositNeededMsg(sf::RenderWindow* window, sf::Font* font, sf::Vecto
     window->draw(text);
 }
 
-void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font font)
+void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font* font)
 {
     for (unsigned int i=0; i<strings.size(); i++)
     {
-        sf::Text text(strings[i], font, 16);
+        sf::Text text(strings[i], *font, 16);
         text.setFillColor(sf::Color(150, 150, 150));
 
         float width = text.getLocalBounds().width;
@@ -750,7 +750,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, boost::shared_ptr
     drawCircleAround(window, vector2fl(entity->getPos()), 15, 1, sf::Color::Green);
 }
 
-void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -789,7 +789,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
         vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
-            sf::Text aboveText(displayAboveCoins->getDollarString(), font, 16);
+            sf::Text aboveText(displayAboveCoins->getDollarString(), *font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
             vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-30)));
@@ -925,7 +925,7 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font font)
+void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font* font)
 {
     auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
     char keyChar = get<1>(hotkeyInfo);
@@ -960,7 +960,7 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
     rectShape.setOutlineThickness(1);
     window->draw(rectShape);
 
-    sf::Text hotkeyText(string(1, keyChar), font, 14);
+    sf::Text hotkeyText(string(1, keyChar), *font, 14);
     hotkeyText.setFillColor(hotkeyTextColor);
 
     // determine horizontal placement of hotkey
@@ -991,7 +991,7 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
     if (maybeCost)
     {
         string coinsString = coinsIntToDollarString(*maybeCost);
-        sf::Text costText(coinsString, font, 12);
+        sf::Text costText(coinsString, *font, 12);
         costText.setFillColor(costStringColor);
 
         int width = costText.getLocalBounds().width;
@@ -1005,7 +1005,7 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
     vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
     for (unsigned int i=0; i<cmdNameLines.size(); i++)
     {
-        sf::Text lineText(cmdNameLines[i], font, 12);
+        sf::Text lineText(cmdNameLines[i], *font, 12);
 
         float width = lineText.getGlobalBounds().width;
         float lineXFromCenter = - width / 2;
@@ -1018,13 +1018,13 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
     }
 }
 
-void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font font)
+void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font* font)
 {
     vector2i drawPos(HOTKEY_BOX_SPACING, getViewSize(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
     displayHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
 }
 
-void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
+void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font* font)
 {
     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
@@ -1069,7 +1069,7 @@ void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
 //     }
 // }
 
-void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font font)
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font* font)
 {
     sf::Transform transform;
     transform.translate(
@@ -1084,7 +1084,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
-        GH::wrapAndRenderTextWithTransform(window, preBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, preBarTextBlocks[i], font, 13, sf::Color::White, boxWidth, &transform);
     }
 
     if (auto progress = tutorial->currentStep()->getProgress(game, ui))
@@ -1110,14 +1110,14 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
             for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
             {
-                GH::wrapAndRenderTextWithTransform(window, postBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
+                GH::wrapAndRenderTextWithTransform(window, postBarTextBlocks[i], font, 13, sf::Color::White, boxWidth, &transform);
             }
         }
     }
     
     if (tutorial->currentStep()->isReadyToFinish(game, ui) && tutorial->currentStep()->waitForEnter)
     {
-        GH::wrapAndRenderTextWithTransform(window, "Press enter to continue", &font, 16, sf::Color::White, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, "Press enter to continue", font, 16, sf::Color::White, boxWidth, &transform);
     }
 }
 
@@ -1349,7 +1349,7 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
     }
 }
 
-void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font mainFont)
+void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* mainFont)
 {
     if (!ui->cleanDrawEnabled)
     {
@@ -1365,7 +1365,7 @@ void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<
 }
 
 coinsInt lastPlayerCredit = 0;
-void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font mainFont, bool displayWalletHints)
+void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* mainFont, bool displayWalletHints)
 {
     // depending on how maybePlayerAddress and maybePlayerId are set,
     // we might draw a balance or a message about coinfight.io.
@@ -1385,11 +1385,11 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
     }
     else // player has an address but no ID. To become a registered player in the game they need to deposit
     {
-        displayDepositNeededMsg(window, &mainFont, sf::Vector2f(20, 20));
+        displayDepositNeededMsg(window, mainFont, sf::Vector2f(20, 20));
     }
 }
 
-void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
 {
     bool playerOwnsUnits(false);
     for (unsigned int i=0; i<game->entities.size(); i++)
@@ -1410,10 +1410,10 @@ void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optiona
     }
 }
 
-void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font font, vector2i upperLeftDrawPos)
+void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos)
 {
     string name = unit->getTypename();
-    sf::Text nameText(name, font, 22);
+    sf::Text nameText(name, *font, 22);
     nameText.setPosition(toSFVecF(upperLeftDrawPos));
 
     window->draw(nameText);
@@ -1438,15 +1438,15 @@ sf::Color getHealthStringColor(boost::shared_ptr<Unit> unit)
     }
 }
 
-void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font font, vector2i upperRightDrawPos)
+void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperRightDrawPos)
 {
     string currentHealthString = uint16ToString(unit->getEffectiveHealth());
     string maxHealthString = uint16ToString(unit->getMaxHealth());
     
-    sf::Text firstHalf(currentHealthString, font, HEALTH_TEXT_SIZE);
+    sf::Text firstHalf(currentHealthString, *font, HEALTH_TEXT_SIZE);
     firstHalf.setFillColor(getHealthStringColor(unit));
 
-    sf::Text secondHalf(string(" / ") + maxHealthString, font, HEALTH_TEXT_SIZE);
+    sf::Text secondHalf(string(" / ") + maxHealthString, *font, HEALTH_TEXT_SIZE);
     secondHalf.setFillColor(sf::Color(255, 255, 255));
 
     vector2i drawPos = upperRightDrawPos;
@@ -1462,7 +1462,7 @@ void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, s
     window->draw(firstHalf);
 }
 
-void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, optional<uint8_t> maybePlayerId, sf::Font font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
+void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, optional<uint8_t> maybePlayerId, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
 {
     vector2i upperRightDrawPos = upperLeftDrawPos + vector2i(drawAreaSize.x, 0);
 
@@ -1470,7 +1470,7 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
     displayUnitHealth(window, unit, font, upperRightDrawPos);
 }
 
-void displayUnitInfo(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void displayUnitInfo(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
 {
     vector2i boxUpperLeft = getViewSize(window) - (UNIT_INFO_BOX_SIZE + UX_ELEMENT_SPACING);
 
@@ -1496,7 +1496,7 @@ void displayUnitInfo(sf::RenderWindow* window, Game* game, GameUI* ui, optional<
     }
 }
 
-void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font, bool displayWalletHints)
+void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
 {
     displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, font, displayWalletHints);
 
@@ -1506,7 +1506,8 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
         displayOutputStrings(window, outputStrings, font);
     }
 
-    displayHotkeyHelp(window, game, ui, maybePlayerId, font);
+    // displayHotkeyHelp(window, game, ui, maybePlayerId, font);
+    ui->keyButtonBox.draw(window);
     displayUnitInfo(window, game, ui, maybePlayerId, font);
 }
 
@@ -1529,7 +1530,7 @@ void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
     }
 }
 
-void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool displayWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font* mainFont, sf::Font* tutorialFont, bool displayWalletHints)
 {
     sf::View gameView = ui->cameraView;
     sf::View screenView = window->getDefaultView();

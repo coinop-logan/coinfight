@@ -591,3 +591,94 @@ optional<GiftUnitsWindow::Msg> GiftUnitsWindow::processEvent(sf::Event event)
 
     return {};
 }
+
+
+
+UXBox::UXBox(vector2i upperLeft, vector2i size)
+    : upperLeft(upperLeft), size(size)
+{}
+
+void UXBox::draw(sf::RenderWindow* window)
+{
+    sf::RectangleShape mainBox(toSFVecF(size));
+    mainBox.setPosition(toSFVecF(upperLeft));
+    mainBox.setFillColor(UX_BOX_BACKGROUND_COLOR);
+    mainBox.setOutlineThickness(1);
+    mainBox.setOutlineColor(UX_BOX_BORDER_COLOR);
+    window->draw(mainBox);
+
+    drawContent(window, upperLeft + UX_BOX_PADDING);
+}
+
+KeyButton::KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText)
+    : Button(upperLeft, upperLeft + KEYBUTTON_SIZE), key(key), keyCharText(keyCharText)
+{}
+
+void KeyButton::setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo)
+{
+    maybeActionInfo = _actionInfo;
+}
+
+void KeyButton::draw(sf::RenderWindow* window)
+{
+    sf::RectangleShape mainBox(toSFVecF(KEYBUTTON_SIZE));
+    mainBox.setPosition(toSFVecF(p1));
+    mainBox.setOutlineColor(
+        (bool)(maybeActionInfo) ?
+        sf::Color(100, 100, 255) :
+        sf::Color(80, 80, 80)
+    );
+    mainBox.setFillColor(
+        (bool)(maybeActionInfo) ?
+        sf::Color(100, 100, 255, 100) :
+        sf::Color::Black
+    );
+    window->draw(mainBox);
+
+    // keyCharText = sf::Text("s", )
+    keyCharText.setPosition(toSFVecF(p1));
+    keyCharText.setFillColor(
+        (bool)(maybeActionInfo) ?
+        sf::Color::White :
+        sf::Color(80, 80, 80)
+    );
+    window->draw(keyCharText);
+
+    if (maybeActionInfo)
+    {
+        auto actionInfo = *maybeActionInfo;
+
+        actionInfo.sprite.setPosition(toSFVecF(p1 + KEYBUTTON_PADDING));
+
+        window->draw(actionInfo.sprite);
+    }
+}
+
+// Not needed since we're overriding draw() above
+void KeyButton::drawContent(sf::RenderWindow* window) {}
+
+KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font)
+    : UXBox(upperLeft, upperLeft + KEYBUTTONBOX_SIZE)
+{
+    KeyButton testKey(upperLeft + vector2i(20, 20), sf::Keyboard::G, sf::Text('G', *font, 18));
+    KeyButtonActionInfo actionInfo;
+    actionInfo.keyButtonMsg = WarpInGateway;
+    
+    if (!t.create(40, 40))
+    {
+        cout << "whaaaaaaa" << endl;
+    }
+    t.clear(sf::Color(255, 0, 0));
+    t.display();
+    actionInfo.sprite = sf::Sprite(t.getTexture());
+    testKey.setKeyButtonActionInfo({actionInfo});
+    keyButtons.push_back(testKey);
+}
+
+void KeyButtonUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        keyButtons[i].draw(window);
+    }
+}

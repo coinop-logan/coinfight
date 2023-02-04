@@ -29,6 +29,7 @@ struct GameUI
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;
+    KeyButtonUXBox keyButtonBox;
     enum CmdState {
         Default,
         SpawnBeacon,

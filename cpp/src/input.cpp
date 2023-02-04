@@ -28,7 +28,7 @@ void printHi()
 }
 
 GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
-    : font(font), online(online)
+    : font(font), keyButtonBox(vector2i(500, 500), font), online(online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
@@ -360,17 +360,17 @@ Target getTargetAtScreenPos(sf::RenderWindow* window, Game *game, vector2i scree
         return Target(gamePos);
 }
 
-boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int playerID, Target target)
+boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI* ui, int playerID, Target target)
 {
     boost::shared_ptr<Cmd> noCmd;
-    if (ui.selectedUnits.size() == 0)
+    if (ui->selectedUnits.size() == 0)
     {
         return noCmd;
     }
 
     bool asap = !isShiftPressed();
 
-    if (ui.selectionHasGateways())
+    if (ui->selectionHasGateways())
     {
         if (auto point = target.castToPoint())
         {
@@ -381,7 +381,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
         {
             if (getAllianceType(playerID, entity) == Foreign)
             {
-                return boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), target, true));
+                return boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), target, true));
             }
 
             // We have to handle a right click on an entity, with possibly multiple GWs selected.
@@ -391,9 +391,9 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
             boost::shared_ptr<Gateway> firstGatewayContainingEntityInBuildQueue;
             boost::shared_ptr<Gateway> firstGatewayContainingEntityInScuttleQueue;
 
-            for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
+            for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
             {
-                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(ui.selectedUnits[i]))
+                if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(ui->selectedUnits[i]))
                 {
                     if (!firstGatewayContainingEntityInBuildQueue)
                     {
@@ -455,9 +455,9 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
                     // search through GWs to find the most appropriate one based on scuttle queue weight
                     coinsInt bestChoiceScore(0);
                     boost::shared_ptr<Gateway> bestChoice;
-                    for (unsigned int i=0; i<ui.selectedUnits.size(); i++)
+                    for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
                     {
-                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui.selectedUnits[i]))
+                        if (auto gateway = boost::dynamic_pointer_cast<Gateway, Entity>(ui->selectedUnits[i]))
                         {
                             coinsInt score = gateway->scuttleQueueWeight();
                             if (!bestChoice || score < bestChoiceScore)
@@ -479,7 +479,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
                 }
                 else
                 {
-                    return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(ui.selectedUnits), entity->getRefOrThrow(), asap));
+                    return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow(), asap));
                 }
             }
 
@@ -518,33 +518,33 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI ui, int player
     {
         if (auto point = target.castToPoint())
         {
-            auto selectedMobileUnits = filterForTypeKeepContainer<MobileUnit, Unit>(ui.selectedUnits);
+            auto selectedMobileUnits = filterForTypeKeepContainer<MobileUnit, Unit>(ui->selectedUnits);
             return boost::shared_ptr<Cmd>(new MoveCmd(entityPtrsToRefsOrThrow(selectedMobileUnits), *point));
         }
         else if (boost::shared_ptr<Entity> entity = target.castToEntityPtr(game))
         {
             if (getAllianceType(playerID, entity) == Foreign)
             {
-                auto selectedCombatUnits = filterForTypeKeepContainer<CombatUnit, Unit>(ui.selectedUnits);
+                auto selectedCombatUnits = filterForTypeKeepContainer<CombatUnit, Unit>(ui->selectedUnits);
                 return boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(selectedCombatUnits), entity->getRefOrThrow(), asap));
             }
             else
             {
                 if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
-                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
+                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                     return boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow(), asap));
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
                     if (unit->getBuiltRatio() < fixed32(1))
                     {
-                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui.selectedUnits);
+                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                         return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow(), asap));
                     }
                     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
                     {
-                        auto primesInSelection = filterForType<Prime, Unit>(ui.selectedUnits);
+                        auto primesInSelection = filterForType<Prime, Unit>(ui->selectedUnits);
 
                         bool foundPrimeWithGold = false;
                         vector<EntityRef> primeRefs;
@@ -1048,7 +1048,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             if (ui->selectedUnits.size() > 0)
                             {
                                 if (playerId)
-                                    cmdsToSend.push_back(makeRightClickCmd(*game, *ui, *playerId, getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton))));
+                                    cmdsToSend.push_back(makeRightClickCmd(*game, ui, *playerId, getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton))));
                             }
                         }
                         else
