@@ -10,14 +10,28 @@ sf::Texture
     copyActionSource,
     copyDoneSource,
     pasteActionSource,
-    pasteDoneSource
+    pasteDoneSource,
+    cmdAttackSource,
+    cmdCollectSource,
+    cmdInvestSource,
+    cmdMoveSource,
+    cmdStopSource,
+    cmdWarpInSource,
+    cmdWarpOutSource
 ;
 
 sf::Sprite
     copyActionIcon,
     copyDoneIcon,
     pasteActionIcon,
-    pasteDoneIcon
+    pasteDoneIcon,
+    cmdAttackIcon,
+    cmdCollectIcon,
+    cmdInvestIcon,
+    cmdMoveIcon,
+    cmdStopIcon,
+    cmdWarpInIcon,
+    cmdWarpOutIcon
 ;
 
 void loadIcons()
@@ -45,6 +59,48 @@ void loadIcons()
         throw runtime_error("Can't load paste done icon");
     }
     pasteDoneIcon.setTexture(pasteDoneSource);
+
+    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdAttackIcon.setTexture(cmdAttackSource);
+
+    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdCollectIcon.setTexture(cmdCollectSource);
+
+    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdInvestIcon.setTexture(cmdInvestSource);
+
+    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdMoveIcon.setTexture(cmdMoveSource);
+
+    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdStopIcon.setTexture(cmdStopSource);
+
+    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdWarpInIcon.setTexture(cmdWarpInSource);
+
+    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
 }
 
 bool collides(vector2i p1, vector2i p2, vector2i point)
@@ -623,14 +679,15 @@ void KeyButton::draw(sf::RenderWindow* window)
 {
     sf::RectangleShape mainBox(toSFVecF(KEYBUTTON_SIZE));
     mainBox.setPosition(toSFVecF(p1));
+    mainBox.setOutlineThickness(2);
     mainBox.setOutlineColor(
         (bool)(maybeActionInfo) ?
         sf::Color(100, 100, 255) :
         sf::Color(80, 80, 80)
     );
     mainBox.setFillColor(
-        (bool)(maybeActionInfo) ?
-        sf::Color(100, 100, 255, 100) :
+        // (bool)(maybeActionInfo) ?
+        // sf::Color(100, 100, 255, 100) :
         sf::Color::Black
     );
     window->draw(mainBox);
@@ -648,9 +705,9 @@ void KeyButton::draw(sf::RenderWindow* window)
     {
         auto actionInfo = *maybeActionInfo;
 
-        actionInfo.sprite.setPosition(toSFVecF(p1 + KEYBUTTON_PADDING));
+        actionInfo.sprite->setPosition(toSFVecF(p1 + KEYBUTTON_PADDING));
 
-        window->draw(actionInfo.sprite);
+        window->draw(*actionInfo.sprite);
     }
 }
 
@@ -663,14 +720,9 @@ KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font)
     KeyButton testKey(upperLeft + vector2i(20, 20), sf::Keyboard::G, sf::Text('G', *font, 18));
     KeyButtonActionInfo actionInfo;
     actionInfo.keyButtonMsg = WarpInGateway;
-    
-    if (!t.create(40, 40))
-    {
-        cout << "whaaaaaaa" << endl;
-    }
-    t.clear(sf::Color(255, 0, 0));
-    t.display();
-    actionInfo.sprite = sf::Sprite(t.getTexture());
+
+    actionInfo.sprite = &cmdWarpInIcon;
+    actionInfo.sprite->setScale(3, 3);
     testKey.setKeyButtonActionInfo({actionInfo});
     keyButtons.push_back(testKey);
 }

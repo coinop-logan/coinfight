@@ -30,9 +30,11 @@ const vector2i UX_BOX_PADDING(10, 10);
 const sf::Color UX_BOX_BORDER_COLOR(150, 150, 200);
 const sf::Color UX_BOX_BACKGROUND_COLOR(0, 0, 0, 200);
 
-const vector2i KEYBUTTON_SIZE(60, 60);
-const vector2i KEYBUTTONBOX_SIZE(400, 300);
+const vector2i KEYBUTTON_ICON_BASE_SIZE(19, 19);
+const int KEYBUTTON_ICON_SCALE = 3;
 const vector2i KEYBUTTON_PADDING(3, 3);
+const vector2i KEYBUTTON_SIZE = (KEYBUTTON_ICON_BASE_SIZE * KEYBUTTON_ICON_SCALE) + (KEYBUTTON_PADDING * 2);
+const vector2i KEYBUTTONBOX_SIZE(400, 300);
 
 void loadIcons();
 
@@ -256,7 +258,7 @@ enum KeyButtonMsg
 
 struct KeyButtonActionInfo
 {
-    sf::Sprite sprite;
+    sf::Sprite* sprite;
     KeyButtonHintInfo hintInfo;
     KeyButtonMsg keyButtonMsg;
 };
@@ -285,7 +287,6 @@ public:
 class KeyButtonUXBox : public UXBox
 {
     vector<KeyButton> keyButtons;
-    sf::RenderTexture t;
 public:
     KeyButtonUXBox(vector2i upperLeft, sf::Font* font);
     void drawContent(sf::RenderWindow* window, vector2i upperLeft);
