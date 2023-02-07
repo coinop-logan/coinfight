@@ -11,6 +11,8 @@
 const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 const float ZOOM_AMOUNT = 1.2;
 
+void loadKeyCommandIcons();
+
 class Tutorial; // defined in tutorial.h
 
 enum InGameMenuMsg {
@@ -43,8 +45,6 @@ struct GameUI
     optional<vector2i> maybeSelectionBoxStart;
     vector<boost::shared_ptr<Unit>> selectedUnits;
     sf::View cameraView;
-    vector<boost::shared_ptr<UnitInterfaceCmd>> unitInterfaceCmds;
-    SpawnBeaconInterfaceCmd spawnBeaconInterfaceCmd;
     bool quitNow;
     int debugInt;
     bool cleanDrawEnabled;
@@ -54,15 +54,15 @@ struct GameUI
     bool displayAllRadii;
     ParticlesContainer particles;
     GameUI(sf::RenderWindow*, sf::Font* font, bool online);
-    void updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable);
+    void updateUnitCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
-    vector<boost::shared_ptr<Cmd>> handlePossibleUnitInterfaceCmd(sf::Keyboard::Key);
     bool selectionHasGateways();
     bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others
     void openInGameMenu(sf::RenderWindow*);
     void iterate();
     void removeDuplicatesFromSelection();
     void returnToDefaultState();
+    tuple<bool, optional<boost::shared_ptr<Cmd>>> processEventForOverlay(sf::Event event);
 };
 vector2fp screenPosToGamePos(sf::RenderWindow*, vector2i);
 vector2i gamePosToScreenPos(sf::RenderWindow*, vector2fp);

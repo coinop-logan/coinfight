@@ -37,6 +37,8 @@ void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
+    loadKeyCommandIcons();
+
     // choose a good videomode
     sf::VideoMode chosenMode;
     if (smallScreen)
@@ -1018,40 +1020,40 @@ void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceC
     }
 }
 
-void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font* font)
-{
-    vector2i drawPos(HOTKEY_BOX_SPACING, getViewSize(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    displayHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
-}
+// void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font* font)
+// {
+//     vector2i drawPos(HOTKEY_BOX_SPACING, getViewSize(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
+//     displayHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
+// }
 
-void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font* font)
-{
-    int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
-    int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getViewSize(window).y - (hotkeyHelpBoxHeight + 10));
+// void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font* font)
+// {
+//     int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
+//     int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
+//     vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getViewSize(window).y - (hotkeyHelpBoxHeight + 10));
 
-    sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
-    hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
-    hotkeyHelpBoudingRect.setFillColor(UX_BOX_BACKGROUND_COLOR);
-    hotkeyHelpBoudingRect.setOutlineColor(UX_BOX_BORDER_COLOR);
-    hotkeyHelpBoudingRect.setOutlineThickness(1);
-    window->draw(hotkeyHelpBoudingRect);
+//     sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
+//     hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
+//     hotkeyHelpBoudingRect.setFillColor(UX_BOX_BACKGROUND_COLOR);
+//     hotkeyHelpBoudingRect.setOutlineColor(UX_BOX_BORDER_COLOR);
+//     hotkeyHelpBoudingRect.setOutlineThickness(1);
+//     window->draw(hotkeyHelpBoudingRect);
 
-    for (unsigned int i=0; i<ui->unitInterfaceCmds.size(); i++)
-    {
-        vector2i drawPosOffset;
-        if (i < 4)
-        {
-            drawPosOffset = vector2i(i * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), 0);
-        }
-        else
-        {
-            drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
-        }
+//     for (unsigned int i=0; i<ui->unitInterfaceCmds.size(); i++)
+//     {
+//         vector2i drawPosOffset;
+//         if (i < 4)
+//         {
+//             drawPosOffset = vector2i(i * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), 0);
+//         }
+//         else
+//         {
+//             drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
+//         }
 
-        displayHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i], font);
-    }
-}
+//         displayHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i], font);
+//     }
+// }
 
 // void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
 // {
@@ -1389,26 +1391,26 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
     }
 }
 
-void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
-{
-    bool playerOwnsUnits(false);
-    for (unsigned int i=0; i<game->entities.size(); i++)
-    {
-        if (game->entities[i])
-            if (getAllianceType(maybePlayerId, game->entities[i]) == Owned)
-            {
-                playerOwnsUnits = true;
-                break;
-            }
-    }
-    if (!ui->hideUX)
-    {
-    if (playerOwnsUnits)
-        displayUnitHotkeyHelp(window, ui, font);
-    else
-        displaySpawnBeaconHotkey(window, ui, font);
-    }
-}
+// void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
+// {
+//     bool playerOwnsUnits(false);
+//     for (unsigned int i=0; i<game->entities.size(); i++)
+//     {
+//         if (game->entities[i])
+//             if (getAllianceType(maybePlayerId, game->entities[i]) == Owned)
+//             {
+//                 playerOwnsUnits = true;
+//                 break;
+//             }
+//     }
+    // if (!ui->hideUX)
+    // {
+    //     if (playerOwnsUnits)
+    //         displayUnitHotkeyHelp(window, ui, font);
+    //     else
+    //         displaySpawnBeaconHotkey(window, ui, font);
+    // }
+// }
 
 void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos)
 {

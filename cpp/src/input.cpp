@@ -9,6 +9,78 @@ extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<boost::shared_ptr<Cmd>> noCmds;
 
+sf::Texture
+    cmdAttackSource,
+    cmdCollectSource,
+    cmdInvestSource,
+    cmdMoveSource,
+    cmdStopSource,
+    cmdWarpInSource,
+    cmdWarpOutSource
+;
+
+sf::Sprite
+    cmdAttackIcon,
+    cmdCollectIcon,
+    cmdInvestIcon,
+    cmdMoveIcon,
+    cmdStopIcon,
+    cmdWarpInIcon,
+    cmdWarpOutIcon
+;
+
+void loadKeyCommandIcons()
+{
+    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdAttackIcon.setTexture(cmdAttackSource);
+    cmdAttackIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdCollectIcon.setTexture(cmdCollectSource);
+    cmdCollectIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdInvestIcon.setTexture(cmdInvestSource);
+    cmdInvestIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdMoveIcon.setTexture(cmdMoveSource);
+    cmdMoveIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdStopIcon.setTexture(cmdStopSource);
+    cmdStopIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdWarpInIcon.setTexture(cmdWarpInSource);
+    cmdWarpInIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
+    {
+        throw runtime_error("Can't load paste done icon");
+    }
+    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
+    cmdWarpOutIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+}
+
 bool isShiftPressed()
 {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
@@ -28,7 +100,7 @@ void printHi()
 }
 
 GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
-    : font(font), keyButtonBox(vector2i(500, 500), font), online(online)
+    : font(font), keyButtonBox(vector2i(0, getViewSize(window).y - KEYBUTTONBOX_SIZE.y), font), online(online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
@@ -38,53 +110,38 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
     minimapEnabled = false;
     maybeSelectionBoxStart = {};
     displayAllRadii = false;
-    unitInterfaceCmds = vector<boost::shared_ptr<UnitInterfaceCmd>>
-    {
-        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new AttackScuttleInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new StopInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
-        boost::shared_ptr<UnitInterfaceCmd>(new FetchInterfaceCmd())
-    };
+    // unitInterfaceCmds = vector<boost::shared_ptr<UnitInterfaceCmd>>
+    // {
+    //     boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new AttackScuttleInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new StopInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
+    //     boost::shared_ptr<UnitInterfaceCmd>(new FetchInterfaceCmd())
+    // };
     quitNow = false;
     cleanDrawEnabled = false;
     showTutorial = true; // only matters for coinfight_local right now
     hideUX = false;
 }
 
-void GameUI::updateAvailableUnitInterfaceCmds(bool spawnBeaconAvailable)
+void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
 {
-    spawnBeaconInterfaceCmd.eligible = spawnBeaconAvailable;
+    keyButtonBox.clearActionInfos();
 
-    // set all to false, and create a list of pointers to track those we've yet to enable
-    vector<boost::shared_ptr<InterfaceCmd>> notYetEnabledUnitInterfaceCmds;
-    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
+    if (selectedUnits.size() == 0)
     {
-        unitInterfaceCmds[i]->eligible = false;
-        notYetEnabledUnitInterfaceCmds.push_back(unitInterfaceCmds[i]);
-    }
-
-    for (unsigned int i=0; i<selectedUnits.size(); i++)
-    {
-        // if we've enabled all cmds, no need to keep looking
-        if (notYetEnabledUnitInterfaceCmds.size() == 0)
-            break;
-
-        for (unsigned int j=0; j<notYetEnabledUnitInterfaceCmds.size(); j++)
+        if (spawnBeaconAvailable)
         {
-            if (auto unitInterfaceCmd = boost::dynamic_pointer_cast<UnitInterfaceCmd, InterfaceCmd>(notYetEnabledUnitInterfaceCmds[j]))
-            {
-                if (unitInterfaceCmd->isUnitEligible(selectedUnits[i]))
-                {
-                    // enable it and remove this pointer from the list
-                    notYetEnabledUnitInterfaceCmds[j]->eligible = true;
-                    notYetEnabledUnitInterfaceCmds.erase(notYetEnabledUnitInterfaceCmds.begin() + j);
-                    j--;
-                }
-            }
+            keyButtonBox.setUnitCmdOrThrow(sf::Keyboard::W,
+                KeyButtonActionInfo(
+                    &cmdWarpInIcon,
+                    KeyButtonHintInfo("Warp In Gateway"),
+                    WarpInGateway
+                )
+            );
         }
     }
 }
@@ -250,29 +307,6 @@ vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInt
         cout << "Logic error! I can't figure out which UnitInterfaceCmd that is!" << endl;
         return noCmds;
     }
-}
-
-vector<boost::shared_ptr<Cmd>> GameUI::handlePossibleUnitInterfaceCmd(sf::Keyboard::Key key)
-{
-    if (spawnBeaconInterfaceCmd.eligible && spawnBeaconInterfaceCmd.getKey() == key)
-    {
-        returnToDefaultState();
-        cmdState = GameUI::SpawnBeacon;
-        spawnBeaconInterfaceCmd.active = true;
-        ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
-
-        return noCmds;
-    }
-
-    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
-    {
-        if (unitInterfaceCmds[i]->eligible && unitInterfaceCmds[i]->getKey() == key)
-        {
-            return executeUnitInterfaceCmd(unitInterfaceCmds[i], this);
-        }
-    }
-
-    return {};
 }
 
 bool GameUI::selectionHasGateways()
@@ -630,12 +664,18 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
         ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
         : false;
 
-    ui->updateAvailableUnitInterfaceCmds(spawnBeaconAvailable);
+    ui->updateUnitCmds(spawnBeaconAvailable);
 
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
     while (window->pollEvent(event))
     {
+        if (event.type == sf::Event::Closed)
+        {
+            window->close();
+            break;
+        }
+
         if (ui->giftUnitsWindow)
         {
             optional<GiftUnitsWindow::Msg> maybeMsg = ui->giftUnitsWindow->processEvent(event);
@@ -714,423 +754,426 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
         }
         else
         {
-            switch (event.type)
+            bool overlayConsumedEvent = false; // until proven otherwise
+
+            // If the user isn't middle-click-dragging or using a selectionBox, try interface with overlay
+            if (!sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle) && !ui->maybeSelectionBoxStart)
             {
-            case sf::Event::Closed:
-                window->close();
-                break;
-            case sf::Event::MouseMoved:
+                auto wasConsumedAndMaybeCmd = ui->processEventForOverlay(event);
+
+                overlayConsumedEvent = get<0>(wasConsumedAndMaybeCmd);
+                if (auto cmd = get<1>(wasConsumedAndMaybeCmd))
                 {
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
-                    {
-                        vector2i mousePos = mouseEventVec(event.mouseMove);
-
-                        float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
-
-                        vector2fl moveVector = vector2fl(mousePos - ui->lastMousePos) * zoomFactor;
-                        ui->cameraView.move(toSFVecF(moveVector * -1));
-                    }
-
-                    Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseMove));
-                    ui->mouseoverEntity = target.castToEntityPtr(*game);
-
-                    ui->lastMousePos = mouseEventVec(event.mouseMove);
+                    cmdsToSend.push_back(*cmd);
                 }
-                break;
-            case sf::Event::MouseButtonReleased:
-                if (event.mouseButton.button == sf::Mouse::Left)
+            }
+            if (!overlayConsumedEvent)
+            {
+                switch (event.type)
                 {
-                    sf::Time sinceLastLClick = ui->lClickClock.getElapsedTime();
-                    ui->lClickClock.restart();
-                    bool isDoubleClick = (sinceLastLClick < sf::milliseconds(300));
-
-                    if (auto playerId = maybePlayerId)
+                case sf::Event::MouseMoved:
                     {
-                        if (ui->maybeSelectionBoxStart)
+                        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
                         {
-                            vector2fl mousePos = mouseEventVec(event.mouseButton);
-                            if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
-                            {
-                                vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
-                                if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(window, game, averagedClick).castToEntityPtr(*game))
-                                {
-                                    if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
-                                    {
-                                        if (clickedUnit->ownerId == *playerId)
-                                        {
-                                            if (!isShiftPressed())
-                                            {
-                                                ui->selectedUnits.clear();
-                                            }
+                            vector2i mousePos = mouseEventVec(event.mouseMove);
 
-                                            if (ui->selectionWouldStaySegregated(clickedUnit->typechar()))
+                            float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
+
+                            vector2fl moveVector = vector2fl(mousePos - ui->lastMousePos) * zoomFactor;
+                            ui->cameraView.move(toSFVecF(moveVector * -1));
+                        }
+
+                        Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseMove));
+                        ui->mouseoverEntity = target.castToEntityPtr(*game);
+
+                        ui->lastMousePos = mouseEventVec(event.mouseMove);
+                    }
+                    break;
+                case sf::Event::MouseButtonReleased:
+                    if (event.mouseButton.button == sf::Mouse::Left)
+                    {
+                        sf::Time sinceLastLClick = ui->lClickClock.getElapsedTime();
+                        ui->lClickClock.restart();
+                        bool isDoubleClick = (sinceLastLClick < sf::milliseconds(300));
+
+                        if (auto playerId = maybePlayerId)
+                        {
+                            if (ui->maybeSelectionBoxStart)
+                            {
+                                vector2fl mousePos = mouseEventVec(event.mouseButton);
+                                if ((*ui->maybeSelectionBoxStart - mousePos).getMagnitudeSquared() <= 25)
+                                {
+                                    vector2i averagedClick = (*ui->maybeSelectionBoxStart + mousePos) / 2;
+                                    if (boost::shared_ptr<Entity> clickedEntity = getTargetAtScreenPos(window, game, averagedClick).castToEntityPtr(*game))
+                                    {
+                                        if (auto clickedUnit = boost::dynamic_pointer_cast<Unit, Entity>(clickedEntity))
+                                        {
+                                            if (clickedUnit->ownerId == *playerId)
                                             {
-                                                if (isCtrlPressed() || isDoubleClick)
+                                                if (!isShiftPressed())
                                                 {
-                                                    ui->selectAllUnitsOfSimilarTypeOnScreen(window, game, clickedUnit);
+                                                    ui->selectedUnits.clear();
                                                 }
-                                                else
+
+                                                if (ui->selectionWouldStaySegregated(clickedUnit->typechar()))
                                                 {
-                                                    bool removedFromSelection = false;
-                                                    if (isShiftPressed())
+                                                    if (isCtrlPressed() || isDoubleClick)
                                                     {
-                                                        // if it's in the selection, remove it
-                                                        for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
+                                                        ui->selectAllUnitsOfSimilarTypeOnScreen(window, game, clickedUnit);
+                                                    }
+                                                    else
+                                                    {
+                                                        bool removedFromSelection = false;
+                                                        if (isShiftPressed())
                                                         {
-                                                            if (ui->selectedUnits[i]->getRefOrThrow() == clickedUnit->getRefOrThrow())
+                                                            // if it's in the selection, remove it
+                                                            for (unsigned int i=0; i<ui->selectedUnits.size(); i++)
                                                             {
-                                                                ui->selectedUnits.erase(ui->selectedUnits.begin() + i);
-                                                                i --;
-                                                                removedFromSelection = true;
-                                                                // we don't break because there may be duplicates in the list at this point
+                                                                if (ui->selectedUnits[i]->getRefOrThrow() == clickedUnit->getRefOrThrow())
+                                                                {
+                                                                    ui->selectedUnits.erase(ui->selectedUnits.begin() + i);
+                                                                    i --;
+                                                                    removedFromSelection = true;
+                                                                    // we don't break because there may be duplicates in the list at this point
+                                                                }
                                                             }
                                                         }
-                                                    }
-                                                    if (!removedFromSelection)
-                                                    {
-                                                        ui->selectedUnits.push_back(clickedUnit);
+                                                        if (!removedFromSelection)
+                                                        {
+                                                            ui->selectedUnits.push_back(clickedUnit);
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                }
-                            }
-                            else
-                            {
-                                tuple<vector2i, vector2i> corners =
-                                {
-                                    screenPosToGamePos(window, *ui->maybeSelectionBoxStart),
-                                    screenPosToGamePos(window, mousePos)
-                                };
-                                int rectLeft = min(get<0>(corners).x, get<1>(corners).x);
-                                int rectRight = max(get<0>(corners).x, get<1>(corners).x);
-                                int rectBottom = min(get<0>(corners).y, get<1>(corners).y);
-                                int rectTop = max(get<0>(corners).y, get<1>(corners).y);
-
-                                // For arg1.x here, we use rectBottom instead of rectTop, since we're using +Y=up here, while SFML assumes +Y=down
-                                sf::Rect selectionRectGameCoords(sf::Vector2f(rectLeft, rectBottom), sf::Vector2f((rectRight - rectLeft), (rectTop - rectBottom)));
-
-                                if (!isShiftPressed())
-                                {
-                                    ui->selectedUnits.clear();
-                                }
-
-                                auto entitiesInSelectionBox = game->entitiesWithinRect(get<0>(corners), get<1>(corners));
-
-                                // we need to preserve selection segregation:
-                                // if selection is non-empty, just preserve existing segregation
-                                // if selection is empty, scan box for any non-GW units, and decide based on that
-                                bool filterForGateways;
-                                if (ui->selectedUnits.size() > 0)
-                                {
-                                    filterForGateways = (ui->selectedUnits[0]->typechar() == GATEWAY_TYPECHAR);
                                 }
                                 else
                                 {
-                                    // scan box for non-GW units
-                                    bool foundNonGWUnit = false;
-                                    for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
+                                    tuple<vector2i, vector2i> corners =
                                     {
-                                        if (getAllianceType(maybePlayerId, entitiesInSelectionBox[i]) == Owned)
-                                        {
-                                            if (entitiesInSelectionBox[i]->typechar() != GATEWAY_TYPECHAR)
-                                            {
-                                                foundNonGWUnit = true;
-                                                break;
-                                            }
-                                        }
+                                        screenPosToGamePos(window, *ui->maybeSelectionBoxStart),
+                                        screenPosToGamePos(window, mousePos)
+                                    };
+                                    int rectLeft = min(get<0>(corners).x, get<1>(corners).x);
+                                    int rectRight = max(get<0>(corners).x, get<1>(corners).x);
+                                    int rectBottom = min(get<0>(corners).y, get<1>(corners).y);
+                                    int rectTop = max(get<0>(corners).y, get<1>(corners).y);
+
+                                    // For arg1.x here, we use rectBottom instead of rectTop, since we're using +Y=up here, while SFML assumes +Y=down
+                                    sf::Rect selectionRectGameCoords(sf::Vector2f(rectLeft, rectBottom), sf::Vector2f((rectRight - rectLeft), (rectTop - rectBottom)));
+
+                                    if (!isShiftPressed())
+                                    {
+                                        ui->selectedUnits.clear();
                                     }
 
-                                    if (foundNonGWUnit)
+                                    auto entitiesInSelectionBox = game->entitiesWithinRect(get<0>(corners), get<1>(corners));
+
+                                    // we need to preserve selection segregation:
+                                    // if selection is non-empty, just preserve existing segregation
+                                    // if selection is empty, scan box for any non-GW units, and decide based on that
+                                    bool filterForGateways;
+                                    if (ui->selectedUnits.size() > 0)
                                     {
-                                        filterForGateways = false;
+                                        filterForGateways = (ui->selectedUnits[0]->typechar() == GATEWAY_TYPECHAR);
                                     }
                                     else
                                     {
-                                        filterForGateways = true;
-                                    }
-                                }
-
-                                for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
-                                {
-                                    if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSelectionBox[i]))
-                                    {
-                                        // finally, filter out units for segregation
-                                        if ((filterForGateways && unit->typechar() == GATEWAY_TYPECHAR)
-                                        || (!filterForGateways && unit->typechar() != GATEWAY_TYPECHAR))
+                                        // scan box for non-GW units
+                                        bool foundNonGWUnit = false;
+                                        for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
                                         {
-                                            if (unit->ownerId == *playerId)
+                                            if (getAllianceType(maybePlayerId, entitiesInSelectionBox[i]) == Owned)
                                             {
-                                                if (selectionRectGameCoords.contains(toSFVecF(vector2i(unit->getPos()))))
+                                                if (entitiesInSelectionBox[i]->typechar() != GATEWAY_TYPECHAR)
                                                 {
-                                                    ui->selectedUnits.push_back(unit);
+                                                    foundNonGWUnit = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if (foundNonGWUnit)
+                                        {
+                                            filterForGateways = false;
+                                        }
+                                        else
+                                        {
+                                            filterForGateways = true;
+                                        }
+                                    }
+
+                                    for (unsigned int i=0; i<entitiesInSelectionBox.size(); i++)
+                                    {
+                                        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entitiesInSelectionBox[i]))
+                                        {
+                                            // finally, filter out units for segregation
+                                            if ((filterForGateways && unit->typechar() == GATEWAY_TYPECHAR)
+                                            || (!filterForGateways && unit->typechar() != GATEWAY_TYPECHAR))
+                                            {
+                                                if (unit->ownerId == *playerId)
+                                                {
+                                                    if (selectionRectGameCoords.contains(toSFVecF(vector2i(unit->getPos()))))
+                                                    {
+                                                        ui->selectedUnits.push_back(unit);
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            ui->maybeSelectionBoxStart = {};
+                                ui->maybeSelectionBoxStart = {};
+                            }
                         }
+
+                        ui->removeDuplicatesFromSelection();
                     }
-
-                    ui->removeDuplicatesFromSelection();
-                }
-                break;
-            case sf::Event::MouseButtonPressed:
-                if (auto playerId = maybePlayerId)
-                {
-                    bool asap = !isShiftPressed();
-
-                    if (event.mouseButton.button == sf::Mouse::Left)
+                    break;
+                case sf::Event::MouseButtonPressed:
+                    if (auto playerId = maybePlayerId)
                     {
-                        switch (ui->cmdState)
+                        bool asap = !isShiftPressed();
+
+                        if (event.mouseButton.button == sf::Mouse::Left)
                         {
-                            case GameUI::Default:
+                            switch (ui->cmdState)
                             {
-                                ui->maybeSelectionBoxStart = {vector2i(mouseEventVec(event.mouseButton))};
-                            }
-                            break;
-                            case GameUI::SpawnBeacon:
-                            {
-                                vector2fp spawnPos = screenPosToGamePos(window, mouseEventVec(event.mouseButton));
-
-                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
-                                if (!isShiftPressed())
+                                case GameUI::Default:
                                 {
-                                    ui->returnToDefaultState();
+                                    ui->maybeSelectionBoxStart = {vector2i(mouseEventVec(event.mouseButton))};
                                 }
-                            }
-                            break;
-                            case GameUI::AttackScuttle:
-                            {
-                                Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
-
-                                if (ui->selectionHasGateways())
+                                break;
+                                case GameUI::SpawnBeacon:
                                 {
-                                    if (auto entity = target.castToEntityPtr(*game))
-                                    {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow())));
-                                        if (!isShiftPressed())
-                                        {
-                                            ui->returnToDefaultState();
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
-                                    vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                    auto fightersAndPrimes = fightersInSelection;
-                                    fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+                                    vector2fp spawnPos = screenPosToGamePos(window, mouseEventVec(event.mouseButton));
 
-                                    if (fightersAndPrimes.size() > 0)
-                                    {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
-                                        if (!isShiftPressed())
-                                        {
-                                            ui->returnToDefaultState();
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                            case GameUI::Deposit:
-                            {
-                                Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
-
-                                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
-                                auto primesAndGateways = primesInSelection;
-                                primesAndGateways.insert(primesAndGateways.begin(), gatewaysInSelection.begin(), gatewaysInSelection.end());
-
-                                if (primesAndGateways.size() > 0)
-                                {
-                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesAndGateways), target, asap)));
+                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new SpawnBeaconCmd(spawnPos)));
                                     if (!isShiftPressed())
                                     {
                                         ui->returnToDefaultState();
                                     }
                                 }
-                            }
-                            break;
-                            case GameUI::Fetch:
-                            {
-                                Target clickTarget = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
-                                if (auto targetEntity = clickTarget.castToEntityPtr(*game))
+                                break;
+                                case GameUI::AttackScuttle:
                                 {
-                                    if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
+                                    Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
+
+                                    if (ui->selectionHasGateways())
                                     {
-                                        if (ui->selectionHasGateways())
+                                        if (auto entity = target.castToEntityPtr(*game))
                                         {
-                                            vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
-
-                                            boost::shared_ptr<Gateway> bestChoice;
-
-                                            float bestGatewayDistanceSquared;
-                                            for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd(entityPtrsToRefsOrThrow(ui->selectedUnits), entity->getRefOrThrow())));
+                                            if (!isShiftPressed())
                                             {
-                                                vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
-
-                                                if (!bestChoice)
-                                                {
-                                                    bestChoice = gatewaysInSelection[i];
-                                                    bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
-                                                }
-                                                else
-                                                {
-                                                    float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
-                                                    if (distanceSquared < bestGatewayDistanceSquared)
-                                                    {
-                                                        bestChoice = gatewaysInSelection[i];
-                                                        bestGatewayDistanceSquared = distanceSquared;
-                                                    }
-                                                }
-                                            }
-
-                                            if (!bestChoice)
-                                            {
-                                                // we should have had a best choice by now...
-                                                cout << "Can't find a bestChoice for the GatewayScuttleCmd" << endl;
-                                            }
-                                            else
-                                            {
-                                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
-                                                if (!isShiftPressed())
-                                                {
-                                                    ui->returnToDefaultState();
-                                                }
+                                                ui->returnToDefaultState();
                                             }
                                         }
-                                        else
+                                    }
+                                    else
+                                    {
+                                        vector<boost::shared_ptr<Unit>> fightersInSelection = filterForTypeKeepContainer<Fighter, Unit>(ui->selectedUnits);
+                                        vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                        auto fightersAndPrimes = fightersInSelection;
+                                        fightersAndPrimes.insert(fightersAndPrimes.begin(), primesInSelection.begin(), primesInSelection.end());
+
+                                        if (fightersAndPrimes.size() > 0)
                                         {
-                                            // selection does not have Gateways. Issue cmd to all Primes.
-                                            auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                            if (primesInSelection.size() > 0)
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new AttackScuttleCmd(entityPtrsToRefsOrThrow(fightersAndPrimes), target, asap)));
+                                            if (!isShiftPressed())
                                             {
-                                                cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow(), asap)));
                                                 ui->returnToDefaultState();
                                             }
                                         }
                                     }
                                 }
-                                else if (auto targetPoint = clickTarget.castToPoint())
+                                break;
+                                case GameUI::Deposit:
                                 {
-                                    // selection does not have Gateways. Issue cmd to all Primes.
-                                    auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                    if (primesInSelection.size() > 0)
+                                    Target target = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
+
+                                    vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                    vector<boost::shared_ptr<Unit>> gatewaysInSelection = filterForTypeKeepContainer<Gateway, Unit>(ui->selectedUnits);
+                                    auto primesAndGateways = primesInSelection;
+                                    primesAndGateways.insert(primesAndGateways.begin(), gatewaysInSelection.begin(), gatewaysInSelection.end());
+
+                                    if (primesAndGateways.size() > 0)
                                     {
-                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), clickTarget, asap)));
+                                        cmdsToSend.push_back(boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesAndGateways), target, asap)));
+                                        if (!isShiftPressed())
+                                        {
+                                            ui->returnToDefaultState();
+                                        }
+                                    }
+                                }
+                                break;
+                                case GameUI::Fetch:
+                                {
+                                    Target clickTarget = getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton));
+                                    if (auto targetEntity = clickTarget.castToEntityPtr(*game))
+                                    {
+                                        if (getAllianceType(*playerId, targetEntity) == Owned || targetEntity->typechar() == GOLDPILE_TYPECHAR)
+                                        {
+                                            if (ui->selectionHasGateways())
+                                            {
+                                                vector<boost::shared_ptr<Gateway>> gatewaysInSelection = filterForType<Gateway, Unit>(ui->selectedUnits);
+
+                                                boost::shared_ptr<Gateway> bestChoice;
+
+                                                float bestGatewayDistanceSquared;
+                                                for (unsigned int i=0; i<gatewaysInSelection.size(); i++)
+                                                {
+                                                    vector2fl gatewayPos(gatewaysInSelection[i]->getPos());
+
+                                                    if (!bestChoice)
+                                                    {
+                                                        bestChoice = gatewaysInSelection[i];
+                                                        bestGatewayDistanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                                    }
+                                                    else
+                                                    {
+                                                        float distanceSquared = (gatewayPos - vector2fl(targetEntity->getPos())).getMagnitudeSquared();
+                                                        if (distanceSquared < bestGatewayDistanceSquared)
+                                                        {
+                                                            bestChoice = gatewaysInSelection[i];
+                                                            bestGatewayDistanceSquared = distanceSquared;
+                                                        }
+                                                    }
+                                                }
+
+                                                if (!bestChoice)
+                                                {
+                                                    // we should have had a best choice by now...
+                                                    cout << "Can't find a bestChoice for the GatewayScuttleCmd" << endl;
+                                                }
+                                                else
+                                                {
+                                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new GatewayScuttleCmd({bestChoice->getRefOrThrow()}, targetEntity->getRefOrThrow())));
+                                                    if (!isShiftPressed())
+                                                    {
+                                                        ui->returnToDefaultState();
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                // selection does not have Gateways. Issue cmd to all Primes.
+                                                auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                                if (primesInSelection.size() > 0)
+                                                {
+                                                    cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), targetEntity->getRefOrThrow(), asap)));
+                                                    ui->returnToDefaultState();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else if (auto targetPoint = clickTarget.castToPoint())
+                                    {
+                                        // selection does not have Gateways. Issue cmd to all Primes.
+                                        auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                        if (primesInSelection.size() > 0)
+                                        {
+                                            cmdsToSend.push_back(boost::shared_ptr<Cmd>(new FetchCmd(entityPtrsToRefsOrThrow(primesInSelection), clickTarget, asap)));
+                                            ui->returnToDefaultState();
+                                        }
+                                    }
+                                }
+                                break;
+                                case GameUI::Build:
+                                {
+                                    vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
+                                    vector2fl buildPos(screenPosToGamePos(window, mouseEventVec(event.mouseButton)));
+                                    cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
+                                    if (!isShiftPressed())
+                                    {
                                         ui->returnToDefaultState();
                                     }
                                 }
+                                break;
                             }
-                            break;
-                            case GameUI::Build:
+                        }
+                        else if (event.mouseButton.button == sf::Mouse::Right)
+                        {
+                            if (ui->cmdState == GameUI::Default)
                             {
-                                vector<boost::shared_ptr<Unit>> primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
-                                vector2fl buildPos(screenPosToGamePos(window, mouseEventVec(event.mouseButton)));
-                                cmdsToSend.push_back(makePrimeBuildCmd(ui->selectedUnits, ui->ghostBuilding->typechar(), buildPos, asap));
-                                if (!isShiftPressed())
+                                if (ui->selectedUnits.size() > 0)
                                 {
-                                    ui->returnToDefaultState();
+                                    if (playerId)
+                                        cmdsToSend.push_back(makeRightClickCmd(*game, ui, *playerId, getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton))));
                                 }
                             }
-                            break;
-                        }
-                    }
-                    else if (event.mouseButton.button == sf::Mouse::Right)
-                    {
-                        if (ui->cmdState == GameUI::Default)
-                        {
-                            if (ui->selectedUnits.size() > 0)
+                            else
                             {
-                                if (playerId)
-                                    cmdsToSend.push_back(makeRightClickCmd(*game, ui, *playerId, getTargetAtScreenPos(window, game, mouseEventVec(event.mouseButton))));
+                                ui->returnToDefaultState();
                             }
                         }
-                        else
-                        {
-                            ui->returnToDefaultState();
-                        }
                     }
-                }
-                break;
-            case sf::Event::MouseWheelMoved:
-            {
-                bool zoomIn = event.mouseWheel.delta > 0;
-                float zoomFactor = zoomIn ? (1 / ZOOM_AMOUNT) : (ZOOM_AMOUNT) ;
+                    break;
+                case sf::Event::MouseWheelMoved:
+                {
+                    bool zoomIn = event.mouseWheel.delta > 0;
+                    float zoomFactor = zoomIn ? (1 / ZOOM_AMOUNT) : (ZOOM_AMOUNT) ;
 
-                unsigned int zoomAmount = abs(event.mouseWheel.delta);
+                    unsigned int zoomAmount = abs(event.mouseWheel.delta);
 
-                for (unsigned int i=0; i<zoomAmount; i++)
-                {
-                    ui->cameraView.zoom(zoomFactor);
+                    for (unsigned int i=0; i<zoomAmount; i++)
+                    {
+                        ui->cameraView.zoom(zoomFactor);
+                    }
+                    break;
                 }
-                break;
-            }
-            case sf::Event::KeyPressed:
-                switch (event.key.code)
-                {
-                    case sf::Keyboard::F1:
-                        ui->showTutorial = !ui->showTutorial;
-                        break;
-                    case sf::Keyboard::Enter:
-                        if (tutorial)
-                            tutorial->enterPressed();
-                        break;
-                    case sf::Keyboard::Tilde:
-                        ui->debugInt ++;
-                        break;
-                    case sf::Keyboard::Tab:
-                        ui->minimapEnabled = !(ui->minimapEnabled);
-                        break;
-                    case sf::Keyboard::F10:
-                        if (!ui->inGameMenu)
-                        {
-                            ui->openInGameMenu(window);
-                        }
-                        break;
-                    case sf::Keyboard::Escape:
-                        if (ui->cmdState != GameUI::Default)
-                        {
-                            ui->returnToDefaultState();
-                        }
-                        else if (ui->selectedUnits.size() > 0)
-                        {
-                            ui->selectedUnits.clear();
-                        }
-                        else
-                        {
-                            ui->openInGameMenu(window);
-                        }
-                        break;
-                    case sf::Keyboard::H:
-                        ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
-                        break;
-                    case sf::Keyboard::J:
-                        ui->hideUX = ! ui->hideUX;
-                        break;
-                    default:
-                        vector<boost::shared_ptr<Cmd>> cmds = ui->handlePossibleUnitInterfaceCmd(event.key.code);
-                        cmdsToSend.insert(cmdsToSend.begin(), cmds.begin(), cmds.end());
-                        break;
+                case sf::Event::KeyPressed:
+                    switch (event.key.code)
+                    {
+                        case sf::Keyboard::F1:
+                            ui->showTutorial = !ui->showTutorial;
+                            break;
+                        case sf::Keyboard::Enter:
+                            if (tutorial)
+                                tutorial->enterPressed();
+                            break;
+                        case sf::Keyboard::Tilde:
+                            ui->debugInt ++;
+                            break;
+                        case sf::Keyboard::Tab:
+                            ui->minimapEnabled = !(ui->minimapEnabled);
+                            break;
+                        case sf::Keyboard::F10:
+                            if (!ui->inGameMenu)
+                            {
+                                ui->openInGameMenu(window);
+                            }
+                            break;
+                        case sf::Keyboard::Escape:
+                            if (ui->cmdState != GameUI::Default)
+                            {
+                                ui->returnToDefaultState();
+                            }
+                            else if (ui->selectedUnits.size() > 0)
+                            {
+                                ui->selectedUnits.clear();
+                            }
+                            else
+                            {
+                                ui->openInGameMenu(window);
+                            }
+                            break;
+                        case sf::Keyboard::H:
+                            ui->cleanDrawEnabled = ! ui->cleanDrawEnabled;
+                            break;
+                        case sf::Keyboard::J:
+                            ui->hideUX = ! ui->hideUX;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
                 }
-                break;
-            case sf::Event::KeyReleased:
-                switch (event.key.code)
-                {
-                    default:
-                        break;
-                }
-                break;
-            default:
-                break;
             }
         }
-
     }
 
     if (! sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
@@ -1167,9 +1210,63 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
 void GameUI::returnToDefaultState()
 {
     cmdState = Default;
-    spawnBeaconInterfaceCmd.active = false;
-    for (unsigned int i=0; i<unitInterfaceCmds.size(); i++)
+    keyButtonBox.returnToDefaultState();
+}
+
+tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf::Event event)
+{
+    // the below just deals with the KeyButtonBox.
+
+    bool consumed = false;
+    optional<tuple<KeyButton*, KeyButtonMsg>> maybeButtonAndMsg = {};
+
+    switch (event.type)
     {
-        unitInterfaceCmds[i]->active = false;
+        case sf::Event::MouseButtonPressed:
+        {
+            consumed = keyButtonBox.registerPress(mouseEventVec(event.mouseButton));
+            break;
+        }
+        case sf::Event::MouseButtonReleased:
+        {
+            auto consumedAndMaybeMsg = keyButtonBox.registerRelease(mouseEventVec(event.mouseButton));
+            consumed = get<0>(consumedAndMaybeMsg);
+            maybeButtonAndMsg = get<1>(consumedAndMaybeMsg);
+            break;
+        }
+        case sf::Event::MouseMoved:
+        {
+            consumed = keyButtonBox.registerMouseMove(mouseEventVec(event.mouseMove));
+            break;
+        }
+        case sf::Event::KeyPressed:
+        {
+            maybeButtonAndMsg = keyButtonBox.handleKey(event.key.code);
+            if (maybeButtonAndMsg)
+            {
+                consumed = true;
+            }
+            break;
+        }
     }
+
+    optional<boost::shared_ptr<Cmd>> maybeCmd;
+
+    if (maybeButtonAndMsg)
+    {
+        auto button = get<0>(*maybeButtonAndMsg);
+        auto msg = get<1>(*maybeButtonAndMsg);
+        switch (msg)
+        {
+            case WarpInGateway:
+            {
+                returnToDefaultState();
+                cmdState = GameUI::SpawnBeacon;
+                button->active = true;
+                ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+            }
+        }
+    }
+
+    return {consumed, maybeCmd};
 }

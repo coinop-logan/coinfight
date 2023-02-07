@@ -10,31 +10,17 @@ sf::Texture
     copyActionSource,
     copyDoneSource,
     pasteActionSource,
-    pasteDoneSource,
-    cmdAttackSource,
-    cmdCollectSource,
-    cmdInvestSource,
-    cmdMoveSource,
-    cmdStopSource,
-    cmdWarpInSource,
-    cmdWarpOutSource
+    pasteDoneSource
 ;
 
 sf::Sprite
     copyActionIcon,
     copyDoneIcon,
     pasteActionIcon,
-    pasteDoneIcon,
-    cmdAttackIcon,
-    cmdCollectIcon,
-    cmdInvestIcon,
-    cmdMoveIcon,
-    cmdStopIcon,
-    cmdWarpInIcon,
-    cmdWarpOutIcon
+    pasteDoneIcon
 ;
 
-void loadIcons()
+void loadMenuIcons()
 {
     if (!copyActionSource.loadFromFile("clipboard-copy-action.png"))
     {
@@ -59,48 +45,6 @@ void loadIcons()
         throw runtime_error("Can't load paste done icon");
     }
     pasteDoneIcon.setTexture(pasteDoneSource);
-
-    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdAttackIcon.setTexture(cmdAttackSource);
-
-    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdCollectIcon.setTexture(cmdCollectSource);
-
-    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdInvestIcon.setTexture(cmdInvestSource);
-
-    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdMoveIcon.setTexture(cmdMoveSource);
-
-    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdStopIcon.setTexture(cmdStopSource);
-
-    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdWarpInIcon.setTexture(cmdWarpInSource);
-
-    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
 }
 
 bool collides(vector2i p1, vector2i p2, vector2i point)
@@ -654,6 +598,16 @@ UXBox::UXBox(vector2i upperLeft, vector2i size)
     : upperLeft(upperLeft), size(size)
 {}
 
+bool UXBox::pointCollides(vector2i pos)
+{
+    return (
+        upperLeft.x <= pos.x &&
+        upperLeft.y <= pos.y &&
+        pos.x <= upperLeft.x + size.x &&
+        pos.y <= upperLeft.y + size.y
+    );
+}
+
 void UXBox::draw(sf::RenderWindow* window)
 {
     sf::RectangleShape mainBox(toSFVecF(size));
@@ -666,8 +620,11 @@ void UXBox::draw(sf::RenderWindow* window)
     drawContent(window, upperLeft + UX_BOX_PADDING);
 }
 
+KeyButtonActionInfo::KeyButtonActionInfo(sf::Sprite* sprite, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg)
+    : sprite(sprite), hintInfo(hintInfo), keyButtonMsg(keyButtonMsg) {}
+
 KeyButton::KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText)
-    : Button(upperLeft, upperLeft + KEYBUTTON_SIZE), key(key), keyCharText(keyCharText)
+    : Button(upperLeft, upperLeft + KEYBUTTON_SIZE), key(key), keyCharText(keyCharText), active(false)
 {}
 
 void KeyButton::setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo)
@@ -714,17 +671,138 @@ void KeyButton::draw(sf::RenderWindow* window)
 // Not needed since we're overriding draw() above
 void KeyButton::drawContent(sf::RenderWindow* window) {}
 
-KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font)
-    : UXBox(upperLeft, upperLeft + KEYBUTTONBOX_SIZE)
+KeyButton* KeyButtonUXBox::getKeyButton(sf::Keyboard::Key key)
 {
-    KeyButton testKey(upperLeft + vector2i(20, 20), sf::Keyboard::G, sf::Text('G', *font, 18));
-    KeyButtonActionInfo actionInfo;
-    actionInfo.keyButtonMsg = WarpInGateway;
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        if (keyButtons[i].key == key)
+        {
+            return &keyButtons[i];
+        }
+    }
+    return NULL;
+}
 
-    actionInfo.sprite = &cmdWarpInIcon;
-    actionInfo.sprite->setScale(3, 3);
-    testKey.setKeyButtonActionInfo({actionInfo});
-    keyButtons.push_back(testKey);
+KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font)
+    : UXBox(upperLeft, KEYBUTTONBOX_SIZE)
+{
+    vector<tuple<sf::Keyboard::Key, char>> keyButtonSeeds =
+    {
+        {sf::Keyboard::Q, 'Q'},
+        {sf::Keyboard::W, 'W'},
+        {sf::Keyboard::E, 'E'},
+        {sf::Keyboard::R, 'R'},
+        {sf::Keyboard::A, 'A'},
+        {sf::Keyboard::S, 'S'},
+        {sf::Keyboard::D, 'D'},
+        {sf::Keyboard::F, 'F'}
+    };
+
+    for (unsigned int i=0; i<keyButtonSeeds.size(); i++)
+    {
+        int rowNum = i / 4;
+        int rowOffsetX = (rowNum == 0 ? 0 : KEYBUTTON_ROW2_OFFSETX);
+
+        int xOffset = (i % 4) * (KEYBUTTON_SIZE.x + KEYBUTTON_SPACING) + rowOffsetX;
+        int yOffset = (i / 4) * (KEYBUTTON_SIZE.y + KEYBUTTON_SPACING);
+
+        vector2i buttonPos = upperLeft + KEYBUTTONBOX_PADDING + vector2i(xOffset, yOffset);
+
+        auto key = get<0>(keyButtonSeeds[i]);
+
+        sf::Text keyText(get<1>(keyButtonSeeds[i]), *font, 18);
+
+        keyButtons.push_back(KeyButton(buttonPos, key, keyText));
+    }
+}
+
+void KeyButtonUXBox::clearActionInfos()
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        keyButtons[i].maybeActionInfo = {};
+    }
+}
+
+void KeyButtonUXBox::setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonActionInfo actionInfo)
+{
+    if (auto keyButton = getKeyButton(key))
+    {
+        keyButton->setKeyButtonActionInfo(actionInfo);
+    }
+    else
+    {
+        throw runtime_error("Can't find keybutton with that key");
+    }
+}
+
+void KeyButtonUXBox::returnToDefaultState()
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        keyButtons[i].active = false;
+    }
+}
+
+bool KeyButtonUXBox::registerMouseMove(vector2i pos)
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        if (keyButtons[i].maybeActionInfo)
+        {
+            keyButtons[i].registerMouseMove(pos);
+        }
+    }
+
+    return this->pointCollides(pos);
+}
+bool KeyButtonUXBox::registerPress(vector2i pos)
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        if (keyButtons[i].maybeActionInfo)
+        {
+            keyButtons[i].registerPress();
+        }
+    }
+
+    return this->pointCollides(pos);
+}
+tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> KeyButtonUXBox::registerRelease(vector2i pos)
+{
+    bool pointCollides = this->pointCollides(pos);
+    if (!pointCollides)
+    {
+        return {false, {}};
+    }
+
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        if (keyButtons[i].maybeActionInfo)
+        {
+            if (keyButtons[i].registerRelease())
+            {
+                return {true, {{&keyButtons[i], keyButtons[i].maybeActionInfo->keyButtonMsg}}};
+            }
+        }
+    }
+
+    return {true, {}};
+}
+
+optional<tuple<KeyButton*, KeyButtonMsg>> KeyButtonUXBox::handleKey(sf::Keyboard::Key key)
+{
+    if (auto keyButton = getKeyButton(key))
+    {
+        if (keyButton->maybeActionInfo)
+        {
+            return {{keyButton, keyButton->maybeActionInfo->keyButtonMsg}};
+        }
+    }
+    else
+    {
+        return {};
+    }
 }
 
 void KeyButtonUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)

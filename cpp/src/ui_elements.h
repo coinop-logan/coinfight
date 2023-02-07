@@ -34,9 +34,16 @@ const vector2i KEYBUTTON_ICON_BASE_SIZE(19, 19);
 const int KEYBUTTON_ICON_SCALE = 3;
 const vector2i KEYBUTTON_PADDING(3, 3);
 const vector2i KEYBUTTON_SIZE = (KEYBUTTON_ICON_BASE_SIZE * KEYBUTTON_ICON_SCALE) + (KEYBUTTON_PADDING * 2);
-const vector2i KEYBUTTONBOX_SIZE(400, 300);
+const int KEYBUTTON_SPACING = 8;
 
-void loadIcons();
+const vector2i KEYBUTTONBOX_PADDING(5, 5);
+const int KEYBUTTON_ROW2_OFFSETX = 20;
+const vector2i KEYBUTTONBOX_SIZE(
+    KEYBUTTON_ROW2_OFFSETX + KEYBUTTON_SIZE.x * 4 + KEYBUTTON_SPACING * 3 + KEYBUTTONBOX_PADDING.x * 2,
+    KEYBUTTON_SIZE.x * 2 + KEYBUTTON_SPACING + KEYBUTTONBOX_PADDING.y * 2
+);
+
+void loadMenuIcons();
 
 class Button
 {
@@ -81,7 +88,7 @@ struct BoundButton
 {
     boost::shared_ptr<Button> button;
     EventMsg eventMsg;
-};;
+};
 
 class Window
 {
@@ -248,16 +255,20 @@ public:
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);
 
 struct KeyButtonHintInfo
-{};
+{
+    string name;
+    KeyButtonHintInfo(string name) : name(name) {}
+};
 
 enum KeyButtonMsg
 {
     WarpInGateway,
-    RecallWarp
+    WarpOutGateway
 };
 
 struct KeyButtonActionInfo
 {
+    KeyButtonActionInfo(sf::Sprite* sprite, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg);
     sf::Sprite* sprite;
     KeyButtonHintInfo hintInfo;
     KeyButtonMsg keyButtonMsg;
@@ -269,6 +280,7 @@ public:
     sf::Keyboard::Key key;
     sf::Text keyCharText;
     optional<KeyButtonActionInfo> maybeActionInfo;
+    bool active;
     KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText);
     void setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo);
     void draw(sf::RenderWindow*);
@@ -280,6 +292,7 @@ class UXBox
 public:
     vector2i upperLeft, size;
     UXBox(vector2i upperLeft, vector2i size);
+    bool pointCollides(vector2i pos);
     virtual void drawContent(sf::RenderWindow* window, vector2i upperLeft) {}
     void draw(sf::RenderWindow* window);
 };
@@ -287,8 +300,16 @@ public:
 class KeyButtonUXBox : public UXBox
 {
     vector<KeyButton> keyButtons;
+    KeyButton* getKeyButton(sf::Keyboard::Key key);
 public:
     KeyButtonUXBox(vector2i upperLeft, sf::Font* font);
+    void setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonActionInfo actionInfo);
+    void clearActionInfos();
+    void returnToDefaultState();
+    bool registerMouseMove(vector2i);
+    bool registerPress(vector2i);
+    tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> registerRelease(vector2i);
+    optional<tuple<KeyButton*, KeyButtonMsg>> handleKey(sf::Keyboard::Key);
     void drawContent(sf::RenderWindow* window, vector2i upperLeft);
 };
 
