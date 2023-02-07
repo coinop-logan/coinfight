@@ -1714,7 +1714,7 @@ void loadKeyCommandIcons()
 
     // for the build commands, we draw them to textures
     vector2i buttonDrawSize = KEYBUTTON_SIZE - KEYBUTTON_PADDING;
-    
+
     if (!cmdBuildPrimeSource.create(buttonDrawSize.x, buttonDrawSize.y))
     {
         throw runtime_error("Can't create draw texture.");
@@ -1774,5 +1774,16 @@ sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
             return &cmdBuildFighterIcon;
             break;
         }
+        case BuildGateway:
+        {
+            return &cmdBuildGatewayIcon;
+            break;
+        }
+        case BuildTurret:
+        {
+            return &cmdBuildTurretIcon;
+            break;
+        }
     }
+    throw runtime_error("Can't find sprite for that KeyButtonMsg");
 }

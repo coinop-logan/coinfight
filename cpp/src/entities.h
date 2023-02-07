@@ -267,6 +267,7 @@ public:
     Beacon(Netpack::Consumer* from);
 
     void cmdStop();
+    void cmdWarpOut();
 
     void iterate();
 };

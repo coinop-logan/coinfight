@@ -1080,6 +1080,10 @@ void Beacon::iterate()
 }
 
 void Beacon::cmdStop() {}
+void Beacon::cmdWarpOut()
+{
+    state = Despawning;
+}
 
 
 

@@ -832,10 +832,7 @@ optional<tuple<KeyButton*, KeyButtonMsg>> KeyButtonUXBox::handleKey(sf::Keyboard
             return {{keyButton, keyButton->maybeActionInfo->keyButtonMsg}};
         }
     }
-    else
-    {
-        return {};
-    }
+    return {};
 }
 
 void KeyButtonUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)

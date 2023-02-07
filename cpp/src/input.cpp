@@ -75,7 +75,6 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
         // We iterate through all selectedEntities to determine a few facts about the unit makeup
         bool foundNonBeaconUnits = false;
         bool foundBeaconSpawning = false;
-        bool foundBeaconDespawning = false;
         bool selectionHasGateways = false;
         for (unsigned int i=0; i<selectedUnits.size(); i++)
         {
@@ -85,10 +84,6 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 if (beacon->state == Beacon::Spawning)
                 {
                     foundBeaconSpawning = true;
-                }
-                else if (beacon->state == Beacon::Despawning)
-                {
-                    foundBeaconDespawning = true;
                 }
             }
             else
@@ -109,14 +104,6 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     sf::Keyboard::Q,
                     KeyButtonHintInfo("Warp Out"),
                     WarpOut
-                );
-            }
-            if (foundBeaconDespawning)
-            {
-                keyButtonBox.setUnitCmdOrThrow(
-                    sf::Keyboard::W,
-                    KeyButtonHintInfo("Warp In"),
-                    WarpIn
                 );
             }
         }
@@ -1258,6 +1245,7 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             }
             break;
         }
+        default: break;
     }
 
     optional<boost::shared_ptr<Cmd>> maybeCmd;
@@ -1274,6 +1262,16 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
                 cmdState = GameUI::SpawnBeacon;
                 button->active = true;
                 ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+
+                break;
+            }
+            case WarpOut:
+            {
+                returnToDefaultState();
+                maybeCmd = boost::shared_ptr<Cmd>(new WarpOutCmd(entityPtrsToRefsOrThrow(selectedUnits)));
+                button->visualFlashClock.restart();
+
+                break;
             }
         }
     }

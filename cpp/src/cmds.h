@@ -22,6 +22,7 @@ const uint8_t CMD_PRIMEBUILD_CHAR = 9;
 const uint8_t CMD_GIFT_CHAR = 10;
 const uint8_t CMD_GATEWAYSCUTTLE_CHAR = 11;
 const uint8_t CMD_STOPSCUTTLE_CHAR = 12;
+const uint8_t CMD_WARPOUT_CHAR = 13;
 
 struct Cmd
 {
@@ -234,6 +235,18 @@ struct StopScuttleCmd : public UnitCmd
 
     StopScuttleCmd(vector<EntityRef>, EntityRef);
     StopScuttleCmd(Netpack::Consumer* from);
+};
+
+struct WarpOutCmd : public UnitCmd
+{
+    uint8_t getTypechar();
+    string getTypename();
+    void pack(Netpack::Builder* to);
+
+    void executeOnUnit(boost::shared_ptr<Unit>);
+    
+    WarpOutCmd(vector<EntityRef>);
+    WarpOutCmd(Netpack::Consumer* from);
 };
 
 #endif // CMDS_H

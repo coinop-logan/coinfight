@@ -265,7 +265,9 @@ enum KeyButtonMsg
     WarpIn,
     WarpOut,
     BuildPrime,
-    BuildFighter
+    BuildFighter,
+    BuildGateway,
+    BuildTurret
 };
 
 struct KeyButtonActionInfo

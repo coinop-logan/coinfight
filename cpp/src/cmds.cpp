@@ -643,3 +643,39 @@ StopScuttleCmd::StopScuttleCmd(Netpack::Consumer* from)
 {
     targetUnit = consumeEntityRef(from);
 }
+
+uint8_t WarpOutCmd::getTypechar()
+{
+    return CMD_WARPOUT_CHAR;
+}
+string WarpOutCmd::getTypename()
+{
+    return "WarpOutCmd";
+}
+
+void WarpOutCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdScuttle(gateway->getRefOrThrow());
+    }
+    else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+    {
+        beacon->cmdWarpOut();
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+WarpOutCmd::WarpOutCmd(vector<EntityRef> units)
+    : UnitCmd(units)
+{}
+void WarpOutCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+}
+WarpOutCmd::WarpOutCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{}
