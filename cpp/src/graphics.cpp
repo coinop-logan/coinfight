@@ -927,98 +927,98 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font* font)
-{
-    auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
-    char keyChar = get<1>(hotkeyInfo);
-    vector<string> cmdNameLines = get<2>(hotkeyInfo);
-    optional<coinsInt> maybeCost = get<3>(hotkeyInfo);
+// void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font* font)
+// {
+//     auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
+//     char keyChar = get<1>(hotkeyInfo);
+//     vector<string> cmdNameLines = get<2>(hotkeyInfo);
+//     optional<coinsInt> maybeCost = get<3>(hotkeyInfo);
 
-    sf::Color mainOutlineColor, nameColor, hotkeyTextColor, hotkeyBackgroundColor, hotkeyOutlineColor, costStringColor;
-    if (interfaceCmd.eligible)
-    {
-        mainOutlineColor = sf::Color(100, 100, 255);
-        nameColor = sf::Color::White;
-        hotkeyTextColor = sf::Color::White;
-        hotkeyBackgroundColor = sf::Color(100, 100, 255, 100);
-        hotkeyOutlineColor = sf::Color(100, 100, 255);
-        costStringColor = sf::Color::Yellow;
-    }
-    else
-    {
-        mainOutlineColor = nameColor = costStringColor = hotkeyOutlineColor = sf::Color(80, 80, 80);
-        hotkeyBackgroundColor = sf::Color::Black;
-        hotkeyTextColor = sf::Color(80, 80, 80);
-    }
-    sf::Color backgroundColor =
-        interfaceCmd.visualFlashClock.getElapsedTime() < sf::seconds(0.06) || interfaceCmd.active ?
-        sf::Color(150, 0, 0, 100) :
-        sf::Color::Transparent ;
+//     sf::Color mainOutlineColor, nameColor, hotkeyTextColor, hotkeyBackgroundColor, hotkeyOutlineColor, costStringColor;
+//     if (interfaceCmd.eligible)
+//     {
+//         mainOutlineColor = sf::Color(100, 100, 255);
+//         nameColor = sf::Color::White;
+//         hotkeyTextColor = sf::Color::White;
+//         hotkeyBackgroundColor = sf::Color(100, 100, 255, 100);
+//         hotkeyOutlineColor = sf::Color(100, 100, 255);
+//         costStringColor = sf::Color::Yellow;
+//     }
+//     else
+//     {
+//         mainOutlineColor = nameColor = costStringColor = hotkeyOutlineColor = sf::Color(80, 80, 80);
+//         hotkeyBackgroundColor = sf::Color::Black;
+//         hotkeyTextColor = sf::Color(80, 80, 80);
+//     }
+//     sf::Color backgroundColor =
+//         interfaceCmd.visualFlashClock.getElapsedTime() < sf::seconds(0.06) || interfaceCmd.active ?
+//         sf::Color(150, 0, 0, 100) :
+//         sf::Color::Transparent ;
 
-    sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
-    rectShape.setPosition(toSFVecF(drawPos));
-    rectShape.setFillColor(backgroundColor);
-    rectShape.setOutlineColor(mainOutlineColor);
-    rectShape.setOutlineThickness(1);
-    window->draw(rectShape);
+//     sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
+//     rectShape.setPosition(toSFVecF(drawPos));
+//     rectShape.setFillColor(backgroundColor);
+//     rectShape.setOutlineColor(mainOutlineColor);
+//     rectShape.setOutlineThickness(1);
+//     window->draw(rectShape);
 
-    sf::Text hotkeyText(string(1, keyChar), *font, 14);
-    hotkeyText.setFillColor(hotkeyTextColor);
+//     sf::Text hotkeyText(string(1, keyChar), *font, 14);
+//     hotkeyText.setFillColor(hotkeyTextColor);
 
-    // determine horizontal placement of hotkey
-    int width = hotkeyText.getLocalBounds().width;
-    int hSpaceLeft = 16 - width;
-    int xOffset = hSpaceLeft / 2 - 1;
-    // manual adjustment. Idk why this is needed but I just wanna fix it.
-    if (keyChar == 'W' || keyChar == 'A')
-    {
-        xOffset += 1;
-    }
-    if (keyChar == 'E')
-    {
-        xOffset -= 1;
-    }
+//     // determine horizontal placement of hotkey
+//     int width = hotkeyText.getLocalBounds().width;
+//     int hSpaceLeft = 16 - width;
+//     int xOffset = hSpaceLeft / 2 - 1;
+//     // manual adjustment. Idk why this is needed but I just wanna fix it.
+//     if (keyChar == 'W' || keyChar == 'A')
+//     {
+//         xOffset += 1;
+//     }
+//     if (keyChar == 'E')
+//     {
+//         xOffset -= 1;
+//     }
 
-    hotkeyText.setPosition(sf::Vector2f(drawPos.x + xOffset , drawPos.y-1));
+//     hotkeyText.setPosition(sf::Vector2f(drawPos.x + xOffset , drawPos.y-1));
 
-    sf::RectangleShape hotkeyBackground(sf::Vector2f(16, 18));
-    hotkeyBackground.setPosition(toSFVecF(drawPos));
-    hotkeyBackground.setFillColor(hotkeyBackgroundColor);
-    hotkeyBackground.setOutlineColor(hotkeyOutlineColor);
-    hotkeyBackground.setOutlineThickness(1);
+//     sf::RectangleShape hotkeyBackground(sf::Vector2f(16, 18));
+//     hotkeyBackground.setPosition(toSFVecF(drawPos));
+//     hotkeyBackground.setFillColor(hotkeyBackgroundColor);
+//     hotkeyBackground.setOutlineColor(hotkeyOutlineColor);
+//     hotkeyBackground.setOutlineThickness(1);
 
-    window->draw(hotkeyBackground);
-    window->draw(hotkeyText);
+//     window->draw(hotkeyBackground);
+//     window->draw(hotkeyText);
 
-    if (maybeCost)
-    {
-        string coinsString = coinsIntToDollarString(*maybeCost);
-        sf::Text costText(coinsString, *font, 12);
-        costText.setFillColor(costStringColor);
+//     if (maybeCost)
+//     {
+//         string coinsString = coinsIntToDollarString(*maybeCost);
+//         sf::Text costText(coinsString, *font, 12);
+//         costText.setFillColor(costStringColor);
 
-        int width = costText.getLocalBounds().width;
-        costText.setPosition(sf::Vector2f((drawPos.x + HOTKEY_BOX_WIDTH) - (4 + width), drawPos.y-1));
-        window->draw(costText);
-    }
+//         int width = costText.getLocalBounds().width;
+//         costText.setPosition(sf::Vector2f((drawPos.x + HOTKEY_BOX_WIDTH) - (4 + width), drawPos.y-1));
+//         window->draw(costText);
+//     }
 
-    float lineHeight = 12;
-    float allLinesHeight = lineHeight * cmdNameLines.size();
-    float topLineYFromCenter = - allLinesHeight / 2;
-    vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
-    for (unsigned int i=0; i<cmdNameLines.size(); i++)
-    {
-        sf::Text lineText(cmdNameLines[i], *font, 12);
+//     float lineHeight = 12;
+//     float allLinesHeight = lineHeight * cmdNameLines.size();
+//     float topLineYFromCenter = - allLinesHeight / 2;
+//     vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
+//     for (unsigned int i=0; i<cmdNameLines.size(); i++)
+//     {
+//         sf::Text lineText(cmdNameLines[i], *font, 12);
 
-        float width = lineText.getGlobalBounds().width;
-        float lineXFromCenter = - width / 2;
-        vector2fl positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
-        vector2fl position = drawPos + boxCenter + positionFromCenter;
-        lineText.setPosition(sf::Vector2f(position.x, position.y));
+//         float width = lineText.getGlobalBounds().width;
+//         float lineXFromCenter = - width / 2;
+//         vector2fl positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
+//         vector2fl position = drawPos + boxCenter + positionFromCenter;
+//         lineText.setPosition(sf::Vector2f(position.x, position.y));
 
-        lineText.setFillColor(nameColor);
-        window->draw(lineText);
-    }
-}
+//         lineText.setFillColor(nameColor);
+//         window->draw(lineText);
+//     }
+// }
 
 // void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font* font)
 // {

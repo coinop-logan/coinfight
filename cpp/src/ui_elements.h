@@ -40,7 +40,7 @@ const vector2i KEYBUTTONBOX_PADDING(5, 5);
 const int KEYBUTTON_ROW2_OFFSETX = 20;
 const vector2i KEYBUTTONBOX_SIZE(
     KEYBUTTON_ROW2_OFFSETX + KEYBUTTON_SIZE.x * 4 + KEYBUTTON_SPACING * 3 + KEYBUTTONBOX_PADDING.x * 2,
-    KEYBUTTON_SIZE.x * 2 + KEYBUTTON_SPACING + KEYBUTTONBOX_PADDING.y * 2
+    KEYBUTTON_SIZE.x * 3 + KEYBUTTON_SPACING * 2 + KEYBUTTONBOX_PADDING.y * 2
 );
 
 void loadMenuIcons();
@@ -281,6 +281,7 @@ public:
     sf::Text keyCharText;
     optional<KeyButtonActionInfo> maybeActionInfo;
     bool active;
+    sf::Clock visualFlashClock;
     KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText);
     void setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo);
     void draw(sf::RenderWindow*);

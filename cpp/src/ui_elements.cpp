@@ -634,28 +634,58 @@ void KeyButton::setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo
 
 void KeyButton::draw(sf::RenderWindow* window)
 {
+    sf::Color
+        backgroundColor,
+        outlineColor,
+        keyColor
+    ;
+
+    sf::Color gray(80, 80, 80);
+    sf::Color activeRedBackground(150, 0, 0, 100);
+    sf::Color activeOutlineColor(100, 100, 255);
+    sf::Color mouseoverBackgroundColor(100, 100, 255, 100);
+    sf::Color pressedBackgroundColor(100, 100, 255, 200);
+
+    if (!maybeActionInfo)
+    {
+        backgroundColor = sf::Color::Black;
+        outlineColor = gray;
+        keyColor = gray;
+    }
+    else if (visualFlashClock.getElapsedTime() < sf::seconds(0.06) || active)
+    {
+        backgroundColor = activeRedBackground;
+        outlineColor = activeOutlineColor;
+        keyColor = sf::Color::White;
+    }
+    else // eligible but not active
+    {
+        outlineColor = activeOutlineColor;
+        keyColor = sf::Color::White;
+        if (pressed)
+        {
+            backgroundColor = pressedBackgroundColor;
+        }
+        else if (mouseover)
+        {
+            backgroundColor = mouseoverBackgroundColor;
+        }
+        else
+        {
+            backgroundColor = sf::Color::Black;
+        }
+    }
+
     sf::RectangleShape mainBox(toSFVecF(KEYBUTTON_SIZE));
     mainBox.setPosition(toSFVecF(p1));
     mainBox.setOutlineThickness(2);
-    mainBox.setOutlineColor(
-        (bool)(maybeActionInfo) ?
-        sf::Color(100, 100, 255) :
-        sf::Color(80, 80, 80)
-    );
-    mainBox.setFillColor(
-        // (bool)(maybeActionInfo) ?
-        // sf::Color(100, 100, 255, 100) :
-        sf::Color::Black
-    );
+    mainBox.setOutlineColor(outlineColor);
+    mainBox.setFillColor(backgroundColor);
     window->draw(mainBox);
 
     // keyCharText = sf::Text("s", )
     keyCharText.setPosition(toSFVecF(p1));
-    keyCharText.setFillColor(
-        (bool)(maybeActionInfo) ?
-        sf::Color::White :
-        sf::Color(80, 80, 80)
-    );
+    keyCharText.setFillColor(keyColor);
     window->draw(keyCharText);
 
     if (maybeActionInfo)
@@ -771,10 +801,6 @@ bool KeyButtonUXBox::registerPress(vector2i pos)
 tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> KeyButtonUXBox::registerRelease(vector2i pos)
 {
     bool pointCollides = this->pointCollides(pos);
-    if (!pointCollides)
-    {
-        return {false, {}};
-    }
 
     for (unsigned int i=0; i<keyButtons.size(); i++)
     {
@@ -782,12 +808,12 @@ tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> KeyButtonUXBox::registerR
         {
             if (keyButtons[i].registerRelease())
             {
-                return {true, {{&keyButtons[i], keyButtons[i].maybeActionInfo->keyButtonMsg}}};
+                return {pointCollides, {{&keyButtons[i], keyButtons[i].maybeActionInfo->keyButtonMsg}}};
             }
         }
     }
 
-    return {true, {}};
+    return {pointCollides, {}};
 }
 
 optional<tuple<KeyButton*, KeyButtonMsg>> KeyButtonUXBox::handleKey(sf::Keyboard::Key key)
@@ -796,6 +822,7 @@ optional<tuple<KeyButton*, KeyButtonMsg>> KeyButtonUXBox::handleKey(sf::Keyboard
     {
         if (keyButton->maybeActionInfo)
         {
+            keyButton->visualFlashClock.restart();
             return {{keyButton, keyButton->maybeActionInfo->keyButtonMsg}};
         }
     }
