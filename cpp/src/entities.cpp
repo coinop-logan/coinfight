@@ -715,11 +715,11 @@ sf::Color Unit::getTeamOrPrimaryColor()
 sf::Color Unit::getTeamColor()
 {
     if (ownerId == -1)
-        return sf::Color(150, 150, 150);
+        return NEUTRAL_TEAM_COLOR;
     else if (auto regInfo = maybeRegInfo)
         return playerAddressToColor(this->getGameOrThrow()->playerIdToAddress(ownerId));
     else
-        return sf::Color(150, 150, 150);
+        return NEUTRAL_TEAM_COLOR;
 }
 void Unit::iterateUnitBasics() {}
 void Unit::takeHit(uint16_t damage)

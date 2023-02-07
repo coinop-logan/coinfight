@@ -18,5 +18,7 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont);
 void cleanupGraphics(sf::RenderWindow* window);
 void displayTitle(sf::RenderWindow*, sf::Font*);
+void loadKeyCommandIcons();
+sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg);
 
 #endif // GRAPHICS_H

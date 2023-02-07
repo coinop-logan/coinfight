@@ -188,7 +188,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
         firstEvents[i]->execute(&game);
     }
 
-    GameUI ui(window, &mainFont, false);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, false);
     uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmds;
@@ -348,7 +348,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 void runTutorial(sf::RenderWindow* window)
 {
     Game game;
-    GameUI ui(window, &mainFont, false);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, false);
 
     setupTutorialScenario(&game);
 
@@ -509,7 +509,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
         }
     }
 
-    GameUI ui(window, &mainFont, true);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, true);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())

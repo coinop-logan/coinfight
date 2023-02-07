@@ -9,78 +9,6 @@ extern vector<boost::shared_ptr<Cmd>> cmdsToSend;
 
 vector<boost::shared_ptr<Cmd>> noCmds;
 
-sf::Texture
-    cmdAttackSource,
-    cmdCollectSource,
-    cmdInvestSource,
-    cmdMoveSource,
-    cmdStopSource,
-    cmdWarpInSource,
-    cmdWarpOutSource
-;
-
-sf::Sprite
-    cmdAttackIcon,
-    cmdCollectIcon,
-    cmdInvestIcon,
-    cmdMoveIcon,
-    cmdStopIcon,
-    cmdWarpInIcon,
-    cmdWarpOutIcon
-;
-
-void loadKeyCommandIcons()
-{
-    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdAttackIcon.setTexture(cmdAttackSource);
-    cmdAttackIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdCollectIcon.setTexture(cmdCollectSource);
-    cmdCollectIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdInvestIcon.setTexture(cmdInvestSource);
-    cmdInvestIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdMoveIcon.setTexture(cmdMoveSource);
-    cmdMoveIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdStopIcon.setTexture(cmdStopSource);
-    cmdStopIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdWarpInIcon.setTexture(cmdWarpInSource);
-    cmdWarpInIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
-    {
-        throw runtime_error("Can't load paste done icon");
-    }
-    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
-    cmdWarpOutIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-}
-
 bool isShiftPressed()
 {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
@@ -99,8 +27,8 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, bool online)
-    : font(font), keyButtonBox(vector2i(0, getViewSize(window).y - KEYBUTTONBOX_SIZE.y), font), online(online)
+GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), bool online)
+    : font(font), keyButtonBox(vector2i(0, getViewSize(window).y - KEYBUTTONBOX_SIZE.y), font, getSpriteForMsg), online(online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
@@ -135,13 +63,83 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
     {
         if (spawnBeaconAvailable)
         {
-            keyButtonBox.setUnitCmdOrThrow(sf::Keyboard::W,
-                KeyButtonActionInfo(
-                    &cmdWarpInIcon,
-                    KeyButtonHintInfo("Warp In Gateway"),
-                    WarpInGateway
-                )
+            keyButtonBox.setUnitCmdOrThrow(
+                sf::Keyboard::W,
+                KeyButtonHintInfo("Warp In Gateway"),
+                WarpIn
             );
+        }
+    }
+    else // selectedUnits.size > 0
+    {
+        // We iterate through all selectedEntities to determine a few facts about the unit makeup
+        bool foundNonBeaconUnits = false;
+        bool foundBeaconSpawning = false;
+        bool foundBeaconDespawning = false;
+        bool selectionHasGateways = false;
+        for (unsigned int i=0; i<selectedUnits.size(); i++)
+        {
+            auto unit = selectedUnits[i];
+            if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+            {
+                if (beacon->state == Beacon::Spawning)
+                {
+                    foundBeaconSpawning = true;
+                }
+                else if (beacon->state == Beacon::Despawning)
+                {
+                    foundBeaconDespawning = true;
+                }
+            }
+            else
+            {
+                foundNonBeaconUnits = true;
+            }
+            if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+            {
+                selectionHasGateways = true;
+            }
+        }
+
+        if (!foundNonBeaconUnits)
+        {
+            if (foundBeaconSpawning)
+            {
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::Q,
+                    KeyButtonHintInfo("Warp Out"),
+                    WarpOut
+                );
+            }
+            if (foundBeaconDespawning)
+            {
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::W,
+                    KeyButtonHintInfo("Warp In"),
+                    WarpIn
+                );
+            }
+        }
+        else
+        {
+            if (selectionHasGateways)
+            {
+                // Selection is kept GW-segregated, so we know the selection ONLY has gateways
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::Q,
+                    KeyButtonHintInfo("Build Prime"),
+                    BuildPrime
+                );
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::W,
+                    KeyButtonHintInfo("Build Fighter"),
+                    BuildFighter
+                );
+            }
+            else // selection has non-GW units and at least one non-beacon unit
+            {
+
+            }
         }
     }
 }
@@ -1270,7 +1268,7 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
         auto msg = get<1>(*maybeButtonAndMsg);
         switch (msg)
         {
-            case WarpInGateway:
+            case WarpIn:
             {
                 returnToDefaultState();
                 cmdState = GameUI::SpawnBeacon;

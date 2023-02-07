@@ -262,8 +262,10 @@ struct KeyButtonHintInfo
 
 enum KeyButtonMsg
 {
-    WarpInGateway,
-    WarpOutGateway
+    WarpIn,
+    WarpOut,
+    BuildPrime,
+    BuildFighter
 };
 
 struct KeyButtonActionInfo
@@ -302,9 +304,10 @@ class KeyButtonUXBox : public UXBox
 {
     vector<KeyButton> keyButtons;
     KeyButton* getKeyButton(sf::Keyboard::Key key);
+    sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg);
 public:
-    KeyButtonUXBox(vector2i upperLeft, sf::Font* font);
-    void setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonActionInfo actionInfo);
+    KeyButtonUXBox(vector2i upperLeft, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg));
+    void setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg);
     void clearActionInfos();
     void returnToDefaultState();
     bool registerMouseMove(vector2i);

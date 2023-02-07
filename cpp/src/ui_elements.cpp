@@ -713,8 +713,8 @@ KeyButton* KeyButtonUXBox::getKeyButton(sf::Keyboard::Key key)
     return NULL;
 }
 
-KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font)
-    : UXBox(upperLeft, KEYBUTTONBOX_SIZE)
+KeyButtonUXBox::KeyButtonUXBox(vector2i upperLeft, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg))
+    : UXBox(upperLeft, KEYBUTTONBOX_SIZE), getSpriteForMsg(getSpriteForMsg)
 {
     vector<tuple<sf::Keyboard::Key, char>> keyButtonSeeds =
     {
@@ -754,11 +754,17 @@ void KeyButtonUXBox::clearActionInfos()
     }
 }
 
-void KeyButtonUXBox::setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonActionInfo actionInfo)
+void KeyButtonUXBox::setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg)
 {
     if (auto keyButton = getKeyButton(key))
     {
-        keyButton->setKeyButtonActionInfo(actionInfo);
+        keyButton->setKeyButtonActionInfo(
+            KeyButtonActionInfo(
+                getSpriteForMsg(keyButtonMsg),
+                hintInfo,
+                keyButtonMsg
+            )
+        );
     }
     else
     {

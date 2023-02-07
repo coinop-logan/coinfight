@@ -27,6 +27,36 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
+sf::Texture
+    cmdAttackSource,
+    cmdCollectSource,
+    cmdInvestSource,
+    cmdMoveSource,
+    cmdStopSource,
+    cmdWarpInSource,
+    cmdWarpOutSource
+;
+sf::RenderTexture
+    cmdBuildPrimeSource,
+    cmdBuildFighterSource,
+    cmdBuildGatewaySource,
+    cmdBuildTurretSource
+;
+
+sf::Sprite
+    cmdAttackIcon,
+    cmdCollectIcon,
+    cmdInvestIcon,
+    cmdMoveIcon,
+    cmdStopIcon,
+    cmdWarpInIcon,
+    cmdWarpOutIcon,
+    cmdBuildPrimeIcon,
+    cmdBuildFighterIcon,
+    cmdBuildGatewayIcon,
+    cmdBuildTurretIcon
+;
+
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 {
     if (!mainFont->loadFromFile("Andale_Mono.ttf"))
@@ -196,7 +226,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
 
 const sf::Color UNIT_OUTLINE_COLOR(100, 100, 100);
 
-void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
+void drawBeacon(sf::RenderTarget *renderTarget, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -209,10 +239,10 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
     innerRect.setRotation(45);
     innerRect.setPosition(toSFVecF(drawPos));
 
-    window->draw(innerRect);
+    renderTarget->draw(innerRect);
 }
 
-void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, vector2fl drawPos, float drawRotation, sf::Color teamColor, unsigned int alpha)
+void drawGateway(sf::RenderTarget *renderTarget, boost::shared_ptr<Gateway> gateway, vector2fl drawPos, float drawRotation, sf::Color teamColor, unsigned int alpha)
 {
     // if there's a combat target in range, draw guns
     if (auto attackTarget = gateway->maybeAttackTarget)
@@ -231,12 +261,12 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
         gunBarrelPoints[0].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[1].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[2].color = FIGHTER_BARREL_COLOR;
-        window->draw(gunBarrelPoints, transform);
+        renderTarget->draw(gunBarrelPoints, transform);
 
         gunBarrelPoints[0].position.y *= -1;
         gunBarrelPoints[1].position.y *= -1;
         gunBarrelPoints[2].position.y *= -1;
-        window->draw(gunBarrelPoints, transform);
+        renderTarget->draw(gunBarrelPoints, transform);
     }
 
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, alpha);
@@ -249,12 +279,12 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
     outerHex.setPosition(toSFVecF(drawPos));
     outerHex.setRotation(90);
 
-    window->draw(outerHex);
+    renderTarget->draw(outerHex);
 
-    drawBeacon(window, drawPos, teamColor, alpha);
+    drawBeacon(renderTarget, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl pos, float drawRotation, unsigned int alpha)
+void drawPrime(sf::RenderTarget *renderTarget, boost::shared_ptr<Prime> prime, vector2fl pos, float drawRotation, unsigned int alpha)
 {
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVecF(pos));
@@ -271,25 +301,25 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     wingPoints[1].position = sf::Vector2f(-static_cast<float>(PRIME_RADIUS)*1.4, static_cast<float>(PRIME_RADIUS));
     wingPoints[2].position = toSFVecF(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
     wingPoints[0].color = wingPoints[1].color = wingPoints[2].color = mainPrimeColor;
-    window->draw(wingPoints, transform);
+    renderTarget->draw(wingPoints, transform);
 
     wingPoints[0].position.y *= -1;
     wingPoints[1].position.y *= -1;
     wingPoints[2].position.y *= -1;
-    window->draw(wingPoints, transform);
+    renderTarget->draw(wingPoints, transform);
 
     sf::CircleShape structureOutline(primeCavityRadius);
     structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));
     structureOutline.setFillColor(sf::Color::Transparent);
     structureOutline.setOutlineColor(UNIT_OUTLINE_COLOR);
     structureOutline.setOutlineThickness(1);
-    window->draw(structureOutline, transform);
+    renderTarget->draw(structureOutline, transform);
 
     sf::CircleShape thickBorder(structureOutline);
     thickBorder.setOutlineColor(mainPrimeColor);
     thickBorder.setOutlineThickness(borderThickness);
 
-    window->draw(thickBorder, transform);
+    renderTarget->draw(thickBorder, transform);
 
     float heldGoldRatio = static_cast<float>(prime->getHeldGoldRatio());
     if (heldGoldRatio > 0)
@@ -302,11 +332,11 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
         heldGoldCircle.setPosition(toSFVecF(pos));
         heldGoldCircle.setFillColor(sf::Color::Yellow);
 
-        window->draw(heldGoldCircle);
+        renderTarget->draw(heldGoldCircle);
     }
 }
 
-void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawFighter(sf::RenderTarget *renderTarget, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -335,20 +365,20 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
-    window->draw(gunBarrelPoints, transform);
+    renderTarget->draw(gunBarrelPoints, transform);
 
     gunBarrelPoints[0].position.y *= -1;
     gunBarrelPoints[1].position.y *= -1;
     gunBarrelPoints[2].position.y *= -1;
-    window->draw(gunBarrelPoints, transform);
+    renderTarget->draw(gunBarrelPoints, transform);
 
     // draw two triangles
     oneSide.setPoint(1, front);
     oneSide.setPoint(0, back);
     oneSide.setPoint(2, right);
-    window->draw(oneSide);
+    renderTarget->draw(oneSide);
     oneSide.setPoint(2, left);
-    window->draw(oneSide);
+    renderTarget->draw(oneSide);
 
     // draw outline
     sf::VertexArray lines(sf::PrimitiveType::LineStrip, 5);
@@ -366,10 +396,10 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     transform = sf::Transform();
     transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
-    window->draw(lines, transform);
+    renderTarget->draw(lines, transform);
 }
 
-void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawTurret(sf::RenderTarget *renderTarget, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(TURRET_MAIN_COLOR.r,TURRET_MAIN_COLOR.g, TURRET_MAIN_COLOR.b, alpha);
 
@@ -383,9 +413,9 @@ void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf:
     box.setOutlineThickness(1);
     box.setPosition(toSFVecF(drawPos));
 
-    window->draw(box);
+    renderTarget->draw(box);
 
-    drawFighter(window, drawPos, rotation, teamColor, alpha);
+    drawFighter(renderTarget, drawPos, rotation, teamColor, alpha);
 }
 
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
@@ -1628,4 +1658,121 @@ void displayTitle(sf::RenderWindow* window, sf::Font* font)
     rendered.setPosition(toSFVecF(drawPos));
 
     window->draw(rendered);
+}
+
+void loadKeyCommandIcons()
+{
+    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdAttackIcon.setTexture(cmdAttackSource);
+    cmdAttackIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdCollectIcon.setTexture(cmdCollectSource);
+    cmdCollectIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdInvestIcon.setTexture(cmdInvestSource);
+    cmdInvestIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdMoveIcon.setTexture(cmdMoveSource);
+    cmdMoveIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdStopIcon.setTexture(cmdStopSource);
+    cmdStopIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdWarpInIcon.setTexture(cmdWarpInSource);
+    cmdWarpInIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
+    cmdWarpOutIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+
+    // for the build commands, we draw them to textures
+    vector2i buttonDrawSize = KEYBUTTON_SIZE - KEYBUTTON_PADDING;
+    
+    if (!cmdBuildPrimeSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    boost::shared_ptr<Prime> tempPrime(new Prime(-1, vector2fp::zero));
+    drawPrime(&cmdBuildPrimeSource, tempPrime, buttonDrawSize / 2, 45, 255);
+    cmdBuildPrimeSource.display();
+    cmdBuildPrimeIcon.setTexture(cmdBuildPrimeSource.getTexture());
+
+    if (!cmdBuildFighterSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    drawFighter(&cmdBuildFighterSource, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildFighterSource.display();
+    cmdBuildFighterIcon.setTexture(cmdBuildFighterSource.getTexture());
+
+    if (!cmdBuildGatewaySource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    boost::shared_ptr<Gateway> tempGateway(new Gateway(-1, vector2fp::zero));
+    drawGateway(&cmdBuildGatewaySource, tempGateway, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildGatewaySource.display();
+    cmdBuildGatewayIcon.setTexture(cmdBuildGatewaySource.getTexture());
+
+    if (!cmdBuildTurretSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    drawTurret(&cmdBuildTurretSource, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildTurretSource.display();
+    cmdBuildTurretIcon.setTexture(cmdBuildTurretSource.getTexture());
+}
+
+sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
+{
+    switch (keyButtonMsg)
+    {
+        case WarpIn:
+        {
+            return &cmdWarpInIcon;
+            break;
+        }
+        case WarpOut:
+        {
+            return &cmdWarpOutIcon;
+            break;
+        }
+        case BuildPrime:
+        {
+            return &cmdBuildPrimeIcon;
+            break;
+        }
+        case BuildFighter:
+        {
+            return &cmdBuildFighterIcon;
+            break;
+        }
+    }
 }

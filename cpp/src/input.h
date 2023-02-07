@@ -10,8 +10,6 @@
 const int SCREEN_EDGE_SCROLL_AMOUNT = 15;
 const float ZOOM_AMOUNT = 1.2;
 
-void loadKeyCommandIcons();
-
 class Tutorial; // defined in tutorial.h
 
 enum InGameMenuMsg {
@@ -52,7 +50,7 @@ struct GameUI
     bool online;
     bool displayAllRadii;
     ParticlesContainer particles;
-    GameUI(sf::RenderWindow*, sf::Font* font, bool online);
+    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), bool online);
     void updateUnitCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
     bool selectionHasGateways();

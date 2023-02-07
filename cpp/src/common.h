@@ -14,6 +14,8 @@ using namespace std;
 
 const int EXPECTED_SIGNATURE_LENGTH = 130;
 
+const sf::Color NEUTRAL_TEAM_COLOR(150, 150, 150);
+
 void debugOutputVector(const char *,vector2i);
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
