@@ -1224,14 +1224,26 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
     {
         case sf::Event::MouseButtonPressed:
         {
-            consumed = keyButtonBox.registerPress(mouseEventVec(event.mouseButton));
+            if (event.mouseButton.button == sf::Mouse::Right && cmdState != CmdState::Default)
+            {
+                returnToDefaultState();
+                cmdState = CmdState::Default;
+                consumed = true;
+            }
+            else if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                consumed = keyButtonBox.registerPress(mouseEventVec(event.mouseButton));
+            }
             break;
         }
         case sf::Event::MouseButtonReleased:
         {
-            auto consumedAndMaybeMsg = keyButtonBox.registerRelease(mouseEventVec(event.mouseButton));
-            consumed = get<0>(consumedAndMaybeMsg);
-            maybeButtonAndMsg = get<1>(consumedAndMaybeMsg);
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                auto consumedAndMaybeMsg = keyButtonBox.registerRelease(mouseEventVec(event.mouseButton));
+                consumed = get<0>(consumedAndMaybeMsg);
+                maybeButtonAndMsg = get<1>(consumedAndMaybeMsg);
+            }
             break;
         }
         case sf::Event::MouseMoved:
