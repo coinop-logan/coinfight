@@ -76,6 +76,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
         bool foundNonBeaconUnits = false;
         bool foundBeaconSpawning = false;
         bool selectionHasGateways = false;
+        bool foundCombatUnits = false;
+        bool foundPrimes = false;
         for (unsigned int i=0; i<selectedUnits.size(); i++)
         {
             auto unit = selectedUnits[i];
@@ -90,9 +92,18 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             {
                 foundNonBeaconUnits = true;
             }
+
             if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
             {
                 selectionHasGateways = true;
+            }
+            if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit))
+            {
+                foundCombatUnits = true;
+            }
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            {
+                foundPrimes = true;
             }
         }
 
@@ -145,7 +156,52 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             }
             else // selection has non-GW units and at least one non-beacon unit
             {
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::S,
+                    KeyButtonHintInfo("Stop"),
+                    KeyButtonMsg::Stop
+                );
 
+                if (foundCombatUnits)
+                {
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::A,
+                        KeyButtonHintInfo("Attack"),
+                        KeyButtonMsg::AttackScuttle
+                    );
+                }
+                else if (foundPrimes)
+                {
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::A,
+                        KeyButtonHintInfo("Scuttle/Collect"),
+                        KeyButtonMsg::AttackScuttle
+                    );
+                }
+
+                if (foundPrimes)
+                {
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::E,
+                        KeyButtonHintInfo("Build Gateway"),
+                        KeyButtonMsg::BuildGateway
+                    );
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::R,
+                        KeyButtonHintInfo("Build Turret"),
+                        KeyButtonMsg::BuildTurret
+                    );
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::F,
+                        KeyButtonHintInfo("Fetch/Collect"),
+                        KeyButtonMsg::Fetch
+                    );
+                    keyButtonBox.setUnitCmdOrThrow(
+                        sf::Keyboard::D,
+                        KeyButtonHintInfo("Deposit/Construct"),
+                        KeyButtonMsg::Invest
+                    );
+                }
             }
         }
     }
