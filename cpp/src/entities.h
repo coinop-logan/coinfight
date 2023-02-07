@@ -250,6 +250,7 @@ const fixed32 BEACON_RADIUS(10);
 
 class Beacon : public Building
 {
+    bool spendingTicket;
 public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
@@ -262,7 +263,7 @@ public:
         Despawning
     } state;
 
-    Beacon(uint8_t ownerId, vector2fp pos, State state);
+    Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket);
     void pack(Netpack::Builder* to);
     Beacon(Netpack::Consumer* from);
 

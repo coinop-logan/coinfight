@@ -1026,8 +1026,9 @@ string Beacon::getTypename() const { return "Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
-Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
+Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket)
     : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
+    , spendingTicket(spendingTicket)
     , state(state)
 {}
 void Beacon::pack(Netpack::Builder* to)
@@ -1036,12 +1037,14 @@ void Beacon::pack(Netpack::Builder* to)
     packBuildingBasics(to);
 
     to->packEnum(state);
+    to->packBool(spendingTicket);
 }
 Beacon::Beacon(Netpack::Consumer* from)
     : Unit(from)
     , Building(from)
 {
     state = from->consumeEnum<Beacon::State>();
+    spendingTicket = from->consumeBool();
 }
 
 void Beacon::iterate()
@@ -1072,6 +1075,10 @@ void Beacon::iterate()
 
             if (this->getBuilt() == 0)
             {
+                if (spendingTicket)
+                {
+                    game->players[this->ownerId].beaconAvailable = true;
+                }
                 die();
             }
         }
@@ -1321,7 +1328,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
         if (targetRef == this->getRefOrThrow())
         {
             // replace self with a despawning Beacon
-            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning));
+            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning, false));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
             game->registerNewEntityIgnoringConstraints(beacon);
