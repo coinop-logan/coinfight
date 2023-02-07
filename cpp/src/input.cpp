@@ -115,12 +115,32 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::Q,
                     KeyButtonHintInfo("Build Prime"),
-                    BuildPrime
+                    KeyButtonMsg::BuildPrime
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::W,
                     KeyButtonHintInfo("Build Fighter"),
-                    BuildFighter
+                    KeyButtonMsg::BuildFighter
+                );
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::A,
+                    KeyButtonHintInfo("Attack/Scuttle"),
+                    KeyButtonMsg::AttackScuttle
+                );
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::S,
+                    KeyButtonHintInfo("Stop"),
+                    KeyButtonMsg::Stop
+                );
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::D,
+                    KeyButtonHintInfo("Spend/Construct"),
+                    KeyButtonMsg::Invest
+                );
+                keyButtonBox.setUnitCmdOrThrow(
+                    sf::Keyboard::F,
+                    KeyButtonHintInfo("Collect"),
+                    KeyButtonMsg::Fetch
                 );
             }
             else // selection has non-GW units and at least one non-beacon unit
@@ -1256,20 +1276,92 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
         auto msg = get<1>(*maybeButtonAndMsg);
         switch (msg)
         {
-            case WarpIn:
+            case KeyButtonMsg::WarpIn:
             {
                 returnToDefaultState();
-                cmdState = GameUI::SpawnBeacon;
+                cmdState = CmdState::SpawnBeacon;
                 button->active = true;
                 ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
 
                 break;
             }
-            case WarpOut:
+            case KeyButtonMsg::WarpOut:
             {
                 returnToDefaultState();
                 maybeCmd = boost::shared_ptr<Cmd>(new WarpOutCmd(entityPtrsToRefsOrThrow(selectedUnits)));
                 button->visualFlashClock.restart();
+
+                break;
+            }
+            case KeyButtonMsg::Stop:
+            {
+                returnToDefaultState();
+                maybeCmd = boost::shared_ptr<Cmd>(new StopCmd(entityPtrsToRefsOrThrow(selectedUnits)));
+                button->visualFlashClock.restart();
+
+                break;
+            }
+            case KeyButtonMsg::Invest:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::Deposit;
+                button->active = true;
+
+                break;
+            }
+            case KeyButtonMsg::Fetch:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::Fetch;
+                button->active = true;
+
+                break;
+            }
+            case KeyButtonMsg::AttackScuttle:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::AttackScuttle;
+                button->active = true;
+
+                break;
+            }
+            case KeyButtonMsg::BuildPrime:
+            {
+                returnToDefaultState();
+                if (auto cmd = makeGatewayBuildCmd(selectedUnits, PRIME_TYPECHAR))
+                {
+                    button->visualFlashClock.restart();
+                    maybeCmd = {cmd};
+                }
+
+                break;
+            }
+            case KeyButtonMsg::BuildFighter:
+            {
+                returnToDefaultState();
+                if (auto cmd = makeGatewayBuildCmd(selectedUnits, FIGHTER_TYPECHAR))
+                {
+                    button->visualFlashClock.restart();
+                    maybeCmd = {cmd};
+                }
+
+                break;
+            }
+            case KeyButtonMsg::BuildGateway:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::Build;
+                ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+                button->active = true;
+
+                break;
+            }
+            case KeyButtonMsg::BuildTurret:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::Build;
+                ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
+                button->active = true;
 
                 break;
             }

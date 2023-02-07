@@ -264,6 +264,10 @@ enum KeyButtonMsg
 {
     WarpIn,
     WarpOut,
+    Stop,
+    Invest,
+    Fetch,
+    AttackScuttle,
     BuildPrime,
     BuildFighter,
     BuildGateway,

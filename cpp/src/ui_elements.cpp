@@ -683,11 +683,6 @@ void KeyButton::draw(sf::RenderWindow* window)
     mainBox.setFillColor(backgroundColor);
     window->draw(mainBox);
 
-    // keyCharText = sf::Text("s", )
-    keyCharText.setPosition(toSFVecF(p1));
-    keyCharText.setFillColor(keyColor);
-    window->draw(keyCharText);
-
     if (maybeActionInfo)
     {
         auto actionInfo = *maybeActionInfo;
@@ -696,6 +691,11 @@ void KeyButton::draw(sf::RenderWindow* window)
 
         window->draw(*actionInfo.sprite);
     }
+
+    // keyCharText = sf::Text("s", )
+    keyCharText.setPosition(toSFVecF(p1));
+    keyCharText.setFillColor(keyColor);
+    window->draw(keyCharText);
 }
 
 // Not needed since we're overriding draw() above

@@ -30,6 +30,7 @@ const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 sf::Texture
     cmdAttackSource,
     cmdCollectSource,
+    cmdScuttleSource,
     cmdInvestSource,
     cmdMoveSource,
     cmdStopSource,
@@ -46,6 +47,7 @@ sf::RenderTexture
 sf::Sprite
     cmdAttackIcon,
     cmdCollectIcon,
+    cmdScuttleIcon,
     cmdInvestIcon,
     cmdMoveIcon,
     cmdStopIcon,
@@ -1676,6 +1678,13 @@ void loadKeyCommandIcons()
     cmdCollectIcon.setTexture(cmdCollectSource);
     cmdCollectIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
 
+    if (!cmdScuttleSource.loadFromFile("cmd-scuttle.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdScuttleIcon.setTexture(cmdScuttleSource);
+    cmdScuttleIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
     if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
     {
         throw runtime_error("Can't load icon png");
@@ -1762,6 +1771,26 @@ sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
         case WarpOut:
         {
             return &cmdWarpOutIcon;
+            break;
+        }
+        case Stop:
+        {
+            return &cmdStopIcon;
+            break;
+        }
+        case Invest:
+        {
+            return &cmdInvestIcon;
+            break;
+        }
+        case Fetch:
+        {
+            return &cmdCollectIcon;
+            break;
+        }
+        case AttackScuttle:
+        {
+            return &cmdScuttleIcon;
             break;
         }
         case BuildPrime:
