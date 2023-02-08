@@ -28,7 +28,25 @@ void printHi()
 }
 
 GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::View uxView, bool online)
-    : font(font), keyButtonBox(vector2i(0, getViewSize(window, uxView).y - KEYBUTTONBOX_SIZE.y), font, getSpriteForMsg), online(online)
+  : font(font),
+    selectedUnits(),
+    unitInfoBox(
+        vector2i(
+            0,
+            getViewSize(window, uxView).y - UNITINFOBOX_SIZE.y
+        ),
+        font,
+        &selectedUnits
+    ),
+    keyButtonBox(
+        vector2i(
+            UNITINFOBOX_SIZE.x,
+            getViewSize(window, uxView).y - KEYBUTTONBOX_SIZE.y
+        ),
+        font,
+        getSpriteForMsg
+    ),
+    online(online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));

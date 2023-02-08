@@ -842,3 +842,83 @@ void KeyButtonUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
         keyButtons[i].draw(window);
     }
 }
+
+UnitInfoUXBox::UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits)
+    : UXBox(upperLeft, UNITINFOBOX_SIZE), font(font), selectedUnits(selectedUnits)
+    {}
+
+void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos)
+{
+    string name = unit->getTypename();
+    sf::Text nameText(name, *font, 22);
+    nameText.setPosition(toSFVecF(upperLeftDrawPos));
+
+    window->draw(nameText);
+}
+
+const int HEALTH_TEXT_SIZE = 20;
+
+sf::Color getHealthStringColor(boost::shared_ptr<Unit> unit)
+{
+    float healthRatio = (float)(unit->getEffectiveHealth()) / (float)(unit->getMaxHealth());
+    if (healthRatio < 0.25)
+    {
+        return sf::Color(255, 0, 0);
+    }
+    else if (healthRatio < 0.6)
+    {
+        return sf::Color(255, 255, 0);
+    }
+    else
+    {
+        return sf::Color(0, 255, 0);
+    }
+}
+
+void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperRightDrawPos)
+{
+    string currentHealthString = uint16ToString(unit->getEffectiveHealth());
+    string maxHealthString = uint16ToString(unit->getMaxHealth());
+    
+    sf::Text firstHalf(currentHealthString, *font, HEALTH_TEXT_SIZE);
+    firstHalf.setFillColor(getHealthStringColor(unit));
+
+    sf::Text secondHalf(string(" / ") + maxHealthString, *font, HEALTH_TEXT_SIZE);
+    secondHalf.setFillColor(sf::Color(255, 255, 255));
+
+    vector2i drawPos = upperRightDrawPos;
+
+    // align the whole thing right, by rendering the two pieces in reverse order
+    drawPos -= vector2i(secondHalf.getLocalBounds().width, 0);
+    secondHalf.setPosition(toSFVecF(drawPos));
+
+    drawPos -= vector2i(firstHalf.getLocalBounds().width, 0);
+    firstHalf.setPosition(toSFVecF(drawPos));
+
+    window->draw(secondHalf);
+    window->draw(firstHalf);
+}
+
+void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
+{
+    vector2i upperRightDrawPos = upperLeftDrawPos + vector2i(drawAreaSize.x, 0);
+
+    displayUnitName(window, unit, font, upperLeftDrawPos);
+    displayUnitHealth(window, unit, font, upperRightDrawPos);
+}
+
+void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
+{
+    if (selectedUnits->size() == 0)
+    {
+        // displayNoneUnitInfo(boxUpperLeft);
+    }
+    else if (selectedUnits->size() == 1)
+    {
+        displaySingleUnitInfo(window, (*selectedUnits)[0], font, upperLeft, UNITINFOBOX_SIZE - (UX_BOX_PADDING * 2));
+    }
+    else
+    {
+        // displayMultipleUnitInfo();
+    }
+}

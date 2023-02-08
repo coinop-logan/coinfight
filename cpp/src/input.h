@@ -28,6 +28,8 @@ struct GameUI
     sf::Clock lClickClock;
     boost::shared_ptr<Entity> mouseoverEntity;
     boost::shared_ptr<Building> ghostBuilding;
+    vector<boost::shared_ptr<Unit>> selectedUnits;
+    UnitInfoUXBox unitInfoBox;
     KeyButtonUXBox keyButtonBox;
     enum CmdState {
         Default,
@@ -40,7 +42,6 @@ struct GameUI
     bool minimapEnabled;
     vector2i lastMousePos;
     optional<vector2i> maybeSelectionBoxStart;
-    vector<boost::shared_ptr<Unit>> selectedUnits;
     sf::View cameraView;
     bool quitNow;
     int debugInt;

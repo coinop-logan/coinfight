@@ -1292,113 +1292,6 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
     }
 }
 
-// void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
-// {
-//     bool playerOwnsUnits(false);
-//     for (unsigned int i=0; i<game->entities.size(); i++)
-//     {
-//         if (game->entities[i])
-//             if (getAllianceType(maybePlayerId, game->entities[i]) == Owned)
-//             {
-//                 playerOwnsUnits = true;
-//                 break;
-//             }
-//     }
-    // if (!ui->hideUX)
-    // {
-    //     if (playerOwnsUnits)
-    //         displayUnitHotkeyHelp(window, ui, font);
-    //     else
-    //         displaySpawnBeaconHotkey(window, ui, font);
-    // }
-// }
-
-void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos)
-{
-    string name = unit->getTypename();
-    sf::Text nameText(name, *font, 22);
-    nameText.setPosition(toSFVecF(upperLeftDrawPos));
-
-    window->draw(nameText);
-}
-
-const int HEALTH_TEXT_SIZE = 20;
-
-sf::Color getHealthStringColor(boost::shared_ptr<Unit> unit)
-{
-    float healthRatio = (float)(unit->getEffectiveHealth()) / (float)(unit->getMaxHealth());
-    if (healthRatio < 0.25)
-    {
-        return sf::Color(255, 0, 0);
-    }
-    else if (healthRatio < 0.6)
-    {
-        return sf::Color(255, 255, 0);
-    }
-    else
-    {
-        return sf::Color(0, 255, 0);
-    }
-}
-
-void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperRightDrawPos)
-{
-    string currentHealthString = uint16ToString(unit->getEffectiveHealth());
-    string maxHealthString = uint16ToString(unit->getMaxHealth());
-    
-    sf::Text firstHalf(currentHealthString, *font, HEALTH_TEXT_SIZE);
-    firstHalf.setFillColor(getHealthStringColor(unit));
-
-    sf::Text secondHalf(string(" / ") + maxHealthString, *font, HEALTH_TEXT_SIZE);
-    secondHalf.setFillColor(sf::Color(255, 255, 255));
-
-    vector2i drawPos = upperRightDrawPos;
-
-    // align the whole thing right, by rendering the two pieces in reverse order
-    drawPos -= vector2i(secondHalf.getLocalBounds().width, 0);
-    secondHalf.setPosition(toSFVecF(drawPos));
-
-    drawPos -= vector2i(firstHalf.getLocalBounds().width, 0);
-    firstHalf.setPosition(toSFVecF(drawPos));
-
-    window->draw(secondHalf);
-    window->draw(firstHalf);
-}
-
-void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, optional<uint8_t> maybePlayerId, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
-{
-    vector2i upperRightDrawPos = upperLeftDrawPos + vector2i(drawAreaSize.x, 0);
-
-    displayUnitName(window, unit, font, upperLeftDrawPos);
-    displayUnitHealth(window, unit, font, upperRightDrawPos);
-}
-
-void displayUnitInfo(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
-{
-    vector2i boxUpperLeft = getCurrentViewSize(window) - (UNIT_INFO_BOX_SIZE + UX_ELEMENT_SPACING);
-
-    sf::RectangleShape boundingBox(toSFVecF(UNIT_INFO_BOX_SIZE));
-    boundingBox.setPosition(toSFVecF(boxUpperLeft));
-    boundingBox.setOutlineThickness(1);
-    boundingBox.setOutlineColor(UX_BOX_BORDER_COLOR);
-    boundingBox.setFillColor(UX_BOX_BACKGROUND_COLOR);
-
-    window->draw(boundingBox);
-
-    if (ui->selectedUnits.size() == 0)
-    {
-        // displayNoneUnitInfo(boxUpperLeft + UX_BOX_PADDING);
-    }
-    else if (ui->selectedUnits.size() == 1)
-    {
-        displaySingleUnitInfo(window, ui->selectedUnits[0], maybePlayerId, font, boxUpperLeft + UX_BOX_PADDING, UNIT_INFO_BOX_SIZE - (UX_BOX_PADDING * 2));
-    }
-    else
-    {
-        // displayMultipleUnitInfo();
-    }
-}
-
 void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
 {
     displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, font, displayWalletHints);
@@ -1409,9 +1302,8 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
         displayOutputStrings(window, outputStrings, font);
     }
 
-    // displayHotkeyHelp(window, game, ui, maybePlayerId, font);
     ui->keyButtonBox.draw(window);
-    displayUnitInfo(window, game, ui, maybePlayerId, font);
+    ui->unitInfoBox.draw(window);
 }
 
 void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)

@@ -9,8 +9,6 @@
 
 const vector2fl COMBATUNIT_SHOT_OFFSET(20, 10);
 
-const vector2i UNIT_INFO_BOX_SIZE(350, 350);
-
 const unsigned int TITLE_POS_Y = 50;
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);

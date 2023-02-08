@@ -3,6 +3,7 @@
 #include <boost/shared_ptr.hpp>
 #include "myvectors.h"
 #include "common.h"
+#include "entities.h"
 
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
@@ -42,6 +43,8 @@ const vector2i KEYBUTTONBOX_SIZE(
     KEYBUTTON_ROW2_OFFSETX + KEYBUTTON_SIZE.x * 4 + KEYBUTTON_SPACING * 3 + KEYBUTTONBOX_PADDING.x * 2,
     KEYBUTTON_SIZE.x * 3 + KEYBUTTON_SPACING * 2 + KEYBUTTONBOX_PADDING.y * 2
 );
+
+const vector2i UNITINFOBOX_SIZE(300, 300);
 
 void loadMenuIcons();
 
@@ -320,6 +323,15 @@ public:
     bool registerPress(vector2i);
     tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> registerRelease(vector2i);
     optional<tuple<KeyButton*, KeyButtonMsg>> handleKey(sf::Keyboard::Key);
+    void drawContent(sf::RenderWindow* window, vector2i upperLeft);
+};
+
+class UnitInfoUXBox : public UXBox
+{
+    sf::Font* font;
+    vector<boost::shared_ptr<Unit>>* selectedUnits;
+public:
+    UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits);
     void drawContent(sf::RenderWindow* window, vector2i upperLeft);
 };
 
