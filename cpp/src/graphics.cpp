@@ -27,6 +27,10 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
+sf::View uxView;
+sf::View gameView;
+sf::View screenView;
+
 sf::Texture
     cmdAttackSource,
     cmdCollectSource,
@@ -109,6 +113,15 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 
     sf::RenderWindow* window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
+
+    // setup views
+    screenView = window->getDefaultView();
+
+    // as a quick fix for big resolutions, we double the UX size if the screen is large.    
+    if (getScreenSize(window).x > 2000)
+        uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
+    else
+        uxView = screenView;
 
     return window;
 }
@@ -585,7 +598,7 @@ void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, 
 
         float width = text.getLocalBounds().width;
         int x, y;
-        x = getViewSize(window).x - width - 10;
+        x = getCurrentViewSize(window).x - width - 10;
         y = 6 + i * 20;
         text.setPosition(sf::Vector2f(x, y));
 
@@ -1108,7 +1121,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
     sf::Transform transform;
     transform.translate(
         sf::Vector2f(
-            getViewSize(window).x - boxWidth - 10,
+            getCurrentViewSize(window).x - boxWidth - 10,
             10
         )
     );
@@ -1506,7 +1519,7 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
 
 void displayUnitInfo(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
 {
-    vector2i boxUpperLeft = getViewSize(window) - (UNIT_INFO_BOX_SIZE + UX_ELEMENT_SPACING);
+    vector2i boxUpperLeft = getCurrentViewSize(window) - (UNIT_INFO_BOX_SIZE + UX_ELEMENT_SPACING);
 
     sf::RectangleShape boundingBox(toSFVecF(UNIT_INFO_BOX_SIZE));
     boundingBox.setPosition(toSFVecF(boxUpperLeft));
@@ -1566,15 +1579,7 @@ void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
 
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font* mainFont, sf::Font* tutorialFont, bool displayWalletHints)
 {
-    sf::View gameView = ui->cameraView;
-    sf::View screenView = window->getDefaultView();
-
-    // as a quick fix for big resolutions, we double the UX size if the screen is large.
-    sf::View uxView;
-    if (getScreenSize(window).x > 2000)
-        uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
-    else
-        uxView = screenView;
+    gameView = ui->cameraView;
 
     window->clear();
 
@@ -1815,4 +1820,9 @@ sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
         }
     }
     throw runtime_error("Can't find sprite for that KeyButtonMsg");
+}
+
+sf::View getUXView()
+{
+    return uxView;
 }

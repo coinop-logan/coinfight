@@ -27,8 +27,8 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), bool online)
-    : font(font), keyButtonBox(vector2i(0, getViewSize(window).y - KEYBUTTONBOX_SIZE.y), font, getSpriteForMsg), online(online)
+GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::View uxView, bool online)
+    : font(font), keyButtonBox(vector2i(0, getViewSize(window, uxView).y - KEYBUTTONBOX_SIZE.y), font, getSpriteForMsg), online(online)
 {
     cameraView = window->getDefaultView();
     cameraView.setCenter(sf::Vector2f(0, 0));
@@ -416,6 +416,18 @@ vector2i gamePosToScreenPos(sf::RenderWindow* window, vector2fp gamePos)
     );
 }
 
+// vector2fl mouseEventVec(sf::Event::MouseButtonEvent mEvent, sf::View view)
+// {
+//     sf::Transform viewTransform = view.getTransform();
+//     vector2fl point = fromSFVec(viewTransform.transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
+//     return fromSFVec(viewTransform.getInverse().transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
+// }
+// vector2fl mouseEventVec(sf::Event::MouseMoveEvent mEvent, sf::View view)
+// {
+//     sf::Transform viewTransform = view.getTransform();
+//     return fromSFVec(viewTransform.getInverse().transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
+// }
+
 vector2i mouseEventVec(sf::Event::MouseButtonEvent mEvent)
 {
     return vector2i(mEvent.x, mEvent.y);
@@ -719,7 +731,7 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
     }
 }
 
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial)
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial, sf::View uxView)
 {
     bool spawnBeaconAvailable = maybePlayerId ?
         ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
@@ -820,7 +832,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
             // If the user isn't middle-click-dragging or using a selectionBox, try interface with overlay
             if (!sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle) && !ui->maybeSelectionBoxStart)
             {
-                auto wasConsumedAndMaybeCmd = ui->processEventForOverlay(event);
+                auto wasConsumedAndMaybeCmd = ui->processEventForOverlay(event, (getScreenSize(window).x / uxView.getSize().x));
 
                 overlayConsumedEvent = get<0>(wasConsumedAndMaybeCmd);
                 if (auto cmd = get<1>(wasConsumedAndMaybeCmd))
@@ -838,7 +850,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                         {
                             vector2i mousePos = mouseEventVec(event.mouseMove);
 
-                            float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
+                            float zoomFactor = getCurrentViewSize(window).x / getScreenSize(window).x ;
 
                             vector2fl moveVector = vector2fl(mousePos - ui->lastMousePos) * zoomFactor;
                             ui->cameraView.move(toSFVecF(moveVector * -1));
@@ -1252,7 +1264,7 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
             (screenDimensions.y - ui->lastMousePos.y == 1)  ?    SCREEN_EDGE_SCROLL_AMOUNT :
             0;
 
-        float zoomFactor = getViewSize(window).x / getScreenSize(window).x ;
+        float zoomFactor = getCurrentViewSize(window).x / getScreenSize(window).x ;
 
         ui->cameraView.move(toSFVecF(screenEdgeCameraMove * zoomFactor));
     }
@@ -1274,7 +1286,7 @@ void GameUI::returnToDefaultState()
     keyButtonBox.returnToDefaultState();
 }
 
-tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf::Event event)
+tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf::Event event, float uxViewZoom)
 {
     // the below just deals with the KeyButtonBox.
 
@@ -1293,7 +1305,8 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             }
             else if (event.mouseButton.button == sf::Mouse::Left)
             {
-                consumed = keyButtonBox.registerPress(mouseEventVec(event.mouseButton));
+                vector2fl point = vector2fl(mouseEventVec(event.mouseButton)) * (1/uxViewZoom);
+                consumed = keyButtonBox.registerPress(point);
             }
             break;
         }
@@ -1301,7 +1314,8 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
         {
             if (event.mouseButton.button == sf::Mouse::Left)
             {
-                auto consumedAndMaybeMsg = keyButtonBox.registerRelease(mouseEventVec(event.mouseButton));
+                vector2fl point = vector2fl(mouseEventVec(event.mouseButton)) * (1/uxViewZoom);
+                auto consumedAndMaybeMsg = keyButtonBox.registerRelease(point);
                 consumed = get<0>(consumedAndMaybeMsg);
                 maybeButtonAndMsg = get<1>(consumedAndMaybeMsg);
             }
@@ -1309,7 +1323,8 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
         }
         case sf::Event::MouseMoved:
         {
-            consumed = keyButtonBox.registerMouseMove(mouseEventVec(event.mouseMove));
+            vector2fl point = vector2fl(mouseEventVec(event.mouseMove)) * (1.0/uxViewZoom);
+            consumed = keyButtonBox.registerMouseMove(point);
             break;
         }
         case sf::Event::KeyPressed:

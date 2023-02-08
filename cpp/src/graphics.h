@@ -20,5 +20,6 @@ void cleanupGraphics(sf::RenderWindow* window);
 void displayTitle(sf::RenderWindow*, sf::Font*);
 void loadKeyCommandIcons();
 sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg);
+sf::View getUXView();
 
 #endif // GRAPHICS_H

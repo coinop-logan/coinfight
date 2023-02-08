@@ -50,7 +50,7 @@ struct GameUI
     bool online;
     bool displayAllRadii;
     ParticlesContainer particles;
-    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), bool online);
+    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::View view, bool online);
     void updateUnitCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
     bool selectionHasGateways();
@@ -59,14 +59,17 @@ struct GameUI
     void iterate();
     void removeDuplicatesFromSelection();
     void returnToDefaultState();
-    tuple<bool, optional<boost::shared_ptr<Cmd>>> processEventForOverlay(sf::Event event);
+    tuple<bool, optional<boost::shared_ptr<Cmd>>> processEventForOverlay(sf::Event event, float uxViewZoom);
 };
 vector2fp screenPosToGamePos(sf::RenderWindow*, vector2i);
 vector2i gamePosToScreenPos(sf::RenderWindow*, vector2fp);
 Target getTargetAtScreenPos(sf::RenderWindow*, Game *, vector2i);
 boost::shared_ptr<Cmd> makeRightclickCmd(const Game &game, GameUI ui, Target target);
+// vector2fl mouseEventVec(sf::Event::MouseButtonEvent mEvent, sf::View view);
+// vector2fl mouseEventVec(sf::Event::MouseMoveEvent mEvent, sf::View view);
 vector2i mouseEventVec(sf::Event::MouseButtonEvent mEvent);
-vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial);
+vector2i mouseEventVec(sf::Event::MouseMoveEvent mEvent);
+vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial, sf::View uxView);
 
 boost::shared_ptr<Cmd> makeGatewayBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar);
 boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selectedUnits, uint8_t buildUnitTypechar, vector2fl buildPos, bool asap);
