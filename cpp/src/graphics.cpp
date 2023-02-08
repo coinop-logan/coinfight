@@ -1361,7 +1361,7 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
     ui->unitInfoBox.draw(window);
     if (auto hintToDisplay = ui->keyButtonBox.getMouseoverHintInfo())
     {
-        displayKeyButtonHint(window, ui->keyButtonBox.upperLeft - (vector2i(0, KEYBUTTONHINT_SIZE.y)), *hintToDisplay, font);
+        displayKeyButtonHint(window, vector2i(ui->keyButtonBox.upperLeft.x + KEYBUTTONBOX_SIZE.x + 2, getCurrentViewSize(window).y - KEYBUTTONHINT_SIZE.y), *hintToDisplay, font);
     }
 }
 
