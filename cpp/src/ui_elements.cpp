@@ -917,6 +917,20 @@ void displayUnitArt(sf::RenderWindow* window, vector2i upperLeft, uint8_t type, 
     window->draw(placeholder);
 }
 
+void displayUnitHints(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, uint8_t type, sf::Font* font)
+{
+    sf::Text hintsText("Hints here!", *font, 16);
+    hintsText.setPosition(toSFVecF(upperLeft));
+    window->draw(hintsText);
+}
+
+void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, boost::shared_ptr<Unit> unit, sf::Font* font)
+{
+    sf::Text hintsText("Status here!", *font, 16);
+    hintsText.setPosition(toSFVecF(upperLeft));
+    window->draw(hintsText);
+}
+
 void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
 {
     vector2i upperRightDrawPos = upperLeftDrawPos + vector2i(drawAreaSize.x, 0);
@@ -927,6 +941,11 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
     int y = upperLeftDrawPos.y + 50;
 
     displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
+    displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
+
+    y += UNIT_ART_SIZE.y + UX_BOX_SPACING.y;
+
+    displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
 }
 
 void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)

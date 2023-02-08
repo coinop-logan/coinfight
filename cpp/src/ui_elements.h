@@ -28,6 +28,7 @@ const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
 
 const vector2i UX_ELEMENT_SPACING(5, 5);
 const vector2i UX_BOX_PADDING(10, 10);
+const vector2i UX_BOX_SPACING(10, 10);
 const sf::Color UX_BOX_BORDER_COLOR(150, 150, 200);
 const sf::Color UX_BOX_BACKGROUND_COLOR(0, 0, 0, 200);
 
