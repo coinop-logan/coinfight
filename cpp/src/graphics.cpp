@@ -1252,11 +1252,11 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
     }
 }
 
-void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* mainFont)
+void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont)
 {
     if (!ui->cleanDrawEnabled)
     {
-        drawUnitDroppableValues(window, game, ui, maybePlayerId, mainFont);
+        drawUnitDroppableValues(window, game, ui, maybePlayerId, fwFont);
         drawUnitHealthBars(window, game, ui, maybePlayerId);
         drawAppropriateRadii(window, game, ui);
     }
@@ -1268,7 +1268,7 @@ void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<
 }
 
 coinsInt lastPlayerCredit = 0;
-void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* mainFont, bool displayWalletHints)
+void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
     // depending on how maybePlayerAddress and maybePlayerId are set,
     // we might draw a balance or a message about coinfight.io.
@@ -1282,17 +1282,17 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
              playerCredit > lastPlayerCredit ?      sf::Color::Green :
                                                     sf::Color::Red
             );
-        displayAccountBalance(window, &game->players[playerId].credit, mainFont, balanceTextColor, sf::Vector2f(20, 20), displayWalletHints);
+        displayAccountBalance(window, &game->players[playerId].credit, fwFont, balanceTextColor, sf::Vector2f(20, 20), displayWalletHints);
 
         lastPlayerCredit = playerCredit;
     }
     else // player has an address but no ID. To become a registered player in the game they need to deposit
     {
-        displayDepositNeededMsg(window, mainFont, sf::Vector2f(20, 20));
+        displayDepositNeededMsg(window, humanFont, sf::Vector2f(20, 20));
     }
 }
 
-void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButtonHintInfo hintInfo, sf::Font* font)
+void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButtonHintInfo hintInfo, sf::Font* fwFont, sf::Font* humanFont)
 {
     sf::RectangleShape borderBox(toSFVecF(KEYBUTTONHINT_SIZE));
     borderBox.setPosition(toSFVecF(upperLeft));
@@ -1307,7 +1307,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
 
     // title text
     string titleString = hintInfo.name + " (" + string(1, hintInfo.hotkeyChar) + ")";
-    sf::Text titleText(titleString, *font, 20);
+    sf::Text titleText(titleString, *humanFont, 20);
     titleText.setPosition(toSFVecF(drawUpperLeft));
     titleText.setFillColor(sf::Color::White);
     window->draw(titleText);
@@ -1315,7 +1315,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
     if (auto cost = hintInfo.maybeCost)
     {
         string costString = coinsIntToDollarString(*cost);
-        sf::Text costText(costString, *font, 18);
+        sf::Text costText(costString, *fwFont, 18);
         int xOffset = drawAreaSize.x - costText.getLocalBounds().width;
         costText.setPosition(toSFVecF(drawUpperLeft + vector2i(xOffset, 0)));
         costText.setFillColor(sf::Color(255, 255, 0));
@@ -1325,7 +1325,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
     int yOffset = titleText.getLocalBounds().height + 20;
     int xOffset = 10;
 
-    int textHeight = GH::wrapAndRenderTextAtPos(window, hintInfo.description, font, 16, sf::Color::White, drawAreaSize.x, drawUpperLeft + vector2i(xOffset, yOffset));
+    int textHeight = GH::wrapAndRenderTextAtPos(window, hintInfo.description, humanFont, 16, sf::Color::White, drawAreaSize.x, drawUpperLeft + vector2i(xOffset, yOffset));
     yOffset += textHeight + 20;
 
     sf::RectangleShape bulletPointRect(sf::Vector2f(5, 5));
@@ -1341,27 +1341,27 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
 
         vector2i textDrawOffset = itemDrawOffset + vector2i(10, 0);
         int availableWidth = drawAreaSize.x - textDrawOffset.x;
-        textHeight = GH::wrapAndRenderTextAtPos(window, lineText, font, 12, sf::Color::White, availableWidth, drawUpperLeft + textDrawOffset);
+        textHeight = GH::wrapAndRenderTextAtPos(window, lineText, humanFont, 12, sf::Color::White, availableWidth, drawUpperLeft + textDrawOffset);
 
         yOffset += textHeight + 10;
     }
 }
 
-void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
+void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
-    displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, font, displayWalletHints);
+    displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
 
     if (! ui->hideUX)
     {
         vector<sf::String> outputStrings;
-        displayOutputStrings(window, outputStrings, font);
+        displayOutputStrings(window, outputStrings, fwFont);
     }
 
     ui->keyButtonBox.draw(window);
     ui->unitInfoBox.draw(window);
     if (auto hintToDisplay = ui->keyButtonBox.getMouseoverHintInfo())
     {
-        displayKeyButtonHint(window, vector2i(ui->keyButtonBox.upperLeft.x + KEYBUTTONBOX_SIZE.x + 2, getCurrentViewSize(window).y - KEYBUTTONHINT_SIZE.y), *hintToDisplay, font);
+        displayKeyButtonHint(window, vector2i(ui->keyButtonBox.upperLeft.x + KEYBUTTONBOX_SIZE.x + 2, getCurrentViewSize(window).y - KEYBUTTONHINT_SIZE.y), *hintToDisplay, fwFont, humanFont);
     }
 }
 
@@ -1384,7 +1384,7 @@ void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
     }
 }
 
-void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font* mainFont, sf::Font* tutorialFont, bool displayWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
     gameView = ui->cameraView;
 
@@ -1404,17 +1404,17 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
     {
         window->setView(gameView);
         drawGame(window, game, ui);
-        drawGameOverlay(window, game, ui, maybePlayerId, mainFont);
+        drawGameOverlay(window, game, ui, maybePlayerId, fwFont);
         // drawSearchGridOverlay(window, game);
         window->setView(screenView);
         displayCursorOrSelectionBox(window, ui, maybePlayerId);
         window->setView(uxView);
-        displayGameHUD(window, game, ui, maybePlayerId, mainFont, displayWalletHints);
+        displayGameHUD(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
     }
     if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))
     {
         window->setView(uxView);
-        displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
+        displayTutorial(window, tutorial, game, ui, 500, humanFont);
     }
 
     window->setView(screenView);
