@@ -56,17 +56,6 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
     minimapEnabled = false;
     maybeSelectionBoxStart = {};
     displayAllRadii = false;
-    // unitInterfaceCmds = vector<boost::shared_ptr<UnitInterfaceCmd>>
-    // {
-    //     boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildPrimeInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new GatewayBuildFighterInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildGatewayInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new PrimeBuildTurretInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new AttackScuttleInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new StopInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new DepositInterfaceCmd()),
-    //     boost::shared_ptr<UnitInterfaceCmd>(new FetchInterfaceCmd())
-    // };
     quitNow = false;
     cleanDrawEnabled = false;
     showTutorial = true; // only matters for coinfight_local right now
