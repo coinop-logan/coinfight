@@ -64,6 +64,8 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
 
 void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
 {
+    KeyButtonHintInfo tempDefault("Temp", dollarsToCoinsIntND(1), sf::Text("T", *font, 16), "Temp description!", {"bullet 1", "bullet 2"});
+    
     keyButtonBox.clearActionInfos();
 
     if (selectedUnits.size() == 0)
@@ -72,7 +74,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
         {
             keyButtonBox.setUnitCmdOrThrow(
                 sf::Keyboard::W,
-                KeyButtonHintInfo("Warp In Gateway"),
+                // KeyButtonHintInfo("Warp In Gateway"),
+                tempDefault,
                 WarpIn
             );
         }
@@ -120,7 +123,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             {
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::Q,
-                    KeyButtonHintInfo("Warp Out"),
+                    // KeyButtonHintInfo("Warp Out"),
+                    tempDefault,
                     WarpOut
                 );
             }
@@ -132,32 +136,38 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 // Selection is kept GW-segregated, so we know the selection ONLY has gateways
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::Q,
-                    KeyButtonHintInfo("Build Prime"),
+                    // KeyButtonHintInfo("Build Prime"),
+                    tempDefault,
                     KeyButtonMsg::BuildPrime
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::W,
-                    KeyButtonHintInfo("Build Fighter"),
+                    // KeyButtonHintInfo("Build Fighter"),
+                    tempDefault,
                     KeyButtonMsg::BuildFighter
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::A,
-                    KeyButtonHintInfo("Attack/Scuttle"),
+                    // KeyButtonHintInfo("Attack/Scuttle"),
+                    tempDefault,
                     KeyButtonMsg::AttackScuttle
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::S,
-                    KeyButtonHintInfo("Stop"),
+                    // KeyButtonHintInfo("Stop"),
+                    tempDefault,
                     KeyButtonMsg::Stop
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::D,
-                    KeyButtonHintInfo("Spend/Construct"),
+                    // KeyButtonHintInfo("Spend/Construct"),
+                    tempDefault,
                     KeyButtonMsg::Invest
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::F,
-                    KeyButtonHintInfo("Collect"),
+                    // KeyButtonHintInfo("Collect"),
+                    tempDefault,
                     KeyButtonMsg::Fetch
                 );
             }
@@ -165,7 +175,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             {
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::S,
-                    KeyButtonHintInfo("Stop"),
+                    // KeyButtonHintInfo("Stop"),
+                    tempDefault,
                     KeyButtonMsg::Stop
                 );
 
@@ -173,7 +184,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 {
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::A,
-                        KeyButtonHintInfo("Attack"),
+                        // KeyButtonHintInfo("Attack"),
+                        tempDefault,
                         KeyButtonMsg::AttackScuttle
                     );
                 }
@@ -181,7 +193,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 {
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::A,
-                        KeyButtonHintInfo("Scuttle/Collect"),
+                        // KeyButtonHintInfo("Scuttle/Collect"),
+                        tempDefault,
                         KeyButtonMsg::AttackScuttle
                     );
                 }
@@ -190,22 +203,26 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 {
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::E,
-                        KeyButtonHintInfo("Build Gateway"),
+                        // KeyButtonHintInfo("Build Gateway"),
+                        tempDefault,
                         KeyButtonMsg::BuildGateway
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::R,
-                        KeyButtonHintInfo("Build Turret"),
+                        // KeyButtonHintInfo("Build Turret"),
+                        tempDefault,
                         KeyButtonMsg::BuildTurret
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::F,
-                        KeyButtonHintInfo("Fetch/Collect"),
+                        // KeyButtonHintInfo("Fetch/Collect"),
+                        tempDefault,
                         KeyButtonMsg::Fetch
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::D,
-                        KeyButtonHintInfo("Deposit/Construct"),
+                        // KeyButtonHintInfo("Deposit/Construct"),
+                        tempDefault,
                         KeyButtonMsg::Invest
                     );
                 }

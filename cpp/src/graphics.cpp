@@ -1292,6 +1292,11 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
     }
 }
 
+void displayKeyButtonHint(KeyButtonHintInfo hintInfo)
+{
+    
+}
+
 void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
 {
     displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, font, displayWalletHints);
@@ -1304,6 +1309,10 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
 
     ui->keyButtonBox.draw(window);
     ui->unitInfoBox.draw(window);
+    if (auto hintToDisplay = ui->keyButtonBox.getMouseoverHintInfo())
+    {
+        displayKeyButtonHint(*hintToDisplay);
+    }
 }
 
 void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)

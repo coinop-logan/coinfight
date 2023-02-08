@@ -780,6 +780,22 @@ void KeyButtonUXBox::returnToDefaultState()
     }
 }
 
+optional<KeyButtonHintInfo> KeyButtonUXBox::getMouseoverHintInfo()
+{
+    for (unsigned int i=0; i<keyButtons.size(); i++)
+    {
+        if (auto actionInfo = keyButtons[i].maybeActionInfo)
+        {
+            if (keyButtons[i].mouseover)
+            {
+                actionInfo->hintInfo;
+            }
+        }
+    }
+    
+    return {};
+}
+
 bool KeyButtonUXBox::registerMouseMove(vector2i pos)
 {
     for (unsigned int i=0; i<keyButtons.size(); i++)

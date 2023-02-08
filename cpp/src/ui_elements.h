@@ -263,7 +263,13 @@ void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);
 struct KeyButtonHintInfo
 {
     string name;
-    KeyButtonHintInfo(string name) : name(name) {}
+    optional<coinsInt> maybeCost;
+    sf::Text hotkeyText;
+    string description;
+    vector<string> bulletPoints;
+    KeyButtonHintInfo(string name, optional<coinsInt> maybeCost, sf::Text hotkeyText, string description, vector<string> bulletPoints)
+        : name(name), maybeCost(maybeCost), hotkeyText(hotkeyText), description(description), bulletPoints(bulletPoints)
+        {}
 };
 
 enum KeyButtonMsg
@@ -322,6 +328,7 @@ public:
     void setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg);
     void clearActionInfos();
     void returnToDefaultState();
+    optional<KeyButtonHintInfo> getMouseoverHintInfo();
     bool registerMouseMove(vector2i);
     bool registerPress(vector2i);
     tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> registerRelease(vector2i);
