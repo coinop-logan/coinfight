@@ -1200,8 +1200,6 @@ void GameUI::returnToDefaultState()
 
 tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf::Event event, float uxViewZoom)
 {
-    // the below just deals with the KeyButtonBox.
-
     bool consumed = false;
     optional<tuple<KeyButton*, KeyButtonMsg>> maybeButtonAndMsg = {};
 
@@ -1219,6 +1217,9 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             {
                 vector2fl point = vector2fl(mouseEventVec(event.mouseButton)) * (1/uxViewZoom);
                 consumed = keyButtonBox.registerPress(point);
+                
+                if (!consumed)
+                    consumed = unitInfoBox.pointCollides(point);
             }
             break;
         }
@@ -1230,6 +1231,9 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
                 auto consumedAndMaybeMsg = keyButtonBox.registerRelease(point);
                 consumed = get<0>(consumedAndMaybeMsg);
                 maybeButtonAndMsg = get<1>(consumedAndMaybeMsg);
+
+                if (!consumed)
+                    consumed = unitInfoBox.pointCollides(point);
             }
             break;
         }
@@ -1237,6 +1241,10 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
         {
             vector2fl point = vector2fl(mouseEventVec(event.mouseMove)) * (1.0/uxViewZoom);
             consumed = keyButtonBox.registerMouseMove(point);
+
+            if (!consumed)
+                consumed = unitInfoBox.pointCollides(point);
+            
             break;
         }
         case sf::Event::KeyPressed:
