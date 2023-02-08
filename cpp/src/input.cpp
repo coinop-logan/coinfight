@@ -64,7 +64,7 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
 
 void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
 {
-    KeyButtonHintInfo tempDefault("Temp", dollarsToCoinsIntND(1), sf::Text("T", *font, 16), "Temp description!", {"bullet 1", "bullet 2"});
+    KeyButtonHintInfo tempDefault("Temp", dollarsToCoinsIntND(1), 't', "Temp description!", {"bullet 1", "bullet 2"});
     
     keyButtonBox.clearActionInfos();
 
@@ -74,8 +74,17 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
         {
             keyButtonBox.setUnitCmdOrThrow(
                 sf::Keyboard::W,
-                // KeyButtonHintInfo("Warp In Gateway"),
-                tempDefault,
+                KeyButtonHintInfo(
+                    "Warp In Gateway",
+                    GATEWAY_COST,
+                    'W',
+                    "Warp in a Gateway, investing $4. This can only be done once per game.",
+                    {
+                        "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal."
+                        "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
+                        "The warp can be reversed before completion, refunding the $4 and allowing you to warp in somewhere else."
+                    }
+                ),
                 WarpIn
             );
         }

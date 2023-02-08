@@ -1292,9 +1292,15 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
     }
 }
 
-void displayKeyButtonHint(KeyButtonHintInfo hintInfo)
+void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButtonHintInfo hintInfo, sf::Font* font)
 {
+    sf::RectangleShape borderBox(toSFVecF(KEYBUTTONHINT_SIZE));
+    borderBox.setPosition(toSFVecF(upperLeft));
+    borderBox.setFillColor(sf::Color::Black);
+    borderBox.setOutlineThickness(1);
+    borderBox.setOutlineColor(UX_BOX_BORDER_COLOR);
     
+    window->draw(borderBox);
 }
 
 void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
@@ -1311,7 +1317,7 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
     ui->unitInfoBox.draw(window);
     if (auto hintToDisplay = ui->keyButtonBox.getMouseoverHintInfo())
     {
-        displayKeyButtonHint(*hintToDisplay);
+        displayKeyButtonHint(window, ui->keyButtonBox.upperLeft - (vector2i(0, KEYBUTTONHINT_SIZE.y)), *hintToDisplay, font);
     }
 }
 

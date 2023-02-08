@@ -788,7 +788,7 @@ optional<KeyButtonHintInfo> KeyButtonUXBox::getMouseoverHintInfo()
         {
             if (keyButtons[i].mouseover)
             {
-                actionInfo->hintInfo;
+                return actionInfo->hintInfo;
             }
         }
     }

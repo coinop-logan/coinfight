@@ -264,11 +264,11 @@ struct KeyButtonHintInfo
 {
     string name;
     optional<coinsInt> maybeCost;
-    sf::Text hotkeyText;
+    char hotkeyChar;
     string description;
     vector<string> bulletPoints;
-    KeyButtonHintInfo(string name, optional<coinsInt> maybeCost, sf::Text hotkeyText, string description, vector<string> bulletPoints)
-        : name(name), maybeCost(maybeCost), hotkeyText(hotkeyText), description(description), bulletPoints(bulletPoints)
+    KeyButtonHintInfo(string name, optional<coinsInt> maybeCost, char hotkeyChar, string description, vector<string> bulletPoints)
+        : name(name), maybeCost(maybeCost), hotkeyChar(hotkeyChar), description(description), bulletPoints(bulletPoints)
         {}
 };
 
