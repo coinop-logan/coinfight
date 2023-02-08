@@ -279,6 +279,7 @@ enum KeyButtonMsg
     Stop,
     Invest,
     Fetch,
+    Attack,
     AttackScuttle,
     BuildPrime,
     BuildFighter,

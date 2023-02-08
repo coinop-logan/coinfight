@@ -195,7 +195,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         sf::Keyboard::A,
                         // KeyButtonHintInfo("Attack"),
                         tempDefault,
-                        KeyButtonMsg::AttackScuttle
+                        KeyButtonMsg::Attack
                     );
                 }
                 else if (foundPrimes)
@@ -1330,6 +1330,14 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             {
                 returnToDefaultState();
                 cmdState = CmdState::Fetch;
+                button->active = true;
+
+                break;
+            }
+            case KeyButtonMsg::Attack:
+            {
+                returnToDefaultState();
+                cmdState = CmdState::AttackScuttle;
                 button->active = true;
 
                 break;

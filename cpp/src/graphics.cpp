@@ -1600,6 +1600,11 @@ sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
             return &cmdCollectIcon;
             break;
         }
+        case Attack:
+        {
+            return &cmdAttackIcon;
+            break;
+        }
         case AttackScuttle:
         {
             return &cmdScuttleIcon;
