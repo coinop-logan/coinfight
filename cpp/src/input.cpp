@@ -294,89 +294,6 @@ void GameUI::removeDuplicatesFromSelection()
     }
 }
 
-// vector<boost::shared_ptr<Cmd>> executeUnitInterfaceCmd(boost::shared_ptr<UnitInterfaceCmd> unitInterfaceCmd, GameUI* ui)
-// {
-//     if (boost::dynamic_pointer_cast<AttackScuttleInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         ui->returnToDefaultState();
-//         ui->cmdState = GameUI::AttackScuttle;
-//         unitInterfaceCmd->active = true;
-
-//         return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<StopInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         if (ui->selectedUnits.size() > 0)
-//         {
-//             unitInterfaceCmd->visualFlashClock.restart();
-//             return {boost::shared_ptr<StopCmd>(new StopCmd(entityPtrsToRefsOrThrow(ui->selectedUnits)))};
-//         }
-//         else
-//         {
-//             return noCmds;
-//         }
-//     }
-//     else if (boost::dynamic_pointer_cast<DepositInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         ui->returnToDefaultState();
-//         ui->cmdState = GameUI::Deposit;
-//         unitInterfaceCmd->active = true;
-
-//         return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<FetchInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         ui->returnToDefaultState();
-//         ui->cmdState = GameUI::Fetch;
-//         unitInterfaceCmd->active = true;
-
-//         return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<GatewayBuildPrimeInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, PRIME_TYPECHAR))
-//         {
-//             unitInterfaceCmd->visualFlashClock.restart();
-//             return {cmd};
-//         }
-//         else
-//             return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<GatewayBuildFighterInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         if (auto cmd = makeGatewayBuildCmd(ui->selectedUnits, FIGHTER_TYPECHAR))
-//         {
-//             unitInterfaceCmd->visualFlashClock.restart();
-//             return {cmd};
-//         }
-//         else
-//             return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<PrimeBuildGatewayInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         ui->returnToDefaultState();
-//         ui->cmdState = GameUI::Build;
-//         ui->ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
-//         unitInterfaceCmd->active = true;
-
-//         return noCmds;
-//     }
-//     else if (boost::dynamic_pointer_cast<PrimeBuildTurretInterfaceCmd, UnitInterfaceCmd>(unitInterfaceCmd))
-//     {
-//         ui->returnToDefaultState();
-//         ui->cmdState = GameUI::Build;
-//         ui->ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
-//         unitInterfaceCmd->active = true;
-
-//         return noCmds;
-//     }
-//     else
-//     {
-//         cout << "Logic error! I can't figure out which UnitInterfaceCmd that is!" << endl;
-//         return noCmds;
-//     }
-// }
-
 bool GameUI::selectionHasGateways()
 {
     for (unsigned int i=0; i<selectedUnits.size(); i++)
@@ -422,18 +339,6 @@ vector2i gamePosToScreenPos(sf::RenderWindow* window, vector2fp gamePos)
         )
     );
 }
-
-// vector2fl mouseEventVec(sf::Event::MouseButtonEvent mEvent, sf::View view)
-// {
-//     sf::Transform viewTransform = view.getTransform();
-//     vector2fl point = fromSFVec(viewTransform.transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
-//     return fromSFVec(viewTransform.getInverse().transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
-// }
-// vector2fl mouseEventVec(sf::Event::MouseMoveEvent mEvent, sf::View view)
-// {
-//     sf::Transform viewTransform = view.getTransform();
-//     return fromSFVec(viewTransform.getInverse().transformPoint(sf::Vector2f(mEvent.x, mEvent.y)));
-// }
 
 vector2i mouseEventVec(sf::Event::MouseButtonEvent mEvent)
 {
