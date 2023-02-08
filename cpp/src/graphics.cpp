@@ -1301,6 +1301,50 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
     borderBox.setOutlineColor(UX_BOX_BORDER_COLOR);
     
     window->draw(borderBox);
+
+    vector2i drawUpperLeft = upperLeft + UX_BOX_PADDING;
+    vector2i drawAreaSize = KEYBUTTONHINT_SIZE - (UX_BOX_PADDING * 2);
+
+    // title text
+    string titleString = hintInfo.name + " (" + string(1, hintInfo.hotkeyChar) + ")";
+    sf::Text titleText(titleString, *font, 20);
+    titleText.setPosition(toSFVecF(drawUpperLeft));
+    titleText.setFillColor(sf::Color::White);
+    window->draw(titleText);
+
+    if (auto cost = hintInfo.maybeCost)
+    {
+        string costString = coinsIntToDollarString(*cost);
+        sf::Text costText(costString, *font, 18);
+        int xOffset = drawAreaSize.x - costText.getLocalBounds().width;
+        costText.setPosition(toSFVecF(drawUpperLeft + vector2i(xOffset, 0)));
+        costText.setFillColor(sf::Color(255, 255, 0));
+        window->draw(costText);
+    }
+
+    int yOffset = titleText.getLocalBounds().height + 20;
+    int xOffset = 10;
+
+    int textHeight = GH::wrapAndRenderTextAtPos(window, hintInfo.description, font, 16, sf::Color::White, drawAreaSize.x, drawUpperLeft + vector2i(xOffset, yOffset));
+    yOffset += textHeight + 20;
+
+    sf::RectangleShape bulletPointRect(sf::Vector2f(5, 5));
+    for (unsigned int i=0; i<hintInfo.bulletPoints.size(); i++)
+    {
+        vector2i itemDrawOffset(xOffset, yOffset);
+        string lineText = hintInfo.bulletPoints[i];
+
+        bulletPointRect.setPosition(toSFVecF(drawUpperLeft + itemDrawOffset + vector2i(0, 5)));
+        bulletPointRect.setFillColor(sf::Color::White);
+
+        window->draw(bulletPointRect);
+
+        vector2i textDrawOffset = itemDrawOffset + vector2i(10, 0);
+        int availableWidth = drawAreaSize.x - textDrawOffset.x;
+        textHeight = GH::wrapAndRenderTextAtPos(window, lineText, font, 12, sf::Color::White, availableWidth, drawUpperLeft + textDrawOffset);
+
+        yOffset += textHeight + 10;
+    }
 }
 
 void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font, bool displayWalletHints)
