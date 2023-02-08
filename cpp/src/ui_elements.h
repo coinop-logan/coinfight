@@ -46,6 +46,8 @@ const vector2i KEYBUTTONBOX_SIZE(
 
 const vector2i UNITINFOBOX_SIZE(300, 300);
 
+const vector2i UNIT_ART_SIZE(120, 120);
+
 void loadMenuIcons();
 
 class Button

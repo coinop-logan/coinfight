@@ -899,12 +899,34 @@ void displayUnitHealth(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, s
     window->draw(firstHalf);
 }
 
+void displayUnitArt(sf::RenderWindow* window, vector2i upperLeft, uint8_t type, sf::Font* font)
+{
+    sf::RectangleShape border(toSFVecF(UNIT_ART_SIZE));
+    border.setFillColor(sf::Color(0, 0, 100));
+    border.setOutlineThickness(1);
+    border.setOutlineColor(sf::Color(0, 0, 255));
+    border.setPosition(toSFVecF(upperLeft));
+
+    window->draw(border);
+
+    sf::Text placeholder("wen art tho", *font, 12);
+    placeholder.setOrigin(toSFVecF(vector2i(placeholder.getLocalBounds().width, placeholder.getLocalBounds().height) / 2));
+    placeholder.setPosition(toSFVecF(upperLeft + (UNIT_ART_SIZE / 2)));
+    placeholder.setFillColor(sf::Color(100, 100, 200));
+
+    window->draw(placeholder);
+}
+
 void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
 {
     vector2i upperRightDrawPos = upperLeftDrawPos + vector2i(drawAreaSize.x, 0);
 
     displayUnitName(window, unit, font, upperLeftDrawPos);
     displayUnitHealth(window, unit, font, upperRightDrawPos);
+
+    int y = upperLeftDrawPos.y + 50;
+
+    displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
 }
 
 void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
