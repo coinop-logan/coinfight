@@ -97,6 +97,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
         bool selectionHasGateways = false;
         bool foundCombatUnits = false;
         bool foundPrimes = false;
+        bool foundFighters = false;
         for (unsigned int i=0; i<selectedUnits.size(); i++)
         {
             auto unit = selectedUnits[i];
@@ -124,6 +125,10 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             {
                 foundPrimes = true;
             }
+            if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
+            {
+                foundFighters = true;
+            }
         }
 
         if (!foundNonBeaconUnits)
@@ -132,8 +137,16 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
             {
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::Q,
-                    // KeyButtonHintInfo("Warp Out"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Recall Warp-in",
+                        {},
+                        'Q',
+                        "Recall the warp-in, refunding any $ spent so far.",
+                        {
+                            "If the Beacon is killed before the warp-out finishes, you'll lose the chance to warp in somewhere else.",
+                            "The Beacon warps out at the same rate as it warped in."
+                        }
+                    ),
                     WarpOut
                 );
             }
@@ -145,65 +158,153 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 // Selection is kept GW-segregated, so we know the selection ONLY has gateways
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::Q,
-                    // KeyButtonHintInfo("Build Prime"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Build Prime",
+                        PRIME_COST,
+                        'Q',
+                        "Begin constructing a Prime, spending $0.50 from your wallet balance.",
+                        {
+                            "Harvests gold for construction or capture ($0.50 carrying capacity)",
+                            "Constructs Gateways and Turrets",
+                            "Works with Gateways and other Primes to accelerate construction",
+                            "Can \"scuttle\" friendly buildings and units, destroying them to harvest their gold"
+                        }
+                    ),
                     KeyButtonMsg::BuildPrime
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::W,
-                    // KeyButtonHintInfo("Build Fighter"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Build Fighter",
+                        FIGHTER_COST,
+                        'W',
+                        "Begin constructing a Fighter, spending $1.50 from your wallet balance.",
+                        {
+                            "Basic ranged combat unit. Pretty much does what you think!",
+                            "Outranged by both Turrets and Gateways."
+                        }
+                    ),
                     KeyButtonMsg::BuildFighter
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::A,
-                    // KeyButtonHintInfo("Attack/Scuttle"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Attack/Scuttle",
+                        {},
+                        'A',
+                        "Attack an enemy or scuttle a friendly unit",
+                        {
+                            "If cast on an enemy unit within combat range, the Gateway will prioritize killing this unit.",
+                            "If cast on a friendly unit, the unit will be scuttled, destroying the unit and pulling its investment gold into your Coinfight wallet."
+                        }
+                    ),
                     KeyButtonMsg::AttackScuttle
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::S,
-                    // KeyButtonHintInfo("Stop"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Stop",
+                        {},
+                        'S',
+                        "Stop all activity",
+                        {
+                            "All scuttle and construction jobs will halt.",
+                            "All gold transfer to and from your wallet will halt."
+                        }
+                    ),
                     KeyButtonMsg::Stop
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::D,
-                    // KeyButtonHintInfo("Spend/Construct"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Spend from Wallet",
+                        {},
+                        'D',
+                        "Pull money from your Coinfight wallet into the game",
+                        {
+                            "Turns credit from your Coinfight wallet into in-game gold, in various forms:",
+                            "If cast on a Prime, the gold is deposited directly into the Prime's tank.",
+                            "If cast on a half-built unit, the gold is invested in the unit's construction.",
+                            "If cast on a point within transfer range, the gold is simply put into a gold pile for later use."
+                        }
+                    ),
                     KeyButtonMsg::Invest
                 );
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::F,
-                    // KeyButtonHintInfo("Collect"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Capture to Wallet",
+                        {},
+                        'F',
+                        "Pull money out of the game and into your Coinfight wallet",
+                        {
+                            "Turns in-game gold into credit in your Coinfight wallet.",
+                            "Can be cast on gold piles within transfer range, or Primes.",
+                            "If cast on a half-built unit, construction is reversed and the unit is drained of gold."
+                        }
+                    ),
                     KeyButtonMsg::Fetch
                 );
             }
             else // selection has non-GW units and at least one non-beacon unit
             {
+                vector<string> stopBullets;
+                if (foundPrimes)
+                {
+                    stopBullets = { "Primes will clear all orders" };
+                }
+                else
+                {
+                    stopBullets = {};
+                }
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::S,
-                    // KeyButtonHintInfo("Stop"),
-                    tempDefault,
+                    KeyButtonHintInfo(
+                        "Stop",
+                        {},
+                        'S',
+                        "Stop all activities and return to an idle state",
+                        stopBullets
+                    ),
                     KeyButtonMsg::Stop
                 );
 
                 if (foundCombatUnits)
                 {
+                    vector<string> bullets =
+                    {
+                        "If cast on an enemy unit, the target will be attacked until it is destroyed."
+                    };
+                    if (foundFighters)
+                    {
+                        bullets.push_back("If cast on a location, the fighter will move toward the location and attack any enemies it encounters along the way.");
+                    }
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::A,
-                        // KeyButtonHintInfo("Attack"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Attack",
+                            {},
+                            'A',
+                            "Attack a specific unit or assault a location",
+                            bullets
+                        ),
                         KeyButtonMsg::Attack
                     );
                 }
-                else if (foundPrimes)
+                else if (foundPrimes) // found primes and no fighters
                 {
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::A,
-                        // KeyButtonHintInfo("Scuttle/Collect"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Scuttle",
+                            {},
+                            'A',
+                            "Deconstruct a friendly unit or structure, absorbing its investment gold.",
+                            {
+                                "The friendly unit will become operational as soon as the scuttling starts.",
+                                "Make sure the Prime has somewhere to put the gold, or it will stop when it's full ($0.50)."
+                            }
+                        ),
                         KeyButtonMsg::AttackScuttle
                     );
                 }
@@ -212,26 +313,62 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 {
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::E,
-                        // KeyButtonHintInfo("Build Gateway"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Build Gateway",
+                            GATEWAY_COST,
+                            'E',
+                            "Begin constructing a Gateway.",
+                            {
+                                "Gateways act as factories for Primes and Fighters, and also transmute your wallet credit into in-game gold (and vise versa)."
+                                "Additional Gateways can increase the total rate at which you can bring gold in or out of the game."
+                            }
+                        ),
                         KeyButtonMsg::BuildGateway
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::R,
-                        // KeyButtonHintInfo("Build Turret"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Build Turret",
+                            TURRET_COST,
+                            'R',
+                            "Begin constructing a Turret, a building with a powerful gun and long range.",
+                            {
+                                "Expensive and slow to build, but high DPS and health.",
+                                "Outranges both Fighters and Gateways."
+                            }
+                        ),
                         KeyButtonMsg::BuildTurret
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::F,
-                        // KeyButtonHintInfo("Fetch/Collect"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Collect",
+                            {},
+                            'F',
+                            "Collect or pick up gold from a target",
+                            {
+                                "Can set Gateways or other Primes as \"last resort\" sources of gold",
+                                "Can target gold piles for direct pickup",
+                                "Targeting a location will cause the Prime to approach the location, picking up any gold it finds on the way",
+                                "New tasks are added to the front of the queue. Holding shift adds them to the end of the queue instead, delaying the task"
+                            }
+                        ),
                         KeyButtonMsg::Fetch
                     );
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::D,
-                        // KeyButtonHintInfo("Deposit/Construct"),
-                        tempDefault,
+                        KeyButtonHintInfo(
+                            "Deposit",
+                            {},
+                            'D',
+                            "Deposit held gold into a target",
+                            {
+                                "Can set Gateways or other Primes as \"last resort\" drop-off points for gold.",
+                                "Can target gold piles or locations for direct drop-off.",
+                                "Targeting a partially-built unit will invest the gold into the construction of the unit.",
+                                "New tasks are added to the front of the queue. Holding shift adds them to the end of the queue instead, delaying the task."
+                            }
+                        ),
                         KeyButtonMsg::Invest
                     );
                 }
