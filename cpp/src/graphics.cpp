@@ -1394,21 +1394,15 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
         maybePlayerId = game->playerAddressToMaybeId(*maybePlayerAddress);
     }
 
-    if (ui->minimapEnabled)
-    {
-        // displayMinimap(window, game, maybePlayerId, screenDimensions);
-    }
-    else
-    {
-        window->setView(gameView);
-        drawGame(window, game, ui);
-        drawGameOverlay(window, game, ui, maybePlayerId, fwFont);
-        // drawSearchGridOverlay(window, game);
-        window->setView(screenView);
-        displayCursorOrSelectionBox(window, ui, maybePlayerId);
-        window->setView(uxView);
-        displayGameHUD(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
-    }
+    window->setView(gameView);
+    drawGame(window, game, ui);
+    drawGameOverlay(window, game, ui, maybePlayerId, fwFont);
+    // drawSearchGridOverlay(window, game);
+    window->setView(screenView);
+    displayCursorOrSelectionBox(window, ui, maybePlayerId);
+    window->setView(uxView);
+    displayGameHUD(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
+
     if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))
     {
         window->setView(uxView);

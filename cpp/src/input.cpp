@@ -53,7 +53,6 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
     lastMousePos = getScreenSize(window) / 2;
     debugInt = 0;
     cmdState = Default;
-    minimapEnabled = false;
     maybeSelectionBoxStart = {};
     displayAllRadii = false;
     quitNow = false;
@@ -1285,9 +1284,6 @@ vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *u
                             break;
                         case sf::Keyboard::Tilde:
                             ui->debugInt ++;
-                            break;
-                        case sf::Keyboard::Tab:
-                            ui->minimapEnabled = !(ui->minimapEnabled);
                             break;
                         case sf::Keyboard::F10:
                             if (!ui->inGameMenu)

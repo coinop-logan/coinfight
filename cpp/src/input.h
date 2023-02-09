@@ -39,7 +39,6 @@ struct GameUI
         Fetch,
         Build
     } cmdState;
-    bool minimapEnabled;
     vector2i lastMousePos;
     optional<vector2i> maybeSelectionBoxStart;
     sf::View cameraView;
