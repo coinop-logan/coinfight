@@ -1343,7 +1343,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
         int availableWidth = drawAreaSize.x - textDrawOffset.x;
         textHeight = GH::wrapAndRenderTextAtPos(window, lineText, humanFont, 12, sf::Color::White, availableWidth, drawUpperLeft + textDrawOffset);
 
-        yOffset += textHeight + 16;
+        yOffset += textHeight + 12;
     }
 }
 

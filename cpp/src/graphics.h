@@ -12,7 +12,7 @@ const vector2fl COMBATUNIT_SHOT_OFFSET(20, 10);
 
 const unsigned int TITLE_POS_Y = 50;
 
-const vector2i KEYBUTTONHINT_SIZE(600, KEYBUTTONBOX_SIZE.y);
+const vector2i KEYBUTTONHINT_SIZE(650, KEYBUTTONBOX_SIZE.y);
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
 void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial*, sf::Font* mainFont, sf::Font* tutorialFont, bool drawWalletHints);
