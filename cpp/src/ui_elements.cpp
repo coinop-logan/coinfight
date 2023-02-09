@@ -956,12 +956,12 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
 
     int y = upperLeftDrawPos.y + 50;
 
-    displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
-    displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
+    // displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
+    // displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
 
-    y += UNIT_ART_SIZE.y + UX_BOX_SPACING.y;
+    // y += UNIT_ART_SIZE.y + UX_BOX_SPACING.y;
 
-    displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
+    // displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
 }
 
 void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
