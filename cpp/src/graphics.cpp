@@ -36,7 +36,6 @@ sf::Texture
     cmdCollectSource,
     cmdScuttleSource,
     cmdInvestSource,
-    cmdMoveSource,
     cmdStopSource,
     cmdWarpInSource,
     cmdWarpOutSource
@@ -53,7 +52,6 @@ sf::Sprite
     cmdCollectIcon,
     cmdScuttleIcon,
     cmdInvestIcon,
-    cmdMoveIcon,
     cmdStopIcon,
     cmdWarpInIcon,
     cmdWarpOutIcon,
@@ -1503,13 +1501,6 @@ void loadKeyCommandIcons()
     }
     cmdInvestIcon.setTexture(cmdInvestSource);
     cmdInvestIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
-
-    if (!cmdMoveSource.loadFromFile("cmd-move.png"))
-    {
-        throw runtime_error("Can't load icon png");
-    }
-    cmdMoveIcon.setTexture(cmdMoveSource);
-    cmdMoveIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
 
     if (!cmdStopSource.loadFromFile("cmd-stop.png"))
     {
