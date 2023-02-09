@@ -3169,7 +3169,7 @@ uint16_t Turret::getMaxHealth() const { return TURRET_HEALTH; }
 fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }
 
 uint8_t Turret::typechar() const { return TURRET_TYPECHAR; }
-string Turret::getTypename() const { return "Fighter"; }
+string Turret::getTypename() const { return "Turret"; }
 
 void Turret::cmdStop()
 {
