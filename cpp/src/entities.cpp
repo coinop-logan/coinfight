@@ -1026,7 +1026,7 @@ void MobileUnit::cmdMove(vector2fp pointTarget)
 
 fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
-string Beacon::getTypename() const { return "Beacon"; }
+string Beacon::getTypename() const { return "Gateway Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
