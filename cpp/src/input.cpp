@@ -82,7 +82,8 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     {
                         "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal.",
                         "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
-                        "The warp can be reversed before completion, refunding the $4 and allowing you to warp in somewhere else."
+                        "The warp can be reversed before completion, refunding the $4 and allowing you to warp in somewhere else.",
+                        "Additional Gateways can be built later with Primes."
                     }
                 ),
                 WarpIn
@@ -164,10 +165,10 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         'Q',
                         "Begin constructing a Prime, spending $0.50 from your wallet balance.",
                         {
-                            "Harvests gold for construction or capture ($0.50 carrying capacity)",
-                            "Constructs Gateways and Turrets",
-                            "Works with Gateways and other Primes to accelerate construction",
-                            "Can \"scuttle\" friendly buildings and units, destroying them to harvest their gold"
+                            "Harvests gold for construction or capture ($0.50 carrying capacity).",
+                            "Constructs Gateways and Turrets.",
+                            "Works with Gateways and other Primes to accelerate construction.",
+                            "Can \"scuttle\" friendly buildings and units, destroying them to recover their gold investment."
                         }
                     ),
                     KeyButtonMsg::BuildPrime
@@ -192,7 +193,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Attack/Scuttle",
                         {},
                         'A',
-                        "Attack an enemy or scuttle a friendly unit",
+                        "Attack an enemy or scuttle a friendly unit.",
                         {
                             "If cast on an enemy unit within combat range, the Gateway will prioritize killing this unit.",
                             "If cast on a friendly unit, the unit will be scuttled, destroying the unit and pulling its investment gold into your Coinfight wallet."
@@ -206,7 +207,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Stop",
                         {},
                         'S',
-                        "Stop all activity",
+                        "Stop all activity.",
                         {
                             "All scuttle and construction jobs will halt.",
                             "All gold transfer to and from your wallet will halt."
@@ -220,12 +221,11 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Spend from Wallet",
                         {},
                         'D',
-                        "Pull money from your Coinfight wallet into the game",
+                        "Pull money from your Coinfight wallet into the game as gold.",
                         {
-                            "Turns credit from your Coinfight wallet into in-game gold, in various forms:",
                             "If cast on a Prime, the gold is deposited directly into the Prime's tank.",
                             "If cast on a half-built unit, the gold is invested in the unit's construction.",
-                            "If cast on a point within transfer range, the gold is simply put into a gold pile for later use."
+                            "If cast on a point nearby, the gold is simply put into a gold pile for later use."
                         }
                     ),
                     KeyButtonMsg::Invest
@@ -236,11 +236,11 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Capture to Wallet",
                         {},
                         'F',
-                        "Pull money out of the game and into your Coinfight wallet",
+                        "Pull money out of the game and into your Coinfight wallet.",
                         {
                             "Turns in-game gold into credit in your Coinfight wallet.",
                             "Can be cast on gold piles within transfer range, or Primes.",
-                            "If cast on a half-built unit, construction is reversed and the unit is drained of gold."
+                            "If cast on a half-built unit, construction is reversed and any invested gold is recovered."
                         }
                     ),
                     KeyButtonMsg::Fetch
@@ -251,7 +251,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 vector<string> stopBullets;
                 if (foundPrimes)
                 {
-                    stopBullets = { "Primes will clear all orders" };
+                    stopBullets = { "Primes will clear all job queues." };
                 }
                 else
                 {
@@ -263,7 +263,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Stop",
                         {},
                         'S',
-                        "Stop all activities and return to an idle state",
+                        "Stop all activities and return to an idle state.",
                         stopBullets
                     ),
                     KeyButtonMsg::Stop
@@ -285,7 +285,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                             "Attack",
                             {},
                             'A',
-                            "Attack a specific unit or assault a location",
+                            "Attack a specific unit or assault a location.",
                             bullets
                         ),
                         KeyButtonMsg::Attack
@@ -319,7 +319,9 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                             'E',
                             "Begin constructing a Gateway.",
                             {
-                                "Gateways act as factories for Primes and Fighters, and also transmute your wallet credit into in-game gold (and vise versa)."
+                                "Builds Primes and Fighters.",
+                                "Can bring credit from your Coinfight wallet into the game as gold.",
+                                "Can capture nearby in-game gold, depositing it as credit into your Coinfight wallet.",
                                 "Additional Gateways can increase the total rate at which you can bring gold in or out of the game."
                             }
                         ),
@@ -345,12 +347,12 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                             "Collect",
                             {},
                             'F',
-                            "Collect or pick up gold from a target",
+                            "Collect or pick up gold from a target.",
                             {
-                                "Can set Gateways or other Primes as \"last resort\" sources of gold",
-                                "Can target gold piles for direct pickup",
-                                "Targeting a location will cause the Prime to approach the location, picking up any gold it finds on the way",
-                                "New tasks are added to the front of the queue. Holding shift adds them to the end of the queue instead, delaying the task"
+                                "Can set Gateways or other Primes as \"last resort\" sources of gold.",
+                                "Can target gold piles for direct pickup.",
+                                "Targeting a location will cause the Prime to approach the location, picking up any gold it finds on the way.",
+                                "New tasks are added to the front of the queue. Holding shift adds them to the end of the queue instead, delaying the task."
                             }
                         ),
                         KeyButtonMsg::Fetch
