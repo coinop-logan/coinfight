@@ -439,7 +439,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
     unsigned int fadedAlpha;
     if (!unit->isActive())
     {
-        fadedAlpha = static_cast<float>(unit->getBuiltRatio()) * 0.8 * 255;
+        fadedAlpha = (unit->getBuiltRatio()) * 0.8 * 255;
     }
     else
     {

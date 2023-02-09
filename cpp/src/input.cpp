@@ -608,7 +608,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI* ui, int playe
             bool isCompletedUnit;
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                isCompletedUnit = (unit->getBuiltRatio() == fixed32(1.0));
+                isCompletedUnit = unit->isFullyBuilt();
             }
             else
             {
@@ -721,7 +721,7 @@ boost::shared_ptr<Cmd> makeRightClickCmd(const Game &game, GameUI* ui, int playe
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    if (unit->getBuiltRatio() < fixed32(1))
+                    if (!unit->isFullyBuilt())
                     {
                         auto primesInSelection = filterForTypeKeepContainer<Prime, Unit>(ui->selectedUnits);
                         return boost::shared_ptr<Cmd>(new DepositCmd(entityPtrsToRefsOrThrow(primesInSelection), entity->getRefOrThrow(), asap));

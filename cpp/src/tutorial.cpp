@@ -212,7 +212,7 @@ public:
     {
         auto primes = filterForType<Prime, Entity>(game->entities);
 
-        return (primes.size() > 0 && primes[0]->getBuiltRatio() == fixed32(1));
+        return (primes.size() > 0 && primes[0]->isFullyBuilt());
     }
 
     optional<float> getProgress(Game* game, GameUI* ui)
@@ -536,7 +536,7 @@ public:
         int finished = 0;
         for (unsigned int i=0; i<combatUnits.size(); i++)
         {
-            if (combatUnits[i]->getBuiltRatio() == fixed32(1))
+            if (combatUnits[i]->isFullyBuilt())
             {
                 finished ++;
             }

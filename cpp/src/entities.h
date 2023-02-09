@@ -125,7 +125,8 @@ public:
     coinsInt unbuild(coinsInt attemptedAmount, Coins* toCoins);
     bool completeBuildingInstantly(Coins* fromCoins);
     coinsInt getBuilt();
-    fixed32 getBuiltRatio();
+    float getBuiltRatio();
+    bool isFullyBuilt();
     bool isActive();
     void iterateUnitBasics();
     void takeHit(uint16_t damage);

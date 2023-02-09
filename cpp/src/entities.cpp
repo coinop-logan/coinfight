@@ -681,9 +681,13 @@ coinsInt Unit::getBuilt()
 {
     return goldInvested.getInt();
 }
-fixed32 Unit::getBuiltRatio()
+float Unit::getBuiltRatio()
 {
-    return (fixed32)getBuilt() / getCost();
+    return float(getBuilt()) / float(getCost());
+}
+bool Unit::isFullyBuilt()
+{
+    return getBuilt() >= getCost();
 }
 uint16_t Unit::getEffectiveHealth()
 {
@@ -1714,7 +1718,7 @@ void Gateway::iterate()
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    if (unit->getBuiltRatio() < fixed32(1))
+                    if (!unit->isFullyBuilt())
                     {
                         if (fromQueue)
                         {
@@ -1735,7 +1739,7 @@ void Gateway::iterate()
                 if (maybeCoinsToDepositTo)
                 {
                     coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GOLD_TRANSFER_RATE, maybeCoinsToDepositTo);
-                    if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
+                    if (maybeBuildingUnit && maybeBuildingUnit->isFullyBuilt())
                     {
                         buildTargetQueue.erase(buildTargetQueue.begin());
                     }
@@ -2022,7 +2026,7 @@ void Prime::cmdDeposit(EntityRef entityRef, bool asap)
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
-            if (unit->getBuiltRatio() < fixed32(1))
+            if (!unit->isFullyBuilt())
             {
                 addToBuildQueue_enforceUnique(entityRef, asap);
 
@@ -2243,7 +2247,7 @@ void Prime::validateTargets()
         {
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                if (unit->getBuiltRatio() == fixed32(1))
+                if (unit->isFullyBuilt())
                 {
                     buildTargetQueue.erase(buildTargetQueue.begin() + i);
                     i --;
@@ -2418,7 +2422,7 @@ void Prime::tryTransferAndMaybeMoveOn()
                         }
                         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                         {
-                            if (unit->getBuiltRatio() < fixed32(1))
+                            if (!unit->isFullyBuilt())
                             {
                                 amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
                                 entityPushedTo = unit;
