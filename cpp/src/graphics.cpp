@@ -334,7 +334,7 @@ void drawPrime(sf::RenderTarget *renderTarget, boost::shared_ptr<Prime> prime, v
 
     renderTarget->draw(thickBorder, transform);
 
-    float heldGoldRatio = static_cast<float>(prime->getHeldGoldRatio());
+    float heldGoldRatio = prime->getHeldGoldRatio();
     if (heldGoldRatio > 0)
     {
         float innerGoldRadius = 0.5 + (sqrt(heldGoldRatio) * (primeCavityRadius - 0.5));

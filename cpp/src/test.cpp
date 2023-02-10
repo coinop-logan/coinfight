@@ -31,5 +31,5 @@ void pr(C c) {
 
 int main()
 {
-    cout << uint16ToString(5) << "hi" << endl;
+    cout << floatToShortPercentString(0.4) << endl;
 }

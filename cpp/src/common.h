@@ -100,5 +100,7 @@ vector2i getScreenSize(sf::RenderWindow* window);
 vector2fl getCurrentViewSize(sf::RenderWindow* window);
 vector2fl getViewSize(sf::RenderWindow* window, sf::View view);
 string uint16ToString(uint16_t x);
+string floatToPercentString(float x);
+string floatToShortPercentString(float x);
 
 #endif // COMMON_H

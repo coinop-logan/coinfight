@@ -45,9 +45,11 @@ const vector2i KEYBUTTONBOX_SIZE(
     KEYBUTTON_SIZE.x * 3 + KEYBUTTON_SPACING * 2 + KEYBUTTONBOX_PADDING.y * 2
 );
 
-const vector2i UNITINFOBOX_SIZE(300, 300);
+const vector2i UNITINFOBOX_SIZE(350, 350);
 
 const vector2i UNIT_ART_SIZE(120, 120);
+
+const int UNIT_INFO_STATUS_ELEMENT_SPACING = 14;
 
 void loadMenuIcons();
 

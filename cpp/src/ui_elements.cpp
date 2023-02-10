@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "ui_elements.h"
 #include "common.h"
 #include "myvectors.h"
@@ -933,18 +934,156 @@ void displayUnitArt(sf::RenderWindow* window, vector2i upperLeft, uint8_t type, 
     window->draw(placeholder);
 }
 
-void displayUnitHints(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, uint8_t type, sf::Font* font)
+int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, string mainJobName, optional<float> maybeMainJobCompletion, int numAdditionalJobs, string additionalJobsLabel, sf::Color mainColor, bool active)
 {
-    sf::Text hintsText("Hints here!", *font, 16);
-    hintsText.setPosition(toSFVecF(upperLeft));
-    window->draw(hintsText);
+    int yOffset = 0;
+
+    string jobText = mainJobName;
+    if (maybeMainJobCompletion)
+    {
+        jobText += " (" + floatToShortPercentString(*maybeMainJobCompletion) + ")";
+    }
+
+    sf::Text nameText(jobText, *font, 16);
+    nameText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+    nameText.setFillColor(active ? mainColor : sf::Color(150, 150, 150));
+    if (active) nameText.setStyle(sf::Text::Bold);
+    window->draw(nameText);
+
+    yOffset += nameText.getLocalBounds().height + 10;
+
+    if (numAdditionalJobs > 0)
+    {
+        vector2i drawPos = upperLeft + vector2i(10, yOffset);
+
+        stringstream ss;
+        ss << "+ " << numAdditionalJobs << " more " << additionalJobsLabel << " jobs queued";
+        sf::Text additionalJobsText(ss.str(), *font, 14);
+        additionalJobsText.setPosition(toSFVecF(drawPos));
+        additionalJobsText.setFillColor(sf::Color(150, 150, 150));
+        window->draw(additionalJobsText);
+    }
+
+    yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + 12;
+
+    return yOffset;
+}
+
+void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
+{
+    if (prime->scavengeTargetQueue.size() > 0)
+    {
+        string jobName;
+        optional<float> maybeJobCompletion;
+        bool isActiveJob;
+        if (prime->scavengeTargetQueue[0].type == Target::PointTarget)
+        {
+            jobName = "Scavenging";
+            if (auto moveTarget = prime->getMaybeMoveTarget())
+            {
+                if (prime->scavengeTargetQueue[0] == *moveTarget)
+                {
+                    isActiveJob = true;
+                }
+                else
+                {
+                    if (auto fetchTarget = prime->fetchToImmediateTarget)
+                    {
+                        isActiveJob = (prime->fetchToImmediateTarget == moveTarget->castToEntityRef());
+                    }
+                    else
+                    {
+                        isActiveJob = false;
+                    }
+                }
+            }
+        }
+        else if (auto entity = prime->scavengeTargetQueue[0].castToEntityPtr(*prime->getGameOrThrow()))
+        {
+            isActiveJob = (prime->scavengeTargetQueue[0] == prime->getMaybeMoveTarget());
+            if (entity->typechar() == GOLDPILE_TYPECHAR)
+            {
+                jobName = "Picking up gold";
+            }
+            else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                jobName = "Scuttling " + unit->getTypename();
+                maybeJobCompletion = 1 - unit->getBuiltRatio();
+            }
+        }
+
+        if (prime->heldGold.getSpaceLeft() == 0)
+        {
+            isActiveJob = false;
+        }
+
+        // #error "this fails during scavengeTo operations. Also not quite right when full without anyplace to put gold. Might need to rewrite some logic...?"
+
+        displayWorkOrderInfo(window, font, upperLeft, jobName, maybeJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), isActiveJob);
+    }
 }
 
 void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, boost::shared_ptr<Unit> unit, sf::Font* font)
 {
-    sf::Text hintsText("Status here!", *font, 16);
-    hintsText.setPosition(toSFVecF(upperLeft));
-    window->draw(hintsText);
+    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    {
+        int yOffset = 0;
+
+        stringstream ss;
+        ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
+        ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
+        
+        sf::Text heldGoldText(ss.str(), *font, 16);
+        heldGoldText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+        heldGoldText.setFillColor(sf::Color::Yellow);
+        window->draw(heldGoldText);
+
+        yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
+
+        displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(0, yOffset), prime);
+
+        // sf::Text goldSourcesText;
+        // int numSources = prime->scavengeTargetQueue.size();
+        // ss.str("");
+        // ss.clear();
+        // ss << numSources;
+        // goldSourcesText = sf::Text(ss.str(), *font, 16);
+        // goldSourcesText.setFillColor(numSources == 0 ? sf::Color::Red : sf::Color::White);
+        // goldSourcesText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+        // window->draw(goldSourcesText);
+        
+        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
+
+        // sf::Text goldDestinationsText;
+        // int numDests = prime->buildTargetQueue.size();
+        // ss.str("");
+        // ss.clear();
+        // ss << numDests;
+        // goldDestinationsText = sf::Text(ss.str(), *font, 16);
+        // goldDestinationsText.setFillColor(numSources == 0 ? sf::Color::Red : sf::Color::White);
+        // goldDestinationsText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+        // window->draw(goldDestinationsText);
+        
+        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
+
+        // string statusDescription;
+        // if (prime->mobileUnitIsIdle())
+        // {
+        //     statusDescription = "idle";
+        // }
+        // else
+        // {
+        //     statusDescription = "not idle";
+        // }
+
+        // sf::Text statusText(statusDescription, *font, 16);
+        // statusText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+        // statusText.setFillColor(sf::Color(200, 200, 255));
+        // window->draw(statusText);
+
+        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + statusText.getLocalBounds().height;
+    }
+    #warning "Some unit statuses undefined"
 }
 
 void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
@@ -956,12 +1095,13 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
 
     int y = upperLeftDrawPos.y + 50;
 
+    displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
+
     // displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
     // displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
 
     // y += UNIT_ART_SIZE.y + UX_BOX_SPACING.y;
 
-    // displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
 }
 
 void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)

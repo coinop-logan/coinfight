@@ -2686,9 +2686,9 @@ vector<Coins*> Prime::getDroppableCoins()
     return vector<Coins*>{&goldInvested, &heldGold};
 }
 
-fixed32 Prime::getHeldGoldRatio()
+float Prime::getHeldGoldRatio()
 {
-    return ((fixed32)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
+    return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
 }
 
 

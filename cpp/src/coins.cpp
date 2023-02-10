@@ -1,6 +1,7 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <sstream>
 #include "coins.h"
 #include "netpack.h"
 
@@ -87,13 +88,24 @@ string coinsIntToDollarString(coinsInt amount)
     float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
     char buf[100];
     snprintf(buf, 100, "$%.2f", dollars);
-    return sf::String(buf);
+    return string(buf);
+}
+int getNumCentsRounded(coinsInt amount)
+{
+    float cents = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT - 2));
+    return int(round(cents));
+}
+string coinsIntToCentsRoundedString(coinsInt amount)
+{
+    stringstream ss;
+    ss << getNumCentsRounded(amount) << "c";
+    return ss.str();
 }
 coinsInt Coins::getInt()
 {
     return heldAmount;
 }
-sf::String Coins::getDollarString()
+string Coins::getDollarString()
 {
     return coinsIntToDollarString(getInt());
 }

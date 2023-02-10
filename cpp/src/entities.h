@@ -400,7 +400,7 @@ public:
     void tryTransferAndMaybeMoveOn();
     void iterate();
 
-    fixed32 getHeldGoldRatio();
+    float getHeldGoldRatio();
     vector<Coins*> getDroppableCoins();
 };
 

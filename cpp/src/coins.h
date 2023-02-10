@@ -16,6 +16,8 @@ coinsInt consumeCoinsInt(Netpack::Consumer* from);
 coinsInt weiDepositStringToCoinsInt(string weiString);
 string coinsIntToWeiDepositString(coinsInt coins);
 string coinsIntToDollarString(coinsInt coins);
+int getNumCentsRounded(coinsInt amount);
+string coinsIntToCentsRoundedString(coinsInt amount);
 
 class Coins
 {
@@ -28,7 +30,7 @@ private:
 public:
     coinsInt max;
     coinsInt getInt();
-    sf::String getDollarString();
+    string getDollarString();
     Coins();
     Coins(coinsInt);
     Coins(Netpack::Consumer*);

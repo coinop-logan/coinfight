@@ -343,12 +343,12 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::F,
                         KeyButtonHintInfo(
-                            "Collect",
+                            "Collect / Scavenge",
                             {},
                             'F',
-                            "Collect or pick up gold from a target.",
+                            "Collect gold from a target or scavenge gold from a location.",
                             {
-                                "Can set Gateways or other Primes as \"last resort\" sources of gold.",
+                                "Can set Gateways or other Primes as \"last resort\" sources of gold, if there are no other sources.",
                                 "Can target gold piles for direct pickup.",
                                 "Targeting a location will cause the Prime to approach the location, picking up any gold it finds on the way.",
                                 "New tasks are added to the front of the queue. Holding shift adds them to the end of the queue instead, delaying the task."

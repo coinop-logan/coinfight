@@ -207,3 +207,17 @@ string uint16ToString(uint16_t x) {
     ss << (unsigned int)x;
     return ss.str();
 }
+
+string floatToPercentString(float x)
+{
+    char buf[10];
+    snprintf(buf, 10, "$%.2f", x);
+    return string(buf) + "%";
+}
+string floatToShortPercentString(float x)
+{
+    int roundedPercent = round(x*100);
+    char buf[10];
+    snprintf(buf, 10, "%i", roundedPercent);
+    return string(buf) + "%";
+}
