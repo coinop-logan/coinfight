@@ -934,6 +934,14 @@ void displayUnitArt(sf::RenderWindow* window, vector2i upperLeft, uint8_t type, 
     window->draw(placeholder);
 }
 
+void displayWorkOrderWarning(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, string warning)
+{
+    sf::Text warningText(warning, *font, 16);
+    warningText.setPosition(toSFVecF(upperLeft));
+    warningText.setColor(sf::Color::Red);
+    window->draw(warningText);
+}
+
 int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, string mainJobName, optional<float> maybeMainJobCompletion, int numAdditionalJobs, string additionalJobsLabel, sf::Color mainColor, bool active)
 {
     int yOffset = 0;
@@ -971,55 +979,79 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
 
 void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
 {
-    if (prime->scavengeTargetQueue.size() > 0)
+    if (prime->scavengeTargetQueue.size() == 0)
     {
-        string jobName;
-        optional<float> maybeJobCompletion;
-        bool isActiveJob;
+        if (auto fundsSource = prime->fundsSource)
+        {
+            string sourceJobName;
+            optional<float> maybeSourceJobCompletion;
+            bool sourceIsActiveJob;
+
+            sourceJobName = "Fetching gold from Gateway";
+            if (auto moveTarget = prime->getMaybeMoveTarget())
+            {
+                sourceIsActiveJob = (*moveTarget == Target(*fundsSource));
+            }
+            else
+            {
+                sourceIsActiveJob = false;
+            }
+
+            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceIsActiveJob);
+        }
+        else
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "No gold sources assigned!");
+        }
+    }
+    else // scavenge queue size > 0
+    {
+        string sourceJobName;
+        optional<float> maybeSourceJobCompletion;
+        bool sourceIsActiveJob;
+
         if (prime->scavengeTargetQueue[0].type == Target::PointTarget)
         {
-            jobName = "Scavenging";
+            sourceJobName = "Scavenging";
             if (auto moveTarget = prime->getMaybeMoveTarget())
             {
                 if (prime->scavengeTargetQueue[0] == *moveTarget)
                 {
-                    isActiveJob = true;
+                    sourceIsActiveJob = true;
                 }
                 else
                 {
                     if (auto fetchTarget = prime->fetchToImmediateTarget)
                     {
-                        isActiveJob = (prime->fetchToImmediateTarget == moveTarget->castToEntityRef());
+                        sourceIsActiveJob = (prime->fetchToImmediateTarget == moveTarget->castToEntityRef());
                     }
                     else
                     {
-                        isActiveJob = false;
+                        sourceIsActiveJob = false;
                     }
                 }
             }
         }
         else if (auto entity = prime->scavengeTargetQueue[0].castToEntityPtr(*prime->getGameOrThrow()))
         {
-            isActiveJob = (prime->scavengeTargetQueue[0] == prime->getMaybeMoveTarget());
+            sourceIsActiveJob = (prime->scavengeTargetQueue[0] == prime->getMaybeMoveTarget());
             if (entity->typechar() == GOLDPILE_TYPECHAR)
             {
-                jobName = "Picking up gold";
+                sourceJobName = "Picking up gold";
             }
             else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                jobName = "Scuttling " + unit->getTypename();
-                maybeJobCompletion = 1 - unit->getBuiltRatio();
+                sourceJobName = "Scuttling " + unit->getTypename();
+                maybeSourceJobCompletion = 1 - unit->getBuiltRatio();
             }
         }
 
         if (prime->heldGold.getSpaceLeft() == 0)
         {
-            isActiveJob = false;
+            sourceIsActiveJob = false;
         }
 
-        // #error "this fails during scavengeTo operations. Also not quite right when full without anyplace to put gold. Might need to rewrite some logic...?"
-
-        displayWorkOrderInfo(window, font, upperLeft, jobName, maybeJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), isActiveJob);
+        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceIsActiveJob);
     }
 }
 
