@@ -938,7 +938,7 @@ void displayWorkOrderWarning(sf::RenderWindow* window, sf::Font* font, vector2i 
 {
     sf::Text warningText(warning, *font, 16);
     warningText.setPosition(toSFVecF(upperLeft));
-    warningText.setColor(sf::Color::Red);
+    warningText.setFillColor(sf::Color::Red);
     window->draw(warningText);
 }
 
@@ -958,7 +958,7 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
     if (active) nameText.setStyle(sf::Text::Bold);
     window->draw(nameText);
 
-    yOffset += nameText.getLocalBounds().height + 10;
+    yOffset += nameText.getLocalBounds().height + 8;
 
     if (numAdditionalJobs > 0)
     {
@@ -983,32 +983,53 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
     {
         if (auto fundsSource = prime->fundsSource)
         {
-            string sourceJobName;
-            optional<float> maybeSourceJobCompletion;
-            bool sourceIsActiveJob;
-
-            sourceJobName = "Fetching gold from Gateway";
-            if (auto moveTarget = prime->getMaybeMoveTarget())
+            auto entity = maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), fundsSource);
+            if (!entity)
             {
-                sourceIsActiveJob = (*moveTarget == Target(*fundsSource));
+                displayWorkOrderWarning(window, font, upperLeft, "???");
+                return;
+            }
+
+            string sourceJobName;
+            bool sourceJobIsActive;
+
+            if (entity->typechar() == GATEWAY_TYPECHAR)
+            {
+                sourceJobName = "Withdrawing gold via Gateway";
+            }
+            else if (entity->typechar() == PRIME_TYPECHAR)
+            {
+                sourceJobName = "Withdrawing gold from a Prime";
             }
             else
             {
-                sourceIsActiveJob = false;
+                displayWorkOrderWarning(window, font, upperLeft, "???");
+                return;
             }
 
-            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceIsActiveJob);
+            if (auto moveTarget = prime->getMaybeMoveTarget())
+            {
+                sourceJobIsActive = (*moveTarget == Target(*fundsSource));
+            }
+            else
+            {
+                sourceJobIsActive = (bool)get<0>(prime->goldFlowFrom_view);
+            }
+
+            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, {}, 0, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+            return;
         }
         else
         {
             displayWorkOrderWarning(window, font, upperLeft, "No gold sources assigned!");
+            return;
         }
     }
     else // scavenge queue size > 0
     {
         string sourceJobName;
         optional<float> maybeSourceJobCompletion;
-        bool sourceIsActiveJob;
+        bool sourceJobIsActive;
 
         if (prime->scavengeTargetQueue[0].type == Target::PointTarget)
         {
@@ -1017,24 +1038,24 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
             {
                 if (prime->scavengeTargetQueue[0] == *moveTarget)
                 {
-                    sourceIsActiveJob = true;
+                    sourceJobIsActive = true;
                 }
                 else
                 {
                     if (auto fetchTarget = prime->fetchToImmediateTarget)
                     {
-                        sourceIsActiveJob = (prime->fetchToImmediateTarget == moveTarget->castToEntityRef());
+                        sourceJobIsActive = (prime->fetchToImmediateTarget == moveTarget->castToEntityRef());
                     }
                     else
                     {
-                        sourceIsActiveJob = false;
+                        sourceJobIsActive = false;
                     }
                 }
             }
         }
         else if (auto entity = prime->scavengeTargetQueue[0].castToEntityPtr(*prime->getGameOrThrow()))
         {
-            sourceIsActiveJob = (prime->scavengeTargetQueue[0] == prime->getMaybeMoveTarget());
+            sourceJobIsActive = (prime->scavengeTargetQueue[0] == prime->getMaybeMoveTarget());
             if (entity->typechar() == GOLDPILE_TYPECHAR)
             {
                 sourceJobName = "Picking up gold";
@@ -1046,12 +1067,113 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
             }
         }
 
-        if (prime->heldGold.getSpaceLeft() == 0)
+        if (get<0>(prime->goldFlowFrom_view))
         {
-            sourceIsActiveJob = false;
+            sourceJobIsActive = true;
         }
 
-        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceIsActiveJob);
+        if (prime->heldGold.getSpaceLeft() == 0)
+        {
+            sourceJobIsActive = false;
+        }
+
+        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+        return;
+    }
+}
+
+void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
+{
+    if (prime->buildTargetQueue.size() == 0)
+    {
+        if (auto fundsDest = prime->fundsDest)
+        {
+            string destJobName;
+            optional<float> maybeDestJobCompletion;
+            bool destJobIsActive;
+
+            auto destEntity = maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), *fundsDest);
+            if (!destEntity)
+            {
+                displayWorkOrderWarning(window, font, upperLeft, "???");
+                return;
+            }
+
+            if (destEntity->typechar() == GATEWAY_TYPECHAR)
+            {
+                destJobName = "Depositing gold through Gateway";
+            }
+            else if (destEntity->typechar() == GOLDPILE_TYPECHAR)
+            {
+                destJobName = "Depositing to gold pile";
+            }
+            else if (destEntity->typechar() == PRIME_TYPECHAR)
+            {
+                destJobName = "Depositing gold to a Prime";
+            }
+            else
+            {
+                displayWorkOrderWarning(window, font, upperLeft, "???");
+                return;
+            }
+
+            if (auto moveTarget = prime->getMaybeMoveTarget())
+            {
+                destJobIsActive = (*moveTarget == Target(*fundsDest));
+            }
+            else
+            {
+                destJobIsActive = false;
+            }
+
+            if (get<0>(prime->goldFlowTo_view))
+            {
+                destJobIsActive = true;
+            }
+
+            displayWorkOrderInfo(window, font, upperLeft, destJobName, {}, 0, "build", sf::Color(200, 200, 255), destJobIsActive);
+            return;
+        }
+        else
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "No build/deposit jobs assigned!");
+            return;
+        }
+    }
+    else // build queue size > 0
+    {
+        auto targetEntity = maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->buildTargetQueue[0]);
+        if (!targetEntity)
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+        auto targetUnit = boost::dynamic_pointer_cast<Unit, Entity>(targetEntity);
+        if (!targetUnit)
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+
+        string buildJobName = string("Building ") + targetUnit->getTypename();
+        float buildJobCompletion = targetUnit->getBuiltRatio();
+
+        bool buildJobIsActive = false;
+        if (auto moveTarget = prime->getMaybeMoveTarget())
+        {
+            if (*moveTarget == Target(prime->buildTargetQueue[0]))
+            {
+                buildJobIsActive = true;
+            }
+        }
+
+        if (get<0>(prime->goldFlowTo_view))
+        {
+            buildJobIsActive = true;
+        }
+
+        displayWorkOrderInfo(window, font, upperLeft, buildJobName, buildJobCompletion, prime->buildTargetQueue.size() - 1, "build", sf::Color(200, 200, 255), buildJobIsActive);
+        return;
     }
 }
 
@@ -1060,6 +1182,7 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
         int yOffset = 0;
+        int xOffset = 20;
 
         stringstream ss;
         ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
@@ -1070,9 +1193,13 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
         heldGoldText.setFillColor(sf::Color::Yellow);
         window->draw(heldGoldText);
 
-        yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
+        yOffset += heldGoldText.getLocalBounds().height + 30;
 
-        displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(0, yOffset), prime);
+        displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
+
+        yOffset += 50;
+
+        displayPrimeGoldDestInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
 
         // sf::Text goldSourcesText;
         // int numSources = prime->scavengeTargetQueue.size();
