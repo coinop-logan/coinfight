@@ -1053,6 +1053,10 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
         {
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->scavengeTargetQueue[i].castToEntityRef())))
             {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                {
+                    fundsInQueue += prime->heldGold.getInt();
+                }
                 fundsInQueue += unit->getBuilt();
             }
         }
@@ -1303,14 +1307,22 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
     {
         if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->scuttleTargetQueue[i])))
         {
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            {
+                fundsLeftInQueue += prime->heldGold.getInt();
+            }
             fundsLeftInQueue += unit->getBuilt();
         }
     }
 
     if (gateway->maybeDepositingPrime)
     {
-        displayWorkOrderInfo(window, font, upperLeft, "Extracting from Prime", {}, gateway->scuttleTargetQueue.size(), fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), true);
-        return;
+        if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->maybeDepositingPrime)))
+        {
+            fundsLeftInQueue += prime->heldGold.getInt();
+            displayWorkOrderInfo(window, font, upperLeft, "Extracting from Prime", {}, gateway->scuttleTargetQueue.size(), fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), true);
+            return;
+        }
     }
     else if (auto scuttleTarget = gateway->getMaybeScuttleTarget())
     {
