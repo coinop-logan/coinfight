@@ -942,7 +942,7 @@ void displayWorkOrderWarning(sf::RenderWindow* window, sf::Font* font, vector2i 
     window->draw(warningText);
 }
 
-int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, string mainJobName, optional<float> maybeMainJobCompletion, int numAdditionalJobs, string additionalJobsLabel, sf::Color mainColor, bool active)
+int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, string mainJobName, optional<float> maybeMainJobCompletion, int numAdditionalJobs, optional<coinsInt> maybeFundsLeft, string additionalJobsLabel, sf::Color mainColor, bool active)
 {
     int yOffset = 0;
 
@@ -970,6 +970,23 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
         additionalJobsText.setPosition(toSFVecF(drawPos));
         additionalJobsText.setFillColor(sf::Color(150, 150, 150));
         window->draw(additionalJobsText);
+    }
+
+    if (maybeFundsLeft)
+    {
+        vector2i drawPos = upperLeft + vector2i(250, yOffset);
+
+        string fundsLeftString = coinsIntToDollarString(*maybeFundsLeft);
+        sf::Text fundsLeftText(fundsLeftString, *font, 14);
+        fundsLeftText.setPosition(toSFVecF(drawPos));
+        fundsLeftText.setFillColor(sf::Color::Yellow);
+        window->draw(fundsLeftText);
+
+        drawPos += vector2i(50, 2);
+        sf::Text left(" left", *font, 12);
+        left.setPosition(toSFVecF(drawPos));
+        left.setFillColor(sf::Color::White);
+        window->draw(left);
     }
 
     yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + 12;
@@ -1016,7 +1033,7 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
                 sourceJobIsActive = (bool)get<0>(prime->goldFlowFrom_view);
             }
 
-            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, {}, 0, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, {}, 0, {}, "source", sf::Color(200, 200, 255), sourceJobIsActive);
             return;
         }
         else
@@ -1030,6 +1047,15 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
         string sourceJobName;
         optional<float> maybeSourceJobCompletion;
         bool sourceJobIsActive;
+
+        coinsInt fundsInQueue = 0;
+        for (unsigned int i=0; i<prime->scavengeTargetQueue.size(); i++)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->scavengeTargetQueue[i].castToEntityRef())))
+            {
+                fundsInQueue += unit->getBuilt();
+            }
+        }
 
         if (prime->scavengeTargetQueue[0].type == Target::PointTarget)
         {
@@ -1077,7 +1103,7 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
             sourceJobIsActive = false;
         }
 
-        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, fundsInQueue, "source", sf::Color(200, 200, 255), sourceJobIsActive);
         return;
     }
 }
@@ -1131,7 +1157,7 @@ void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i
                 destJobIsActive = true;
             }
 
-            displayWorkOrderInfo(window, font, upperLeft, destJobName, {}, 0, "build", sf::Color(200, 200, 255), destJobIsActive);
+            displayWorkOrderInfo(window, font, upperLeft, destJobName, {}, 0, {}, "build", sf::Color(200, 200, 255), destJobIsActive);
             return;
         }
         else
@@ -1172,75 +1198,208 @@ void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i
             buildJobIsActive = true;
         }
 
-        displayWorkOrderInfo(window, font, upperLeft, buildJobName, buildJobCompletion, prime->buildTargetQueue.size() - 1, "build", sf::Color(200, 200, 255), buildJobIsActive);
+        coinsInt fundsLeft = 0;
+        for (unsigned int i=0; i<prime->buildTargetQueue.size(); i++)
+        {
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->buildTargetQueue[i])))
+            {
+                fundsLeft += (unit->getCost() - unit->getBuilt());
+            }
+        }
+
+        displayWorkOrderInfo(window, font, upperLeft, buildJobName, buildJobCompletion, prime->buildTargetQueue.size() - 1, fundsLeft, "build", sf::Color(200, 200, 255), buildJobIsActive);
         return;
     }
+}
+
+void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
+{
+    int yOffset = 0;
+    int xOffset = 20;
+
+    stringstream ss;
+    ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
+    ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
+    
+    sf::Text heldGoldText(ss.str(), *font, 16);
+    heldGoldText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
+    heldGoldText.setFillColor(sf::Color::Yellow);
+    window->draw(heldGoldText);
+
+    yOffset += heldGoldText.getLocalBounds().height + 30;
+
+    displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
+
+    yOffset += 50;
+
+    displayPrimeGoldDestInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
+}
+
+void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
+{
+    coinsInt fundsLeftInQueue = 0;
+    for (unsigned int i=0; i<gateway->buildTargetQueue.size(); i++)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->buildTargetQueue[i])))
+        {
+            fundsLeftInQueue += (unit->getCost() - unit->getBuilt());
+        }
+    }
+
+    if (gateway->maybeWithdrawingPrime)
+    {
+        displayWorkOrderInfo(window, font, upperLeft, "Funding Prime", {}, gateway->buildTargetQueue.size(), fundsLeftInQueue, "build", sf::Color(200, 200, 255), true);
+        return;
+    }
+    else if (auto depositTarget = gateway->getMaybeDepositTarget())
+    {
+        string spendJobName;
+        optional<float> jobCompletion;
+
+        auto entity = maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), get<0>(*depositTarget));
+        if (!entity)
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+
+        if (entity->typechar() == GOLDPILE_TYPECHAR)
+        {
+            spendJobName = "Depositing to gold pile";
+        }
+        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+        {
+            if (!unit->isFullyBuilt())
+            {
+                spendJobName = string("Building ") + unit->getTypename();
+                jobCompletion = unit->getBuiltRatio();
+            }
+            else if (unit->typechar() == PRIME_TYPECHAR)
+            {
+                spendJobName = "Funding Prime";
+            }
+            else
+            {
+                displayWorkOrderWarning(window, font, upperLeft, "???");
+                return;
+            }
+        }
+        else
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+
+        bool isActive = (bool)get<0>(gateway->goldFlowTo_view);
+        displayWorkOrderInfo(window, font, upperLeft, spendJobName, jobCompletion, gateway->buildTargetQueue.size() - 1, fundsLeftInQueue, "build", sf::Color(200, 200, 255), isActive);
+        return;
+    }
+}
+
+void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
+{
+    coinsInt fundsLeftInQueue = 0;
+    for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->scuttleTargetQueue[i])))
+        {
+            fundsLeftInQueue += unit->getBuilt();
+        }
+    }
+
+    if (gateway->maybeDepositingPrime)
+    {
+        displayWorkOrderInfo(window, font, upperLeft, "Extracting from Prime", {}, gateway->scuttleTargetQueue.size(), fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), true);
+        return;
+    }
+    else if (auto scuttleTarget = gateway->getMaybeScuttleTarget())
+    {
+        string incomeJobName;
+        optional<float> jobCompletion;
+
+        auto entity = maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), get<0>(*scuttleTarget));
+        if (!entity)
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+
+        if (entity->typechar() == GOLDPILE_TYPECHAR)
+        {
+            incomeJobName = "Extracting gold";
+        }
+        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+        {
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            {
+                if (prime->isFullyBuilt())
+                {
+                    incomeJobName = "Extracting from Prime";
+                }
+                else
+                {
+                    incomeJobName = "Scuttling Prime";
+                }
+            }
+            else
+            {
+                incomeJobName = string("Scuttling ") + unit->getTypename();
+                jobCompletion = 1 - unit->getBuiltRatio();
+            }
+        }
+        else
+        {
+            displayWorkOrderWarning(window, font, upperLeft, "???");
+            return;
+        }
+
+        bool isActive = (bool)get<0>(gateway->goldFlowFrom_view);
+        displayWorkOrderInfo(window, font, upperLeft, incomeJobName, jobCompletion, gateway->scuttleTargetQueue.size() - 1, fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), isActive);
+        return;
+    }
+}
+
+void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
+{
+    int yOffset = 0;
+    int xOffset = 20;
+
+    displayGatewayGoldSpendInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
+
+    yOffset += 50;
+
+    displayGatewayGoldIncomeInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
+
+    // vector<string> msgs =
+    // {
+    //     (gateway->maybeDepositingPrime ? "maybeDepositingPrime" : "-"),
+    //     (gateway->maybeWithdrawingPrime ? "maybeWithdrawingPrime" : "-"),
+    //     (gateway->getMaybeScuttleTarget() ? "getMaybeScuttleTarget" : "-"),
+    //     (gateway->getMaybeDepositTarget() ? "getMaybeDepositTarget" : "-"),
+    //     uint16ToString(gateway->buildTargetQueue.size()),
+    //     uint16ToString(gateway->scuttleTargetQueue.size())
+    // };
+
+    // for (unsigned int i=0; i<msgs.size(); i++)
+    // {
+    //     sf::Text text(msgs[i], *font, 16);
+    //     text.setPosition(toSFVecF(upperLeft + vector2i(xOffset, yOffset)));
+    //     text.setFillColor(sf::Color::White);
+    //     window->draw(text);
+
+    //     yOffset += 20;
+    // }
 }
 
 void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, boost::shared_ptr<Unit> unit, sf::Font* font)
 {
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        int yOffset = 0;
-        int xOffset = 20;
-
-        stringstream ss;
-        ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
-        ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
-        
-        sf::Text heldGoldText(ss.str(), *font, 16);
-        heldGoldText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
-        heldGoldText.setFillColor(sf::Color::Yellow);
-        window->draw(heldGoldText);
-
-        yOffset += heldGoldText.getLocalBounds().height + 30;
-
-        displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
-
-        yOffset += 50;
-
-        displayPrimeGoldDestInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
-
-        // sf::Text goldSourcesText;
-        // int numSources = prime->scavengeTargetQueue.size();
-        // ss.str("");
-        // ss.clear();
-        // ss << numSources;
-        // goldSourcesText = sf::Text(ss.str(), *font, 16);
-        // goldSourcesText.setFillColor(numSources == 0 ? sf::Color::Red : sf::Color::White);
-        // goldSourcesText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
-        // window->draw(goldSourcesText);
-        
-        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
-
-        // sf::Text goldDestinationsText;
-        // int numDests = prime->buildTargetQueue.size();
-        // ss.str("");
-        // ss.clear();
-        // ss << numDests;
-        // goldDestinationsText = sf::Text(ss.str(), *font, 16);
-        // goldDestinationsText.setFillColor(numSources == 0 ? sf::Color::Red : sf::Color::White);
-        // goldDestinationsText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
-        // window->draw(goldDestinationsText);
-        
-        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + heldGoldText.getLocalBounds().height;
-
-        // string statusDescription;
-        // if (prime->mobileUnitIsIdle())
-        // {
-        //     statusDescription = "idle";
-        // }
-        // else
-        // {
-        //     statusDescription = "not idle";
-        // }
-
-        // sf::Text statusText(statusDescription, *font, 16);
-        // statusText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
-        // statusText.setFillColor(sf::Color(200, 200, 255));
-        // window->draw(statusText);
-
-        // yOffset += UNIT_INFO_STATUS_ELEMENT_SPACING + statusText.getLocalBounds().height;
+        displayPrimeStatus(window, font, upperLeft, prime);
+    }
+    else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        displayGatewayStatus(window, font, upperLeft, gateway);
     }
     #warning "Some unit statuses undefined"
 }
