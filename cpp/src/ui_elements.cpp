@@ -1359,10 +1359,73 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
     }
 }
 
-void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
+void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int drawWidth, boost::shared_ptr<Gateway> gateway)
+{
+    if (!(get<0>(gateway->goldFlowFrom_view) || get<0>(gateway->goldFlowTo_view)))
+    {
+        // Nothing interesting happening, so we don't need to display anything
+        return;
+    }
+
+    string longText;
+    bool showPlus = false;
+    bool showMinus = false;
+    sf::Color characterTextColor, longTextColor;
+
+    if (get<0>(gateway->goldFlowFrom_view) && get<0>(gateway->goldFlowTo_view))
+    {
+        // neutral gold flow
+        showPlus = showMinus = true;
+        longText = "Income = spending. No gold transferring to/from wallet.";
+        characterTextColor = longTextColor = sf::Color(150, 150, 150);
+    }
+    else if (get<0>(gateway->goldFlowFrom_view))
+    {
+        // positive gold flow
+        showPlus = true;
+        longText = "Sending funds to wallet.";
+        characterTextColor = sf::Color(0, 255, 0);
+        longTextColor = sf::Color(0, 150, 0);
+    }
+    else
+    {
+        showMinus = true;
+        longText = "Withdrawing funds from wallet.";
+        characterTextColor = sf::Color(255, 0, 0);
+        longTextColor = sf::Color(150, 0, 0);
+    }
+
+    sf::Text dollarSign("$", *font, 28);
+    int xOffset = drawWidth / 2 - dollarSign.getLocalBounds().width;
+    vector2i dollarSignDrawPos = upperLeft + vector2i(xOffset, 0);
+    dollarSign.setPosition(toSFVecF(dollarSignDrawPos));
+    dollarSign.setFillColor(characterTextColor);
+    window->draw(dollarSign);
+
+    if (showPlus)
+    {
+        sf::Text plus("+", *font, 28);
+        plus.setPosition(toSFVecF(dollarSignDrawPos + vector2i(13, 0)));
+        plus.setFillColor(characterTextColor);
+        window->draw(plus);
+    }
+    if (showMinus)
+    {
+        sf::Text minus("-", *font, 28);
+        minus.setPosition(toSFVecF(dollarSignDrawPos + vector2i(-13, 0)));
+        minus.setFillColor(characterTextColor);
+        window->draw(minus);
+    }
+}
+
+void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Gateway> gateway)
 {
     int yOffset = 0;
     int xOffset = 20;
+
+    displayGatewayProfitStatus(window, font, upperLeft + vector2i(xOffset, yOffset), availableWidth - xOffset, gateway);
+
+    yOffset += 100;
 
     displayGatewayGoldSpendInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
 
@@ -1379,7 +1442,7 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
-        displayGatewayStatus(window, font, upperLeft, gateway);
+        displayGatewayStatus(window, font, upperLeft, availableWidth, gateway);
     }
     #warning "Some unit statuses undefined"
 }
@@ -1393,7 +1456,7 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
 
     int y = upperLeftDrawPos.y + 50;
 
-    displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.y, unit, font);
+    displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.x, unit, font);
 
     // displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
     // displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
