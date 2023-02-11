@@ -211,7 +211,7 @@ string uint16ToString(uint16_t x) {
 string floatToPercentString(float x)
 {
     char buf[10];
-    snprintf(buf, 10, "$%.2f", x);
+    snprintf(buf, 10, "$%.2f", x*100);
     return string(buf) + "%";
 }
 string floatToShortPercentString(float x)
