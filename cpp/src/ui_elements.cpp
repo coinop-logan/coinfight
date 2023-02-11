@@ -1369,26 +1369,6 @@ void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upp
     yOffset += 50;
 
     displayGatewayGoldIncomeInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
-
-    // vector<string> msgs =
-    // {
-    //     (gateway->maybeDepositingPrime ? "maybeDepositingPrime" : "-"),
-    //     (gateway->maybeWithdrawingPrime ? "maybeWithdrawingPrime" : "-"),
-    //     (gateway->getMaybeScuttleTarget() ? "getMaybeScuttleTarget" : "-"),
-    //     (gateway->getMaybeDepositTarget() ? "getMaybeDepositTarget" : "-"),
-    //     uint16ToString(gateway->buildTargetQueue.size()),
-    //     uint16ToString(gateway->scuttleTargetQueue.size())
-    // };
-
-    // for (unsigned int i=0; i<msgs.size(); i++)
-    // {
-    //     sf::Text text(msgs[i], *font, 16);
-    //     text.setPosition(toSFVecF(upperLeft + vector2i(xOffset, yOffset)));
-    //     text.setFillColor(sf::Color::White);
-    //     window->draw(text);
-
-    //     yOffset += 20;
-    // }
 }
 
 void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, boost::shared_ptr<Unit> unit, sf::Font* font)
