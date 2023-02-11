@@ -1379,36 +1379,35 @@ void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector
         return;
     }
 
-    string longText;
+    string longTextString;
     bool showPlus = false;
     bool showMinus = false;
     sf::Color characterTextColor, longTextColor;
 
     if (get<0>(gateway->goldFlowFrom_view) && get<0>(gateway->goldFlowTo_view))
     {
-        // neutral gold flow
         showPlus = showMinus = true;
-        longText = "Income = spending. No gold transferring to/from wallet.";
-        characterTextColor = longTextColor = sf::Color(150, 150, 150);
+        longTextString = "break-even";
+        characterTextColor = sf::Color(150, 150, 150);
+        longTextColor = sf::Color(180, 180, 180);
     }
     else if (get<0>(gateway->goldFlowFrom_view))
     {
-        // positive gold flow
         showPlus = true;
-        longText = "Sending funds to wallet.";
+        longTextString = "Sending funds to wallet.";
         characterTextColor = sf::Color(0, 255, 0);
-        longTextColor = sf::Color(0, 150, 0);
+        longTextColor = sf::Color(150, 200, 150);
     }
     else
     {
         showMinus = true;
-        longText = "Withdrawing funds from wallet.";
+        longTextString = "Withdrawing funds from wallet.";
         characterTextColor = sf::Color(255, 0, 0);
-        longTextColor = sf::Color(150, 0, 0);
+        longTextColor = sf::Color(200, 150, 150);
     }
 
     sf::Text dollarSign("$", *font, 28);
-    int xOffset = drawWidth / 2 - dollarSign.getLocalBounds().width;
+    int xOffset = (drawWidth - dollarSign.getLocalBounds().width) / 2;
     vector2i dollarSignDrawPos = upperLeft + vector2i(xOffset, 0);
     dollarSign.setPosition(toSFVecF(dollarSignDrawPos));
     dollarSign.setFillColor(characterTextColor);
@@ -1428,6 +1427,14 @@ void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector
         minus.setFillColor(characterTextColor);
         window->draw(minus);
     }
+
+    int yOffset = 32;
+    sf::Text longText(longTextString, *font, 14);
+    xOffset = (drawWidth - longText.getLocalBounds().width) / 2;
+    vector2i longTextDrawPos = upperLeft + vector2i(xOffset, yOffset);
+    longText.setPosition(toSFVecF(longTextDrawPos));
+    longText.setFillColor(longTextColor);
+    window->draw(longText);
 }
 
 void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Gateway> gateway)
