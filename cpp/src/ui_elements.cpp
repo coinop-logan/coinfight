@@ -1053,13 +1053,21 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
         coinsInt fundsInQueue = 0;
         for (unsigned int i=0; i<prime->scavengeTargetQueue.size(); i++)
         {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->scavengeTargetQueue[i].castToEntityRef())))
+            if (auto entity = maybeEntityRefToPtrOrNull(*prime->getGameOrThrow(), prime->scavengeTargetQueue[i].castToEntityRef()))
             {
-                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                 {
-                    fundsInQueue += prime->heldGold.getInt();
+                    fundsInQueue += goldpile->gold.getInt();
                 }
-                fundsInQueue += unit->getBuilt();
+                else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+                {
+                    fundsInQueue += unit->getBuilt();
+
+                    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                    {
+                        fundsInQueue += prime->heldGold.getInt();
+                    }
+                }
             }
         }
 
@@ -1312,13 +1320,20 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
     coinsInt fundsLeftInQueue = 0;
     for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
     {
-        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->scuttleTargetQueue[i])))
+        if (auto entity = maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->scuttleTargetQueue[i]))
         {
-            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
             {
-                fundsLeftInQueue += prime->heldGold.getInt();
+                fundsLeftInQueue += goldpile->gold.getInt();
             }
-            fundsLeftInQueue += unit->getBuilt();
+            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+            {
+                if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+                {
+                    fundsLeftInQueue += prime->heldGold.getInt();
+                }
+                fundsLeftInQueue += unit->getBuilt();
+            }
         }
     }
 
