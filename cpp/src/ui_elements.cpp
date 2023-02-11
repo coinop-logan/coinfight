@@ -1484,7 +1484,28 @@ void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upp
 
 void displayCombatUnitStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<CombatUnit> combatUnit)
 {
-    sf::Text text("lol imma shoot stuff", *font, 16);
+    string statusString;
+    if (combatUnit->state == CombatUnit::State::AttackingGeneral)
+    {
+        if (combatUnit->maybeAttackObjective)
+        {
+            statusString = "Assaulting location";
+        }
+        else
+        {
+            statusString = "Engaging nearby enemy";
+        }
+    }
+    else if (combatUnit->state == CombatUnit::State::AttackingSpecific)
+    {
+        statusString = "Targeting enemy";
+    }
+    else if (combatUnit->state == CombatUnit::State::NotAttacking)
+    {
+        statusString = "NotAttackingButMaybeMoving!?!?!?";
+    }
+    
+    sf::Text text(statusString, *font, 16);
     text.setPosition(toSFVecF(upperLeft));
     text.setFillColor(sf::Color::White);
     window->draw(text);
@@ -1521,7 +1542,28 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
     vector2i detailedStatusDrawPos = upperLeft + vector2i(xOffset, 0);
     int detailedStatusAvailableWidth = availableWidth - xOffset;
 
-    if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+    if (!unit->isFullyBuilt())
+    {
+        if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+        {
+            displayBeaconStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, beacon);
+        }
+        else
+        {
+            sf::Text constructingText("Not fully built", *font, 18);
+            constructingText.setFillColor(sf::Color(255, 150, 150));
+            constructingText.setPosition(toSFVecF(detailedStatusDrawPos));
+            window->draw(constructingText);
+        }
+    }
+    else if (!unit->isActive())
+    {
+        sf::Text inactiveText("Unit inactive", *font, 18);
+        inactiveText.setFillColor(sf::Color(150, 150, 150));
+        inactiveText.setPosition(toSFVecF(detailedStatusDrawPos));
+        window->draw(inactiveText);
+    }
+    else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
         displayPrimeStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, prime);
     }
@@ -1537,11 +1579,6 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
     {
         displayTurretStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, turret);
     }
-    else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
-    {
-        displayBeaconStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, beacon);
-    }
-    #warning "Some unit statuses undefined"
 }
 
 void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos, vector2i drawAreaSize)
