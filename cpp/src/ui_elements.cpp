@@ -1502,7 +1502,17 @@ void displayCombatUnitStatus(sf::RenderWindow* window, sf::Font* font, vector2i 
     }
     else if (combatUnit->state == CombatUnit::State::NotAttacking)
     {
-        statusString = "NotAttackingButMaybeMoving!?!?!?";
+        if (auto mobileUnit = dynamic_cast<MobileUnit*>(combatUnit.get()))
+        {
+            if (mobileUnit->mobileUnitIsIdle())
+            {
+                statusString = "Idle";
+            }
+            else
+            {
+                statusString = "Moving to position";
+            }
+        }
     }
 
     sf::Text text(statusString, *font, 16);
