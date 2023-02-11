@@ -996,6 +996,8 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
 
 void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
 {
+    sf::Color nameColor(255, 255, 150);
+
     if (prime->scavengeTargetQueue.size() == 0)
     {
         if (auto fundsSource = prime->fundsSource)
@@ -1033,7 +1035,7 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
                 sourceJobIsActive = (bool)get<0>(prime->goldFlowFrom_view);
             }
 
-            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, {}, 0, {}, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+            displayWorkOrderInfo(window, font, upperLeft, sourceJobName, {}, 0, {}, "source", nameColor, sourceJobIsActive);
             return;
         }
         else
@@ -1107,13 +1109,15 @@ void displayPrimeGoldSourceInfo(sf::RenderWindow* window, sf::Font* font, vector
             sourceJobIsActive = false;
         }
 
-        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, fundsInQueue, "source", sf::Color(200, 200, 255), sourceJobIsActive);
+        displayWorkOrderInfo(window, font, upperLeft, sourceJobName, maybeSourceJobCompletion, prime->scavengeTargetQueue.size() - 1, fundsInQueue, "source", nameColor, sourceJobIsActive);
         return;
     }
 }
 
 void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
 {
+    sf::Color nameColor(150, 150, 255);
+
     if (prime->buildTargetQueue.size() == 0)
     {
         if (auto fundsDest = prime->fundsDest)
@@ -1161,7 +1165,7 @@ void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i
                 destJobIsActive = true;
             }
 
-            displayWorkOrderInfo(window, font, upperLeft, destJobName, {}, 0, {}, "build", sf::Color(200, 200, 255), destJobIsActive);
+            displayWorkOrderInfo(window, font, upperLeft, destJobName, {}, 0, {}, "build", nameColor, destJobIsActive);
             return;
         }
         else
@@ -1211,7 +1215,7 @@ void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i
             }
         }
 
-        displayWorkOrderInfo(window, font, upperLeft, buildJobName, buildJobCompletion, prime->buildTargetQueue.size() - 1, fundsLeft, "build", sf::Color(200, 200, 255), buildJobIsActive);
+        displayWorkOrderInfo(window, font, upperLeft, buildJobName, buildJobCompletion, prime->buildTargetQueue.size() - 1, fundsLeft, "build", nameColor, buildJobIsActive);
         return;
     }
 }
@@ -1241,6 +1245,7 @@ void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upper
 
 void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
 {
+    sf::Color nameColor(255, 150, 150);
     coinsInt fundsLeftInQueue = 0;
     for (unsigned int i=0; i<gateway->buildTargetQueue.size(); i++)
     {
@@ -1252,7 +1257,7 @@ void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vecto
 
     if (gateway->maybeWithdrawingPrime)
     {
-        displayWorkOrderInfo(window, font, upperLeft, "Funding Prime", {}, gateway->buildTargetQueue.size(), fundsLeftInQueue, "build", sf::Color(200, 200, 255), true);
+        displayWorkOrderInfo(window, font, upperLeft, "Funding Prime", {}, gateway->buildTargetQueue.size(), fundsLeftInQueue, "build", nameColor, true);
         return;
     }
     else if (auto depositTarget = gateway->getMaybeDepositTarget())
@@ -1295,13 +1300,15 @@ void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vecto
         }
 
         bool isActive = (bool)get<0>(gateway->goldFlowTo_view);
-        displayWorkOrderInfo(window, font, upperLeft, spendJobName, jobCompletion, gateway->buildTargetQueue.size() - 1, fundsLeftInQueue, "build", sf::Color(200, 200, 255), isActive);
+        displayWorkOrderInfo(window, font, upperLeft, spendJobName, jobCompletion, gateway->buildTargetQueue.size() - 1, fundsLeftInQueue, "build", nameColor, isActive);
         return;
     }
 }
 
 void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
 {
+    sf::Color nameColor(150, 255, 150);
+
     coinsInt fundsLeftInQueue = 0;
     for (unsigned int i=0; i<gateway->scuttleTargetQueue.size(); i++)
     {
@@ -1320,7 +1327,7 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
         if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(maybeEntityRefToPtrOrNull(*gateway->getGameOrThrow(), gateway->maybeDepositingPrime)))
         {
             fundsLeftInQueue += prime->heldGold.getInt();
-            displayWorkOrderInfo(window, font, upperLeft, "Extracting from Prime", {}, gateway->scuttleTargetQueue.size(), fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), true);
+            displayWorkOrderInfo(window, font, upperLeft, "Extracting from Prime", {}, gateway->scuttleTargetQueue.size(), fundsLeftInQueue, "extraction", nameColor, true);
             return;
         }
     }
@@ -1366,7 +1373,7 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
         }
 
         bool isActive = (bool)get<0>(gateway->goldFlowFrom_view);
-        displayWorkOrderInfo(window, font, upperLeft, incomeJobName, jobCompletion, gateway->scuttleTargetQueue.size() - 1, fundsLeftInQueue, "extraction", sf::Color(200, 200, 255), isActive);
+        displayWorkOrderInfo(window, font, upperLeft, incomeJobName, jobCompletion, gateway->scuttleTargetQueue.size() - 1, fundsLeftInQueue, "extraction", nameColor, isActive);
         return;
     }
 }
