@@ -1228,10 +1228,9 @@ void displayPrimeGoldDestInfo(sf::RenderWindow* window, sf::Font* font, vector2i
     }
 }
 
-void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Prime> prime)
+void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Prime> prime)
 {
     int yOffset = 0;
-    int xOffset = 20;
 
     stringstream ss;
     ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
@@ -1244,11 +1243,11 @@ void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upper
 
     yOffset += heldGoldText.getLocalBounds().height + 30;
 
-    displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
+    displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(0, yOffset), prime);
 
     yOffset += 50;
 
-    displayPrimeGoldDestInfo(window, font, upperLeft + vector2i(xOffset, yOffset), prime);
+    displayPrimeGoldDestInfo(window, font, upperLeft + vector2i(0, yOffset), prime);
 }
 
 void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
@@ -1403,7 +1402,6 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
 
 void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int drawWidth, boost::shared_ptr<Gateway> gateway)
 {
-
     string longTextString;
     bool showPlus = false;
     bool showMinus = false;
@@ -1472,28 +1470,76 @@ void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector
 void displayGatewayStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Gateway> gateway)
 {
     int yOffset = 0;
-    int xOffset = 20;
 
-    displayGatewayProfitStatus(window, font, upperLeft + vector2i(xOffset, yOffset), availableWidth - xOffset, gateway);
+    displayGatewayProfitStatus(window, font, upperLeft + vector2i(0, yOffset), availableWidth, gateway);
 
     yOffset += 100;
 
-    displayGatewayGoldSpendInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
+    displayGatewayGoldSpendInfo(window, font, upperLeft + vector2i(0, yOffset), gateway);
 
     yOffset += 50;
 
-    displayGatewayGoldIncomeInfo(window, font, upperLeft + vector2i(xOffset, yOffset), gateway);
+    displayGatewayGoldIncomeInfo(window, font, upperLeft + vector2i(0, yOffset), gateway);
+}
+
+void displayCombatUnitStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<CombatUnit> combatUnit)
+{
+    sf::Text text("lol imma shoot stuff", *font, 16);
+    text.setPosition(toSFVecF(upperLeft));
+    text.setFillColor(sf::Color::White);
+    window->draw(text);
+}
+
+void displayFighterStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Fighter> fighter)
+{
+    displayCombatUnitStatus(window, font, upperLeft, availableWidth, fighter);
+}
+void displayTurretStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Turret> turret)
+{
+    displayCombatUnitStatus(window, font, upperLeft, availableWidth, turret);
+}
+void displayBeaconStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int availableWidth, boost::shared_ptr<Beacon> beacon)
+{
+    string statusString;
+    if (beacon->state == Beacon::State::Spawning)
+    {
+        statusString = "Warping in (" + floatToShortPercentString(beacon->getBuiltRatio()) + ")";
+    }
+    else
+    {
+        statusString = "Warping out (" + floatToShortPercentString(1 - beacon->getBuiltRatio()) + ")";
+    }
+    sf::Text statusText(statusString, *font, 16);
+    statusText.setPosition(toSFVecF(upperLeft));
+    statusText.setFillColor(sf::Color::White);
+    window->draw(statusText);
 }
 
 void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availableWidth, boost::shared_ptr<Unit> unit, sf::Font* font)
 {
+    int xOffset = 20;
+    vector2i detailedStatusDrawPos = upperLeft + vector2i(xOffset, 0);
+    int detailedStatusAvailableWidth = availableWidth - xOffset;
+
     if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
     {
-        displayPrimeStatus(window, font, upperLeft, prime);
+        displayPrimeStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, prime);
     }
     else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
     {
-        displayGatewayStatus(window, font, upperLeft, availableWidth, gateway);
+        displayGatewayStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, gateway);
+    }
+    else if (auto fighter = boost::dynamic_pointer_cast<Fighter, Unit>(unit))
+    {
+        displayFighterStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, fighter);
+    }
+    else if (auto turret = boost::dynamic_pointer_cast<Turret, Unit>(unit))
+    {
+        displayTurretStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, turret);
+    }
+    else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+    {
+        displayBeaconStatus(window, font, detailedStatusDrawPos, detailedStatusAvailableWidth, beacon);
     }
     #warning "Some unit statuses undefined"
 }
