@@ -1504,7 +1504,7 @@ void displayCombatUnitStatus(sf::RenderWindow* window, sf::Font* font, vector2i 
     {
         statusString = "NotAttackingButMaybeMoving!?!?!?";
     }
-    
+
     sf::Text text(statusString, *font, 16);
     text.setPosition(toSFVecF(upperLeft));
     text.setFillColor(sf::Color::White);
@@ -1550,7 +1550,8 @@ void displayUnitStatus(sf::RenderWindow* window, vector2i upperLeft, int availab
         }
         else
         {
-            sf::Text constructingText("Not fully built", *font, 18);
+            string s = "Partially constructed (" + floatToShortPercentString(unit->getBuiltRatio()) + ")";
+            sf::Text constructingText(s, *font, 18);
             constructingText.setFillColor(sf::Color(255, 150, 150));
             constructingText.setPosition(toSFVecF(detailedStatusDrawPos));
             window->draw(constructingText);
