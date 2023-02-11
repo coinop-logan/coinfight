@@ -1311,6 +1311,10 @@ void displayGatewayGoldSpendInfo(sf::RenderWindow* window, sf::Font* font, vecto
         displayWorkOrderInfo(window, font, upperLeft, spendJobName, jobCompletion, gateway->buildTargetQueue.size() - 1, fundsLeftInQueue, "build", nameColor, isActive);
         return;
     }
+    else
+    {
+        displayWorkOrderInfo(window, font, upperLeft, "No build jobs", {}, 0, {}, "build", sf::Color(150, 150, 150), false);
+    }
 }
 
 void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, boost::shared_ptr<Gateway> gateway)
@@ -1391,22 +1395,28 @@ void displayGatewayGoldIncomeInfo(sf::RenderWindow* window, sf::Font* font, vect
         displayWorkOrderInfo(window, font, upperLeft, incomeJobName, jobCompletion, gateway->scuttleTargetQueue.size() - 1, fundsLeftInQueue, "extraction", nameColor, isActive);
         return;
     }
+    else
+    {
+        displayWorkOrderInfo(window, font, upperLeft, "No extraction jobs", {}, 0, {}, "extraction", sf::Color(150, 150, 150), false);
+    }
 }
 
 void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, int drawWidth, boost::shared_ptr<Gateway> gateway)
 {
-    if (!(get<0>(gateway->goldFlowFrom_view) || get<0>(gateway->goldFlowTo_view)))
-    {
-        // Nothing interesting happening, so we don't need to display anything
-        return;
-    }
 
     string longTextString;
     bool showPlus = false;
     bool showMinus = false;
     sf::Color characterTextColor, longTextColor;
 
-    if (get<0>(gateway->goldFlowFrom_view) && get<0>(gateway->goldFlowTo_view))
+    if (!(get<0>(gateway->goldFlowFrom_view) || get<0>(gateway->goldFlowTo_view)))
+    {
+        // Nothing interesting happening, so we don't need to display anything
+        longTextString = "Idle";
+        characterTextColor = sf::Color(150, 150, 150);
+        longTextColor = sf::Color(180, 180, 180);
+    }
+    else if (get<0>(gateway->goldFlowFrom_view) && get<0>(gateway->goldFlowTo_view))
     {
         showPlus = showMinus = true;
         longTextString = "break-even";
