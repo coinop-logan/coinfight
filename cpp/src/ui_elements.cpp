@@ -860,8 +860,8 @@ void KeyButtonUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
     }
 }
 
-UnitInfoUXBox::UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits)
-    : UXBox(upperLeft, UNITINFOBOX_SIZE), font(font), selectedUnits(selectedUnits)
+UnitInfoUXBox::UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits, sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t))
+    : UXBox(upperLeft, UNITINFOBOX_SIZE), font(font), selectedUnits(selectedUnits), getSpriteForUnitTypechar(getSpriteForUnitTypechar)
     {}
 
 void displayUnitName(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, sf::Font* font, vector2i upperLeftDrawPos)
@@ -1602,19 +1602,70 @@ void displaySingleUnitInfo(sf::RenderWindow* window, boost::shared_ptr<Unit> uni
     int y = upperLeftDrawPos.y + 50;
 
     displayUnitStatus(window, vector2i(upperLeftDrawPos.x, y), drawAreaSize.x, unit, font);
+}
 
-    // displayUnitArt(window, vector2i(upperLeftDrawPos.x, y), unit->typechar(), font);
-    // displayUnitHints(window, vector2i(upperLeftDrawPos.x + UNIT_ART_SIZE.x + UX_BOX_SPACING.x, y), drawAreaSize.x - (UNIT_ART_SIZE.x + UX_BOX_SPACING.x), unit->typechar(), font);
+void displayNoneUnitInfo(sf::RenderWindow* window, sf::Font* font, vector2i upperLeft, vector2i drawAreaSize)
+{
 
-    // y += UNIT_ART_SIZE.y + UX_BOX_SPACING.y;
+}
 
+void displayMultipleUnitInfo(sf::RenderWindow* window, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits, vector2i upperLeft, vector2i drawAreaSize, sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t))
+{
+    vector<tuple<uint8_t, int, string>> typesToCount =
+    {
+        {GATEWAY_TYPECHAR, 0, "Gateways"},
+        {BEACON_TYPECHAR, 0, "Warps"},
+        {PRIME_TYPECHAR, 0, "Primes"},
+        {FIGHTER_TYPECHAR, 0, "Fighters"},
+        {TURRET_TYPECHAR, 0, "Turrets"}
+    };
+
+    // count up units
+    for (unsigned int i=0; i<selectedUnits->size(); i++)
+    {
+        for (unsigned int j=0; j<typesToCount.size(); j++)
+        {
+            if ((*selectedUnits)[i]->typechar() == get<0>(typesToCount[j]))
+            {
+                get<1>(typesToCount[j]) ++;
+            }
+        }
+    }
+
+    int yOffset = 0;
+    const int rowHeight = 60;
+
+    for (unsigned int i=0; i<typesToCount.size(); i++)
+    {
+        int numOfType = get<1>(typesToCount[i]);
+        if (numOfType > 0)
+        {
+            sf::Sprite* sprite = getSpriteForUnitTypechar(get<0>(typesToCount[i]));
+            sprite->setPosition(toSFVecF(upperLeft + vector2i( 0, yOffset)));
+
+            window->draw(*sprite);
+
+            if (numOfType > 1)
+            {
+                stringstream ss;
+                ss << "x" << numOfType;
+                sf::Text countText(ss.str(), *font, 20);
+                countText.setPosition(toSFVecF(upperLeft + vector2i(70, yOffset + 20)));
+                countText.setFillColor(sf::Color::White);
+
+                window->draw(countText);
+            }
+
+            yOffset += rowHeight;
+        }
+    }
 }
 
 void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
 {
     if (selectedUnits->size() == 0)
     {
-        // displayNoneUnitInfo(boxUpperLeft);
+        displayNoneUnitInfo(window, font, upperLeft, UNITINFOBOX_SIZE - (UX_BOX_PADDING * 2));
     }
     else if (selectedUnits->size() == 1)
     {
@@ -1622,6 +1673,6 @@ void UnitInfoUXBox::drawContent(sf::RenderWindow* window, vector2i upperLeft)
     }
     else
     {
-        // displayMultipleUnitInfo();
+        displayMultipleUnitInfo(window, font, selectedUnits, upperLeft, UNITINFOBOX_SIZE - (UX_BOX_PADDING * 2), getSpriteForUnitTypechar);
     }
 }

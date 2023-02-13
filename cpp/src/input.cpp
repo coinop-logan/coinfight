@@ -27,7 +27,7 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::View uxView, bool online)
+GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View uxView, bool online)
   : font(font),
     selectedUnits(),
     unitInfoBox(
@@ -36,7 +36,8 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
             getViewSize(window, uxView).y - UNITINFOBOX_SIZE.y
         ),
         font,
-        &selectedUnits
+        &selectedUnits,
+        getSpriteForUnitTypechar
     ),
     keyButtonBox(
         vector2i(

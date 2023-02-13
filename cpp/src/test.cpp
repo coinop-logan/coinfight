@@ -31,5 +31,8 @@ void pr(C c) {
 
 int main()
 {
-    cout << floatToShortPercentString(0.4) << endl;
+    vector<tuple<int, int>> vec = {{3,3}};
+
+    get<0>(vec[0]) ++;
+    cout << get<0>(vec[0]) << endl;
 }

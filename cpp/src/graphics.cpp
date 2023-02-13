@@ -1556,6 +1556,34 @@ void loadKeyCommandIcons()
     cmdBuildTurretIcon.setTexture(cmdBuildTurretSource.getTexture());
 }
 
+sf::Sprite* getSpriteForUnitTypechar(uint8_t typechar)
+{
+    switch (typechar)
+    {
+        case GATEWAY_TYPECHAR:
+        {
+            return &cmdBuildGatewayIcon;
+        }
+        case PRIME_TYPECHAR:
+        {
+            return &cmdBuildPrimeIcon;
+        }
+        case BEACON_TYPECHAR:
+        {
+            return &cmdBuildGatewayIcon;
+        }
+        case FIGHTER_TYPECHAR:
+        {
+            return &cmdBuildFighterIcon;
+        }
+        case TURRET_TYPECHAR:
+        {
+            return &cmdBuildTurretIcon;
+        }
+    }
+    throw runtime_error("Couldn't find sprite for that unit...");
+}
+
 sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
 {
     switch (keyButtonMsg)

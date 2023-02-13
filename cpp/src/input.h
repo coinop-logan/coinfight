@@ -50,7 +50,7 @@ struct GameUI
     bool online;
     bool displayAllRadii;
     ParticlesContainer particles;
-    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::View view, bool online);
+    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View view, bool online);
     void updateUnitCmds(bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
     bool selectionHasGateways();

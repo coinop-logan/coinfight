@@ -343,8 +343,9 @@ class UnitInfoUXBox : public UXBox
 {
     sf::Font* font;
     vector<boost::shared_ptr<Unit>>* selectedUnits;
+    sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t);
 public:
-    UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits);
+    UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits, sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t));
     void drawContent(sf::RenderWindow* window, vector2i upperLeft);
 };
 
