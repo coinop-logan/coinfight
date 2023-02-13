@@ -50,7 +50,7 @@ all: server-build client-build prep-server
 server-build: bin/server
 
 client-build: bin/coinfight
-	cp assets/client/* bin/
+	cp -r assets/client/* bin/
 
 package-client:
 	cd package-assets/client && ./package.sh && mv coinfight-*.zip ../../dist/ && cd ../..
