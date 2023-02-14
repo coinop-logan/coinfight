@@ -55,3 +55,12 @@ void displayTitle(sf::RenderWindow* window, int yPadding)
 
     window->draw(rendered);
 }
+
+sf::Font* getHumanFont()
+{
+    return &humanFont;
+}
+sf::Font* getFWFont()
+{
+    return &fwFont;
+}
