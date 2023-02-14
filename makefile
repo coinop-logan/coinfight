@@ -37,3 +37,5 @@ launcher-build: bin/launcher
 .PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR)
+	rm -rf bin/*
+	rm -rf dist/*
