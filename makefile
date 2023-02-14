@@ -4,14 +4,14 @@ CXX = g++
 UNAME := $(shell uname)
 INC=-I/usr/include -I/usr/include/python3.8/ -I ./cpp/include/ `python3-config --includes`
 LIBSERVER=-lboost_system -lboost_filesystem `python3-config --ldflags` -lpython3.8
-LIBLAUNCHER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem
+LIBLAUNCHER=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lboost_filesystem
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Wall -std=c++17 -no-pie -arch x86_64 -DGIT_COMMIT_HASH='"$(GIT_COMMIT_HASH)"'
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -framework OpenGL
 else
 # ifeq($(UNAME), Linux)
 CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie -DGIT_COMMIT_HASH='"$(GIT_COMMIT_HASH)"'
-LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lGL -lGLU
+LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window
 endif
 
 launcher: pre-build launcher-build
