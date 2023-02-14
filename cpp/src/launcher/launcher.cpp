@@ -1,6 +1,8 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <chrono>
+#include <curl/curl.h>
+#include <sstream>
 #include "interface/graphics/common.h"
 #include "interface/common.h"
 #include "common/myvectors.h"
@@ -9,6 +11,77 @@
 using namespace std;
 
 const vector2i LAUNCHER_SCREEN_SIZE(800, 500);
+
+sf::RenderWindow* setupGraphics();
+void cleanupGraphics(sf::RenderWindow* window);
+void display(sf::RenderWindow* window, sf::Font* humanFont);
+
+optional<vector<int>> checkLocalFilesVersion();
+optional<vector<int>> checkServerVersion();
+
+string versionToString(vector<int>);
+
+// enum AppState
+// {
+//     CheckingLocalFiles,
+//     CheckingRemoteVersion,
+//     ReadyForUpdate,
+//     Updating,
+//     ReadyToPlay
+// };
+
+int main(int argc, char *argv[])
+{
+    curl_global_init(0);
+
+    sf::RenderWindow* window = setupGraphics();
+    sf::Font* humanFont = getHumanFont();
+    sf::Font* fwFont = getFWFont();
+
+    // check local files
+    // optional<vector<int>> localFilesVersion = checkLocalFilesVersion();
+
+    // check remote version
+    optional<vector<int>> serverVersion = checkServerVersion();
+    if (serverVersion)
+    {
+        cout << "version: " << versionToString(*serverVersion) << endl;
+    }
+    else
+    {
+        cout << "no version found!" << endl;
+    }
+
+    return 0;
+
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+
+    while (window->isOpen())
+    {
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
+            continue;
+        
+        nextFrameStart += ONE_FRAME;
+
+        sf::Event event;
+        while (window->pollEvent(event))
+        {
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                {
+                    window->close();
+                    break;
+                }
+            }
+        }
+
+        display(window, humanFont);
+    }
+
+    cleanupGraphics(window);
+}
 
 sf::RenderWindow* setupGraphics()
 {
@@ -43,37 +116,32 @@ void display(sf::RenderWindow* window, sf::Font* humanFont)
     window->display();
 }
 
-int main(int argc, char *argv[])
+
+optional<vector<int>> checkLocalFilesVersion()
 {
-    sf::RenderWindow* window = setupGraphics();
-    sf::Font* humanFont = getHumanFont();
-    sf::Font* fwFont = getFWFont();
+    return {};
+}
 
-    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+optional<vector<int>> checkServerVersion()
+{
+    CURL* c = curl_easy_init();
 
-    while (window->isOpen())
+    curl_easy_cleanup(c);
+
+    return {};
+}
+
+string versionToString(vector<int> version)
+{
+    stringstream ss;
+    for (unsigned int i=0; i<version.size(); i++)
     {
-        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
-        if (now < nextFrameStart)
-            continue;
-        
-        nextFrameStart += ONE_FRAME;
-
-        sf::Event event;
-        while (window->pollEvent(event))
+        if (i != 0)
         {
-            switch (event.type)
-            {
-                case sf::Event::Closed:
-                {
-                    window->close();
-                    break;
-                }
-            }
+            ss << ".";
         }
-
-        display(window, humanFont);
+        ss << version[i];
     }
 
-    cleanupGraphics(window);
+    return ss.str();
 }
