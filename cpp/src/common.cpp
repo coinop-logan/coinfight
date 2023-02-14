@@ -91,31 +91,6 @@ vector2fl randomVectorWithMagnitudeRange(float min, float max)
     return randomVectorWithMagnitude(magnitude);
 }
 
-sf::Vector2f toSFVecF(vector2fl v)
-{
-    return sf::Vector2f(v.x, v.y);
-}
-sf::Vector2i toSFVecI(vector2i v)
-{
-    return sf::Vector2i(v.x, v.y);
-}
-sf::Vector2f toSFVecF(vector2i v)
-{
-    return sf::Vector2f(v.x, v.y);
-}
-vector2fl fromSFVec(sf::Vector2f v)
-{
-    return vector2fl(v.x, v.y);
-}
-vector2i fromSFVec(sf::Vector2i v)
-{
-    return vector2i(v.x, v.y);
-}
-vector2i fromSFVec(sf::Vector2u v)
-{
-    return vector2i(v.x, v.y);
-}
-
 uint32_t floorSquareFixed(fixed32 val)
 {
     int32_t floored = static_cast<int32_t>(val);
@@ -180,26 +155,6 @@ optional<Address> validateAddress(string addrStr)
 double radiansToDegrees(double radians)
 {
     return (radians / M_PI) * 180;
-}
-
-vector2i getScreenSize(sf::RenderWindow* window)
-{
-    return fromSFVec(window->getSize());
-}
-vector2fl getCurrentViewSize(sf::RenderWindow* window)
-{
-    return fromSFVec(window->getView().getSize());
-}
-vector2fl getViewSize(sf::RenderWindow* window, sf::View view)
-{
-    sf::View currentView = window->getView();
-
-    window->setView(view);
-    vector2fl size = getCurrentViewSize(window);
-
-    window->setView(currentView);
-
-    return size;
 }
 
 string uint16ToString(uint16_t x) {

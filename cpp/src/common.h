@@ -65,13 +65,6 @@ template<class T, class U> vector<boost::shared_ptr<U>> filterForTypeKeepContain
     return filtered;
 }
 
-sf::Vector2f toSFVecF(vector2fl v);
-sf::Vector2i toSFVecI(vector2i v);
-sf::Vector2f toSFVecF(vector2i v);
-vector2fl fromSFVec(sf::Vector2f v);
-vector2i fromSFVec(sf::Vector2i v);
-vector2i fromSFVec(sf::Vector2u v);
-
 uint32_t floorSquareFixed(fixed32);
 uint32_t newtonSqrtFloor(uint32_t x);
 uint64_t constexpr ipow(uint32_t base, uint32_t exp)
@@ -96,7 +89,6 @@ optional<tuple<Address, string>> decodeAddressAndSig(string str);
 optional<Address> validateAddress(string addrStr);
 
 double radiansToDegrees(double radians);
-vector2i getScreenSize(sf::RenderWindow* window);
 vector2fl getCurrentViewSize(sf::RenderWindow* window);
 vector2fl getViewSize(sf::RenderWindow* window, sf::View view);
 string uint16ToString(uint16_t x);

@@ -2,7 +2,7 @@ GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
 
 CXX = g++
 UNAME := $(shell uname)
-INC=-I/usr/include -I/usr/include/python3.8/ -I ./cpp/include/ `python3-config --includes`
+INC=-I/usr/include -I./cpp/src/ -I/usr/include/python3.8/ -I ./cpp/include/ `python3-config --includes`
 LIBSERVER=-lboost_system -lboost_filesystem `python3-config --ldflags` -lpython3.8
 LIBLAUNCHER=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -lboost_filesystem
 ifeq ($(UNAME), Darwin)
@@ -14,20 +14,26 @@ CXXFLAGS = -g -Wall -std=c++17 -pthread -no-pie -DGIT_COMMIT_HASH='"$(GIT_COMMIT
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window
 endif
 
-launcher: pre-build launcher-build
+SRC_DIR = cpp/src
+OBJ_DIR = cpp/obj
+SRC_FILES := $(wildcard $(SRC_DIR)/*/*.cpp)
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
+
+bin/launcher: $(OBJ_DIR)/launcher/launcher.o cpp/obj/interface/graphics/common.o cpp/obj/interface/common.o cpp/obj/common/utils.o cpp/obj/common/myvectors.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBLAUNCHER)
+
+launcher: directories launcher-build
+
+directories:
+	@mkdir -p bin/
+	@mkdir -p dist/
 
 launcher-build: bin/launcher
 
-pre-build:
-	mkdir -p cpp/obj
-	mkdir -p bin/
-	mkdir -p dist/
-
-cpp/obj/launcher/launcher.o: cpp/src/launcher/launcher.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
-
-%.o: %.cpp %.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
-
-bin/launcher: cpp/obj/launcher/launcher.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBLAUNCHER)
+.PHONY: clean
+clean:
+	rm -rf $(OBJ_DIR)
