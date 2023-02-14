@@ -1611,13 +1611,13 @@ void displayNoneUnitInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
 
 void displayMultipleUnitInfo(sf::RenderWindow* window, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits, vector2i upperLeft, vector2i drawAreaSize, sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t))
 {
-    vector<tuple<uint8_t, int, string>> typesToCount =
+    vector<tuple<uint8_t, int>> typesToCount =
     {
-        {GATEWAY_TYPECHAR, 0, "Gateways"},
-        {BEACON_TYPECHAR, 0, "Warps"},
-        {PRIME_TYPECHAR, 0, "Primes"},
-        {FIGHTER_TYPECHAR, 0, "Fighters"},
-        {TURRET_TYPECHAR, 0, "Turrets"}
+        {GATEWAY_TYPECHAR, 0},
+        {BEACON_TYPECHAR, 0},
+        {PRIME_TYPECHAR, 0},
+        {FIGHTER_TYPECHAR, 0},
+        {TURRET_TYPECHAR, 0}
     };
 
     // count up units
