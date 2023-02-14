@@ -33,6 +33,7 @@ directories:
 	@mkdir -p dist/
 
 launcher-build: bin/launcher
+	cp -r assets/client/* bin/
 
 .PHONY: clean
 clean:
