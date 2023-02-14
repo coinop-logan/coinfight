@@ -198,14 +198,6 @@
 		<Unit filename="cpp/src/tutorial.h" />
 		<Unit filename="cpp/src/ui_elements.cpp" />
 		<Unit filename="cpp/src/ui_elements.h" />
-		<Unit filename="cpp/src/unit_interface_cmds.cpp">
-			<Option target="Coinfight" />
-			<Option target="Coinfight - Debug" />
-		</Unit>
-		<Unit filename="cpp/src/unit_interface_cmds.h">
-			<Option target="Coinfight" />
-			<Option target="Coinfight - Debug" />
-		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
