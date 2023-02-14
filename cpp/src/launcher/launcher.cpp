@@ -22,7 +22,21 @@ int main(int argc, char *argv[])
 {
     sf::RenderWindow* window = setupGraphics();
 
-    cout << "hi there" << endl;
+    while (window->isOpen())
+    {
+        sf::Event event;
+        while (window->pollEvent(event))
+        {
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                {
+                    window->close();
+                    break;
+                }
+            }
+        }
+    }
 
     cleanupGraphics(window);
 }
