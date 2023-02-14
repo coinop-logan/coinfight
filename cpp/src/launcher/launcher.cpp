@@ -1,7 +1,9 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <chrono>
 #include "interface/graphics/common.h"
 #include "common/myvectors.h"
+#include "config.h"
 
 using namespace std;
 
@@ -26,7 +28,7 @@ void cleanupGraphics(sf::RenderWindow* window)
 
 void display(sf::RenderWindow* window)
 {
-    window->clear(sf::Color(0, 0, 100));
+    window->clear(sf::Color(0, 0, 50));
 
     displayTitle(window, 20);
 
@@ -37,8 +39,16 @@ int main(int argc, char *argv[])
 {
     sf::RenderWindow* window = setupGraphics();
 
+    chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
+
     while (window->isOpen())
     {
+        chrono::time_point<chrono::system_clock, chrono::duration<double>> now(chrono::system_clock::now());
+        if (now < nextFrameStart)
+            continue;
+        
+        nextFrameStart += ONE_FRAME;
+
         sf::Event event;
         while (window->pollEvent(event))
         {
@@ -51,6 +61,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        display(window);
     }
 
     cleanupGraphics(window);
