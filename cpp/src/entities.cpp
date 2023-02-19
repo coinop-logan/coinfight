@@ -1079,10 +1079,6 @@ void Beacon::iterate()
 
             if (this->getBuilt() == 0)
             {
-                if (spendingTicket)
-                {
-                    game->players[this->ownerId].beaconAvailable = true;
-                }
                 die();
             }
         }
@@ -1094,6 +1090,11 @@ void Beacon::cmdStop() {}
 void Beacon::cmdWarpOut()
 {
     state = Despawning;
+    if (this->spendingTicket)
+    {
+        this->spendingTicket = false;
+        getGameOrThrow()->players[this->ownerId].beaconAvailable = true;
+    }
 }
 
 
