@@ -17,7 +17,7 @@
 
 const bool SEND_REGULAR_RESYNC_CHECKS = true;
 
-const unsigned int RECENT_BACKUP_INTERVAL_IN_FRAMES = 60; // every second
+const unsigned int RECENT_BACKUP_INTERVAL_IN_FRAMES = 60*5; // every 5 seconds
 
 using namespace std;
 using namespace boost::asio::ip;
