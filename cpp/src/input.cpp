@@ -218,7 +218,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::D,
                     KeyButtonHintInfo(
-                        "Spend from Wallet",
+                        "Spend",
                         {},
                         'D',
                         "Pull money from your Coinfight wallet into the game as gold.",
@@ -233,7 +233,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 keyButtonBox.setUnitCmdOrThrow(
                     sf::Keyboard::F,
                     KeyButtonHintInfo(
-                        "Capture to Wallet",
+                        "Capture",
                         {},
                         'F',
                         "Pull money out of the game and into your Coinfight wallet.",
@@ -344,7 +344,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     keyButtonBox.setUnitCmdOrThrow(
                         sf::Keyboard::F,
                         KeyButtonHintInfo(
-                            "Collect / Scavenge",
+                            "Collect",
                             {},
                             'F',
                             "Collect gold from a target or scavenge gold from a location.",

@@ -546,7 +546,7 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
     {
         vector<sf::Text> hints
             {sf::Text(sf::String("This can be spent or captured via Gateways"), *font, 16),
-            sf::Text(sf::String("and withdraws/deposits into xDai."), *font, 16)
+            sf::Text(sf::String("and withdraws/deposits into Godwoken USDC."), *font, 16)
             };
 
         sf::Transform hintsTransform;
