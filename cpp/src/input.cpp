@@ -163,7 +163,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Build Prime",
                         PRIME_COST,
                         'Q',
-                        "Begin constructing a Prime, spending $0.50 from your wallet balance.",
+                        "Begin constructing a Prime, a general worker unit, spending $0.50 from your wallet balance.",
                         {
                             "Harvests gold for construction or capture ($0.50 carrying capacity).",
                             "Constructs Gateways and Turrets.",
