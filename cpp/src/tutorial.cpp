@@ -192,6 +192,7 @@ public:
                 "Select your Gateway and click the Build Prime button (or hit Q)."
             },
             {
+                "Your Gateway is a portal between your Coinfight wallet and in-game resources. Right now, it's transmuting some of your (pretend) USDC credit into a unit.",
                 "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die, for you or someone else to pick up."
             }
         };
@@ -241,7 +242,7 @@ public:
                 "Select your Prime and use its Collect command on the gold pile. Your Prime has a max capacity of $0.50.",
             },
             {
-                "Gold is the only resource in Coinfight, and is backed by Godwoken USDC. In a real game, your ultimate goal is simply to exit the game with as much USDC as possible."
+                "Gold is the only resource in Coinfight, and is backed by Godwoken USDC. In a real game, your ultimate goal is simply to exit the game with as much USDC as possible, by sending it to your wallet via Gateways."
             }
         };
     }
