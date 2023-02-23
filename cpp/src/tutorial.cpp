@@ -102,8 +102,7 @@ public:
         {
             {
                 "A real Coinfight game will require crypto, but for now we'll pretend you deposited $4.50 into your Coinfight wallet - see your balance on the upper left.",
-                "The first step after joining a game will be to spawn in your first Gateway.",
-                "Do this now by hitting \"G\" and clicking on the map somewhere.",
+                "The first step after joining a game will be to spawn in your first Gateway. See the button for this near the lower-left of your screen.",
             },
             {}
         };
@@ -136,7 +135,7 @@ public:
                 "Note that this is spending money from your Coinfight wallet. All told, the Gateway takes a $4 investment."
             },
             {
-                "In a real game, you can only \"teleport in\" a Gateway like this by spending a ticket to a Coinfight round.",
+                "In a real game, you can only warp-in a Gateway like this by spending a ticket to a Coinfight round.",
                 "Any additional Gateways will have to be built with units and gold on location."
             }
         };
@@ -190,10 +189,10 @@ public:
         {
             {
                 "Now that your Gateway is finished, you can build your first unit.",
-                "Select your Gateway and hit Q.",
-                "This will build a Prime, the main worker/builder in Coinfight, for $0.50."
+                "Select your Gateway and click the Build Prime button (or hit Q)."
             },
             {
+                "Your Gateway is a portal between your Coinfight wallet and in-game resources. Right now, it's transmuting some of your (pretend) USDC credit into a unit.",
                 "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die, for you or someone else to pick up."
             }
         };
@@ -212,7 +211,7 @@ public:
     {
         auto primes = filterForType<Prime, Entity>(game->entities);
 
-        return (primes.size() > 0 && primes[0]->getBuiltRatio() == fixed32(1));
+        return (primes.size() > 0 && primes[0]->isFullyBuilt());
     }
 
     optional<float> getProgress(Game* game, GameUI* ui)
@@ -240,10 +239,10 @@ public:
         {
             {
                 "Bad news: you're broke! Good news: you have a Prime, and he can go pick up the gold nearby. You might need to move your camera to find the gold.",
-                "Select your Prime and right-click on that gold pile to start picking it up. Your Prime has a max capacity of $0.50.",
+                "Select your Prime and use its Collect command on the gold pile. Your Prime has a max capacity of $0.50.",
             },
             {
-                "Gold is the only resource in Coinfight, and is backed by DAI. In a real game, your main focus will be on finding and securing gold to either spend on your army or take out of the game as DAI."
+                "Gold is the only resource in Coinfight, and is backed by Godwoken USDC. In a real game, your ultimate goal is simply to exit the game with as much USDC as possible, by sending it to your wallet via Gateways."
             }
         };
     }
@@ -302,7 +301,7 @@ public:
         return
         {
             {
-                "Great! To finish capturing that gold, it has to be brought to the Gateway. With your Prime selected, right click on the Gateway.",
+                "Great! To finish capturing that gold, it has to be brought to the Gateway. Use your Prime's Deposit command on the Gateway.",
                 "Capture at least $0.20 of gold to continue."
             },
             {
@@ -349,14 +348,14 @@ public:
         {
             {
                 "Here's some more fake tutorial money!",
-                "Right clicking on additional gold piles will add them to the Prime's job queue. Without shift pressed, the new job will be done immediately; with shift pressed, it'll be added to the end of the queue.",
-                "You can also hit F and click a location, to add a \"fetch to\" job: the Prime will approach the location and pick up any gold it finds on the way.",
+                "Right clicking on additional gold piles will add them to the Prime's job queue. Holding shift will change where in the queue the new job goes.",
+                "You can also cast the Prime's Collect command on a location, to have the Prime approach the location and pick up any gold it finds on the way.",
                 "Continue gathering gold and make another Prime.",
             },
             {
                 "Primes will continue working until they run out of sources of gold or ways to store/invest it."
-                "Moving the Prime will only briefly interrupt this work--to stop it completely and clear its job queue, hit S.",
-                "(right-clicking usually does the right thing, but the keys D (Deposit) and F (Fetch) can be more specific)"
+                "Moving the Prime will only briefly interrupt this work--to stop it completely and clear its job queue, use the Stop command.",
+                "Generally, right-clicking with Primes does what you want it to, but the Deposit, Fetch, and Scuttle commands are more precise."
             }
         };
     }
@@ -433,12 +432,11 @@ public:
             {
                 "When you're ready to get out of the game (hopefully at a profit!), you'll want to recover the money you invested in your army.",
                 "Both Gateways and Primes can \"scuttle\" friendly units, deconstructing them to recover their investment cost.",
-                "Scuttle one Prime with another by selecting one Prime, hitting A, and clicking on the other.",
+                "Scuttle one Prime with another by using its Scuttle command.",
                 "Once again, holding shift will delay the job; otherwise it will be done immediately."
             },
             {
-                "Gateways can also scuttle units in this way, and will send the money directly to your wallet. But they can only take in one source of gold at a time, and will prioritize bringing in raw gold over scuttling functional units.",
-                "If you want, you can try this out by selecting the Gateway and right-clicking on one of your Primes."
+                "Gateways can also scuttle units in this way, and will send the money directly to your wallet."
             }
         };
     }
@@ -509,11 +507,10 @@ public:
         return
         {
             {
-                "Take a look at the key hints in the lower left.",
-                "The top row (QWER keys) is for building units. The first two are mobile units that can be built with Gateways; the last two are buildings that Primes can build.",
+                "We're just about at the end of the tutorial! Just a few more points, then a fun minigame:",
+                "Note that Gateways can build Fighters as well as Primes, and Primes can build both Gateways and Turrets.",
                 "When Primes are constructing buildings, they'll need more gold than they can carry, so make sure they have some source of gold (like a Gateway or some gold piles) queued up so they can finish the job.",
                 "",
-                "This pretty much concludes the tutorial, but there's a bit of a minigame for you to try out some of the combat.",
                 "To start the ~Tutorial Graduation Minigame~, build two combat units (Fighers and/or Turrets).",
             },
             {}
@@ -536,7 +533,7 @@ public:
         int finished = 0;
         for (unsigned int i=0; i<combatUnits.size(); i++)
         {
-            if (combatUnits[i]->getBuiltRatio() == fixed32(1))
+            if (combatUnits[i]->isFullyBuilt())
             {
                 finished ++;
             }
@@ -612,7 +609,7 @@ public:
         }
         return {
             {
-                "In a real game, your wallet balance (upper left) is withdrawable xDai, even after your army is lost. How high can you get it before you die?",
+                "In a real game, your wallet balance (upper left) is withdrawable USDC, even after your army is lost. How high can you get it before you die?",
                 numFightersSS.str(),
                 "Next wave countdown:"
             },

@@ -3,6 +3,7 @@
 #include <boost/shared_ptr.hpp>
 #include "myvectors.h"
 #include "common.h"
+#include "entities.h"
 
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
@@ -25,7 +26,32 @@ const vector2i GIFT_WINDOW_DIMENSIONS(600, 300);
 
 const vector2i COPYPASTE_BUTTON_DIMENSIONS(50, 50);
 
-void loadIcons();
+const vector2i UX_ELEMENT_SPACING(5, 5);
+const vector2i UX_BOX_PADDING(10, 10);
+const vector2i UX_BOX_SPACING(10, 10);
+const sf::Color UX_BOX_BORDER_COLOR(150, 150, 200);
+const sf::Color UX_BOX_BACKGROUND_COLOR(0, 0, 0, 200);
+
+const vector2i KEYBUTTON_ICON_BASE_SIZE(19, 19);
+const int KEYBUTTON_ICON_SCALE = 3;
+const vector2i KEYBUTTON_PADDING(3, 3);
+const vector2i KEYBUTTON_SIZE = (KEYBUTTON_ICON_BASE_SIZE * KEYBUTTON_ICON_SCALE) + (KEYBUTTON_PADDING * 2);
+const int KEYBUTTON_SPACING = 8;
+
+const vector2i KEYBUTTONBOX_PADDING(5, 5);
+const int KEYBUTTON_ROW2_OFFSETX = 20;
+const vector2i KEYBUTTONBOX_SIZE(
+    KEYBUTTON_ROW2_OFFSETX + KEYBUTTON_SIZE.x * 4 + KEYBUTTON_SPACING * 3 + KEYBUTTONBOX_PADDING.x * 2,
+    KEYBUTTON_SIZE.x * 3 + KEYBUTTON_SPACING * 2 + KEYBUTTONBOX_PADDING.y * 2
+);
+
+const vector2i UNITINFOBOX_SIZE(400, 300);
+
+const vector2i UNIT_ART_SIZE(120, 120);
+
+const int UNIT_INFO_STATUS_ELEMENT_SPACING = 14;
+
+void loadMenuIcons();
 
 class Button
 {
@@ -235,5 +261,92 @@ public:
 };
 
 void runNoticeWindow(sf::RenderWindow* window, string message, sf::Font*);
+
+struct KeyButtonHintInfo
+{
+    string name;
+    optional<coinsInt> maybeCost;
+    char hotkeyChar;
+    string description;
+    vector<string> bulletPoints;
+    KeyButtonHintInfo(string name, optional<coinsInt> maybeCost, char hotkeyChar, string description, vector<string> bulletPoints)
+        : name(name), maybeCost(maybeCost), hotkeyChar(hotkeyChar), description(description), bulletPoints(bulletPoints)
+        {}
+};
+
+enum KeyButtonMsg
+{
+    WarpIn,
+    WarpOut,
+    Stop,
+    Invest,
+    Fetch,
+    Attack,
+    AttackScuttle,
+    BuildPrime,
+    BuildFighter,
+    BuildGateway,
+    BuildTurret
+};
+
+struct KeyButtonActionInfo
+{
+    KeyButtonActionInfo(sf::Sprite* sprite, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg);
+    sf::Sprite* sprite;
+    KeyButtonHintInfo hintInfo;
+    KeyButtonMsg keyButtonMsg;
+};
+
+class KeyButton : public Button
+{
+public:
+    sf::Keyboard::Key key;
+    sf::Text keyCharText;
+    optional<KeyButtonActionInfo> maybeActionInfo;
+    bool active;
+    sf::Clock visualFlashClock;
+    KeyButton(vector2i upperLeft, sf::Keyboard::Key key, sf::Text keyCharText);
+    void setKeyButtonActionInfo(optional<KeyButtonActionInfo> _actionInfo);
+    void draw(sf::RenderWindow*);
+    void drawContent(sf::RenderWindow*);
+};
+
+class UXBox
+{
+public:
+    vector2i upperLeft, size;
+    UXBox(vector2i upperLeft, vector2i size);
+    bool pointCollides(vector2i pos);
+    virtual void drawContent(sf::RenderWindow* window, vector2i upperLeft) {}
+    void draw(sf::RenderWindow* window);
+};
+
+class KeyButtonUXBox : public UXBox
+{
+    vector<KeyButton> keyButtons;
+    KeyButton* getKeyButton(sf::Keyboard::Key key);
+    sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg);
+public:
+    KeyButtonUXBox(vector2i upperLeft, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg));
+    void setUnitCmdOrThrow(sf::Keyboard::Key key, KeyButtonHintInfo hintInfo, KeyButtonMsg keyButtonMsg);
+    void clearActionInfos();
+    void returnToDefaultState();
+    optional<KeyButtonHintInfo> getMouseoverHintInfo();
+    bool registerMouseMove(vector2i);
+    bool registerPress(vector2i);
+    tuple<bool, optional<tuple<KeyButton*, KeyButtonMsg>>> registerRelease(vector2i);
+    optional<tuple<KeyButton*, KeyButtonMsg>> handleKey(sf::Keyboard::Key);
+    void drawContent(sf::RenderWindow* window, vector2i upperLeft);
+};
+
+class UnitInfoUXBox : public UXBox
+{
+    sf::Font* font;
+    vector<boost::shared_ptr<Unit>>* selectedUnits;
+    sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t);
+public:
+    UnitInfoUXBox(vector2i upperLeft, sf::Font* font, vector<boost::shared_ptr<Unit>>* selectedUnits, sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t));
+    void drawContent(sf::RenderWindow* window, vector2i upperLeft);
+};
 
 #endif // UI_ELEMENTS_H

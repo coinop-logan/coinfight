@@ -27,6 +27,40 @@ const sf::Color TURRET_MAIN_COLOR = sf::Color(255, 100, 100);
 const float ENERGY_LINE_SEGMENT_LENGTH = 10;
 const float ENERGY_LINE_PERTURB_AMOUNT = 3;
 
+sf::View uxView;
+sf::View gameView;
+sf::View screenView;
+
+sf::Texture
+    cmdAttackSource,
+    cmdCollectSource,
+    cmdScuttleSource,
+    cmdInvestSource,
+    cmdStopSource,
+    cmdWarpInSource,
+    cmdWarpOutSource
+;
+sf::RenderTexture
+    cmdBuildPrimeSource,
+    cmdBuildFighterSource,
+    cmdBuildGatewaySource,
+    cmdBuildTurretSource
+;
+
+sf::Sprite
+    cmdAttackIcon,
+    cmdCollectIcon,
+    cmdScuttleIcon,
+    cmdInvestIcon,
+    cmdStopIcon,
+    cmdWarpInIcon,
+    cmdWarpOutIcon,
+    cmdBuildPrimeIcon,
+    cmdBuildFighterIcon,
+    cmdBuildGatewayIcon,
+    cmdBuildTurretIcon
+;
+
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 {
     if (!mainFont->loadFromFile("Andale_Mono.ttf"))
@@ -37,6 +71,8 @@ void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
+    loadKeyCommandIcons();
+
     // choose a good videomode
     sf::VideoMode chosenMode;
     if (smallScreen)
@@ -75,6 +111,15 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 
     sf::RenderWindow* window = new sf::RenderWindow(chosenMode, "Coinfight Client", flags);
     window->setKeyRepeatEnabled(false);
+
+    // setup views
+    screenView = window->getDefaultView();
+
+    // as a quick fix for big resolutions, we double the UX size if the screen is large.    
+    if (getScreenSize(window).x > 2000)
+        uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
+    else
+        uxView = screenView;
 
     return window;
 }
@@ -194,7 +239,7 @@ void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile
 
 const sf::Color UNIT_OUTLINE_COLOR(100, 100, 100);
 
-void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
+void drawBeacon(sf::RenderTarget *renderTarget, vector2fl drawPos, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color teamColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -207,10 +252,10 @@ void drawBeacon(sf::RenderWindow *window, vector2fl drawPos, sf::Color teamColor
     innerRect.setRotation(45);
     innerRect.setPosition(toSFVecF(drawPos));
 
-    window->draw(innerRect);
+    renderTarget->draw(innerRect);
 }
 
-void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, vector2fl drawPos, float drawRotation, sf::Color teamColor, unsigned int alpha)
+void drawGateway(sf::RenderTarget *renderTarget, boost::shared_ptr<Gateway> gateway, vector2fl drawPos, float drawRotation, sf::Color teamColor, unsigned int alpha)
 {
     // if there's a combat target in range, draw guns
     if (auto attackTarget = gateway->maybeAttackTarget)
@@ -229,12 +274,12 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
         gunBarrelPoints[0].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[1].color = FIGHTER_BARREL_COLOR;
         gunBarrelPoints[2].color = FIGHTER_BARREL_COLOR;
-        window->draw(gunBarrelPoints, transform);
+        renderTarget->draw(gunBarrelPoints, transform);
 
         gunBarrelPoints[0].position.y *= -1;
         gunBarrelPoints[1].position.y *= -1;
         gunBarrelPoints[2].position.y *= -1;
-        window->draw(gunBarrelPoints, transform);
+        renderTarget->draw(gunBarrelPoints, transform);
     }
 
     sf::Color fillColorFaded(GATEWAY_MAIN_COLOR.r, GATEWAY_MAIN_COLOR.g, GATEWAY_MAIN_COLOR.b, alpha);
@@ -247,12 +292,12 @@ void drawGateway(sf::RenderWindow *window, boost::shared_ptr<Gateway> gateway, v
     outerHex.setPosition(toSFVecF(drawPos));
     outerHex.setRotation(90);
 
-    window->draw(outerHex);
+    renderTarget->draw(outerHex);
 
-    drawBeacon(window, drawPos, teamColor, alpha);
+    drawBeacon(renderTarget, drawPos, teamColor, alpha);
 }
 
-void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2fl pos, float drawRotation, unsigned int alpha)
+void drawPrime(sf::RenderTarget *renderTarget, boost::shared_ptr<Prime> prime, vector2fl pos, float drawRotation, unsigned int alpha)
 {
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVecF(pos));
@@ -269,27 +314,27 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
     wingPoints[1].position = sf::Vector2f(-static_cast<float>(PRIME_RADIUS)*1.4, static_cast<float>(PRIME_RADIUS));
     wingPoints[2].position = toSFVecF(composeVector2fl(0.8 * M_PI, static_cast<float>(PRIME_RADIUS)));
     wingPoints[0].color = wingPoints[1].color = wingPoints[2].color = mainPrimeColor;
-    window->draw(wingPoints, transform);
+    renderTarget->draw(wingPoints, transform);
 
     wingPoints[0].position.y *= -1;
     wingPoints[1].position.y *= -1;
     wingPoints[2].position.y *= -1;
-    window->draw(wingPoints, transform);
+    renderTarget->draw(wingPoints, transform);
 
     sf::CircleShape structureOutline(primeCavityRadius);
     structureOutline.setOrigin(sf::Vector2f(primeCavityRadius, primeCavityRadius));
     structureOutline.setFillColor(sf::Color::Transparent);
     structureOutline.setOutlineColor(UNIT_OUTLINE_COLOR);
     structureOutline.setOutlineThickness(1);
-    window->draw(structureOutline, transform);
+    renderTarget->draw(structureOutline, transform);
 
     sf::CircleShape thickBorder(structureOutline);
     thickBorder.setOutlineColor(mainPrimeColor);
     thickBorder.setOutlineThickness(borderThickness);
 
-    window->draw(thickBorder, transform);
+    renderTarget->draw(thickBorder, transform);
 
-    float heldGoldRatio = static_cast<float>(prime->getHeldGoldRatio());
+    float heldGoldRatio = prime->getHeldGoldRatio();
     if (heldGoldRatio > 0)
     {
         float innerGoldRadius = 0.5 + (sqrt(heldGoldRatio) * (primeCavityRadius - 0.5));
@@ -300,11 +345,11 @@ void drawPrime(sf::RenderWindow *window, boost::shared_ptr<Prime> prime, vector2
         heldGoldCircle.setPosition(toSFVecF(pos));
         heldGoldCircle.setFillColor(sf::Color::Yellow);
 
-        window->draw(heldGoldCircle);
+        renderTarget->draw(heldGoldCircle);
     }
 }
 
-void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawFighter(sf::RenderTarget *renderTarget, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(teamColor.r, teamColor.g, teamColor.r, alpha);
 
@@ -333,20 +378,20 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     sf::Transform transform = sf::Transform();
     transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
-    window->draw(gunBarrelPoints, transform);
+    renderTarget->draw(gunBarrelPoints, transform);
 
     gunBarrelPoints[0].position.y *= -1;
     gunBarrelPoints[1].position.y *= -1;
     gunBarrelPoints[2].position.y *= -1;
-    window->draw(gunBarrelPoints, transform);
+    renderTarget->draw(gunBarrelPoints, transform);
 
     // draw two triangles
     oneSide.setPoint(1, front);
     oneSide.setPoint(0, back);
     oneSide.setPoint(2, right);
-    window->draw(oneSide);
+    renderTarget->draw(oneSide);
     oneSide.setPoint(2, left);
-    window->draw(oneSide);
+    renderTarget->draw(oneSide);
 
     // draw outline
     sf::VertexArray lines(sf::PrimitiveType::LineStrip, 5);
@@ -364,10 +409,10 @@ void drawFighter(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf
     transform = sf::Transform();
     transform.translate(toSFVecF(drawPos));
     transform.rotate(radiansToDegrees(rotation));
-    window->draw(lines, transform);
+    renderTarget->draw(lines, transform);
 }
 
-void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
+void drawTurret(sf::RenderTarget *renderTarget, vector2fl drawPos, float rotation, sf::Color teamColor, unsigned int alpha)
 {
     sf::Color fillColorFaded(TURRET_MAIN_COLOR.r,TURRET_MAIN_COLOR.g, TURRET_MAIN_COLOR.b, alpha);
 
@@ -381,9 +426,9 @@ void drawTurret(sf::RenderWindow *window, vector2fl drawPos, float rotation, sf:
     box.setOutlineThickness(1);
     box.setPosition(toSFVecF(drawPos));
 
-    window->draw(box);
+    renderTarget->draw(box);
 
-    drawFighter(window, drawPos, rotation, teamColor, alpha);
+    drawFighter(renderTarget, drawPos, rotation, teamColor, alpha);
 }
 
 void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
@@ -394,7 +439,7 @@ void drawUnit(sf::RenderWindow *window, boost::shared_ptr<Unit> unit, vector2fl 
     unsigned int fadedAlpha;
     if (!unit->isActive())
     {
-        fadedAlpha = static_cast<float>(unit->getBuiltRatio()) * 0.8 * 255;
+        fadedAlpha = (unit->getBuiltRatio()) * 0.8 * 255;
     }
     else
     {
@@ -495,13 +540,13 @@ void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vect
 //     window->draw(pixel);
 // }
 
-void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool displayWalletHints)
+void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::Font* font, sf::Color balanceTextColor, sf::Vector2f upperLeft, bool displayWalletHints)
 {
     if (displayWalletHints)
     {
         vector<sf::Text> hints
-            {sf::Text(sf::String("This can be spent or captured via Gateways"), font, 16),
-            sf::Text(sf::String("and withdraws/deposits into xDai."), font, 16)
+            {sf::Text(sf::String("This can be spent or captured via Gateways"), *font, 16),
+            sf::Text(sf::String("and withdraws/deposits into Godwoken USDC."), *font, 16)
             };
 
         sf::Transform hintsTransform;
@@ -517,9 +562,9 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
 
     int textSpacing = 10;
 
-    sf::Text title(sf::String("Wallet"), font, 24);
+    sf::Text title(sf::String("Wallet"), *font, 24);
 
-    sf::Text balance(sf::String(playerBalance->getDollarString()), font, 30);
+    sf::Text balance(sf::String(playerBalance->getDollarString()), *font, 30);
     balance.setFillColor(balanceTextColor);
 
     sf::Transform transform;
@@ -542,16 +587,16 @@ void displayDepositNeededMsg(sf::RenderWindow* window, sf::Font* font, sf::Vecto
     window->draw(text);
 }
 
-void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font font)
+void displayOutputStrings(sf::RenderWindow *window, vector<sf::String> strings, sf::Font* font)
 {
     for (unsigned int i=0; i<strings.size(); i++)
     {
-        sf::Text text(strings[i], font, 16);
+        sf::Text text(strings[i], *font, 16);
         text.setFillColor(sf::Color(150, 150, 150));
 
         float width = text.getLocalBounds().width;
         int x, y;
-        x = getViewSize(window).x - width - 10;
+        x = getCurrentViewSize(window).x - width - 10;
         y = 6 + i * 20;
         text.setPosition(sf::Vector2f(x, y));
 
@@ -750,7 +795,7 @@ void drawSelectionCircleAroundEntity(sf::RenderWindow *window, boost::shared_ptr
     drawCircleAround(window, vector2fl(entity->getPos()), 15, 1, sf::Color::Green);
 }
 
-void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* font)
 {
     for (unsigned int i=0; i<game->entities.size(); i++)
     {
@@ -789,7 +834,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
         vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
-            sf::Text aboveText(displayAboveCoins->getDollarString(), font, 16);
+            sf::Text aboveText(displayAboveCoins->getDollarString(), *font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
             vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-30)));
@@ -925,156 +970,12 @@ const int HOTKEY_BOX_WIDTH = 60;
 const int HOTKEY_BOX_SPACING = 10;
 const int HOTKEY_BOTTOMROW_INDENT = 18;
 
-void displayHotkey(sf::RenderWindow *window, vector2fl drawPos, const InterfaceCmd &interfaceCmd, sf::Font font)
-{
-    auto hotkeyInfo = interfaceCmd.getHotkeyInfo();
-    char keyChar = get<1>(hotkeyInfo);
-    vector<string> cmdNameLines = get<2>(hotkeyInfo);
-    optional<coinsInt> maybeCost = get<3>(hotkeyInfo);
-
-    sf::Color mainOutlineColor, nameColor, hotkeyTextColor, hotkeyBackgroundColor, hotkeyOutlineColor, costStringColor;
-    if (interfaceCmd.eligible)
-    {
-        mainOutlineColor = sf::Color(100, 100, 255);
-        nameColor = sf::Color::White;
-        hotkeyTextColor = sf::Color::White;
-        hotkeyBackgroundColor = sf::Color(100, 100, 255, 100);
-        hotkeyOutlineColor = sf::Color(100, 100, 255);
-        costStringColor = sf::Color::Yellow;
-    }
-    else
-    {
-        mainOutlineColor = nameColor = costStringColor = hotkeyOutlineColor = sf::Color(80, 80, 80);
-        hotkeyBackgroundColor = sf::Color::Black;
-        hotkeyTextColor = sf::Color(80, 80, 80);
-    }
-    sf::Color backgroundColor =
-        interfaceCmd.visualFlashClock.getElapsedTime() < sf::seconds(0.06) || interfaceCmd.active ?
-        sf::Color(150, 0, 0, 100) :
-        sf::Color::Transparent ;
-
-    sf::RectangleShape rectShape(sf::Vector2f(HOTKEY_BOX_WIDTH, HOTKEY_BOX_WIDTH));
-    rectShape.setPosition(toSFVecF(drawPos));
-    rectShape.setFillColor(backgroundColor);
-    rectShape.setOutlineColor(mainOutlineColor);
-    rectShape.setOutlineThickness(1);
-    window->draw(rectShape);
-
-    sf::Text hotkeyText(string(1, keyChar), font, 14);
-    hotkeyText.setFillColor(hotkeyTextColor);
-
-    // determine horizontal placement of hotkey
-    int width = hotkeyText.getLocalBounds().width;
-    int hSpaceLeft = 16 - width;
-    int xOffset = hSpaceLeft / 2 - 1;
-    // manual adjustment. Idk why this is needed but I just wanna fix it.
-    if (keyChar == 'W' || keyChar == 'A')
-    {
-        xOffset += 1;
-    }
-    if (keyChar == 'E')
-    {
-        xOffset -= 1;
-    }
-
-    hotkeyText.setPosition(sf::Vector2f(drawPos.x + xOffset , drawPos.y-1));
-
-    sf::RectangleShape hotkeyBackground(sf::Vector2f(16, 18));
-    hotkeyBackground.setPosition(toSFVecF(drawPos));
-    hotkeyBackground.setFillColor(hotkeyBackgroundColor);
-    hotkeyBackground.setOutlineColor(hotkeyOutlineColor);
-    hotkeyBackground.setOutlineThickness(1);
-
-    window->draw(hotkeyBackground);
-    window->draw(hotkeyText);
-
-    if (maybeCost)
-    {
-        string coinsString = coinsIntToDollarString(*maybeCost);
-        sf::Text costText(coinsString, font, 12);
-        costText.setFillColor(costStringColor);
-
-        int width = costText.getLocalBounds().width;
-        costText.setPosition(sf::Vector2f((drawPos.x + HOTKEY_BOX_WIDTH) - (4 + width), drawPos.y-1));
-        window->draw(costText);
-    }
-
-    float lineHeight = 12;
-    float allLinesHeight = lineHeight * cmdNameLines.size();
-    float topLineYFromCenter = - allLinesHeight / 2;
-    vector2fl boxCenter(HOTKEY_BOX_WIDTH / 2, HOTKEY_BOX_WIDTH / 2);
-    for (unsigned int i=0; i<cmdNameLines.size(); i++)
-    {
-        sf::Text lineText(cmdNameLines[i], font, 12);
-
-        float width = lineText.getGlobalBounds().width;
-        float lineXFromCenter = - width / 2;
-        vector2fl positionFromCenter(lineXFromCenter, topLineYFromCenter + (lineHeight * i));
-        vector2fl position = drawPos + boxCenter + positionFromCenter;
-        lineText.setPosition(sf::Vector2f(position.x, position.y));
-
-        lineText.setFillColor(nameColor);
-        window->draw(lineText);
-    }
-}
-
-void displaySpawnBeaconHotkey(sf::RenderWindow* window, GameUI *ui, sf::Font font)
-{
-    vector2i drawPos(HOTKEY_BOX_SPACING, getViewSize(window).y - (2*HOTKEY_BOX_SPACING + HOTKEY_BOX_WIDTH));
-    displayHotkey(window, drawPos, ui->spawnBeaconInterfaceCmd, font);
-}
-
-void displayUnitHotkeyHelp(sf::RenderWindow *window, GameUI *ui, sf::Font font)
-{
-    int hotkeyHelpBoxWidth = HOTKEY_BOTTOMROW_INDENT + (4 * HOTKEY_BOX_WIDTH + 3 * HOTKEY_BOX_SPACING) + 20;
-    int hotkeyHelpBoxHeight = (2 * HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING) + 20;
-    vector2i hotkeyHelpBoxUpperLeft = vector2fl(10, getViewSize(window).y - (hotkeyHelpBoxHeight + 10));
-
-    sf::RectangleShape hotkeyHelpBoudingRect(sf::Vector2f(hotkeyHelpBoxWidth, hotkeyHelpBoxHeight));
-    hotkeyHelpBoudingRect.setPosition(sf::Vector2f(hotkeyHelpBoxUpperLeft.x, hotkeyHelpBoxUpperLeft.y));
-    hotkeyHelpBoudingRect.setFillColor(sf::Color(0, 0, 0, 200));
-    hotkeyHelpBoudingRect.setOutlineColor(sf::Color(150, 150, 200));
-    hotkeyHelpBoudingRect.setOutlineThickness(1);
-    window->draw(hotkeyHelpBoudingRect);
-
-    for (unsigned int i=0; i<ui->unitInterfaceCmds.size(); i++)
-    {
-        vector2i drawPosOffset;
-        if (i < 4)
-        {
-            drawPosOffset = vector2i(i * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), 0);
-        }
-        else
-        {
-            drawPosOffset = vector2i(HOTKEY_BOTTOMROW_INDENT + (i-4) * (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING), (HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING));
-        }
-
-        displayHotkey(window, hotkeyHelpBoxUpperLeft + vector2i(10, 10) + drawPosOffset, *ui->unitInterfaceCmds[i], font);
-    }
-}
-
-// void displayMinimap(sf::RenderWindow *window, Game *game, optional<uint8_t> maybePlayerId, vector2i minimapDimensions)
-// {
-//     sf::Color backgroundColor(0, 0, 50);
-//     window->clear(backgroundColor);
-
-//     float zoomOutFactor = 10;
-
-//     for (unsigned int i = 0; i < game->entities.size(); i++)
-//     {
-//         if (game->entities[i])
-//         {
-//             drawEntitySymbolOnMinimap(window, game->entities[i], maybePlayerId, zoomOutFactor);
-//         }
-//     }
-// }
-
-void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font font)
+void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, GameUI* ui, int boxWidth, sf::Font* font)
 {
     sf::Transform transform;
     transform.translate(
         sf::Vector2f(
-            getViewSize(window).x - boxWidth - 10,
+            getCurrentViewSize(window).x - boxWidth - 10,
             10
         )
     );
@@ -1084,7 +985,7 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
     for (unsigned int i=0; i<preBarTextBlocks.size(); i++)
     {
-        GH::wrapAndRenderTextWithTransform(window, preBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, preBarTextBlocks[i], font, 13, sf::Color::White, boxWidth, &transform);
     }
 
     if (auto progress = tutorial->currentStep()->getProgress(game, ui))
@@ -1110,14 +1011,14 @@ void displayTutorial(sf::RenderWindow *window, Tutorial* tutorial, Game* game, G
 
             for (unsigned int i=0; i<postBarTextBlocks.size(); i++)
             {
-                GH::wrapAndRenderTextWithTransform(window, postBarTextBlocks[i], &font, 13, sf::Color::White, boxWidth, &transform);
+                GH::wrapAndRenderTextWithTransform(window, postBarTextBlocks[i], font, 13, sf::Color::White, boxWidth, &transform);
             }
         }
     }
     
     if (tutorial->currentStep()->isReadyToFinish(game, ui) && tutorial->currentStep()->waitForEnter)
     {
-        GH::wrapAndRenderTextWithTransform(window, "Press enter to continue", &font, 16, sf::Color::White, boxWidth, &transform);
+        GH::wrapAndRenderTextWithTransform(window, "Press enter to continue", font, 16, sf::Color::White, boxWidth, &transform);
     }
 }
 
@@ -1349,11 +1250,11 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
     }
 }
 
-void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font mainFont)
+void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont)
 {
     if (!ui->cleanDrawEnabled)
     {
-        drawUnitDroppableValues(window, game, ui, maybePlayerId, mainFont);
+        drawUnitDroppableValues(window, game, ui, maybePlayerId, fwFont);
         drawUnitHealthBars(window, game, ui, maybePlayerId);
         drawAppropriateRadii(window, game, ui);
     }
@@ -1365,7 +1266,7 @@ void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<
 }
 
 coinsInt lastPlayerCredit = 0;
-void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font mainFont, bool displayWalletHints)
+void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
     // depending on how maybePlayerAddress and maybePlayerId are set,
     // we might draw a balance or a message about coinfight.io.
@@ -1379,48 +1280,87 @@ void displayWalletBalanceOrDepositNeededMsg(sf::RenderWindow* window, Game* game
              playerCredit > lastPlayerCredit ?      sf::Color::Green :
                                                     sf::Color::Red
             );
-        displayAccountBalance(window, &game->players[playerId].credit, mainFont, balanceTextColor, sf::Vector2f(20, 20), displayWalletHints);
+        displayAccountBalance(window, &game->players[playerId].credit, fwFont, balanceTextColor, sf::Vector2f(20, 20), displayWalletHints);
 
         lastPlayerCredit = playerCredit;
     }
     else // player has an address but no ID. To become a registered player in the game they need to deposit
     {
-        displayDepositNeededMsg(window, &mainFont, sf::Vector2f(20, 20));
+        displayDepositNeededMsg(window, humanFont, sf::Vector2f(20, 20));
     }
 }
 
-void displayHotkeyHelp(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font)
+void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButtonHintInfo hintInfo, sf::Font* fwFont, sf::Font* humanFont)
 {
-    bool playerOwnsUnits(false);
-    for (unsigned int i=0; i<game->entities.size(); i++)
+    sf::RectangleShape borderBox(toSFVecF(KEYBUTTONHINT_SIZE));
+    borderBox.setPosition(toSFVecF(upperLeft));
+    borderBox.setFillColor(sf::Color::Black);
+    borderBox.setOutlineThickness(1);
+    borderBox.setOutlineColor(UX_BOX_BORDER_COLOR);
+    
+    window->draw(borderBox);
+
+    vector2i drawUpperLeft = upperLeft + UX_BOX_PADDING;
+    vector2i drawAreaSize = KEYBUTTONHINT_SIZE - (UX_BOX_PADDING * 2);
+
+    // title text
+    string titleString = hintInfo.name + " (" + string(1, hintInfo.hotkeyChar) + ")";
+    sf::Text titleText(titleString, *humanFont, 20);
+    titleText.setPosition(toSFVecF(drawUpperLeft));
+    titleText.setFillColor(sf::Color::White);
+    window->draw(titleText);
+
+    if (auto cost = hintInfo.maybeCost)
     {
-        if (game->entities[i])
-            if (getAllianceType(maybePlayerId, game->entities[i]) == Owned)
-            {
-                playerOwnsUnits = true;
-                break;
-            }
+        string costString = coinsIntToDollarString(*cost);
+        sf::Text costText(costString, *fwFont, 18);
+        int xOffset = drawAreaSize.x - costText.getLocalBounds().width;
+        costText.setPosition(toSFVecF(drawUpperLeft + vector2i(xOffset, 0)));
+        costText.setFillColor(sf::Color(255, 255, 0));
+        window->draw(costText);
     }
-    if (!ui->hideUX)
+
+    int yOffset = titleText.getLocalBounds().height + 20;
+    int xOffset = 10;
+
+    int textHeight = GH::wrapAndRenderTextAtPos(window, hintInfo.description, humanFont, 16, sf::Color::White, drawAreaSize.x, drawUpperLeft + vector2i(xOffset, yOffset));
+    yOffset += textHeight + 20;
+
+    sf::RectangleShape bulletPointRect(sf::Vector2f(5, 5));
+    for (unsigned int i=0; i<hintInfo.bulletPoints.size(); i++)
     {
-    if (playerOwnsUnits)
-        displayUnitHotkeyHelp(window, ui, font);
-    else
-        displaySpawnBeaconHotkey(window, ui, font);
+        vector2i itemDrawOffset(xOffset, yOffset);
+        string lineText = hintInfo.bulletPoints[i];
+
+        bulletPointRect.setPosition(toSFVecF(drawUpperLeft + itemDrawOffset + vector2i(0, 5)));
+        bulletPointRect.setFillColor(sf::Color::White);
+
+        window->draw(bulletPointRect);
+
+        vector2i textDrawOffset = itemDrawOffset + vector2i(16, 0);
+        int availableWidth = drawAreaSize.x - textDrawOffset.x;
+        textHeight = GH::wrapAndRenderTextAtPos(window, lineText, humanFont, 12, sf::Color::White, availableWidth, drawUpperLeft + textDrawOffset);
+
+        yOffset += textHeight + 12;
     }
 }
 
-void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font font, bool displayWalletHints)
+void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
-    displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, font, displayWalletHints);
+    displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
 
     if (! ui->hideUX)
     {
         vector<sf::String> outputStrings;
-        displayOutputStrings(window, outputStrings, font);
+        displayOutputStrings(window, outputStrings, fwFont);
     }
 
-    displayHotkeyHelp(window, game, ui, maybePlayerId, font);
+    ui->keyButtonBox.draw(window);
+    ui->unitInfoBox.draw(window);
+    if (auto hintToDisplay = ui->keyButtonBox.getMouseoverHintInfo())
+    {
+        displayKeyButtonHint(window, vector2i(ui->keyButtonBox.upperLeft.x + KEYBUTTONBOX_SIZE.x + 2, getCurrentViewSize(window).y - KEYBUTTONHINT_SIZE.y), *hintToDisplay, fwFont, humanFont);
+    }
 }
 
 void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
@@ -1442,16 +1382,9 @@ void drawSearchGridOverlay(sf::RenderWindow* window, Game* game)
     }
 }
 
-void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font mainFont, sf::Font tutorialFont, bool displayWalletHints)
+void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address> maybePlayerAddress, Tutorial* tutorial, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
-    sf::View gameView = ui->cameraView;
-    sf::View screenView = window->getDefaultView();
-
-    sf::View uxView; // as a quick fix for big default resolutions, we double the UX size if the screen is large.
-    if (getScreenSize(window).x > 2000)
-        uxView = sf::View(sf::FloatRect(sf::Vector2f(0, 0), toSFVecF(getScreenSize(window) / 2)));
-    else
-        uxView = screenView;
+    gameView = ui->cameraView;
 
     window->clear();
 
@@ -1461,25 +1394,19 @@ void display(sf::RenderWindow *window, Game *game, GameUI* ui, optional<Address>
         maybePlayerId = game->playerAddressToMaybeId(*maybePlayerAddress);
     }
 
-    if (ui->minimapEnabled)
-    {
-        // displayMinimap(window, game, maybePlayerId, screenDimensions);
-    }
-    else
-    {
-        window->setView(gameView);
-        drawGame(window, game, ui);
-        drawGameOverlay(window, game, ui, maybePlayerId, mainFont);
-        // drawSearchGridOverlay(window, game);
-        window->setView(screenView);
-        displayCursorOrSelectionBox(window, ui, maybePlayerId);
-        window->setView(uxView);
-        displayGameHUD(window, game, ui, maybePlayerId, mainFont, displayWalletHints);
-    }
+    window->setView(gameView);
+    drawGame(window, game, ui);
+    drawGameOverlay(window, game, ui, maybePlayerId, fwFont);
+    // drawSearchGridOverlay(window, game);
+    window->setView(screenView);
+    displayCursorOrSelectionBox(window, ui, maybePlayerId);
+    window->setView(uxView);
+    displayGameHUD(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
+
     if (ui->showTutorial && tutorial && !tutorial->isFinished() && (!ui->hideUX))
     {
         window->setView(uxView);
-        displayTutorial(window, tutorial, game, ui, 500, tutorialFont);
+        displayTutorial(window, tutorial, game, ui, 500, humanFont);
     }
 
     window->setView(screenView);
@@ -1537,4 +1464,190 @@ void displayTitle(sf::RenderWindow* window, sf::Font* font)
     rendered.setPosition(toSFVecF(drawPos));
 
     window->draw(rendered);
+}
+
+void loadKeyCommandIcons()
+{
+    if (!cmdAttackSource.loadFromFile("cmd-attack.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdAttackIcon.setTexture(cmdAttackSource);
+    cmdAttackIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdCollectSource.loadFromFile("cmd-collect.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdCollectIcon.setTexture(cmdCollectSource);
+    cmdCollectIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdScuttleSource.loadFromFile("cmd-scuttle.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdScuttleIcon.setTexture(cmdScuttleSource);
+    cmdScuttleIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdInvestSource.loadFromFile("cmd-invest.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdInvestIcon.setTexture(cmdInvestSource);
+    cmdInvestIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdStopSource.loadFromFile("cmd-stop.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdStopIcon.setTexture(cmdStopSource);
+    cmdStopIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpInSource.loadFromFile("cmd-warp-in.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdWarpInIcon.setTexture(cmdWarpInSource);
+    cmdWarpInIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+    if (!cmdWarpOutSource.loadFromFile("cmd-warp-out.png"))
+    {
+        throw runtime_error("Can't load icon png");
+    }
+    cmdWarpOutIcon.setTexture(cmdWarpOutSource);
+    cmdWarpOutIcon.setScale(KEYBUTTON_ICON_SCALE, KEYBUTTON_ICON_SCALE);
+
+
+    // for the build commands, we draw them to textures
+    vector2i buttonDrawSize = KEYBUTTON_SIZE - KEYBUTTON_PADDING;
+
+    if (!cmdBuildPrimeSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    boost::shared_ptr<Prime> tempPrime(new Prime(-1, vector2fp::zero));
+    drawPrime(&cmdBuildPrimeSource, tempPrime, buttonDrawSize / 2, 45, 255);
+    cmdBuildPrimeSource.display();
+    cmdBuildPrimeIcon.setTexture(cmdBuildPrimeSource.getTexture());
+
+    if (!cmdBuildFighterSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    drawFighter(&cmdBuildFighterSource, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildFighterSource.display();
+    cmdBuildFighterIcon.setTexture(cmdBuildFighterSource.getTexture());
+
+    if (!cmdBuildGatewaySource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    boost::shared_ptr<Gateway> tempGateway(new Gateway(-1, vector2fp::zero));
+    drawGateway(&cmdBuildGatewaySource, tempGateway, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildGatewaySource.display();
+    cmdBuildGatewayIcon.setTexture(cmdBuildGatewaySource.getTexture());
+
+    if (!cmdBuildTurretSource.create(buttonDrawSize.x, buttonDrawSize.y))
+    {
+        throw runtime_error("Can't create draw texture.");
+    }
+    drawTurret(&cmdBuildTurretSource, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
+    cmdBuildTurretSource.display();
+    cmdBuildTurretIcon.setTexture(cmdBuildTurretSource.getTexture());
+}
+
+sf::Sprite* getSpriteForUnitTypechar(uint8_t typechar)
+{
+    switch (typechar)
+    {
+        case GATEWAY_TYPECHAR:
+        {
+            return &cmdBuildGatewayIcon;
+        }
+        case PRIME_TYPECHAR:
+        {
+            return &cmdBuildPrimeIcon;
+        }
+        case BEACON_TYPECHAR:
+        {
+            return &cmdBuildGatewayIcon;
+        }
+        case FIGHTER_TYPECHAR:
+        {
+            return &cmdBuildFighterIcon;
+        }
+        case TURRET_TYPECHAR:
+        {
+            return &cmdBuildTurretIcon;
+        }
+    }
+    throw runtime_error("Couldn't find sprite for that unit...");
+}
+
+sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg keyButtonMsg)
+{
+    switch (keyButtonMsg)
+    {
+        case WarpIn:
+        {
+            return &cmdWarpInIcon;
+            break;
+        }
+        case WarpOut:
+        {
+            return &cmdWarpOutIcon;
+            break;
+        }
+        case Stop:
+        {
+            return &cmdStopIcon;
+            break;
+        }
+        case Invest:
+        {
+            return &cmdInvestIcon;
+            break;
+        }
+        case Fetch:
+        {
+            return &cmdCollectIcon;
+            break;
+        }
+        case Attack:
+        {
+            return &cmdAttackIcon;
+            break;
+        }
+        case AttackScuttle:
+        {
+            return &cmdScuttleIcon;
+            break;
+        }
+        case BuildPrime:
+        {
+            return &cmdBuildPrimeIcon;
+            break;
+        }
+        case BuildFighter:
+        {
+            return &cmdBuildFighterIcon;
+            break;
+        }
+        case BuildGateway:
+        {
+            return &cmdBuildGatewayIcon;
+            break;
+        }
+        case BuildTurret:
+        {
+            return &cmdBuildTurretIcon;
+            break;
+        }
+    }
+    throw runtime_error("Can't find sprite for that KeyButtonMsg");
+}
+
+sf::View getUXView()
+{
+    return uxView;
 }

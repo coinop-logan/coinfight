@@ -31,7 +31,7 @@ const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
 const int CREDIT_PER_DOLLAR_EXPONENT = 4; // credit = dollar * 10^X
-const int WEI_PER_DOLLAR_EXPONENT = 6; // using xDai, so wei = dollar * 10^18
+const int WEI_PER_DOLLAR_EXPONENT = 6;
 
 const float PARTICLE_MAGNET_STRENGTH = 1;
 const float PARTICLE_FRICTION_CONSTANT = 0.9;

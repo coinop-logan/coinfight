@@ -84,7 +84,7 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
 
     if (game->getPlayerBeaconAvailable(playerId))
     {
-        boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning));
+        boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning, true));
         if (game->registerNewEntityIfInMapAndNoCollision(beacon))
         {
             game->setPlayerBeaconAvailable(playerId, false);
@@ -268,19 +268,44 @@ void AttackScuttleCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     if (unit->getRefOrThrow() == target.castToEntityRef())
         return;
 
-    if (auto fighter = boost::dynamic_pointer_cast<Fighter, Entity>(unit))
+    if (auto targetEntity = target.castToEntityPtr(*unit->getGameOrThrow()))
     {
-        fighter->cmdAttack(target);
+        if (getAllianceType(unit->ownerId, targetEntity) == Foreign)
+        {
+            if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit))
+            {
+                combatUnit->cmdAttack(target);
+            }
+            else
+            {
+                // do nothing
+            };
+        }
+        else
+        {
+            if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
+            {
+                prime->cmdScuttle(targetEntity, asap);
+            }
+            else if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+            {
+                gateway->cmdScuttle(targetEntity->getRefOrThrow());
+            }
+            else
+            {
+                // do nothing
+            }
+        }
     }
-    else if (auto prime = boost::dynamic_pointer_cast<Prime, Entity>(unit))
+    else if (auto targetPoint = target.castToPoint())
     {
-        if (auto targetPoint = target.castToPoint())
+        if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit))
+        {
+            combatUnit->cmdAttack(target);
+        }
+        else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
         {
             prime->cmdFetch(target, asap);
-        }
-        else if (auto entity = target.castToEntityPtr(*prime->getGameOrThrow()))
-        {
-            prime->cmdScuttle(entity, asap);
         }
     }
 }
@@ -618,3 +643,39 @@ StopScuttleCmd::StopScuttleCmd(Netpack::Consumer* from)
 {
     targetUnit = consumeEntityRef(from);
 }
+
+uint8_t WarpOutCmd::getTypechar()
+{
+    return CMD_WARPOUT_CHAR;
+}
+string WarpOutCmd::getTypename()
+{
+    return "WarpOutCmd";
+}
+
+void WarpOutCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
+{
+    if (auto gateway = boost::dynamic_pointer_cast<Gateway, Unit>(unit))
+    {
+        gateway->cmdScuttle(gateway->getRefOrThrow());
+    }
+    else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+    {
+        beacon->cmdWarpOut();
+    }
+    else
+    {
+        cout << "Trying to call Scuttle for a unit other than Prime or Gateway!" << endl;
+    }
+}
+
+WarpOutCmd::WarpOutCmd(vector<EntityRef> units)
+    : UnitCmd(units)
+{}
+void WarpOutCmd::pack(Netpack::Builder* to)
+{
+    packUnitCmdBasics(to);
+}
+WarpOutCmd::WarpOutCmd(Netpack::Consumer* from)
+    : UnitCmd(from)
+{}

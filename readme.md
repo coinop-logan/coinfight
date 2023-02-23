@@ -1,6 +1,6 @@
 # Coinfight
 
-Build an army out of crypto (xDai), fight other armies, pick up the pieces, and get out with more crypto (xDai)! Unless you blunder and lose your army. Then all that money's gone!
+Build an army out of crypto dollars (stablecoins like DAI, USDC, etc), fight other armies, pick up the pieces, and get out with more crypto dollars! Unless you blunder and lose your army. Then all that money's gone!
 
 The game is still in early alpha, but here are some basic media pieces:
 

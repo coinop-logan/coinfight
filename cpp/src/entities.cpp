@@ -681,9 +681,13 @@ coinsInt Unit::getBuilt()
 {
     return goldInvested.getInt();
 }
-fixed32 Unit::getBuiltRatio()
+float Unit::getBuiltRatio()
 {
-    return (fixed32)getBuilt() / getCost();
+    return float(getBuilt()) / float(getCost());
+}
+bool Unit::isFullyBuilt()
+{
+    return getBuilt() >= getCost();
 }
 uint16_t Unit::getEffectiveHealth()
 {
@@ -715,11 +719,11 @@ sf::Color Unit::getTeamOrPrimaryColor()
 sf::Color Unit::getTeamColor()
 {
     if (ownerId == -1)
-        return sf::Color(150, 150, 150);
+        return NEUTRAL_TEAM_COLOR;
     else if (auto regInfo = maybeRegInfo)
         return playerAddressToColor(this->getGameOrThrow()->playerIdToAddress(ownerId));
     else
-        return sf::Color(150, 150, 150);
+        return NEUTRAL_TEAM_COLOR;
 }
 void Unit::iterateUnitBasics() {}
 void Unit::takeHit(uint16_t damage)
@@ -1022,12 +1026,13 @@ void MobileUnit::cmdMove(vector2fp pointTarget)
 
 fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
-string Beacon::getTypename() const { return "Beacon"; }
+string Beacon::getTypename() const { return "Gateway Beacon"; }
 coinsInt Beacon::getCost() const { return GATEWAY_COST; }
 uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
-Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state)
+Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket)
     : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
+    , spendingTicket(spendingTicket)
     , state(state)
 {}
 void Beacon::pack(Netpack::Builder* to)
@@ -1036,12 +1041,14 @@ void Beacon::pack(Netpack::Builder* to)
     packBuildingBasics(to);
 
     to->packEnum(state);
+    to->packBool(spendingTicket);
 }
 Beacon::Beacon(Netpack::Consumer* from)
     : Unit(from)
     , Building(from)
 {
     state = from->consumeEnum<Beacon::State>();
+    spendingTicket = from->consumeBool();
 }
 
 void Beacon::iterate()
@@ -1080,6 +1087,15 @@ void Beacon::iterate()
 }
 
 void Beacon::cmdStop() {}
+void Beacon::cmdWarpOut()
+{
+    state = Despawning;
+    if (this->spendingTicket)
+    {
+        this->spendingTicket = false;
+        getGameOrThrow()->players[this->ownerId].beaconAvailable = true;
+    }
+}
 
 
 
@@ -1317,7 +1333,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
         if (targetRef == this->getRefOrThrow())
         {
             // replace self with a despawning Beacon
-            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning));
+            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning, false));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
             game->registerNewEntityIgnoringConstraints(beacon);
@@ -1703,7 +1719,7 @@ void Gateway::iterate()
                 }
                 else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                 {
-                    if (unit->getBuiltRatio() < fixed32(1))
+                    if (!unit->isFullyBuilt())
                     {
                         if (fromQueue)
                         {
@@ -1724,7 +1740,7 @@ void Gateway::iterate()
                 if (maybeCoinsToDepositTo)
                 {
                     coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GOLD_TRANSFER_RATE, maybeCoinsToDepositTo);
-                    if (maybeBuildingUnit && maybeBuildingUnit->getBuiltRatio() == fixed32(1))
+                    if (maybeBuildingUnit && maybeBuildingUnit->isFullyBuilt())
                     {
                         buildTargetQueue.erase(buildTargetQueue.begin());
                     }
@@ -2011,7 +2027,7 @@ void Prime::cmdDeposit(EntityRef entityRef, bool asap)
         }
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
         {
-            if (unit->getBuiltRatio() < fixed32(1))
+            if (!unit->isFullyBuilt())
             {
                 addToBuildQueue_enforceUnique(entityRef, asap);
 
@@ -2232,7 +2248,7 @@ void Prime::validateTargets()
         {
             if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
-                if (unit->getBuiltRatio() == fixed32(1))
+                if (unit->isFullyBuilt())
                 {
                     buildTargetQueue.erase(buildTargetQueue.begin() + i);
                     i --;
@@ -2407,7 +2423,7 @@ void Prime::tryTransferAndMaybeMoveOn()
                         }
                         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                         {
-                            if (unit->getBuiltRatio() < fixed32(1))
+                            if (!unit->isFullyBuilt())
                             {
                                 amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
                                 entityPushedTo = unit;
@@ -2671,9 +2687,9 @@ vector<Coins*> Prime::getDroppableCoins()
     return vector<Coins*>{&goldInvested, &heldGold};
 }
 
-fixed32 Prime::getHeldGoldRatio()
+float Prime::getHeldGoldRatio()
 {
-    return ((fixed32)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
+    return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
 }
 
 
@@ -2867,7 +2883,6 @@ void CombatUnit::iterateCombatUnitBasics()
         break;
         case AttackingGeneral:
         {
-
             // try to find an attack target, ultimately updating this->maybeAttackTarget
             boost::shared_ptr<Unit> bestTarget;
             fixed32 bestTargetPriority;
@@ -2877,8 +2892,13 @@ void CombatUnit::iterateCombatUnitBasics()
             {
                 if (auto targetUnit = boost::dynamic_pointer_cast<Unit,Entity>(maybeEntityRefToPtrOrNull(*game, *attackTarget)))
                 {
-                    // Clear attackTarget if it's outside of the aggression range.
-                    if ((targetUnit->getPos() - this->getPos()).getRoughMagnitude() > this->getAggressionRange())
+                    // Clear attackTarget if it's too far - outside of aggression range for mobile untis, shot range otherwise.
+                    fixed32 rangeThreshold =
+                        (bool)(dynamic_cast<MobileUnit*>(this)) ?
+                        this->getAggressionRange() :
+                        this->getShotRange() ;
+
+                    if ((targetUnit->getPos() - this->getPos()).getRoughMagnitude() > rangeThreshold)
                     {
                         maybeAttackTarget = {};
                     }
@@ -3154,7 +3174,7 @@ uint16_t Turret::getMaxHealth() const { return TURRET_HEALTH; }
 fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }
 
 uint8_t Turret::typechar() const { return TURRET_TYPECHAR; }
-string Turret::getTypename() const { return "Fighter"; }
+string Turret::getTypename() const { return "Turret"; }
 
 void Turret::cmdStop()
 {

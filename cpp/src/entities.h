@@ -125,7 +125,8 @@ public:
     coinsInt unbuild(coinsInt attemptedAmount, Coins* toCoins);
     bool completeBuildingInstantly(Coins* fromCoins);
     coinsInt getBuilt();
-    fixed32 getBuiltRatio();
+    float getBuiltRatio();
+    bool isFullyBuilt();
     bool isActive();
     void iterateUnitBasics();
     void takeHit(uint16_t damage);
@@ -250,6 +251,7 @@ const fixed32 BEACON_RADIUS(10);
 
 class Beacon : public Building
 {
+    bool spendingTicket;
 public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
@@ -262,11 +264,12 @@ public:
         Despawning
     } state;
 
-    Beacon(uint8_t ownerId, vector2fp pos, State state);
+    Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket);
     void pack(Netpack::Builder* to);
     Beacon(Netpack::Consumer* from);
 
     void cmdStop();
+    void cmdWarpOut();
 
     void iterate();
 };
@@ -397,7 +400,7 @@ public:
     void tryTransferAndMaybeMoveOn();
     void iterate();
 
-    fixed32 getHeldGoldRatio();
+    float getHeldGoldRatio();
     vector<Coins*> getDroppableCoins();
 };
 
@@ -437,7 +440,7 @@ public:
     void iterate();
 };
 
-const coinsInt TURRET_COST = 60000;
+const coinsInt TURRET_COST = 70000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(450);

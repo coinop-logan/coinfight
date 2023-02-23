@@ -50,7 +50,7 @@ all: server-build client-build prep-server
 server-build: bin/server
 
 client-build: bin/coinfight
-	cp assets/client/* bin/
+	cp -r assets/client/* bin/
 
 package-client:
 	cd package-assets/client && ./package.sh && mv coinfight-*.zip ../../dist/ && cd ../..
@@ -67,11 +67,11 @@ cpp/obj/server.o: cpp/src/server.cpp
 cpp/obj/%.o: cpp/src/%.cpp cpp/src/%.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INC)
 
-bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/client_networking.o cpp/obj/address.o cpp/obj/algorithm.o
+bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/graphics_helpers.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/client_networking.o cpp/obj/address.o cpp/obj/algorithm.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT)
 
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/address.o cpp/obj/algorithm.o cpp/obj/exec.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
 
-bin/test: cpp/obj/test.o cpp/obj/graphics_helpers.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/unit_interface_cmds.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/address.o cpp/obj/algorithm.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/exec.o
+bin/test: cpp/obj/test.o cpp/obj/graphics_helpers.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/address.o cpp/obj/algorithm.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/exec.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT) $(LIBSERVER)

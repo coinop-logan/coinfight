@@ -14,6 +14,8 @@ using namespace std;
 
 const int EXPECTED_SIGNATURE_LENGTH = 130;
 
+const sf::Color NEUTRAL_TEAM_COLOR(150, 150, 150);
+
 void debugOutputVector(const char *,vector2i);
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
@@ -95,6 +97,10 @@ optional<Address> validateAddress(string addrStr);
 
 double radiansToDegrees(double radians);
 vector2i getScreenSize(sf::RenderWindow* window);
-vector2fl getViewSize(sf::RenderWindow* window);
+vector2fl getCurrentViewSize(sf::RenderWindow* window);
+vector2fl getViewSize(sf::RenderWindow* window, sf::View view);
+string uint16ToString(uint16_t x);
+string floatToPercentString(float x);
+string floatToShortPercentString(float x);
 
 #endif // COMMON_H

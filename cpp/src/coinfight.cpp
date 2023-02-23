@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     string serverIP = customServerIP ? *customServerIP : SERVER_IP_DEFAULT;
 
     loadFonts(&mainFont, &tutorialFont);
-    loadIcons();
+    loadMenuIcons();
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 
@@ -188,7 +188,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
         firstEvents[i]->execute(&game);
     }
 
-    GameUI ui(window, &mainFont, false);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
     uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmds;
@@ -207,7 +207,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 
                 // poll for cmds from input
                 // (also updates GameUI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window, {});
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, currentPlayerId, window, {}, getUXView());
                 pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 
                 // use ui.debugInt to switch playerIds
@@ -218,7 +218,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
                     cout << "now controlling player " << currentPlayerId << endl;
                 }
 
-                display(window, &game, &ui, game.players[currentPlayerId].address, {}, mainFont, tutorialFont, false);
+                display(window, &game, &ui, game.players[currentPlayerId].address, {}, &mainFont, &tutorialFont, false);
             }
         }
         else {
@@ -341,7 +341,6 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
             {
                 return;
             }
-
         }
     }
 }
@@ -349,7 +348,7 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 void runTutorial(sf::RenderWindow* window)
 {
     Game game;
-    GameUI ui(window, &mainFont, false);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
 
     setupTutorialScenario(&game);
 
@@ -373,10 +372,10 @@ void runTutorial(sf::RenderWindow* window)
 
                 // poll for cmds from input
                 // (also updates GameUI)
-                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, &tutorial);
+                vector<boost::shared_ptr<Cmd>> newCmds = pollWindowEventsAndUpdateUI(&game, &ui, 0, window, &tutorial, getUXView());
                 pendingCmds.insert(pendingCmds.begin(), newCmds.begin(), newCmds.end());
 
-                display(window, &game, &ui, Address(TUTORIAL_PLAYER_ADDRESS_STR), &tutorial, mainFont, tutorialFont, false);
+                display(window, &game, &ui, Address(TUTORIAL_PLAYER_ADDRESS_STR), &tutorial, &mainFont, &tutorialFont, false);
             }
         }
         else
@@ -510,7 +509,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
         }
     }
 
-    GameUI ui(window, &mainFont, true);
+    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), true);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())
@@ -522,7 +521,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
             continue;
 
         // PROCESS INPUT
-        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL);
+        vector<boost::shared_ptr<Cmd>> cmdsToSend = pollWindowEventsAndUpdateUI(&game, &ui, maybePlayerId, window, NULL, getUXView());
 
         // SEND CMDS
         for (unsigned int i=0; i < cmdsToSend.size(); i++)
@@ -542,7 +541,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
         }
 
         // DISPLAY
-        display(window, &game, &ui, playerAddress, {}, mainFont, tutorialFont, true);
+        display(window, &game, &ui, playerAddress, {}, &mainFont, &tutorialFont, true);
 
         if (game.frame % 200 == 0)
             cout << "Latency buffer size: " << connectionHandler.receivedFrameEventsPackets.size() << endl;

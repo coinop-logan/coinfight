@@ -186,7 +186,38 @@ vector2i getScreenSize(sf::RenderWindow* window)
 {
     return fromSFVec(window->getSize());
 }
-vector2fl getViewSize(sf::RenderWindow* window)
+vector2fl getCurrentViewSize(sf::RenderWindow* window)
 {
     return fromSFVec(window->getView().getSize());
+}
+vector2fl getViewSize(sf::RenderWindow* window, sf::View view)
+{
+    sf::View currentView = window->getView();
+
+    window->setView(view);
+    vector2fl size = getCurrentViewSize(window);
+
+    window->setView(currentView);
+
+    return size;
+}
+
+string uint16ToString(uint16_t x) {
+    stringstream ss;
+    ss << (unsigned int)x;
+    return ss.str();
+}
+
+string floatToPercentString(float x)
+{
+    char buf[10];
+    snprintf(buf, 10, "$%.2f", x*100);
+    return string(buf) + "%";
+}
+string floatToShortPercentString(float x)
+{
+    int roundedPercent = round(x*100);
+    char buf[10];
+    snprintf(buf, 10, "%i", roundedPercent);
+    return string(buf) + "%";
 }
