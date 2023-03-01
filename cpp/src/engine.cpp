@@ -2,6 +2,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/random.hpp>
 #include <vector>
 #include <string>
 #include "myvectors.h"
@@ -374,14 +375,15 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 }
 
 
-Game::Game()
-    : frame(0), searchGrid(calculateMapRadius())
+Game::Game(int randSeed)
+    : randGen(randSeed), frame(0), searchGrid(calculateMapRadius())
 {
     mapRadius = calculateMapRadius();
 }
 
 void Game::pack(Netpack::Builder* to)
 {
+    packRandGenerator(to, randGen);
     to->packUint64_t(frame);
     to->packUint8_t((uint8_t)players.size());
     for (unsigned int i=0; i < players.size(); i++)
@@ -406,6 +408,7 @@ Game::Game(Netpack::Consumer* from)
     : searchGrid(calculateMapRadius())
     , mapRadius(calculateMapRadius())
 {
+    randGen = consumeRandGenerator(from);
     frame = from->consumeUint64_t();
     uint8_t playersSize = from->consumeUint8_t();
     
@@ -441,54 +444,65 @@ void Game::reassignEntityGamePointers()
     }
 }
 
+void iterateEntityIfActive(boost::shared_ptr<Entity> entity)
+{
+    if (entity)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
+        {
+            if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
+                unit->iterate();
+        }
+        else
+            entity->iterate();
+    }
+}
+
+void moveMobileUnitAndCollisionAvoid(boost::shared_ptr<Entity> entity)
+{
+    // only for MobileUnits
+    if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entity))
+    {
+        if (mobileUnit->isActive())
+        {
+            auto nearbyEntities = mobileUnit->getGameOrThrow()->entitiesWithinSquare(mobileUnit->getPos(), COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH);
+
+            // filter for Units (this ignores GoldPiles)
+            auto nearbyUnits = filterForType<Unit, Entity>(nearbyEntities);
+
+            // quickly remove the inevitable self-reference
+            for (unsigned int j=0; j<nearbyUnits.size(); j++)
+            {
+                // don't compare to self
+                if (mobileUnit->getRefOrThrow() == nearbyUnits[j]->getRefOrThrow())
+                {
+                    nearbyUnits.erase(nearbyUnits.begin() + j);
+                    break;
+                }
+            }
+
+            vector2fp velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, fixed32(40), fixed32(1));
+            // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
+
+            mobileUnit->moveWithVelocityAndUpdateCell(velocity);
+        }
+    }
+}
+
 void Game::iterate()
 {
+    // we iterate through entities starting at a random position in the list
+    // this way, if two entities are i.e. shooting at each other on the same frame,
+    // it's essentially a coinflip as to who shoots who first
+
+    boost::uniform_int<> iterateStartPosDist(0, entities.size()-1);
+    int iterateStartPos = boost::variate_generator<baseRandGenType&, boost::uniform_int<> >(randGen, iterateStartPosDist)();
+
     // iterate all units
-    for (unsigned int i=0; i<entities.size(); i++)
-    {
-        if (entities[i])
-        {
-            if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
-            {
-                if (unit->isActive() || unit->typechar() == BEACON_TYPECHAR)
-                    unit->iterate();
-            }
-            else
-                entities[i]->iterate();
-        }
-    }
+    forEachStartAt(&entities, iterateStartPos, &iterateEntityIfActive);
 
-    // for MobileUnits, correct velocities and move 
-    for (unsigned int i=0; i<entities.size(); i++)
-    {
-        // only for MobileUnits
-        if (auto mobileUnit = boost::dynamic_pointer_cast<MobileUnit, Entity>(entities[i]))
-        {
-            if (mobileUnit->isActive())
-            {
-                auto nearbyEntities = this->entitiesWithinSquare(mobileUnit->getPos(), COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH);
-
-                // filter for Units (this ignores GoldPiles)
-                auto nearbyUnits = filterForType<Unit, Entity>(nearbyEntities);
-
-                // quickly remove the inevitable self-reference
-                for (unsigned int j=0; j<nearbyUnits.size(); j++)
-                {
-                    // don't compare to self
-                    if (mobileUnit->getRefOrThrow() == nearbyUnits[j]->getRefOrThrow())
-                    {
-                        nearbyUnits.erase(nearbyUnits.begin() + j);
-                        break;
-                    }
-                }
-
-                vector2fp velocity = calcNewVelocityToAvoidCollisions(mobileUnit, nearbyUnits, fixed32(40), fixed32(1));
-                // cout << ((velocity - mobileUnit->getDesiredVelocity()).getMagnitudeSquared() < EPSILON) << endl;
-
-                mobileUnit->moveWithVelocityAndUpdateCell(velocity);
-            }
-        }
-    }
+    // move mobile units and collision check
+    forEachStartAt(&entities, iterateStartPos, &moveMobileUnitAndCollisionAvoid);
 
     // clean up units that are ded
     // also take note of GWs, Primes, and zeroed goldpiles for purposes of the next loop
@@ -611,7 +625,8 @@ void Game::iterate()
 
 bool gameStatesAreIdentical_triggerDebugIfNot(Game* game1, Game* game2)
 {
-    if (game1->frame != game2->frame
+    if (game1->randGen != game2->randGen
+     || game1->frame != game2->frame
      || game1->entities.size() != game2->entities.size()
      || game1->players.size() != game2->players.size()
        )

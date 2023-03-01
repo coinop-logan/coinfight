@@ -53,6 +53,20 @@ vector2fp consumeVector2fp(Netpack::Consumer *from)
 }
 
 
+void packRandGenerator(Netpack::Builder* to, baseRandGenType randGen)
+{
+    stringstream ss;
+    ss << randGen;
+    to->packStringWith16bitSize(ss.str());
+}
+baseRandGenType consumeRandGenerator(Netpack::Consumer* from)
+{
+    string s = from->consumeStringWith16bitSize();
+    stringstream ss(s);
+    baseRandGenType randGen;
+    ss >> randGen;
+    return randGen;
+}
 void packEntityRef(Netpack::Builder* to, EntityRef ref)
 {
     to->packUint16_t(ref);

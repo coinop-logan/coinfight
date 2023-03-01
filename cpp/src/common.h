@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <optional>
 #include <boost/shared_ptr.hpp>
+#include <boost/random.hpp>
 #include "address.h"
 #include "myvectors.h"
 #include "netpack.h"
@@ -12,6 +13,8 @@
 
 using namespace std;
 
+typedef boost::mt11213b baseRandGenType;
+
 const int EXPECTED_SIGNATURE_LENGTH = 130;
 
 const sf::Color NEUTRAL_TEAM_COLOR(150, 150, 150);
@@ -20,6 +23,9 @@ void debugOutputVector(const char *,vector2i);
 void debugOutputVector(const char *,vector2fp);
 void debugOutputVector(const char *,vector2fl);
 void debugOutputVector(const char *,vector3f);
+
+void packRandGenerator(Netpack::Builder* to, baseRandGenType randGen);
+baseRandGenType consumeRandGenerator(Netpack::Consumer* from);
 
 void packFixed32(Netpack::Builder* to, fixed32 val);
 fixed32 consumeFixed32(Netpack::Consumer *from);
@@ -102,5 +108,32 @@ vector2fl getViewSize(sf::RenderWindow* window, sf::View view);
 string uint16ToString(uint16_t x);
 string floatToPercentString(float x);
 string floatToShortPercentString(float x);
+template<typename C>
+void forEachStartAt(vector<C>* vec, unsigned int start, void (*actionFunc)(C))
+{
+    if (start >= vec->size())
+    {
+        throw runtime_error("Start position out of range of vector");
+    }
+
+    unsigned int i = start;
+    bool firstLoop = true;
+    while (true)
+    {
+        if (!firstLoop && i == start)
+        {
+            break;
+        }
+
+        actionFunc((*vec)[i]);
+
+        if (firstLoop) firstLoop = false;
+        i ++;
+        if (i == vec->size())
+        {
+            i = 0;
+        }
+    }
+}
 
 #endif // COMMON_H

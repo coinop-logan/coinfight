@@ -6,6 +6,7 @@
 #include <string>
 #include <pthread.h>
 #include <set>
+#include <boost/random.hpp>
 #include "coins.h"
 #include "myvectors.h"
 #include "netpack.h"
@@ -72,6 +73,7 @@ public:
 class Game
 {
 public:
+    baseRandGenType randGen;
     uint64_t frame;
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
@@ -95,7 +97,7 @@ public:
 
     void pack(Netpack::Builder*);
 
-    Game();
+    Game(int randSeed);
     Game(Netpack::Consumer*);
     void reassignEntityGamePointers();
 

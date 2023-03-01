@@ -3,11 +3,9 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <optional>
-#include "graphics_helpers.h"
+#include <functional>
+#include <boost/random.hpp>
 #include "common.h"
-#include "fpm/math.hpp"
-#include "fpm/ios.hpp"
-#include "myvectors.h"
 
 using namespace std;
 
@@ -21,18 +19,16 @@ void makeSure(string name, bool condition) // hacky test function
     cout << (condition ? "PASSED: " : "FAILED: ") << name << endl;
 }
 
-using namespace std;
-using vch = vector<unsigned char>;
-
-template<typename C>
-void pr(C c) {
-    cout << c << endl;
+void doThing(int a)
+{
+    cout << a << endl;
 }
 
 int main()
 {
-    vector<tuple<int, int>> vec = {{3,3}};
+    vector<int> ints = {1, 2,3,4};
 
-    get<0>(vec[0]) ++;
-    cout << get<0>(vec[0]) << endl;
+    forEachStartAt(&ints, 2, doThing);
+
+    return 0;
 }

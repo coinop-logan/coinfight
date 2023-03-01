@@ -73,5 +73,5 @@ bin/coinfight: cpp/obj/coinfight.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/
 bin/server: cpp/obj/server.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/packets.o cpp/obj/sigWrapper.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/address.o cpp/obj/algorithm.o cpp/obj/exec.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBSERVER)
 
-bin/test: cpp/obj/test.o cpp/obj/graphics_helpers.o cpp/obj/engine.o cpp/obj/myvectors.o cpp/obj/cmds.o cpp/obj/common.o cpp/obj/coins.o cpp/obj/graphics.o cpp/obj/input.o cpp/obj/packets.o cpp/obj/events.o cpp/obj/entities.o cpp/obj/collision.o cpp/obj/netpack.o cpp/obj/tutorial.o cpp/obj/address.o cpp/obj/algorithm.o cpp/obj/ui_elements.o cpp/obj/particles.o cpp/obj/exec.o
+bin/test: cpp/obj/test.o cpp/obj/common.o cpp/obj/myvectors.o cpp/obj/coins.o cpp/obj/netpack.o cpp/obj/address.o cpp/obj/algorithm.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBCLIENT) $(LIBSERVER)
