@@ -494,6 +494,11 @@ void drawUnitRadii(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, vecto
     {
         drawRadius(window, drawPos, float(GATEWAY_RANGE), sf::Color(255, 255, 0, 100));
     }
+    if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
+    {
+        drawRadius(window, drawPos, float(GATEWAY_RANGE), sf::Color(255, 255, 0, 100));
+        drawRadius(window, drawPos, float(GATEWAY_SHOT_RANGE), sf::Color(255, 0, 0, 100));
+    }
 }
 
 void drawEntity(sf::RenderWindow *window, boost::shared_ptr<Entity> entity, vector2fl drawPos)
