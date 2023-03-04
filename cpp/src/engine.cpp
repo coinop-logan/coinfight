@@ -376,7 +376,7 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 
 
 Game::Game(int randSeed)
-    : randGen(randSeed), frame(0), searchGrid(calculateMapRadius())
+    : randGen(randSeed), mode(Pregame), frame(0), searchGrid(calculateMapRadius())
 {
     mapRadius = calculateMapRadius();
 }
@@ -384,6 +384,7 @@ Game::Game(int randSeed)
 void Game::pack(Netpack::Builder* to)
 {
     packRandGenerator(to, randGen);
+    to->packEnum(mode);
     to->packUint64_t(frame);
     to->packUint8_t((uint8_t)players.size());
     for (unsigned int i=0; i < players.size(); i++)
@@ -409,6 +410,7 @@ Game::Game(Netpack::Consumer* from)
     , mapRadius(calculateMapRadius())
 {
     randGen = consumeRandGenerator(from);
+    mode = from->consumeEnum<GameMode>();
     frame = from->consumeUint64_t();
     uint8_t playersSize = from->consumeUint8_t();
     
@@ -489,9 +491,38 @@ void moveMobileUnitAndCollisionAvoid(boost::shared_ptr<Entity> entity)
     }
 }
 
-void Game::iterate()
+void Game::removeDeadEntities()
 {
-    // we iterate through entities starting at a random position in the list
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        if (entities[i] && entities[i]->dead)
+        {
+            // create new GoldPile to hold all droppable coins
+            boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
+
+            vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
+            for (unsigned int j=0; j<droppableCoins.size(); j++)
+            {
+                if (droppableCoins[j]->getInt() > 0)
+                {
+                    droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
+                }
+            }
+
+            // but only add it if there was more than 0 gold added
+            if (goldPile->gold.getInt() > 0)
+            {
+                // We call the 'ignoreConstraints' verison, knowing that at the end of Game::iterate, map bounds are directly enforced
+                registerNewEntityIgnoringConstraints(goldPile);
+            }
+            entities[i].reset();
+        }
+    }
+}
+
+void Game::iterateGameplay()
+{
+    // we iterate through entities starting at a (deterministically) random position in the list
     // this way, if two entities are i.e. shooting at each other on the same frame,
     // it's essentially a coinflip as to who shoots who first
 
@@ -513,29 +544,7 @@ void Game::iterate()
     {
         if (entities[i])
         {
-            if (entities[i]->dead)
-            {
-                // create new GoldPile to hold all droppable coins
-                boost::shared_ptr<GoldPile> goldPile(new GoldPile(entities[i]->getPos()));
-
-                vector<Coins*> droppableCoins = entities[i]->getDroppableCoins();
-                for (unsigned int j=0; j<droppableCoins.size(); j++)
-                {
-                    if (droppableCoins[j]->getInt() > 0)
-                    {
-                        droppableCoins[j]->transferUpTo(droppableCoins[j]->getInt(), &goldPile->gold);
-                    }
-                }
-
-                // but only add it if there was more than 0 gold added
-                if (goldPile->gold.getInt() > 0)
-                {
-                    // We call the 'ignoreConstraints' verison, knowing that at the end of Game::iterate, map bounds are directly enforced
-                    registerNewEntityIgnoringConstraints(goldPile);
-                }
-                entities[i].reset();
-            }
-            else
+            if(!entities[i]->dead)
             {
                 if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
                 {
@@ -604,23 +613,57 @@ void Game::iterate()
             if (roughMagnitude > mapRadius)
             {
                 fixed32 correctionRatio = mapRadius / roughMagnitude;
-                debugOutputVector("   pos",entity->getPos());
                 vector2fp newPos(entity->getPos().x * correctionRatio, entity->getPos().y * correctionRatio);
-                debugOutputVector("newpos",newPos);
                 entity->setPosAndUpdateCell(newPos);
             }
         }
     }
+}
 
-    frame++;
+void Game::startGameplay()
+{
+    mode = Running;
 
-    if (frame % 200 == 0)
+    // spawn beacons for those who have marked a spot
+    // random start place in players list, to fairly deal with collisions
+
+    // int firstPlayerId = boost::variate_generator<baseRandGenType&, boost::uniform_int<> >(randGen, boost::uniform_int<>(0, players.size() - 1))();
+
+    // forEachStartAt(&players, firstPlayerId, createBeaconAtSpawnPosForPlayer);
+
+    // for (unsigned int i=0; i<players.size(); i++)
+    // {
+
+    // }
+}
+
+void Game::iteratePregame()
+{
+    if (frame == 400)
     {
-        for (unsigned int i=0; i<players.size(); i++)
+        startGameplay();
+    }
+}
+
+void Game::iterate()
+{
+    removeDeadEntities();
+
+    switch (mode)
+    {
+        case Pregame:
         {
-            // cout << "player " << players[i].address << " has " << players[i].credit.getInt() << endl;
+            iteratePregame();
+            break;
+        }
+        case Running:
+        {
+            iterateGameplay();
+            break;
         }
     }
+    
+    frame++;
 }
 
 bool gameStatesAreIdentical_triggerDebugIfNot(Game* game1, Game* game2)

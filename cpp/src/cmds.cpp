@@ -85,9 +85,24 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
     if (game->getPlayerBeaconAvailable(playerId))
     {
         boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning, true));
-        if (game->registerNewEntityIfInMapAndNoCollision(beacon))
+        switch (game->mode)
         {
-            game->setPlayerBeaconAvailable(playerId, false);
+            case Game::GameMode::Pregame:
+            {
+                game->registerNewEntityIfInMapIgnoringCollision(beacon);
+                game->setPlayerBeaconAvailable(playerId, false);
+
+                break;
+            }
+            case Game::GameMode::Running:
+            {
+                if (game->registerNewEntityIfInMapAndNoCollision(beacon))
+                {
+                    game->setPlayerBeaconAvailable(playerId, false);
+                }
+
+                break;
+            }
         }
     }
 }
@@ -662,6 +677,10 @@ void WarpOutCmd::executeOnUnit(boost::shared_ptr<Unit> unit)
     else if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
     {
         beacon->cmdWarpOut();
+        if (beacon->getGameOrThrow()->mode == Game::GameMode::Pregame)
+        {
+            beacon->die();
+        }
     }
     else
     {

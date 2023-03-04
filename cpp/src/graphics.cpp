@@ -10,6 +10,7 @@
 #include "graphics_helpers.h"
 #include "ui_elements.h"
 #include "particles.h"
+#include "algorithm.h"
 
 using namespace std;
 
@@ -484,6 +485,12 @@ void drawRadius(sf::RenderWindow* window, vector2fl drawPos, float radius, sf::C
     window->draw(circle);
 }
 
+void drawBeaconRadii(sf::RenderWindow* window, vector2fl drawPos)
+{
+    drawRadius(window, drawPos, float(GATEWAY_RANGE), sf::Color(255, 255, 0, 100));
+    drawRadius(window, drawPos, float(GATEWAY_SHOT_RANGE), sf::Color(255, 0, 0, 100));
+}
+
 void drawUnitRadii(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, vector2fl drawPos)
 {
     if (auto combatUnit = boost::dynamic_pointer_cast<CombatUnit, Unit>(unit))
@@ -496,8 +503,7 @@ void drawUnitRadii(sf::RenderWindow* window, boost::shared_ptr<Unit> unit, vecto
     }
     if (auto beacon = boost::dynamic_pointer_cast<Beacon, Unit>(unit))
     {
-        drawRadius(window, drawPos, float(GATEWAY_RANGE), sf::Color(255, 255, 0, 100));
-        drawRadius(window, drawPos, float(GATEWAY_SHOT_RANGE), sf::Color(255, 0, 0, 100));
+        drawBeaconRadii(window, drawPos);
     }
 }
 
@@ -1357,6 +1363,9 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
     if (! ui->hideUX)
     {
         vector<sf::String> outputStrings;
+        stringstream ss;
+        ss << game->frame;
+        outputStrings.push_back(ss.str());
         displayOutputStrings(window, outputStrings, fwFont);
     }
 

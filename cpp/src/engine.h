@@ -74,6 +74,11 @@ class Game
 {
 public:
     baseRandGenType randGen;
+    enum GameMode
+    {
+        Pregame,
+        Running
+    } mode;
     uint64_t frame;
     vector<Player> players;
     vector<boost::shared_ptr<Entity>> entities;
@@ -101,6 +106,10 @@ public:
     Game(Netpack::Consumer*);
     void reassignEntityGamePointers();
 
+    void startGameplay();
+    void removeDeadEntities();
+    void iterateGameplay();
+    void iteratePregame();
     void iterate();
 };
 
