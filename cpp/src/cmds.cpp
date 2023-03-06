@@ -85,24 +85,9 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
     if (game->getPlayerBeaconAvailable(playerId))
     {
         boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning, true));
-        switch (game->mode)
+        if (game->registerNewEntityIfInMapAndNoCollision(beacon))
         {
-            case Game::GameMode::Pregame:
-            {
-                game->registerNewEntityIfInMapIgnoringCollision(beacon);
-                game->setPlayerBeaconAvailable(playerId, false);
-
-                break;
-            }
-            case Game::GameMode::Running:
-            {
-                if (game->registerNewEntityIfInMapAndNoCollision(beacon))
-                {
-                    game->setPlayerBeaconAvailable(playerId, false);
-                }
-
-                break;
-            }
+            game->setPlayerBeaconAvailable(playerId, false);
         }
     }
 }

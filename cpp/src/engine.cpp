@@ -623,23 +623,11 @@ void Game::iterateGameplay()
 void Game::startGameplay()
 {
     mode = Running;
-
-    // spawn beacons for those who have marked a spot
-    // random start place in players list, to fairly deal with collisions
-
-    // int firstPlayerId = boost::variate_generator<baseRandGenType&, boost::uniform_int<> >(randGen, boost::uniform_int<>(0, players.size() - 1))();
-
-    // forEachStartAt(&players, firstPlayerId, createBeaconAtSpawnPosForPlayer);
-
-    // for (unsigned int i=0; i<players.size(); i++)
-    // {
-
-    // }
 }
 
 void Game::iteratePregame()
 {
-    if (frame == 400)
+    if (frame == 2000)
     {
         startGameplay();
     }
