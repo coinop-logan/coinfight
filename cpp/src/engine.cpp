@@ -524,6 +524,9 @@ void Game::removeDeadEntities()
 
 void Game::iterateGameplay()
 {
+    if (entities.size() == 0)
+        return;
+    
     // we iterate through entities starting at a (deterministically) random position in the list
     // this way, if two entities are i.e. shooting at each other on the same frame,
     // it's essentially a coinflip as to who shoots who first
