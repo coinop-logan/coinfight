@@ -74,6 +74,7 @@ class Game
 {
 public:
     baseRandGenType randGen;
+    time_t gameStartTime;
     enum GameMode
     {
         Pregame,
@@ -102,11 +103,11 @@ public:
 
     void pack(Netpack::Builder*);
 
-    Game(int randSeed);
+    Game(int randSeed, time_t gameStartTime);
     Game(Netpack::Consumer*);
     void reassignEntityGamePointers();
 
-    void startGameplay();
+    void startGame();
     void removeDeadEntities();
     void iterateGameplay();
     void iteratePregame();

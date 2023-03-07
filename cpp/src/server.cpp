@@ -592,9 +592,10 @@ boost::filesystem::path restoreLabelToStateFile(string restoreLabel)
 int main(int argc, char *argv[])
 {
     optional<string> restoreLabel;
+    optional<time_t> gameStartTime;
 
     int c;
-    while ((c = getopt(argc, argv, "r:")) != -1)
+    while ((c = getopt(argc, argv, "r:t:")) != -1)
     {
         switch (c)
         {
@@ -604,10 +605,22 @@ int main(int argc, char *argv[])
                 boost::trim(*restoreLabel);
                 break;
             }
+            case 't':
+            {
+                gameStartTime = {stoi(string(optarg))};
+                break;
+            }
         }
     }
 
-    Game game;
+    if (!gameStartTime)
+    {
+        cout << "WARNING: no match start time set! Defaulting to now." << endl;
+        gameStartTime = {time(NULL)};
+    }
+
+    int randSeed = time(NULL);
+    Game game(randSeed, *gameStartTime);
     if (restoreLabel)
     {
         boost::filesystem::path statePath = restoreLabelToStateFile(*restoreLabel);

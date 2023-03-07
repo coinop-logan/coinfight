@@ -67,6 +67,14 @@ baseRandGenType consumeRandGenerator(Netpack::Consumer* from)
     ss >> randGen;
     return randGen;
 }
+void packTimeT(Netpack::Builder* to, time_t timeVal)
+{
+    to->packUint64_t(timeVal);
+}
+time_t consumeTimeT(Netpack::Consumer* from)
+{
+    return from->consumeUint64_t();
+}
 void packEntityRef(Netpack::Builder* to, EntityRef ref)
 {
     to->packUint16_t(ref);

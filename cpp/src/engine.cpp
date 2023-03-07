@@ -375,8 +375,8 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 }
 
 
-Game::Game(int randSeed)
-    : randGen(randSeed), mode(Pregame), frame(0), searchGrid(calculateMapRadius())
+Game::Game(int randSeed, time_t gameStartTime)
+    : randGen(randSeed), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius())
 {
     mapRadius = calculateMapRadius();
 }
@@ -384,6 +384,7 @@ Game::Game(int randSeed)
 void Game::pack(Netpack::Builder* to)
 {
     packRandGenerator(to, randGen);
+    packTimeT(to, gameStartTime);
     to->packEnum(mode);
     to->packUint64_t(frame);
     to->packUint8_t((uint8_t)players.size());
@@ -410,6 +411,7 @@ Game::Game(Netpack::Consumer* from)
     , mapRadius(calculateMapRadius())
 {
     randGen = consumeRandGenerator(from);
+    gameStartTime = consumeTimeT(from);
     mode = from->consumeEnum<GameMode>();
     frame = from->consumeUint64_t();
     uint8_t playersSize = from->consumeUint8_t();
@@ -620,16 +622,17 @@ void Game::iterateGameplay()
     }
 }
 
-void Game::startGameplay()
+void Game::startGame()
 {
     mode = Running;
+    cout << "starting game" << endl;
 }
 
 void Game::iteratePregame()
 {
-    if (frame == 2000)
+    if (time(NULL) > gameStartTime)
     {
-        startGameplay();
+        startGame();
     }
 }
 

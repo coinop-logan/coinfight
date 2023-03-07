@@ -27,6 +27,9 @@ void debugOutputVector(const char *,vector3f);
 void packRandGenerator(Netpack::Builder* to, baseRandGenType randGen);
 baseRandGenType consumeRandGenerator(Netpack::Consumer* from);
 
+void packTimeT(Netpack::Builder* to, time_t timeVal);
+time_t consumeTimeT(Netpack::Consumer* from);
+
 void packFixed32(Netpack::Builder* to, fixed32 val);
 fixed32 consumeFixed32(Netpack::Consumer *from);
 

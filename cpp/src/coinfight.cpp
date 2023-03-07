@@ -166,7 +166,8 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
     coinsInt honeypotStartingAmount = dollarsToCoinsIntND(honeypotStartingDollars);
     coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
 
-    Game game(time(NULL));
+    int randSeed = time(NULL);
+    Game game(randSeed, time(NULL));
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
@@ -347,7 +348,9 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 
 void runTutorial(sf::RenderWindow* window)
 {
-    Game game(time(NULL));
+    int randSeed = time(NULL);
+    Game game(randSeed, time(NULL));
+    
     GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
 
     setupTutorialScenario(&game);
@@ -491,7 +494,8 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
 
     connectionHandler.startReceivingLoop();
 
-    Game game(time(NULL));
+    Game game(0, 0); // will be overwritten soon with the resync packet
+    
     optional<uint8_t> maybePlayerId = {};
 
     // Get the first resync packet
