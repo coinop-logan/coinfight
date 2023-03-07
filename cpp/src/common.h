@@ -114,6 +114,15 @@ string floatToShortPercentString(float x);
 template<typename C>
 void forEachStartAt(vector<C>* vec, unsigned int start, void (*actionFunc)(C))
 {
+    if (vec->size() == 0)
+    {
+        if (start > 0)
+        {
+            throw runtime_error("Start position out of range of vector");
+        }
+        return;
+    }
+
     if (start >= vec->size())
     {
         throw runtime_error("Start position out of range of vector");
