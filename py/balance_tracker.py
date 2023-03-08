@@ -22,20 +22,22 @@ rpcUrl = godwokenTestnetRpcUrl
 WEB3_PROVIDER = Web3.HTTPProvider(rpcUrl, session = web3RequestSession)
 
 neededConfirmations = 1
-eventsToServerDir = "events_in/"
-eventsFromServerDir = "events_out/"
+COINFIGHT_RUN_DIR = "/var/run/coinfight/"
+COINFIGHT_DATA_DIR = "/usr/share/coinfight_server/"
+EVENTS_TO_SERVER_DIR = COINFIGHT_RUN_DIR + "events_in/"
+EVENTS_FROM_SERVER_DIR = COINFIGHT_RUN_DIR + "events_out/"
 
 def getLastBlockProcessed():
-    with open("lastblock.txt", "r") as f:
+    with open(COINFIGHT_DATA_DIR + "lastblock.txt", "r") as f:
         return int(f.read())
 
 def setLastBlockProcessed(num):
-    with open("lastblock.txt", "w") as f:
+    with open(COINFIGHT_DATA_DIR + "lastblock.txt", "w") as f:
         f.write(str(num))
 
 def loadEthAccount(w3):
     w3.eth.account.enable_unaudited_hdwallet_features()
-    with open("../secret.txt", "r") as f:
+    with open(COINFIGHT_DATA_DIR + "web3_secret", "r") as f:
         loadedMnemonic = f.read()
     return w3.eth.account.from_mnemonic(loadedMnemonic)
 
@@ -82,7 +84,7 @@ def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
 def executePendingWithdrawals(w3, contract, ethAccount):
     global nextNonce
 
-    withdrawsDir = eventsFromServerDir + "withdrawals/"
+    withdrawsDir = EVENTS_FROM_SERVER_DIR + "withdrawals/"
     withdrawCmdFiles = os.listdir(withdrawsDir)
     for fname in withdrawCmdFiles:
         with open(withdrawsDir + fname, 'r') as f:
@@ -108,17 +110,11 @@ def main():
     try:
         getLastBlockProcessed()
     except FileNotFoundError:
-        print("No data found for last block scanned.")
-        startScanBlockInput = input("At which block should we start scanning? (enter for latest block)")
-        if startScanBlockInput == "":
-            startScanBlock = w3.eth.block_number
-        else:
-            startScanBlock = int(startScanBlockInput)
-        
+        startScanBlock = w3.eth.block_number
         setLastBlockProcessed(startScanBlock - 1)
 
     address = CONTRACT_ADDRESS
-    abi = json.load(open('CoinfightDepositsWithdrawals.json','r'))['abi']
+    abi = json.load(open('/usr/share/coinfight_server/CoinfightDepositsWithdrawals.json','r'))['abi']
     contract = w3.eth.contract(address=address, abi=abi)
 
     ethAccount = loadEthAccount(w3)
@@ -157,7 +153,7 @@ def recordNewPlayerDeposits(newDepositEvents, filename):
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
-        os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
+        os.system("mv " + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
 
 def recordNewHoneypotDeposits(newHoneypotEvents, filename):
     if len(newHoneypotEvents) == 0:
@@ -175,7 +171,7 @@ def recordNewHoneypotDeposits(newHoneypotEvents, filename):
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
-        os.system("mv " + filename + " " + eventsToServerDir + "deposits/")
+        os.system("mv " + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
 
 if __name__ == "__main__":
     main()
