@@ -20,8 +20,9 @@ const bool SEND_REGULAR_RESYNC_CHECKS = true;
 const unsigned int RECENT_BACKUP_INTERVAL_IN_FRAMES = 60*5; // every 5 seconds
 
 const boost::filesystem::path COINFIGHT_DATA_DIR("/usr/share/coinfight_server/");
-const boost::filesystem::path EVENTS_IN_DIR = COINFIGHT_DATA_DIR / "events_in";
-const boost::filesystem::path EVENTS_OUT_DIR = COINFIGHT_DATA_DIR / "events_out";
+const boost::filesystem::path COINFIGHT_RUN_DIR("/var/run/coinfight/");
+const boost::filesystem::path EVENTS_IN_DIR = COINFIGHT_RUN_DIR / "events_in";
+const boost::filesystem::path EVENTS_OUT_DIR = COINFIGHT_RUN_DIR / "events_out";
 const boost::filesystem::path SESSIONS_DATA_PATH = COINFIGHT_DATA_DIR / "sessions";
 
 using namespace std;
@@ -452,7 +453,7 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
 
     bool resetBeacons = false;
     bool quitNow = false;
-    for (boost::filesystem::directory_iterator dirIter(EVENTS_OUT_DIR); dirIter != directoryEndIter; dirIter++)
+    for (boost::filesystem::directory_iterator dirIter(EVENTS_IN_DIR); dirIter != directoryEndIter; dirIter++)
     {
         if (boost::filesystem::is_regular_file(dirIter->path()))
         {
@@ -467,6 +468,11 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
             else if (fileName == "halt")
             {
                 quitNow = true;
+            }
+            else if (fileName == "end_game")
+            {
+                quitNow = true;
+                cout << "WARNING: still need to code in a graceful exit." << endl;
             }
             else
             {
