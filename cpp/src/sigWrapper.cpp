@@ -25,7 +25,7 @@ optional<string> signedMsgToAddressString(string message, string sig, string *er
     Py_Initialize();
 
     PyRun_SimpleString("import sys, os");
-    PyRun_SimpleString("sys.path.append(os.getcwd())");
+    PyRun_SimpleString("sys.path.append('/usr/bin/coinfight/python/')");
 
     PyObject* module = PyImport_ImportModule("signed_msg_to_address");
     if (!module)

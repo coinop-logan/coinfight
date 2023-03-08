@@ -19,6 +19,11 @@ const bool SEND_REGULAR_RESYNC_CHECKS = true;
 
 const unsigned int RECENT_BACKUP_INTERVAL_IN_FRAMES = 60*5; // every 5 seconds
 
+const boost::filesystem::path COINFIGHT_DATA_DIR("/usr/share/coinfight_server/");
+const boost::filesystem::path EVENTS_IN_DIR = COINFIGHT_DATA_DIR / "events_in";
+const boost::filesystem::path EVENTS_OUT_DIR = COINFIGHT_DATA_DIR / "events_out";
+const boost::filesystem::path SESSIONS_DATA_PATH = COINFIGHT_DATA_DIR / "sessions";
+
 using namespace std;
 using namespace boost::asio::ip;
 
@@ -390,14 +395,14 @@ void actuateWithdrawal(Address userAddress, coinsInt amount)
     withdrawDescriptorFile << writeData;
     withdrawDescriptorFile.close();
 
-    filesystem::rename(filename, "./events_out/withdrawals/" + filename);
+    boost::filesystem::rename(filename, EVENTS_OUT_DIR / "withdrawals" / filename);
 }
 
 tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
 {
     vector<boost::shared_ptr<Event>> events;
 
-    boost::filesystem::path depositsDirPath("./events_in/deposits/");
+    boost::filesystem::path depositsDirPath = EVENTS_IN_DIR / "deposits";
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
     for (boost::filesystem::directory_iterator dirIter(depositsDirPath); dirIter != directoryEndIter; dirIter++)
@@ -442,12 +447,12 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
         }
     }
 
-    boost::filesystem::path eventsDirPath("./events_in/");
+    
     directoryEndIter = boost::filesystem::directory_iterator(); // default constructor makes it an end_iter
 
     bool resetBeacons = false;
     bool quitNow = false;
-    for (boost::filesystem::directory_iterator dirIter(eventsDirPath); dirIter != directoryEndIter; dirIter++)
+    for (boost::filesystem::directory_iterator dirIter(EVENTS_OUT_DIR); dirIter != directoryEndIter; dirIter++)
     {
         if (boost::filesystem::is_regular_file(dirIter->path()))
         {
@@ -484,8 +489,6 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
 
     return {quitNow, events};
 }
-
-const boost::filesystem::path SESSIONS_DATA_PATH("./sessions");
 
 class SessionSaver
 {
@@ -533,8 +536,6 @@ public:
     }
     void saveState(boost::filesystem::path path, Game* game)
     {
-        // cout << "saving " << dataBuffer.size() << " bytes to " << path << endl;
-
         dataBuffer.clear();
         Netpack::Builder b(&dataBuffer);
         game->pack(&b);
@@ -634,7 +635,7 @@ int main(int argc, char *argv[])
     listener.startAccept();
 
     // server will scan this directory for pending deposits (supplied by py/balance_tracker.py)
-    boost::filesystem::path depositsDirPath("./events_in/deposits/");
+    boost::filesystem::path depositsDirPath = EVENTS_IN_DIR / "deposits";
     boost::filesystem::directory_iterator directoryEndIter; // default constructor makes it an end_iter
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
