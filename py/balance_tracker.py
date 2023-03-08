@@ -47,10 +47,10 @@ def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
     (startBlock, endBlock) = (lastBlockProcessed + 1, currentBlock - neededConfirmations)
 
     if startBlock > endBlock:
-        print("No new blocks to scan.")
+        # print("No new blocks to scan.")
         return
     
-    print("scanning range", startBlock, endBlock)
+    # print("scanning range", startBlock, endBlock)
         
     # We want to try to "consume" each type of event one at a time,
     # so that if a filter breaks, we avoid the chance of having "consumed" one filter but broken the other
@@ -138,7 +138,8 @@ def main():
 
 def recordNewPlayerDeposits(newDepositEvents, filename):
     if len(newDepositEvents) == 0:
-        print("no new Deposit events")
+        pass
+        # print("no new Deposit events")
     
     else:
         print("processing", len(newDepositEvents), "deposits")
@@ -149,7 +150,7 @@ def recordNewPlayerDeposits(newDepositEvents, filename):
             amountStr = str(event['amount'])
             fileLines.append(forAccount + " " + amountStr)
             
-        print("writing player deposit events to file for game server")
+        # print("writing player deposit events to file for game server")
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
@@ -157,7 +158,8 @@ def recordNewPlayerDeposits(newDepositEvents, filename):
 
 def recordNewHoneypotDeposits(newHoneypotEvents, filename):
     if len(newHoneypotEvents) == 0:
-        print("no new Honeypot events")
+        pass
+        # print("no new Honeypot events")
     
     else:
         print("processing", len(newHoneypotEvents), "new honeypot adds")
@@ -167,7 +169,7 @@ def recordNewHoneypotDeposits(newHoneypotEvents, filename):
             amountStr = str(event['amount'])
             fileLines.append("honeypot " + amountStr)
             
-        print("writing honeypot deposit events to file for game server")
+        # print("writing honeypot deposit events to file for game server")
         with open(filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
