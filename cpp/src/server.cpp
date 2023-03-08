@@ -485,13 +485,6 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
     return {quitNow, events};
 }
 
-string getCodeVersionTag()
-{
-    string result = exec("git describe --tags");
-    result.pop_back(); // remove trailing \n
-    return result;
-}
-
 const boost::filesystem::path SESSIONS_DATA_PATH("./sessions");
 
 class SessionSaver
@@ -499,7 +492,7 @@ class SessionSaver
     boost::filesystem::path rootDir, stateDir, fepsDir, stateBackupsDir, recentStateFile;
     void setupSessionDirectory()
     {
-        string codeVersionTag = getCodeVersionTag();
+        string codeVersionTag = GIT_COMMIT_HASH;
         int sessionNumForVersion = 0;
         boost::filesystem::path attemptedSessionDirPath;
         do
