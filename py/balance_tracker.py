@@ -104,8 +104,6 @@ def executePendingWithdrawals(w3, contract, ethAccount):
         os.remove(withdrawsDir + fname)
 
 def main():
-    os.mkdir("/tmp/coinfight/")
-
     provider = WEB3_PROVIDER
     w3 = Web3(provider)
 
