@@ -104,6 +104,8 @@ def executePendingWithdrawals(w3, contract, ethAccount):
         os.remove(withdrawsDir + fname)
 
 def main():
+    os.mkdir("/tmp/coinfight/")
+
     provider = WEB3_PROVIDER
     w3 = Web3(provider)
 
@@ -151,10 +153,10 @@ def recordNewPlayerDeposits(newDepositEvents, filename):
             fileLines.append(forAccount + " " + amountStr)
             
         # print("writing player deposit events to file for game server")
-        with open(filename, 'w') as f:
+        with open("/tmp/coinfight/" + filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
-        os.system("mv " + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
+        os.system("mv /tmp/coinfight/" + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
 
 def recordNewHoneypotDeposits(newHoneypotEvents, filename):
     if len(newHoneypotEvents) == 0:
@@ -170,10 +172,10 @@ def recordNewHoneypotDeposits(newHoneypotEvents, filename):
             fileLines.append("honeypot " + amountStr)
             
         # print("writing honeypot deposit events to file for game server")
-        with open(filename, 'w') as f:
+        with open("/tmp/coinfight/" + filename, 'w') as f:
             f.write('\n'.join(fileLines))
         
-        os.system("mv " + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
+        os.system("mv /tmp/coinfight/" + filename + " " + EVENTS_TO_SERVER_DIR + "deposits/")
 
 if __name__ == "__main__":
     main()
