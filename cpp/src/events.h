@@ -8,9 +8,10 @@
 
 using namespace std;
 
-const uint8_t EVENT_BALANCEUPDATE_CHAR = 1;
-const uint8_t EVENT_HONEYPOT_CHAR = 2;
-const uint8_t EVENT_RESETBEACONS_CHAR = 3;
+const uint8_t EVENT_DEPOSIT_CHAR = 1;
+const uint8_t EVENT_WITHDRAW_CHAR = 2;
+const uint8_t EVENT_HONEYPOT_CHAR = 3;
+const uint8_t EVENT_RESETBEACONS_CHAR = 4;
 
 struct Event;
 
@@ -28,20 +29,36 @@ struct Event
     Event(Netpack::Consumer*);
 };
 
-struct BalanceUpdateEvent : public Event
+struct WithdrawEvent : public Event
 {
     Address userAddress;
     coinsInt amount;
-    bool isDeposit;
 
-    uint8_t typechar();
+    WithdrawEvent(Address userAddress, coinsInt amount);
+    
+    uint8_t typechar() { return EVENT_WITHDRAW_CHAR; }
 
     void execute(Game *game);
 
     void pack(Netpack::Builder*);
 
-    BalanceUpdateEvent(Address userAddress, coinsInt amount, bool isDeposit);
-    BalanceUpdateEvent(Netpack::Consumer*);
+    WithdrawEvent(Netpack::Consumer*);
+};
+
+struct DepositEvent : public Event
+{
+    Address userAddress;
+    coinsInt amount;
+
+    DepositEvent(Address userAddress, coinsInt amount);
+    
+    uint8_t typechar() { return EVENT_DEPOSIT_CHAR; }
+
+    void execute(Game *game);
+
+    void pack(Netpack::Builder*);
+
+    DepositEvent(Netpack::Consumer*);
 };
 
 struct HoneypotAddedEvent : public Event

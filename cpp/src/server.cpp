@@ -374,29 +374,18 @@ void Listener::handleAccept(boost::shared_ptr<tcp::socket> socket, const boost::
     startAccept();
 }
 
-struct WithdrawEvent
-{
-    Address userAddress;
-    coinsInt amountInCoins;
-    WithdrawEvent(Address userAddress, coinsInt amountInCoins)
-        : userAddress(userAddress), amountInCoins(amountInCoins) {}
-    boost::shared_ptr<Event> toEventSharedPtr()
-    {
-        return boost::shared_ptr<Event>(new BalanceUpdateEvent(userAddress, amountInCoins, false));
-    }
-};
-
 void actuateWithdrawal(Address userAddress, coinsInt amount)
 {
     string weiString = coinsIntToWeiDepositString(amount);
     string writeData = userAddress.getString() + " " + weiString;
 
     string filename = to_string(time(0)) + "-" + to_string(clock());
-    ofstream withdrawDescriptorFile(filename);
+    ofstream withdrawDescriptorFile("/tmp/coinfight/" + filename);
     withdrawDescriptorFile << writeData;
     withdrawDescriptorFile.close();
 
-    boost::filesystem::rename(filename, EVENTS_OUT_DIR / "withdrawals" / filename);
+    boost::filesystem::copy("/tmp/coinfight/" + filename, EVENTS_OUT_DIR / "withdrawals" / filename);
+    boost::filesystem::remove("/tmp/coinfight/" + filename);
 }
 
 tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
@@ -434,7 +423,7 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
                     }
                     else
                     {
-                        events.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address(userAddressOrHoneypotString), depositInCoins, true)));
+                        events.push_back(boost::shared_ptr<Event>(new DepositEvent(Address(userAddressOrHoneypotString), depositInCoins)));
                     }
                 }
             }
@@ -591,6 +580,8 @@ boost::filesystem::path restoreLabelToStateFile(string restoreLabel)
 
 int main(int argc, char *argv[])
 {
+    boost::filesystem::create_directory("/tmp/coinfight/");
+
     optional<string> restoreLabel;
     optional<time_t> gameStartTime;
 
@@ -654,7 +645,7 @@ int main(int argc, char *argv[])
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
 
-    vector<WithdrawEvent> pendingWithdrawEvents;
+    vector<boost::shared_ptr<WithdrawEvent>> pendingWithdrawEvents;
 
     while (true)
     {
@@ -678,17 +669,17 @@ int main(int argc, char *argv[])
         // If so, actuate and queue for in-game processing
         for (unsigned int i=0; i<pendingWithdrawEvents.size(); i++)
         {
-            if (auto playerId = game.playerAddressToMaybeId(pendingWithdrawEvents[i].userAddress))
+            if (auto playerId = game.playerAddressToMaybeId(pendingWithdrawEvents[i]->userAddress))
             {
                 // just make sure again the math works out
-                if (pendingWithdrawEvents[i].amountInCoins > game.players[*playerId].credit.getInt())
+                if (pendingWithdrawEvents[i]->amount > game.players[*playerId].credit.getInt())
                 {
                     cout << "Somehow an invalid withdrawal event was about to get processed..." << endl;
                 }
                 else
                 {
-                    actuateWithdrawal(pendingWithdrawEvents[i].userAddress, pendingWithdrawEvents[i].amountInCoins);
-                    pendingEvents.push_back(pendingWithdrawEvents[i].toEventSharedPtr());
+                    actuateWithdrawal(pendingWithdrawEvents[i]->userAddress, pendingWithdrawEvents[i]->amount);
+                    pendingEvents.push_back(pendingWithdrawEvents[i]);
                 }
             }
             else
@@ -786,7 +777,7 @@ int main(int argc, char *argv[])
                 coinsInt withdrawSpecified = withdrawCmd->amount > 0 ? withdrawCmd->amount : game.players[playerId].credit.getInt();
                 coinsInt amountToWithdraw = min(withdrawSpecified, game.players[playerId].credit.getInt());
 
-                pendingWithdrawEvents.push_back(WithdrawEvent(pendingCmds[i]->playerAddress, amountToWithdraw));
+                pendingWithdrawEvents.push_back(boost::shared_ptr<WithdrawEvent>(new WithdrawEvent(pendingCmds[i]->playerAddress, amountToWithdraw)));
             }
             else
             {

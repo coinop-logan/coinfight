@@ -171,11 +171,11 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xff0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf0ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xff0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf0ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x888f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x8fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
