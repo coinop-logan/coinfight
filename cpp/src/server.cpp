@@ -607,7 +607,15 @@ int main(int argc, char *argv[])
             }
             case 't':
             {
-                gameStartTime = {stoi(string(optarg))};
+                string timeStr(optarg);
+                if (timeStr == "now")
+                {
+                    gameStartTime = time(NULL);
+                }
+                else
+                {
+                    gameStartTime = {stoi(timeStr)};
+                }
                 break;
             }
         }
