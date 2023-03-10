@@ -18,7 +18,7 @@
 
 sf::Font mainFont, tutorialFont;
 
-void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float playerStartDollars, bool checkNetpack);
+void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetpack);
 void runTutorial(sf::RenderWindow* window);
 void runClient(sf::RenderWindow* window, string serverIP, sf::Font* font);
 
@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
             {
                 case StartLocal:
                 {
-                    runLocal(window, 10, 50, false);
+                    runLocal(window, 50, false);
                     break;
                 }
                 case StartLocalDebug:
                 {
-                    runLocal(window, 10, 50, true);
+                    runLocal(window, 50, true);
                     break;
                 }
                 case StartTutorial:
@@ -162,8 +162,7 @@ int main(int argc, char *argv[])
     cleanupGraphics(window);
 }
 
-void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float playerStartDollars, bool checkNetpack) {
-    coinsInt honeypotStartingAmount = dollarsToCoinsIntND(honeypotStartingDollars);
+void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetpack) {
     coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
 
     int randSeed = time(NULL);
@@ -181,8 +180,6 @@ void runLocal(sf::RenderWindow* window, float honeypotStartingDollars, float pla
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x8fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf88f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
     // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x808f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    if (honeypotStartingAmount > 0)
-        firstEvents.push_back(boost::shared_ptr<Event>(new HoneypotAddedEvent(honeypotStartingAmount)));
 
     for (unsigned int i=0; i<firstEvents.size(); i++)
     {

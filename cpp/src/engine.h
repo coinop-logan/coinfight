@@ -85,6 +85,7 @@ public:
     vector<boost::shared_ptr<Entity>> entities;
     SearchGrid searchGrid;
     fixed32 mapRadius;
+    coinsInt matchProfit;
 
     bool registerNewEntityIfInMapAndNoCollision(boost::shared_ptr<Entity> newEntity);
     bool registerNewEntityIfInMapIgnoringCollision(boost::shared_ptr<Entity> newEntity);
@@ -95,6 +96,10 @@ public:
     Address playerIdToAddress(uint8_t playerId);
     bool getPlayerBeaconAvailable(uint8_t playerId);
     void setPlayerBeaconAvailable(uint8_t playerId, bool flag);
+
+    void throwIntoHoneypotByFiat(coinsInt amount);
+    void tallyProfit(coinsInt amount);
+    vector2fp decideHoneypotLocationIgnoringCollisions();
 
     vector<boost::shared_ptr<Entity>> entitiesWithinCircle(vector2fp centerPos, fixed32 radius);
     vector<boost::shared_ptr<Entity>> entitiesWithinSquare(vector2fp centerPos, fixed32 halfWidth);

@@ -27,13 +27,9 @@ void doThing(int a)
 
 int main()
 {
-    string filename = to_string(time(0)) + "-" + to_string(clock());
-    ofstream withdrawDescriptorFile("/tmp/coinfight/" + filename);
-    withdrawDescriptorFile << "hi";
-    withdrawDescriptorFile.close();
-
-    boost::filesystem::copy_file("/tmp/coinfight/" + filename, "/var/run/coinfight/events_out/withdrawals/" + filename);
-    boost::filesystem::remove("/tmp/coinfight/" + filename);
+    int a = 30;
+    int b = a * 0.3999;
+    cout << b << endl;
 
     return 0;
 }

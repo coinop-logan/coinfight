@@ -287,6 +287,76 @@ void Game::setPlayerBeaconAvailable(uint8_t playerId, bool flag)
 {
     players[playerId].beaconAvailable = flag;
 }
+
+void Game::throwIntoHoneypotByFiat(coinsInt amount)
+{
+    boost::shared_ptr<GoldPile> honeypot;
+    if (mode == Pregame)
+    {
+        // there should be at most one honeypot in pregame. Look for it.
+        for (unsigned int i=0; i<entities.size(); i++)
+        {
+            if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
+            {
+                honeypot = goldpile;
+                break;
+            }
+        }
+        if (!honeypot)
+        {
+            // doesn't exist yet. Create it.
+            honeypot = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp::zero));
+            registerNewEntityIgnoringConstraints(honeypot);
+        }
+    }
+    else
+    {
+        bool registered = false;
+        for (int i=0; i<10; i++) // try 10 times
+        {
+            auto goldpile = boost::shared_ptr<GoldPile>(new GoldPile(decideHoneypotLocationIgnoringCollisions()));
+            if (registerNewEntityIfInMapAndNoCollision(goldpile))
+            {
+                registered = true;
+                honeypot = goldpile;
+                break;
+            }
+        }
+        // if 10 tries didn't work, just give up and put it at 0,0
+        if (!registered)
+        {
+            honeypot = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp::zero));
+            registerNewEntityIgnoringConstraints(honeypot);
+        }
+    }
+
+    honeypot->gold.createMoreByFiat(amount);
+}
+void Game::tallyProfit(coinsInt amount)
+{
+    matchProfit += amount;
+}
+vector2fp Game::decideHoneypotLocationIgnoringCollisions()
+{
+    // random angle and a radius that favors small numbers.
+
+    // using ints for now since I have no idea how to make fpm::fixed and boost::random play nice together
+    // or if it's even possible
+
+    // angle
+    boost::uniform_int<unsigned int> angleDist(0, 1000);
+    unsigned int angleInt = boost::variate_generator<baseRandGenType&, boost::uniform_int<unsigned int> >(randGen, angleDist)();
+    fixed32 angle = (fixed32(angleInt) / fixed32(1000)) * fixed32(M_PI) * fixed32(2);
+
+    // radius
+    boost::uniform_int<unsigned int> radiusDist(0, 1000);
+    unsigned int radiusPotInt = boost::variate_generator<baseRandGenType&, boost::uniform_int<unsigned int> >(randGen, radiusDist)();
+    fixed32 radiusPot = fixed32(radiusPotInt) / fixed32(1000);
+    fixed32 radius = (radiusPot*radiusPot) * mapRadius;
+
+    return composeVector2fp(angle, radius);
+}
+
 vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, fixed32 radius)
 {
     uint32_t radiusFloorSquared = floorSquareFixed(radius);
@@ -405,6 +475,7 @@ void Game::pack(Netpack::Builder* to)
             entities[i]->pack(to);
         }
     }
+    packCoinsInt(to, matchProfit);
 }
 Game::Game(Netpack::Consumer* from)
     : searchGrid(calculateMapRadius())
@@ -438,6 +509,7 @@ Game::Game(Netpack::Consumer* from)
             throw "Error registering entity as encoded: it's beyond map bounds.";
         }
     }
+    matchProfit = consumeCoinsInt(from);
 }
 void Game::reassignEntityGamePointers()
 {
