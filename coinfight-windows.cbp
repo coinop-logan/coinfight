@@ -57,6 +57,27 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 			</Target>
+			<Target title="Launcher">
+				<Option output="coinfight-launcher" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-DCURL_STATICLIB" />
+					<Add option="-DNGHTTP2_STATICLIB" />
+				</Compiler>
+				<Linker>
+					<Add library="nghttp2" />
+					<Add library="wsock32" />
+					<Add library="Iphlpapi" />
+					<Add library="sfml-graphics-s" />
+					<Add library="sfml-window-s" />
+					<Add library="sfml-system-s" />
+					<Add library="opengl32" />
+					<Add library="freetype" />
+					<Add library="winmm" />
+					<Add library="curl" />
+				</Linker>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
@@ -67,20 +88,46 @@
 			<Add option="-D_USE_MATH_DEFINES" />
 			<Add directory="cpp/include" />
 			<Add directory="C:/include" />
+			<Add directory="cpp/src" />
 		</Compiler>
 		<Linker>
+			<Add option="-DCURL_STATICLIB" />
 			<Add option="-static-libstdc++" />
 			<Add option="-static-libgcc" />
 			<Add option="-static" />
 			<Add directory="C:/lib" />
 		</Linker>
 		<Unit filename="cpp/include/nlohmann/json.hpp" />
-		<Unit filename="cpp/src/address.cpp" />
-		<Unit filename="cpp/src/address.h" />
-		<Unit filename="cpp/src/algorithm.cpp" />
-		<Unit filename="cpp/src/algorithm.h" />
-		<Unit filename="cpp/src/client_networking.cpp" />
-		<Unit filename="cpp/src/client_networking.h" />
+		<Unit filename="cpp/src/address.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/address.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/algorithm.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/algorithm.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/client_networking.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/client_networking.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/cmds.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
@@ -89,7 +136,11 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/coinfight.cpp" />
+		<Unit filename="cpp/src/coinfight.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/coins.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
@@ -113,6 +164,18 @@
 		<Unit filename="cpp/src/common.h">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
+		</Unit>
+		<Unit filename="cpp/src/common/myvectors.cpp">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/common/myvectors.h">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/common/utils.cpp">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/common/utils.h">
+			<Option target="Launcher" />
 		</Unit>
 		<Unit filename="cpp/src/config.h">
 			<Option target="Coinfight" />
@@ -142,8 +205,16 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/exec.cpp" />
-		<Unit filename="cpp/src/exec.h" />
+		<Unit filename="cpp/src/exec.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/exec.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/graphics.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
@@ -152,8 +223,16 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/graphics_helpers.cpp" />
-		<Unit filename="cpp/src/graphics_helpers.h" />
+		<Unit filename="cpp/src/graphics_helpers.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/graphics_helpers.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/input.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
@@ -161,6 +240,21 @@
 		<Unit filename="cpp/src/input.h">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
+		</Unit>
+		<Unit filename="cpp/src/interface/common.cpp">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/interface/common.h">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/interface/graphics/common.cpp">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/interface/graphics/common.h">
+			<Option target="Launcher" />
+		</Unit>
+		<Unit filename="cpp/src/launcher/launcher.cpp">
+			<Option target="Launcher" />
 		</Unit>
 		<Unit filename="cpp/src/myvectors.cpp">
 			<Option target="Coinfight" />
@@ -170,8 +264,16 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/netpack.cpp" />
-		<Unit filename="cpp/src/netpack.h" />
+		<Unit filename="cpp/src/netpack.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/netpack.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/packets.cpp">
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
@@ -180,8 +282,16 @@
 			<Option target="Coinfight" />
 			<Option target="Coinfight - Debug" />
 		</Unit>
-		<Unit filename="cpp/src/particles.cpp" />
-		<Unit filename="cpp/src/particles.h" />
+		<Unit filename="cpp/src/particles.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/particles.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Unit filename="cpp/src/server.cpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
@@ -194,10 +304,26 @@
 		<Unit filename="cpp/src/test.cpp">
 			<Option target="test" />
 		</Unit>
-		<Unit filename="cpp/src/tutorial.cpp" />
-		<Unit filename="cpp/src/tutorial.h" />
-		<Unit filename="cpp/src/ui_elements.cpp" />
-		<Unit filename="cpp/src/ui_elements.h" />
+		<Unit filename="cpp/src/tutorial.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/tutorial.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/ui_elements.cpp">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
+		<Unit filename="cpp/src/ui_elements.h">
+			<Option target="Coinfight" />
+			<Option target="Coinfight - Debug" />
+			<Option target="test" />
+		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
