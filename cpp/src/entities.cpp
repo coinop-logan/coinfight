@@ -1159,7 +1159,7 @@ void Gateway::removeFromQueues(EntityRef entityRef)
     {
         if (scuttleTargetQueue[i] == entityRef)
         {
-            buildTargetQueue.erase(buildTargetQueue.begin() + i);
+            scuttleTargetQueue.erase(buildTargetQueue.begin() + i);
             i --;
         }
     }
