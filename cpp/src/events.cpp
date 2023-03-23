@@ -118,11 +118,6 @@ DepositEvent::DepositEvent(Netpack::Consumer* from)
     amount = consumeCoinsInt(from);
 }
 
-uint8_t HoneypotAddedEvent::typechar()
-{
-    return EVENT_HONEYPOT_CHAR;
-}
-
 void HoneypotAddedEvent::execute(Game *game)
 {
     boost::shared_ptr<GoldPile> gp(new GoldPile(vector2fp::zero));
@@ -144,12 +139,6 @@ HoneypotAddedEvent::HoneypotAddedEvent(Netpack::Consumer *from)
     honeypotAmount = consumeCoinsInt(from);
 }
 
-
-uint8_t ResetBeaconsEvent::typechar()
-{
-    return EVENT_RESETBEACONS_CHAR;
-}
-
 void ResetBeaconsEvent::execute(Game *game)
 {
     for (unsigned int i=0; i<game->players.size(); i++)
@@ -168,3 +157,44 @@ void ResetBeaconsEvent::pack(Netpack::Builder* to)
 ResetBeaconsEvent::ResetBeaconsEvent(Netpack::Consumer *from)
     : Event(from)
 {}
+
+// void GameEndEvent::execute(Game *game)
+// {
+//     // refund all units gold to owners' wallets
+//     // add GPs to game profit
+
+//     for (unsigned int i=0; i<game->entities.size(); i++)
+//     {
+//         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(game->entities[i]))
+//         {
+//             game->tallyProfit(goldpile->gold.getInt());
+//             goldpile->gold.destroySomeByFiat(goldpile->gold.getInt());
+//         }
+//         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+//         {
+//             auto droppableCoins = unit->getDroppableCoins();
+//             for (unsigned int j=0; j<droppableCoins.size(); i++)
+//             {
+//                 bool success = droppableCoins[j]->tryTransfer(droppableCoins[j]->getInt(), &game->players[unit->ownerId].credit);
+//                 if (!success)
+//                 {
+//                     cout << "DIRE WARNING: Could not transfer a unit's droppable coins into the user's wallet!" << endl;
+//                 }
+//             }
+//         }
+//     }
+
+//     // units with 0 gold will just die. But more immediately,
+//     // the server will see this event, send out withdrawals, and quit.
+// }
+
+// GameEndEvent::GameEndEvent()
+//     : Event()
+//     {}
+// void GameEndEvent::pack(Netpack::Builder* to)
+// {
+//     packEventBasics(to);
+// }
+// GameEndEvent::GameEndEvent(Netpack::Consumer *from)
+//     : Event(from)
+// {}

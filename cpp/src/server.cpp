@@ -461,7 +461,6 @@ tuple<bool, vector<boost::shared_ptr<Event>>> pollPendingEvents()
             else if (fileName == "end_game")
             {
                 quitNow = true;
-                cout << "WARNING: still need to code in a graceful exit." << endl;
             }
             else
             {
@@ -694,12 +693,6 @@ int main(int argc, char *argv[])
         bool quitNow = get<0>(quitNowAndEvents);
         vector<boost::shared_ptr<Event>> depositAndHoneypotEvents = get<1>(quitNowAndEvents);
 
-        if (quitNow)
-        {
-            sessionSaver.saveStateAsRecent(&game);
-            return 0;
-        }
-
         pendingEvents.insert(pendingEvents.end(), depositAndHoneypotEvents.begin(), depositAndHoneypotEvents.end());
 
         // build FrameEventsPacket for this frame
@@ -785,6 +778,17 @@ int main(int argc, char *argv[])
             }
         }
         pendingCmds.clear();
+
+        if (quitNow)
+        {
+            sessionSaver.saveStateAsRecent(&game);
+            vector<tuple<Address, coinsInt>> withdraws = game.endGameCreditCleanup();
+            for (unsigned int i=0; i<withdraws.size(); i++)
+            {
+                actuateWithdrawal(get<0>(withdraws[i]), get<1>(withdraws[i]));
+            }
+            return 0;
+        }
 
         game.iterate();
     }

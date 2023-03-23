@@ -12,6 +12,7 @@ const uint8_t EVENT_DEPOSIT_CHAR = 1;
 const uint8_t EVENT_WITHDRAW_CHAR = 2;
 const uint8_t EVENT_HONEYPOT_CHAR = 3;
 const uint8_t EVENT_RESETBEACONS_CHAR = 4;
+// const uint8_t EVENT_GAMEEND_CHAR = 5;
 
 struct Event;
 
@@ -65,7 +66,7 @@ struct HoneypotAddedEvent : public Event
 {
     coinsInt honeypotAmount;
 
-    uint8_t typechar();
+    uint8_t typechar() { return EVENT_HONEYPOT_CHAR; }
 
     void execute(Game *game);
 
@@ -77,7 +78,7 @@ struct HoneypotAddedEvent : public Event
 
 struct ResetBeaconsEvent : public Event
 {
-    uint8_t typechar();
+    uint8_t typechar() { return EVENT_RESETBEACONS_CHAR; }
 
     void execute(Game *game);
 
@@ -86,5 +87,17 @@ struct ResetBeaconsEvent : public Event
     ResetBeaconsEvent();
     ResetBeaconsEvent(Netpack::Consumer*);
 };
+
+// struct GameEndEvent : public Event
+// {
+//     uint8_t typechar() {return EVENT_GAMEEND_CHAR; }
+
+//     void execute(Game* game);
+
+//     void pack(Netpack::Builder*);
+
+//     GameEndEvent();
+//     GameEndEvent(Netpack::Consumer*);
+// };
 
 #endif // EVENTS_H

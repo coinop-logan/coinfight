@@ -357,6 +357,54 @@ vector2fp Game::decideHoneypotLocationIgnoringCollisions()
     return composeVector2fp(angle, radius);
 }
 
+vector<tuple<Address, coinsInt>> Game::endGameCreditCleanup()
+{
+    // refund all units gold to owners' wallets
+    // add GPs to game profit
+    // return info for processing withdrawals and logging profit
+    
+    coinsInt ticketSalesProfit = matchProfit;
+
+    for (unsigned int i=0; i<entities.size(); i++)
+    {
+        if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entities[i]))
+        {
+            tallyProfit(goldpile->gold.getInt());
+            goldpile->gold.destroySomeByFiat(goldpile->gold.getInt());
+        }
+        else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
+        {
+            auto droppableCoins = unit->getDroppableCoins();
+            for (unsigned int j=0; j<droppableCoins.size(); i++)
+            {
+                bool success = droppableCoins[j]->tryTransfer(droppableCoins[j]->getInt(), &players[unit->ownerId].credit);
+                if (!success)
+                {
+                    cout << "DIRE WARNING: Could not transfer a unit's droppable coins into the user's wallet!" << endl;
+                }
+            }
+        }
+    }
+
+    coinsInt gpProfit = matchProfit - ticketSalesProfit;
+    coinsInt totalProfit = matchProfit;
+
+    cout << "Ticket profit: " << coinsIntToDollarsND(ticketSalesProfit) << endl;
+    cout << "GoldPiles: " << coinsIntToDollarsND(gpProfit) << endl;
+    cout << "Total profit: " << coinsIntToDollarsND(totalProfit) << endl;
+
+    vector<tuple<Address, coinsInt>> withdrawsToProcess;
+    for (unsigned int i=0; i<players.size(); i++)
+    {
+        if (players[i].credit.getInt() > 0)
+        {
+            withdrawsToProcess.push_back({players[i].address, players[i].credit.getInt()});
+        }
+    }
+
+    return withdrawsToProcess;
+}
+
 vector<boost::shared_ptr<Entity>> Game::entitiesWithinCircle(vector2fp fromPos, fixed32 radius)
 {
     uint32_t radiusFloorSquared = floorSquareFixed(radius);
