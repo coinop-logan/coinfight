@@ -494,7 +494,7 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 
 
 Game::Game(int randSeed, time_t gameStartTime)
-    : randGen(randSeed), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius())
+    : randGen(randSeed), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius()), matchProfit(0)
 {
     mapRadius = calculateMapRadius();
 }
