@@ -91,11 +91,11 @@ void DepositEvent::execute(Game* game)
     uint8_t playerId = game->getPlayerId_createIfNone(userAddress);
 
     // split it three ways: wallet, honeypot, profit.
-    // fixed32 can't handle ints as big as amount,
+    // fixed32 can't handle ints as big as `amount`,
     // so we use int math and careful order of operations to keep things deterministic.
 
-    coinsInt toWallet = amount * DEPOSIT_TO_WALLET_PERCENT / 100;
-    coinsInt toHoneypot = amount * DEPOSIT_TO_HONEYPOT_PERCENT / 100;
+    coinsInt toWallet = (amount * DEPOSIT_TO_WALLET_PERCENT) / 100;
+    coinsInt toHoneypot = (amount * DEPOSIT_TO_HONEYPOT_PERCENT) / 100;
     coinsInt toProfit = amount - (toWallet + toHoneypot);
 
     game->players[playerId].credit.createMoreByFiat(toWallet);

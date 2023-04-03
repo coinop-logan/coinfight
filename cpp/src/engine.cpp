@@ -305,7 +305,7 @@ void Game::throwIntoHoneypotByFiat(coinsInt amount)
         if (!honeypot)
         {
             // doesn't exist yet. Create it.
-            honeypot = boost::shared_ptr<GoldPile>(new GoldPile(vector2fp::zero));
+            honeypot = boost::shared_ptr<GoldPile>(new GoldPile(decideHoneypotLocationIgnoringCollisions()));
             registerNewEntityIgnoringConstraints(honeypot);
         }
     }
@@ -351,8 +351,8 @@ vector2fp Game::decideHoneypotLocationIgnoringCollisions()
     // radius
     boost::uniform_int<unsigned int> radiusDist(0, 1000);
     unsigned int radiusPotInt = boost::variate_generator<baseRandGenType&, boost::uniform_int<unsigned int> >(randGen, radiusDist)();
-    fixed32 radiusPot = fixed32(radiusPotInt) / fixed32(1000);
-    fixed32 radius = (radiusPot*radiusPot) * mapRadius;
+    fixed32 radiusFactor = fixed32(radiusPotInt) / fixed32(1000);
+    fixed32 radius = radiusFactor * HONEYPOT_MAX_DISTANCE_FROM_CENTER_FACTOR * mapRadius;
 
     return composeVector2fp(angle, radius);
 }

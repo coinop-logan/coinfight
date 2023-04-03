@@ -21,6 +21,8 @@ using namespace std;
 
 const int SEARCH_GRID_CELL_WIDTH = 200;
 
+const fixed32 HONEYPOT_MAX_DISTANCE_FROM_CENTER_FACTOR(0.4);
+
 const int NUM_MAP_RINGS = 9;
 
 fixed32 calculateMapRadius();
