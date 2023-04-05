@@ -12,14 +12,16 @@ from hacky_event_fetch import hackyEventFetch
 web3RequestSession = requests.Session()
 # web3RequestSession.headers.update({'x-api-key': apiKey})
 
-godwokenTestnetRpcUrl = "https://v1.testnet.godwoken.io/rpc"
-godwokenRpcUrl = "https://v1.mainnet.godwoken.io/rpc"
+GODWOKEN_MAINNET_RPC_URL = "https://v1.mainnet.godwoken.io/rpc"
+GODWOKEN_TESTNET_RPC_URL = "https://v1.testnet.godwoken.io/rpc"
 
-CONTRACT_ADDRESS = "0x0c6b71d194974ae7B110f5A78ef0164445239b2E"
+GODWOKEN_TESTNET_CONTRACT_ADDRESS = "0x0c6b71d194974ae7B110f5A78ef0164445239b2E"
+GODWOKEN_MAINNET_CONTRACT_ADDRESS = "0xfC75cB71AF2C67be288F07888ae6009236F59b78"
 
-rpcUrl = godwokenTestnetRpcUrl
+RPC_URL = GODWOKEN_MAINNET_RPC_URL
+CONTRACT_ADDRESS = GODWOKEN_MAINNET_CONTRACT_ADDRESS
 
-WEB3_PROVIDER = Web3.HTTPProvider(rpcUrl, session = web3RequestSession)
+WEB3_PROVIDER = Web3.HTTPProvider(RPC_URL, session = web3RequestSession)
 
 neededConfirmations = 1
 COINFIGHT_RUN_DIR = "/var/run/coinfight/"
@@ -60,7 +62,7 @@ def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
 
         # depositEventFilter = contract.events.DepositMade.createFilter(fromBlock = startBlock, toBlock = endBlock)
         # newDepositLogs = depositEventFilter.get_all_entries()
-        newDepositEvents = hackyEventFetch(rpcUrl, contractAbi, contractAddress, "DepositMade", startBlock, endBlock)
+        newDepositEvents = hackyEventFetch(RPC_URL, contractAbi, contractAddress, "DepositMade", startBlock, endBlock)
 
         recordNewPlayerDeposits(newDepositEvents, filename)
     except ValueError as e:
@@ -72,7 +74,7 @@ def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
         
         # honeypotEventFilter = contract.events.HoneypotAdded.createFilter(fromBlock = startBlock, toBlock = endBlock)
         # newHoneypotLogs = honeypotEventFilter.get_all_entries()
-        newHoneypotEvents = hackyEventFetch(rpcUrl, contractAbi, contractAddress, "HoneypotAdded", startBlock, endBlock)
+        newHoneypotEvents = hackyEventFetch(RPC_URL, contractAbi, contractAddress, "HoneypotAdded", startBlock, endBlock)
 
         recordNewHoneypotDeposits(newHoneypotEvents, filename)
     except ValueError as e:
