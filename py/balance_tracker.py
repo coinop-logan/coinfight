@@ -117,7 +117,7 @@ def main():
 
     ethAccount = loadEthAccount(w3)
     print("loaded account", ethAccount.address)
-    # 0x0c6b71d194974ae7B110f5A78ef0164445239b2E
+    # 0x3C5adE7Af2f9D187393F27DC2841EAFa13ab1042
 
     while True:
         try:
