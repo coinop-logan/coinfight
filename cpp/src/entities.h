@@ -19,6 +19,7 @@ class Entity
 {
     vector2fp pos;
 public:
+    void setPosWithoutUpdatingCell(vector2fp newPos);
     void setPosAndUpdateCell(vector2fp newPos);
     bool dead;
     optional<RegInfo> maybeRegInfo;
@@ -274,7 +275,7 @@ public:
     void iterate();
 };
 
-const coinsInt GATEWAY_COST = 40000;
+const coinsInt GATEWAY_COST = 20000;
 const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
@@ -341,7 +342,7 @@ public:
     coinsInt scuttleQueueWeight();
 };
 
-const coinsInt PRIME_COST = 5000;
+const coinsInt PRIME_COST = 2500;
 const uint16_t PRIME_HEALTH = 100;
 const fixed32 PRIME_SPEED(1.3);
 const fixed32 PRIME_TRANSFER_RANGE(150);
@@ -404,7 +405,7 @@ public:
     vector<Coins*> getDroppableCoins();
 };
 
-const coinsInt FIGHTER_COST = 15000;
+const coinsInt FIGHTER_COST = 7500;
 const uint16_t FIGHTER_HEALTH = 300;
 const fixed32 FIGHTER_SPEED(2);
 const fixed32 FIGHTER_SHOT_RANGE(200);
@@ -440,7 +441,7 @@ public:
     void iterate();
 };
 
-const coinsInt TURRET_COST = 70000;
+const coinsInt TURRET_COST = 50000;
 const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(450);

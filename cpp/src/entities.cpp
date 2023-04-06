@@ -419,9 +419,13 @@ fixed32 Entity::getRadius() const
 {
     throw runtime_error("getRadius() has not been defined for " + getTypename() + ".\n");
 }
-void Entity::setPosAndUpdateCell(vector2fp newPos)
+void Entity::setPosWithoutUpdatingCell(vector2fp newPos)
 {
     pos = newPos;
+}
+void Entity::setPosAndUpdateCell(vector2fp newPos)
+{
+    setPosWithoutUpdatingCell(newPos);
     getGameOrThrow()->searchGrid.updateEntityCellRelation(this);
 }
 Game* Entity::getGameOrThrow()

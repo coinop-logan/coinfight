@@ -690,13 +690,6 @@ void displaySelectableCursor(sf::RenderWindow *window, vector2i mousePos)
     displayBracketsCursor(window, mousePos, sf::Color::Green);
 }
 
-void drawGhostBuilding(sf::RenderWindow *window, const GameUI* ui, vector2i mousePos)
-{
-    window->setMouseCursorVisible(false);
-
-    drawEntity(window, ui->ghostBuilding, mousePos);
-}
-
 void displaySelectionBox(sf::RenderWindow *window, vector2i p1, vector2i p2)
 {
     int rectLeft = min(p1.x, p2.x);
@@ -747,7 +740,6 @@ void displayCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<
                 break;
             case GameUI::SpawnBeacon:
                 displayTargetCursor(window, mousePos, sf::Color::Yellow);
-                drawUnitRadii(window, ui->ghostBuilding, mousePos);
                 break;
             case GameUI::AttackScuttle:
                 if (ui->mouseoverEntity)
@@ -794,8 +786,7 @@ void displayCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<
                 }
                 break;
             case GameUI::Build:
-                drawGhostBuilding(window, ui, mousePos);
-                drawUnitRadii(window, ui->ghostBuilding, mousePos);
+                // ghostBuilding drawing is handled specifically by updateAndDrawGhostBuildingIfExists in drawGame.
                 break;
         }
     }
@@ -1174,6 +1165,27 @@ void drawCombatUnitShots(sf::RenderWindow* window, Game* game, GameUI* ui)
     }
 }
 
+void updateAndDrawGhostBuildingIfExists(sf::RenderWindow* window, Game* game, GameUI* ui)
+{
+    if (ui->ghostBuilding)
+    {
+        // The next block performs 2 casts, which results in
+        // the ghostBuilding being drawn at a "game valid" (which includes deterministic) position.
+
+        //  [vector2i]     mousePos               (int coord of pointer on screen)
+        //   ... is transformed and "expanded" to fixed precision float ...
+        vector2fp mouseTargetPosInGame = screenPosToGamePos(window, ui->lastMousePos);
+        // and stored in the ghostBuilding
+        ui->ghostBuilding->setPosWithoutUpdatingCell(mouseTargetPosInGame);
+
+        //  [vector2fp]    mouseTargetPosInGame   (deterministic fixed-precision "in game" position)
+        //   ... is cast to an easily-drawable type ...
+        vector2fl ghostBuildingDrawPos(ui->ghostBuilding->getPos());
+
+        drawUnit(window, ui->ghostBuilding, ghostBuildingDrawPos);
+    }
+}
+
 void drawGame(sf::RenderWindow* window, Game* game, GameUI* ui)
 {
     drawGameBackground(window);
@@ -1181,6 +1193,14 @@ void drawGame(sf::RenderWindow* window, Game* game, GameUI* ui)
     drawBuildRelatedEffects(window, game, ui);
     drawCombatUnitShots(window, game, ui);
     drawUnits(window, game, ui);
+    if (ui->ghostBuilding)
+    {
+        if (ui->cmdState == GameUI::CmdState::Build || ui->cmdState == GameUI::CmdState::SpawnBeacon)
+        {
+            updateAndDrawGhostBuildingIfExists(window, game, ui);
+            drawUnitRadii(window, ui->ghostBuilding, vector2fl(ui->ghostBuilding->getPos()));
+        }
+    }
 
     ui->particles.drawParticles(window);
     ui->particles.iterateParticles(*game);
