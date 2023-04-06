@@ -35,6 +35,8 @@ optional<boost::shared_ptr<Cmd>> consumeCmd(Netpack::Consumer* from)
         return boost::shared_ptr<Cmd>(new GatewayScuttleCmd(from));
     case CMD_STOPSCUTTLE_CHAR:
         return boost::shared_ptr<Cmd>(new StopScuttleCmd(from));
+    case CMD_WARPOUT_CHAR:
+        return boost::shared_ptr<Cmd>(new WarpOutCmd(from));
     }
     return {};
 }
