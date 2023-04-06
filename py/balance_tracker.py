@@ -18,6 +18,11 @@ GODWOKEN_TESTNET_RPC_URL = "https://v1.testnet.godwoken.io/rpc"
 GODWOKEN_TESTNET_CONTRACT_ADDRESS = "0x0c6b71d194974ae7B110f5A78ef0164445239b2E"
 GODWOKEN_MAINNET_CONTRACT_ADDRESS = "0xfC75cB71AF2C67be288F07888ae6009236F59b78"
 
+GODWOKEN_TESTNET_GAS_PRICE = 48828125000
+GODWOKEN_MAINNET_GAS_PRICE = 40000000000000
+
+GAS_PRICE = GODWOKEN_MAINNET_GAS_PRICE
+
 RPC_URL = GODWOKEN_MAINNET_RPC_URL
 CONTRACT_ADDRESS = GODWOKEN_MAINNET_CONTRACT_ADDRESS
 
@@ -93,7 +98,7 @@ def executePendingWithdrawals(w3, contract, ethAccount):
         
         tx = contract.functions.withdraw(address, amount).build_transaction({
             'gas': 6000000,
-            'gasPrice': 48828125000,
+            'gasPrice': GAS_PRICE,
             'nonce': w3.eth.getTransactionCount(ethAccount.address)
         })
         signed = ethAccount.signTransaction(tx)
@@ -136,7 +141,6 @@ def main():
 def recordNewPlayerDeposits(newDepositEvents, filename):
     if len(newDepositEvents) == 0:
         pass
-        # print("no new Deposit events")
     
     else:
         print("processing", len(newDepositEvents), "deposits")
