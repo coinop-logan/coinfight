@@ -1292,12 +1292,37 @@ void drawSelectedUnitExtras(sf::RenderWindow* window, Game* game, GameUI* ui)
     }
 }
 
+void drawCompletionPercentForIncompleteUnits(sf::RenderWindow* window, Game* game, GameUI* ui, sf::Font* font)
+{
+    for (unsigned int i=0; i<game->entities.size(); i++)
+    {
+        if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(game->entities[i]))
+        {
+            if (!unit->isFullyBuilt())
+            {
+                string buildPercentageString = floatToShortPercentString(unit->getBuiltRatio());
+
+                sf::Text percentDoneText(buildPercentageString, *font, 16);
+                percentDoneText.setOrigin(percentDoneText.getLocalBounds().width / 2.f, percentDoneText.getLocalBounds().height / 2.f);
+
+                vector2fp percentagePos = unit->getPos() + vector2fp(fixed32(0), -(unit->getRadius() + 16));
+                percentDoneText.setPosition(toSFVecF(percentagePos));
+
+                percentDoneText.setFillColor(sf::Color(255, 0, 0));
+
+                window->draw(percentDoneText);
+            }
+        }
+    }
+}
+
 void drawGameOverlay(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont)
 {
     if (!ui->cleanDrawEnabled)
     {
         drawUnitDroppableValues(window, game, ui, maybePlayerId, fwFont);
         drawUnitHealthBars(window, game, ui, maybePlayerId);
+        drawCompletionPercentForIncompleteUnits(window, game, ui, fwFont);
         drawAppropriateRadii(window, game, ui);
     }
 
