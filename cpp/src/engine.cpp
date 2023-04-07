@@ -375,7 +375,7 @@ vector<tuple<Address, coinsInt>> Game::endGameCreditCleanup()
         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entities[i]))
         {
             auto droppableCoins = unit->getDroppableCoins();
-            for (unsigned int j=0; j<droppableCoins.size(); i++)
+            for (unsigned int j=0; j<droppableCoins.size(); j++)
             {
                 bool success = droppableCoins[j]->tryTransfer(droppableCoins[j]->getInt(), &players[unit->ownerId].credit);
                 if (!success)
