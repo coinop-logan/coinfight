@@ -589,7 +589,12 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
 
 void displayDepositNeededMsg(sf::RenderWindow* window, sf::Font* font, sf::Vector2f upperLeft)
 {
-    string msg = "To participate in the round, you'll need to either:\n* deposit at least $4.50 at coinfight.io to afford your first Gateway and Prime\n* receive some units as a gift from another player.";
+    string msg = "You're logged in, but don't yet have any credit or units.\n"
+                 "To play, you'll need to either:\n" 
+                 "* Stake Godwoken USDC via the deposit helper at coinfight.io\n"
+                 "* Reach out at the Coinfight Discord for some playtest credit\n"
+                 "* Receive some units as a gift from another player\n"
+                 ;
     sf::Text text(sf::String(msg), *font, 16);
 
     text.setFillColor(sf::Color::White);
@@ -1376,6 +1381,50 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
     }
 }
 
+void displayGameCountdownInfo(sf::RenderWindow* window, Game* game, GameUI* ui, sf::Font* font)
+{
+    string titleString = "Pregame Stage";
+    sf::Text titleText(titleString, *font, 20);
+
+    // sf::Text nowTimeText(unixTimeToHumanReadableTimeString(time(0)), *font, 18);
+
+    stringstream startTimeSS;
+    startTimeSS << "Match starts at " << unixTimeToHumanReadableTimeString(game->gameStartTime);
+    string startTimeString = startTimeSS.str();
+    sf::Text startTimeText(startTimeString, *font, 16);
+
+    string countdownString = unixTimeToTimeLeftString(game->gameStartTime);
+    sf::Text countdownText(countdownString, *font, 24);
+    time_t now = time(0);
+    sf::Color countdownColor =
+        game->gameStartTime - now < 60 ?     sf::Color(255, 150, 150) :
+        game->gameStartTime - now < 60*10 ?  sf::Color(255, 255, 150) :
+                                             sf::Color(150, 150, 255);
+    countdownText.setFillColor(countdownColor);
+
+    vector<sf::Text> lines = {
+        titleText,
+        // nowTimeText,
+        startTimeText,
+        countdownText,
+    };
+
+    int lineSpacing = 12;
+    int y = lineSpacing;
+    for (unsigned int i=0; i<lines.size(); i++)
+    {
+        float width = lines[i].getLocalBounds().width;
+        float height = lines[i].getLocalBounds().height;
+
+        int x = getCurrentViewSize(window).x/2 - width/2;
+        lines[i].setPosition(sf::Vector2f(x, y));
+
+        window->draw(lines[i]);
+        
+        y = lines[i].getGlobalBounds().top + lines[i].getGlobalBounds().height + lineSpacing;
+    }
+}
+
 void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<uint8_t> maybePlayerId, sf::Font* fwFont, sf::Font* humanFont, bool displayWalletHints)
 {
     displayWalletBalanceOrDepositNeededMsg(window, game, ui, maybePlayerId, fwFont, humanFont, displayWalletHints);
@@ -1386,7 +1435,12 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
         stringstream ss;
         ss << game->frame;
         outputStrings.push_back(ss.str());
-        displayOutputStrings(window, outputStrings, fwFont);
+        // displayOutputStrings(window, outputStrings, fwFont);
+    }
+
+    if (game->mode == Game::GameMode::Pregame)
+    {
+        displayGameCountdownInfo(window, game, ui, humanFont);
     }
 
     ui->keyButtonBox.draw(window);

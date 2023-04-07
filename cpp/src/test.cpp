@@ -6,6 +6,7 @@
 #include <optional>
 #include <functional>
 #include <boost/random.hpp>
+#include "algorithm.h"
 #include "common.h"
 
 using namespace std;
@@ -27,9 +28,7 @@ void doThing(int a)
 
 int main()
 {
-    int a = 30;
-    int b = a * 0.3999;
-    cout << b << endl;
+    cout << unixTimeToTimeLeftString(time(0) + (60 * 60 * 24 * 0.5)) << endl;
 
     return 0;
 }

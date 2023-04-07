@@ -10,4 +10,7 @@
 std::string lowercaseStr(std::string s);
 sf::Color playerAddressToColor(Address address);
 
+string unixTimeToHumanReadableTimeString(time_t);
+string unixTimeToTimeLeftString(time_t);
+
 #endif // ALGORITHM_H
