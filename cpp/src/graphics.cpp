@@ -759,11 +759,11 @@ void displayCursorOrSelectionBox(sf::RenderWindow *window, GameUI* ui, optional<
             case GameUI::Deposit:
                 if (ui->mouseoverEntity)
                 {
-                    displayBracketsCursor(window, mousePos, sf::Color::Blue);
+                    displayBracketsCursor(window, mousePos, sf::Color(100, 100, 255));
                 }
                 else
                 {
-                    displayTargetCursor(window, mousePos, sf::Color::Blue);
+                    displayTargetCursor(window, mousePos, sf::Color(100, 100, 255));
                 }
                 break;
             case GameUI::Fetch:
