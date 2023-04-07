@@ -91,6 +91,7 @@ def scanForAndRecordDeposits(w3, contractAddress, contractAbi):
 def executePendingWithdrawals(w3, contract, ethAccount):
     withdrawsDir = EVENTS_FROM_SERVER_DIR + "withdrawals/"
     withdrawCmdFiles = os.listdir(withdrawsDir)
+    nonce = w3.eth.getTransactionCount(ethAccount.address)
     for fname in withdrawCmdFiles:
         with open(withdrawsDir + fname, 'r') as f:
             withdrawCmdData = f.read().split(' ')
@@ -99,12 +100,14 @@ def executePendingWithdrawals(w3, contract, ethAccount):
         tx = contract.functions.withdraw(address, amount).build_transaction({
             'gas': 6000000,
             'gasPrice': GAS_PRICE,
-            'nonce': w3.eth.getTransactionCount(ethAccount.address)
+            'nonce': nonce
         })
         signed = ethAccount.signTransaction(tx)
         txHash = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
 
         print("withdrawal", txHash, address, amount)
+
+        nonce += 1
 
         os.remove(withdrawsDir + fname)
 
