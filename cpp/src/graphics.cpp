@@ -1145,11 +1145,17 @@ void drawCombatUnitShots(sf::RenderWindow* window, Game* game, GameUI* ui)
                     sf::Color color;
                     float width;
                     int lifetime;
-                    if (combatUnit->typechar() == TURRET_TYPECHAR || combatUnit->typechar() == GATEWAY_TYPECHAR)
+                    if (combatUnit->typechar() == TURRET_TYPECHAR)
+                    {
+                        color = sf::Color(255, 0, 0);
+                        width = 5;
+                        lifetime = 20;
+                    }
+                    else if (combatUnit->typechar() == GATEWAY_TYPECHAR)
                     {
                         color = sf::Color(200, 0, 200);
                         width = 5;
-                        lifetime = 20;
+                        lifetime = 5;
                     }
                     else if (combatUnit->typechar() == FIGHTER_TYPECHAR)
                     {

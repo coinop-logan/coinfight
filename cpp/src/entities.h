@@ -284,8 +284,8 @@ const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 GATEWAY_SHOT_RANGE(350);
 const fixed32 GATEWAY_AGGRESSION_RANGE(400);
 const uint32_t GATEWAY_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_SHOT_RANGE);
-const uint16_t GATEWAY_SHOT_COOLDOWN = 140;
-const uint16_t GATEWAY_SHOT_DAMAGE = 100;
+const uint16_t GATEWAY_SHOT_COOLDOWN = 15;
+const uint16_t GATEWAY_SHOT_DAMAGE = 7;
 
 class Prime;
 
@@ -344,7 +344,7 @@ public:
 
 const coinsInt PRIME_COST = 2500;
 const uint16_t PRIME_HEALTH = 100;
-const fixed32 PRIME_SPEED(1.3);
+const fixed32 PRIME_SPEED(1.6);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
