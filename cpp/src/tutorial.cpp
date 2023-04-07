@@ -59,7 +59,8 @@ public:
         {
             {
                 "Hey there! This tutorial will explain the basics of Coinfight. You can hide this tutorial (or show it again) anytime by hitting F1.",
-                "First, move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
+                "First: camera controls!"
+                "Scrollwheel zooms in and out, and you can move the camera by dragging with the middle mouse button, or by moving your mouse to the edges of the screen.",
                 "Go ahead, wiggle 'er around a bit!"
             },
             {}
@@ -132,7 +133,7 @@ public:
         return
         {
             {
-                "Note that this is spending money from your Coinfight wallet. All told, the Gateway takes a $4 investment."
+                "Note that this is spending money from your Coinfight wallet. All told, the Gateway takes a $2 investment."
             },
             {
                 "In a real game, you can only warp-in a Gateway like this by spending a ticket to a Coinfight round.",
@@ -193,7 +194,7 @@ public:
             },
             {
                 "Your Gateway is a portal between your Coinfight wallet and in-game resources. Right now, it's transmuting some of your (pretend) USDC credit into a unit.",
-                "This money being invested--$4 in the Gateway, $0.50 for the Prime--will be dropped onto the battlefield if they die, for you or someone else to pick up."
+                "This money being invested--$2 in the Gateway, $0.25 for the Prime--will be dropped onto the battlefield if they die, for you or someone else to pick up."
             }
         };
     }
@@ -238,7 +239,7 @@ public:
         return
         {
             {
-                "Bad news: you're broke! Good news: you have a Prime, and he can go pick up the gold nearby. You might need to move your camera to find the gold.",
+                "Your Prime can go pick up the gold nearby. You might need to move your camera to find the gold.",
                 "Select your Prime and use its Collect command on the gold pile. Your Prime has a max capacity of $0.50.",
             },
             {

@@ -163,7 +163,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Build Prime",
                         PRIME_COST,
                         'Q',
-                        "Begin constructing a Prime, a general worker unit, spending $0.50 from your wallet balance.",
+                        "Begin constructing a Prime, a general worker unit.",
                         {
                             "Harvests gold for construction or capture ($0.50 carrying capacity).",
                             "Constructs Gateways and Turrets.",
@@ -179,10 +179,11 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         "Build Fighter",
                         FIGHTER_COST,
                         'W',
-                        "Begin constructing a Fighter, spending $1.50 from your wallet balance.",
+                        "Begin constructing a Fighter.",
                         {
                             "Basic ranged combat unit. Pretty much does what you think!",
-                            "Outranged by both Turrets and Gateways."
+                            "Outranged by both Turrets and Gateways.",
+                            "Faster than Primes."
                         }
                     ),
                     KeyButtonMsg::BuildFighter
