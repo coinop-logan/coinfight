@@ -1381,20 +1381,20 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
     }
 }
 
-void displayGameCountdownInfo(sf::RenderWindow* window, Game* game, GameUI* ui, sf::Font* font)
+void displayGameCountdownInfo(sf::RenderWindow* window, Game* game, GameUI* ui, sf::Font* humanFont, sf::Font* fwFont)
 {
     string titleString = "Pregame Stage";
-    sf::Text titleText(titleString, *font, 20);
+    sf::Text titleText(titleString, *humanFont, 20);
 
     // sf::Text nowTimeText(unixTimeToHumanReadableTimeString(time(0)), *font, 18);
 
     stringstream startTimeSS;
     startTimeSS << "Match starts at " << unixTimeToHumanReadableTimeString(game->gameStartTime);
     string startTimeString = startTimeSS.str();
-    sf::Text startTimeText(startTimeString, *font, 16);
+    sf::Text startTimeText(startTimeString, *humanFont, 16);
 
     string countdownString = unixTimeToTimeLeftString(game->gameStartTime);
-    sf::Text countdownText(countdownString, *font, 24);
+    sf::Text countdownText(countdownString, *fwFont, 24);
     time_t now = time(0);
     sf::Color countdownColor =
         game->gameStartTime - now < 60 ?     sf::Color(255, 150, 150) :
@@ -1440,7 +1440,7 @@ void displayGameHUD(sf::RenderWindow* window, Game* game, GameUI* ui, optional<u
 
     if (game->mode == Game::GameMode::Pregame)
     {
-        displayGameCountdownInfo(window, game, ui, humanFont);
+        displayGameCountdownInfo(window, game, ui, humanFont, fwFont);
     }
 
     ui->keyButtonBox.draw(window);

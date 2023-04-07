@@ -42,7 +42,7 @@ string unixTimeToTimeLeftString(time_t unixTime)
     system_clock::time_point now = system_clock::now();
     auto timeLeftDuration = start - now;
 
-    int ddd = duration_cast<days>(timeLeftDuration).count();
+    int ddd = duration_cast<hours>(timeLeftDuration).count() / 24;
     int hh = duration_cast<hours>(timeLeftDuration).count() % 24;
     int mm = duration_cast<minutes>(timeLeftDuration).count() % 60;
     int ss = duration_cast<seconds>(timeLeftDuration).count() % 60;
@@ -56,7 +56,7 @@ string unixTimeToTimeLeftString(time_t unixTime)
         std::setfill('0') << std::setw(2) << hh << ':' <<
         std::setfill('0') << std::setw(2) << mm << ':' << 
         std::setfill('0') << std::setw(2) << ss << '.' <<
-        std::setfill('0') << std::setw(3) << msec;
+        std::setfill('0') << std::setw(1) << (msec / 100);
     std::string result = stream.str();
 
     return result;
