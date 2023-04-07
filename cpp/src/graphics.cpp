@@ -1414,7 +1414,6 @@ void displayGameCountdownInfo(sf::RenderWindow* window, Game* game, GameUI* ui, 
     for (unsigned int i=0; i<lines.size(); i++)
     {
         float width = lines[i].getLocalBounds().width;
-        float height = lines[i].getLocalBounds().height;
 
         int x = getCurrentViewSize(window).x/2 - width/2;
         lines[i].setPosition(sf::Vector2f(x, y));
