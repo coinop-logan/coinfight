@@ -246,7 +246,7 @@ protected:
     void iterateCombatUnitBasics();
 };
 
-const coinsInt BEACON_BUILD_RATE = 35 * HYPERSPEED_TRANSFER_MULTIPLIER;
+const coinsInt BEACON_BUILD_RATE = 12 * HYPERSPEED_TRANSFER_MULTIPLIER;
 const uint16_t BEACON_HEALTH = 500;
 const fixed32 BEACON_RADIUS(10);
 
