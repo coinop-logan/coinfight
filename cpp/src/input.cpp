@@ -78,11 +78,11 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     "Warp In Gateway",
                     GATEWAY_COST,
                     'W',
-                    "Warp in a Gateway, investing $4. This can only be done once per game.",
+                    "Warp in a Gateway, investing $2. This can only be done once per game.",
                     {
                         "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal.",
                         "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
-                        "The warp can be reversed before completion, refunding the $4 and allowing you to warp in somewhere else.",
+                        "The warp can be reversed before completion, refunding the $2 and allowing you to warp in somewhere else.",
                         "Additional Gateways can be built later with Primes."
                     }
                 ),
