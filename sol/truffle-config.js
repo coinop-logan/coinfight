@@ -18,11 +18,11 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const fs = require('fs');
+const mnemonic = fs.readFileSync("../secret.txt").toString().trim();
 
 module.exports = {
   /**
@@ -36,6 +36,13 @@ module.exports = {
    */
 
   networks: {
+    godwoken: {
+        provider: () => new HDWalletProvider(mnemonic, "https://v1.mainnet.godwoken.io/rpc"),
+        network_id: 71402,
+        port: 8545,
+        production: true,
+        gas: 230000
+    }
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
     // You should run a client (like ganache-cli, geth or parity) in a separate terminal

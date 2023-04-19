@@ -15,8 +15,8 @@ web3RequestSession = requests.Session()
 GODWOKEN_MAINNET_RPC_URL = "https://v1.mainnet.godwoken.io/rpc"
 GODWOKEN_TESTNET_RPC_URL = "https://v1.testnet.godwoken.io/rpc"
 
-GODWOKEN_TESTNET_CONTRACT_ADDRESS = "0x0c6b71d194974ae7B110f5A78ef0164445239b2E"
-GODWOKEN_MAINNET_CONTRACT_ADDRESS = "0xfC75cB71AF2C67be288F07888ae6009236F59b78"
+# GODWOKEN_TESTNET_CONTRACT_ADDRESS = ??
+GODWOKEN_MAINNET_CONTRACT_ADDRESS = "0xCD5be9DCF3a6941d93bA772cA794c5104C2D193a"
 
 GODWOKEN_TESTNET_GAS_PRICE = 48828125000
 GODWOKEN_MAINNET_GAS_PRICE = 40000000000000
@@ -122,7 +122,7 @@ def main():
         setLastBlockProcessed(startScanBlock - 1)
 
     address = CONTRACT_ADDRESS
-    abi = json.load(open('/usr/share/coinfight_server/CoinfightDepositsWithdrawals.json','r'))['abi']
+    abi = json.load(open('/usr/share/coinfight_server/CoinfightDepositsWithdrawalsNative.json','r'))['abi']
     contract = w3.eth.contract(address=address, abi=abi)
 
     ethAccount = loadEthAccount(w3)
