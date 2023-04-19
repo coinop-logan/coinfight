@@ -9,7 +9,7 @@ void setupTutorialScenario(Game* game)
     game->players.push_back(Player(Address(TUTORIAL_PLAYER_ADDRESS_STR)));
     game->players.push_back(Player(Address(TUTORIAL_OTHER_ADDRESS_STR)));
 
-    game->players[0].credit.createMoreByFiat(dollarsToCoinsIntND(4.5));
+    game->players[0].credit.createMoreByFiat(bcCurrencyAmountToCoinsIntND(4.5));
 }
 
 TutorialStep::TutorialStep(string idName, bool waitForEnter, Game* game, GameUI* ui):
@@ -255,7 +255,7 @@ public:
         vector2fp gpPos = gateways[0]->getPos() + vector2fp(randomVectorWithMagnitude(600));
 
         boost::shared_ptr<GoldPile> gp1 = boost::shared_ptr<GoldPile>(new GoldPile(gpPos));
-        gp1->gold.createMoreByFiat(dollarsToCoinsIntND(0.3));
+        gp1->gold.createMoreByFiat(bcCurrencyAmountToCoinsIntND(0.3));
         game->registerNewEntityIgnoringConstraints(gp1);
     }
 
@@ -281,12 +281,12 @@ public:
     }
     bool isReadyToFinish(Game* game, GameUI* ui)
     {
-        return (getTotalGoldGathered(game) >= dollarsToCoinsIntND(0.2));
+        return (getTotalGoldGathered(game) >= bcCurrencyAmountToCoinsIntND(0.2));
     }
 
     optional<float> getProgress(Game* game, GameUI* ui)
     {
-        return (float(getTotalGoldGathered(game)) / dollarsToCoinsIntND(0.2));
+        return (float(getTotalGoldGathered(game)) / bcCurrencyAmountToCoinsIntND(0.2));
     }
 };
 
@@ -323,12 +323,12 @@ public:
 
     bool isReadyToFinish(Game* game, GameUI* ui)
     {
-        return (game->players[0].credit.getInt() >= dollarsToCoinsIntND(0.2));
+        return (game->players[0].credit.getInt() >= bcCurrencyAmountToCoinsIntND(0.2));
     }
 
     optional<float> getProgress(Game* game, GameUI* ui)
     {
-        return (float(game->players[0].credit.getInt()) / dollarsToCoinsIntND(0.2));
+        return (float(game->players[0].credit.getInt()) / bcCurrencyAmountToCoinsIntND(0.2));
     }
 };
 
@@ -377,7 +377,7 @@ public:
                 vector2fp pos = gatewayPos + vector2fp(randomVectorWithMagnitudeRange(200, 400));
                 float gold = ((((double)rand() / RAND_MAX) * 7.5) + 0.5);
                 boost::shared_ptr<GoldPile> gp = boost::shared_ptr<GoldPile>(new GoldPile(pos));
-                gp->gold.createMoreByFiat(dollarsToCoinsIntND(gold));
+                gp->gold.createMoreByFiat(bcCurrencyAmountToCoinsIntND(gold));
 
                 if (game->registerNewEntityIfInMapAndNoCollision(gp))
                 {
@@ -654,10 +654,10 @@ public:
             }
 
             vector2fp fighterPos = groupPos + vector2fp(randomVectorWithMagnitude(numCreatedThisGroup*2)); // for now a hacky way to avoid collision.cpp failing on too-close units
-            auto fighter = boost::shared_ptr<Fighter>(new Fighter(1, fighterPos));
+            auto fighter = boost::shared_ptr<Fighter>(new Fighter(&game->gameSettings, 1, fighterPos));
             game->registerNewEntityIfInMapIgnoringCollision(fighter);
 
-            game->players[1].credit.createMoreByFiat(FIGHTER_COST);
+            game->players[1].credit.createMoreByFiat(game->gameSettings.fighterCost);
             fighter->completeBuildingInstantly(&game->players[1].credit);
 
             fighter->cmdAttack(groupTarget);

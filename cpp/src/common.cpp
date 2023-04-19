@@ -93,13 +93,13 @@ uint8_t consumeTypechar(Netpack::Consumer* from)
     return from->consumeUint8_t();
 }
 
-coinsInt dollarsToCoinsIntND(float dollars)
+coinsInt bcCurrencyAmountToCoinsIntND(float bcCurrencyAmount)
 {
-    return dollars * (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    return bcCurrencyAmount * (pow(10, LOCAL_CREDIT_EXPONENT));
 }
 float coinsIntToDollarsND(coinsInt coins)
 {
-    return coins / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    return coins / (pow(10, LOCAL_CREDIT_EXPONENT));
 }
 
 vector2fl randomVectorWithMagnitude(float magnitude)
@@ -242,4 +242,70 @@ string floatToShortPercentString(float x)
     char buf[10];
     snprintf(buf, 10, "%i", roundedPercent);
     return string(buf) + "%";
+}
+
+void GameSettings::pack(Netpack::Builder* builder)
+{
+    packCoinsInt(builder, goldTransferRate);
+    packCoinsInt(builder, beaconBuildRate);
+
+    packCoinsInt(builder, gatewayOrBeaconCost);
+
+    builder->packUint16_t(beaconHealth);
+
+    builder->packUint16_t(gatewayHealth);
+
+    packCoinsInt(builder, primeCost);
+    builder->packUint16_t(primeHealth);
+
+    packCoinsInt(builder, fighterCost);
+    builder->packUint16_t(fighterHealth);
+
+    packCoinsInt(builder, turretCost);
+    builder->packUint16_t(turretHealth);
+}
+GameSettings::GameSettings(Netpack::Consumer* consumer)
+{
+    goldTransferRate = consumeCoinsInt(consumer);
+    beaconBuildRate = consumeCoinsInt(consumer);
+
+    gatewayOrBeaconCost = consumeCoinsInt(consumer);
+
+    beaconHealth = consumer->consumeUint16_t();
+
+    gatewayHealth = consumer->consumeUint16_t();
+
+    primeCost = consumeCoinsInt(consumer);
+    primeHealth = consumer->consumeUint16_t();
+
+    fighterCost = consumeCoinsInt(consumer);
+    fighterHealth = consumer->consumeUint16_t();
+
+    turretCost = consumeCoinsInt(consumer);
+    turretHealth = consumer->consumeUint16_t();
+}
+
+GameSettings defaultGameSettings()
+{
+    GameSettings settings;
+
+    settings.goldTransferRate = 60;
+    settings.beaconBuildRate = 100;
+
+    settings.gatewayOrBeaconCost = 500000;
+
+    settings.beaconHealth = 500;
+
+    settings.gatewayHealth = 1500;
+
+    settings.primeCost = 50000;
+    settings.primeHealth = 100;
+
+    settings.fighterCost = 200000;
+    settings.fighterHealth = 300;
+
+    settings.turretCost = 1000000;
+    settings.turretHealth = 900;
+
+    return settings;
 }

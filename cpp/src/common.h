@@ -42,7 +42,7 @@ EntityRef consumeEntityRef(Netpack::Consumer* from);
 void packTypechar(Netpack::Builder* to, uint8_t typechar);
 uint8_t consumeTypechar(Netpack::Consumer* from);
 
-coinsInt dollarsToCoinsIntND(float dollars);
+coinsInt bcCurrencyAmountToCoinsIntND(float dollars);
 float coinsIntToDollarsND(coinsInt coins);
 
 vector2fl randomVectorWithMagnitude(float magnitude);
@@ -147,5 +147,31 @@ void forEachStartAt(vector<C>* vec, unsigned int start, void (*actionFunc)(C))
         }
     }
 }
+
+struct GameSettings
+{
+    coinsInt
+        gatewayOrBeaconCost,
+        primeCost,
+        fighterCost,
+        turretCost;
+    
+    uint16_t
+        beaconHealth,
+        gatewayHealth,
+        primeHealth,
+        fighterHealth,
+        turretHealth;
+    
+    coinsInt
+        goldTransferRate,
+        beaconBuildRate;
+
+    GameSettings() {}
+    void pack(Netpack::Builder*);
+    GameSettings(Netpack::Consumer*);
+};
+
+GameSettings defaultGameSettings();
 
 #endif // COMMON_H

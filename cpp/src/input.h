@@ -22,6 +22,7 @@ enum InGameMenuMsg {
 
 struct GameUI
 {
+    GameSettings* gameSettings;
     sf::Font* font;
     optional<MainMenu<InGameMenuMsg>> inGameMenu;
     optional<GiftUnitsWindow> giftUnitsWindow;
@@ -50,8 +51,8 @@ struct GameUI
     bool online;
     bool displayAllRadii;
     ParticlesContainer particles;
-    GameUI(sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View view, bool online);
-    void updateUnitCmds(bool spawnBeaconAvailable);
+    GameUI(GameSettings* gameSettings, sf::RenderWindow*, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View view, bool online);
+    void updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable);
     void selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow*, Game*, boost::shared_ptr<Unit>);
     bool selectionHasGateways();
     bool selectionWouldStaySegregated(uint8_t typechar); // checks if adding the unit type would mix Gateways/others

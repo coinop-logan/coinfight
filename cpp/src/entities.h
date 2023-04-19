@@ -107,6 +107,9 @@ public:
 
 class Unit : public Entity
 {
+    GameSettings* gameSettings;
+    coinsInt* cost;
+    uint16_t* maxHealth;
     uint16_t healthAssumingBuilt;
 public:
     void setHealthAssumingBuilt(uint16_t newHealth);
@@ -116,8 +119,10 @@ public:
     float angle_view;
 
     vector<Coins*> getDroppableCoins();
-    virtual coinsInt getCost() const;
-    virtual uint16_t getMaxHealth() const;
+
+    coinsInt getCost() { return *cost; }
+    uint16_t getMaxHealth() { return *maxHealth; }
+    GameSettings* getGameSettings() { return gameSettings; }
 
     sf::Color getTeamOrPrimaryColor();
     sf::Color getTeamColor();
@@ -137,9 +142,9 @@ public:
     virtual void cmdStop();
 
 protected:
-    Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos);
+    Unit(GameSettings* gameSettings, uint8_t ownerId, coinsInt* totalCost, uint16_t* maxHealth, vector2fp pos);
     void packEntityAndUnitBasics(Netpack::Builder* to);
-    Unit(Netpack::Consumer*);
+    Unit(GameSettings*, Netpack::Consumer*);
     Unit(); // this will throw if called. Needed for virtual inheritance later but should never be called.
 };
 
@@ -246,8 +251,6 @@ protected:
     void iterateCombatUnitBasics();
 };
 
-const coinsInt BEACON_BUILD_RATE = 12 * HYPERSPEED_TRANSFER_MULTIPLIER;
-const uint16_t BEACON_HEALTH = 500;
 const fixed32 BEACON_RADIUS(10);
 
 class Beacon : public Building
@@ -257,17 +260,15 @@ public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
 
     enum State {
         Spawning,
         Despawning
     } state;
 
-    Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket);
+    Beacon(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos, State state, bool spendingTicket);
     void pack(Netpack::Builder* to);
-    Beacon(Netpack::Consumer* from);
+    Beacon(GameSettings* gameSettings, Netpack::Consumer* from);
 
     void cmdStop();
     void cmdWarpOut();
@@ -275,8 +276,6 @@ public:
     void iterate();
 };
 
-const coinsInt GATEWAY_COST = 20000;
-const uint16_t GATEWAY_HEALTH = 1500;
 const fixed32 GATEWAY_RANGE(150);
 const uint32_t GATEWAY_RANGE_FLOORSQUARED = floorSquareFixed(GATEWAY_RANGE);
 const fixed32 GATEWAY_RADIUS(15); // don't forget to update MAX_UNIT_RADIUS!!
@@ -295,8 +294,6 @@ public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
 
     uint32_t getShotRangeFloorsquared() const;
     uint16_t getShotCooldown() const;
@@ -319,9 +316,9 @@ public:
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
     tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
 
-    Gateway(uint8_t ownerId, vector2fp pos);
+    Gateway(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos);
     void pack(Netpack::Builder* to);
-    Gateway(Netpack::Consumer* from);
+    Gateway(GameSettings* gameSettings, Netpack::Consumer* from);
 
     void cmdBuildUnit(uint8_t unitTypechar);
     void cmdDepositTo(EntityRef entityRef);
@@ -342,8 +339,6 @@ public:
     coinsInt scuttleQueueWeight();
 };
 
-const coinsInt PRIME_COST = 2500;
-const uint16_t PRIME_HEALTH = 100;
 const fixed32 PRIME_SPEED(1.6);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
@@ -357,8 +352,6 @@ public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
     fixed32 getMaxSpeed() const;
 
     Coins heldGold;
@@ -381,9 +374,9 @@ public:
     tuple<boost::shared_ptr<Entity>, bool> goldFlowFrom_view;
     tuple<boost::shared_ptr<Entity>, bool> goldFlowTo_view;
 
-    Prime(uint8_t ownerId, vector2fp pos);
+    Prime(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos);
     void pack(Netpack::Builder* to);
-    Prime(Netpack::Consumer* from);
+    Prime(GameSettings* gameSettings, Netpack::Consumer* from);
 
     void addToScavengeQueue_enforceUnique(Target, bool asap);
     void addToBuildQueue_enforceUnique(EntityRef, bool asap);
@@ -405,8 +398,6 @@ public:
     vector<Coins*> getDroppableCoins();
 };
 
-const coinsInt FIGHTER_COST = 7500;
-const uint16_t FIGHTER_HEALTH = 300;
 const fixed32 FIGHTER_SPEED(2);
 const fixed32 FIGHTER_SHOT_RANGE(200);
 const uint32_t FIGHTER_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(FIGHTER_SHOT_RANGE);
@@ -426,13 +417,11 @@ public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
     fixed32 getAggressionRange() const;
 
-    Fighter(uint8_t ownerId, vector2fp pos);
+    Fighter(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos);
     void pack(Netpack::Builder* to);
-    Fighter(Netpack::Consumer* from);
+    Fighter(GameSettings* gameSettings, Netpack::Consumer* from);
     
     void cmdStop();
     void onMoveCmd(vector2fp moveTo);
@@ -441,8 +430,6 @@ public:
     void iterate();
 };
 
-const coinsInt TURRET_COST = 50000;
-const uint16_t TURRET_HEALTH = 900;
 const fixed32 TURRET_RADIUS(30); // don't forget to update MAX_UNIT_RADIUS!!
 const fixed32 TURRET_SHOT_RANGE(450);
 const uint32_t TURRET_SHOT_RANGE_FLOORSQUARED = floorSquareFixed(TURRET_SHOT_RANGE);
@@ -459,13 +446,11 @@ public:
     fixed32 getRadius() const;
     uint8_t typechar() const;
     string getTypename() const;
-    coinsInt getCost() const;
-    uint16_t getMaxHealth() const;
     fixed32 getAggressionRange() const;
 
-    Turret(uint8_t ownerId, vector2fp pos);
+    Turret(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos);
     void pack(Netpack::Builder* to);
-    Turret(Netpack::Consumer* from);
+    Turret(GameSettings* gameSettings, Netpack::Consumer* from);
 
     void cmdStop();
 
@@ -474,7 +459,7 @@ public:
 
 boost::shared_ptr<Entity> maybeEntityRefToPtrOrNull(const Game&, optional<EntityRef>);
 
-optional<boost::shared_ptr<Entity>> consumeEntity(Netpack::Consumer* from);
+optional<boost::shared_ptr<Entity>> consumeEntity(GameSettings* gameSettings, Netpack::Consumer* from);
 
 bool entitiesAreIdentical_triggerDebugIfNot(boost::shared_ptr<Entity> entity1, boost::shared_ptr<Entity> entity2);
 

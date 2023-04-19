@@ -976,7 +976,7 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
     {
         vector2i drawPos = upperLeft + vector2i(250, yOffset);
 
-        string fundsLeftString = coinsIntToDollarString(*maybeFundsLeft);
+        string fundsLeftString = coinsIntToCurrencyString(*maybeFundsLeft);
         sf::Text fundsLeftText(fundsLeftString, *font, 14);
         fundsLeftText.setPosition(toSFVecF(drawPos));
         fundsLeftText.setFillColor(sf::Color::Yellow);
@@ -1233,7 +1233,7 @@ void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upper
     int yOffset = 0;
 
     stringstream ss;
-    ss << coinsIntToCentsRoundedString(prime->heldGold.getInt()) << " / " << coinsIntToCentsRoundedString(PRIME_MAX_GOLD_HELD);
+    ss << coinsIntToCurrencyString(prime->heldGold.getInt()) << " / " << coinsIntToCurrencyString(PRIME_MAX_GOLD_HELD);
     ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
     
     sf::Text heldGoldText(ss.str(), *font, 16);

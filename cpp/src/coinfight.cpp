@@ -18,7 +18,7 @@
 
 sf::Font mainFont, tutorialFont;
 
-void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetpack);
+void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float playerStartDollars, bool checkNetpack);
 void runTutorial(sf::RenderWindow* window);
 void runClient(sf::RenderWindow* window, string serverIP, sf::Font* font);
 
@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
             {
                 case StartLocal:
                 {
-                    runLocal(window, 50, false);
+                    runLocal(defaultGameSettings(), window, 50000, false);
                     break;
                 }
                 case StartLocalDebug:
                 {
-                    runLocal(window, 50, true);
+                    runLocal(defaultGameSettings(), window, 50000, true);
                     break;
                 }
                 case StartTutorial:
@@ -162,11 +162,11 @@ int main(int argc, char *argv[])
     cleanupGraphics(window);
 }
 
-void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetpack) {
-    coinsInt playerStartCredit = dollarsToCoinsIntND(playerStartDollars);
+void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float playerStartDollars, bool checkNetpack) {
+    coinsInt playerStartCredit = bcCurrencyAmountToCoinsIntND(playerStartDollars);
 
     int randSeed = time(NULL);
-    Game game(randSeed, time(NULL));
+    Game game(randSeed, time(NULL), gameSettings);
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
@@ -186,7 +186,7 @@ void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetp
         firstEvents[i]->execute(&game);
     }
 
-    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
+    GameUI ui(&game.gameSettings, window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
     uint8_t currentPlayerId = 0;
 
     vector<boost::shared_ptr<Cmd>> pendingCmds;
@@ -346,9 +346,9 @@ void runLocal(sf::RenderWindow* window, float playerStartDollars, bool checkNetp
 void runTutorial(sf::RenderWindow* window)
 {
     int randSeed = time(NULL);
-    Game game(randSeed, time(NULL));
+    Game game(randSeed, time(NULL), defaultGameSettings());
     
-    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
+    GameUI ui(&game.gameSettings, window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
 
     setupTutorialScenario(&game);
 
@@ -491,7 +491,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
 
     connectionHandler.startReceivingLoop();
 
-    Game game(0, 0); // will be overwritten soon with the resync packet
+    Game game(0, 0, GameSettings()); // will be overwritten soon with the resync packet
     
     optional<uint8_t> maybePlayerId = {};
 
@@ -510,7 +510,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
         }
     }
 
-    GameUI ui(window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), true);
+    GameUI ui(&game.gameSettings, window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), true);
 
     chrono::time_point<chrono::system_clock, chrono::duration<double>> nextFrameStart(chrono::system_clock::now());
     while (window->isOpen())

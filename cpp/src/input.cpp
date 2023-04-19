@@ -27,8 +27,9 @@ void printHi()
     cout << "hi" << endl;
 }
 
-GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View uxView, bool online)
-  : font(font),
+GameUI::GameUI(GameSettings* gameSettings, sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSpriteForMsg)(KeyButtonMsg), sf::Sprite* (*getSpriteForUnitTypechar)(uint8_t), sf::View uxView, bool online)
+  : gameSettings(gameSettings),
+    font(font),
     selectedUnits(),
     unitInfoBox(
         vector2i(
@@ -62,9 +63,9 @@ GameUI::GameUI(sf::RenderWindow* window, sf::Font* font, sf::Sprite* (*getSprite
     hideUX = false;
 }
 
-void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
+void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable)
 {
-    KeyButtonHintInfo tempDefault("Temp", dollarsToCoinsIntND(1), 't', "Temp description!", {"bullet 1", "bullet 2"});
+    KeyButtonHintInfo tempDefault("Temp", bcCurrencyAmountToCoinsIntND(1), 't', "Temp description!", {"bullet 1", "bullet 2"});
     
     keyButtonBox.clearActionInfos();
 
@@ -76,13 +77,13 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                 sf::Keyboard::W,
                 KeyButtonHintInfo(
                     "Warp In Gateway",
-                    GATEWAY_COST,
+                    gameSettings.gatewayOrBeaconCost,
                     'W',
-                    "Warp in a Gateway, investing $2. This can only be done once per game.",
+                    "Warp in a Gateway, investing " + coinsIntToCurrencyString(gameSettings.gatewayOrBeaconCost) + ". This can only be done once per game.",
                     {
                         "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal.",
                         "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
-                        "The warp can be reversed before completion, refunding the $2 and allowing you to warp in somewhere else.",
+                        "The warp can be reversed before completion, refunding the " + coinsIntToCurrencyString(gameSettings.gatewayOrBeaconCost) + " investment and allowing you to warp in somewhere else.",
                         "Additional Gateways can be built later with Primes."
                     }
                 ),
@@ -161,11 +162,11 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     sf::Keyboard::Q,
                     KeyButtonHintInfo(
                         "Build Prime",
-                        PRIME_COST,
+                        gameSettings.primeCost,
                         'Q',
                         "Begin constructing a Prime, a general worker unit.",
                         {
-                            "Harvests gold for construction or capture ($0.50 carrying capacity).",
+                            "Harvests gold for construction or capture (" + coinsIntToCurrencyString(gameSettings.primeCost) + " carrying capacity).",
                             "Constructs Gateways and Turrets.",
                             "Works with Gateways and other Primes to accelerate construction.",
                             "Can \"scuttle\" friendly buildings and units, destroying them to recover their gold investment."
@@ -177,7 +178,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                     sf::Keyboard::W,
                     KeyButtonHintInfo(
                         "Build Fighter",
-                        FIGHTER_COST,
+                        gameSettings.fighterCost,
                         'W',
                         "Begin constructing a Fighter.",
                         {
@@ -316,7 +317,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         sf::Keyboard::E,
                         KeyButtonHintInfo(
                             "Build Gateway",
-                            GATEWAY_COST,
+                            gameSettings.gatewayOrBeaconCost,
                             'E',
                             "Begin constructing a Gateway.",
                             {
@@ -332,7 +333,7 @@ void GameUI::updateUnitCmds(bool spawnBeaconAvailable)
                         sf::Keyboard::R,
                         KeyButtonHintInfo(
                             "Build Turret",
-                            TURRET_COST,
+                            gameSettings.turretCost,
                             'R',
                             "Begin constructing a Turret, a building with a powerful gun and long range.",
                             {
@@ -407,11 +408,11 @@ void GameUI::selectAllUnitsOfSimilarTypeOnScreen(sf::RenderWindow* window, Game*
     this->selectedUnits.reserve(selectedUnitsCopy.size() + visibleUnits.size());
 
     // sort both collections
-    sort(selectedUnitsCopy.begin(), selectedUnitsCopy.end());
-    sort(ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end());
+    std::sort(selectedUnitsCopy.begin(), selectedUnitsCopy.end());
+    std::sort(ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end());
 
     // merge via set_union
-    set_union(selectedUnitsCopy.begin(), selectedUnitsCopy.end(), ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end(), back_inserter(this->selectedUnits));
+    std::set_union(selectedUnitsCopy.begin(), selectedUnitsCopy.end(), ownedVisibleUnitsOfType.begin(), ownedVisibleUnitsOfType.end(), back_inserter(this->selectedUnits));
 }
 
 void GameUI::openInGameMenu(sf::RenderWindow* window)
@@ -812,10 +813,10 @@ boost::shared_ptr<Cmd> makePrimeBuildCmd(vector<boost::shared_ptr<Unit>> selecte
 vector<boost::shared_ptr<Cmd>> pollWindowEventsAndUpdateUI(Game *game, GameUI *ui, optional<uint8_t> maybePlayerId, sf::RenderWindow *window, Tutorial* tutorial, sf::View uxView)
 {
     bool spawnBeaconAvailable = maybePlayerId ?
-        ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= GATEWAY_COST)
+        ((game->getPlayerBeaconAvailable(*maybePlayerId)) && game->players[*maybePlayerId].credit.getInt() >= game->gameSettings.gatewayOrBeaconCost)
         : false;
 
-    ui->updateUnitCmds(spawnBeaconAvailable);
+    ui->updateUnitCmds(game->gameSettings, spawnBeaconAvailable);
 
     vector<boost::shared_ptr<Cmd>> cmdsToSend;
     sf::Event event;
@@ -1435,7 +1436,7 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
                 returnToDefaultState();
                 cmdState = CmdState::SpawnBeacon;
                 button->active = true;
-                ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+                ghostBuilding = boost::shared_ptr<Building>(new Gateway(gameSettings, -1, vector2fp::zero));
 
                 break;
             }
@@ -1513,7 +1514,7 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             {
                 returnToDefaultState();
                 cmdState = CmdState::Build;
-                ghostBuilding = boost::shared_ptr<Building>(new Gateway(-1, vector2fp::zero));
+                ghostBuilding = boost::shared_ptr<Building>(new Gateway(gameSettings, -1, vector2fp::zero));
                 button->active = true;
 
                 break;
@@ -1522,7 +1523,7 @@ tuple<bool, optional<boost::shared_ptr<Cmd>>> GameUI::processEventForOverlay(sf:
             {
                 returnToDefaultState();
                 cmdState = CmdState::Build;
-                ghostBuilding = boost::shared_ptr<Building>(new Turret(-1, vector2fp::zero));
+                ghostBuilding = boost::shared_ptr<Building>(new Turret(gameSettings, -1, vector2fp::zero));
                 button->active = true;
 
                 break;

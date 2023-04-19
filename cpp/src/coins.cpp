@@ -25,14 +25,14 @@ Coins::Coins(coinsInt max) :  heldAmount(0), max(max)
 
 coinsInt weiDepositStringToCoinsInt(string weiString)
 {
-    int digitsToRemove = WEI_PER_DOLLAR_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
+    int digitsToRemove = BLOCKCHAIN_WEI_EXPONENT - LOCAL_CREDIT_EXPONENT;
     string newString(weiString);
     newString.erase(newString.length() - digitsToRemove);
     return stoi(newString);
 }
 string coinsIntToWeiDepositString(coinsInt amount)
 {
-    int digitsToAdd = WEI_PER_DOLLAR_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
+    int digitsToAdd = BLOCKCHAIN_WEI_EXPONENT - LOCAL_CREDIT_EXPONENT;
     string coinsString = to_string(amount);
     string weiString = coinsString + string(digitsToAdd, '0');
     return weiString;
@@ -83,31 +83,42 @@ bool Coins::tryAdd(coinsInt addAmount)
 
 // PUBLIC
 
-string coinsIntToDollarString(coinsInt amount)
+string coinsIntToCurrencyString(coinsInt amount)
 {
-    float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    float bcCurrencyAmount = amount / (pow(10, LOCAL_CREDIT_EXPONENT));
     char buf[100];
-    snprintf(buf, 100, "$%.2f", dollars);
+    snprintf(buf, 100, "%.2f c", bcCurrencyAmount);
     return string(buf);
 }
-int getNumCentsRounded(coinsInt amount)
-{
-    float cents = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT - 2));
-    return int(round(cents));
-}
-string coinsIntToCentsRoundedString(coinsInt amount)
-{
-    stringstream ss;
-    ss << getNumCentsRounded(amount) << "c";
-    return ss.str();
-}
+// string coinsIntToDollarString(coinsInt amount)
+// {
+//     float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+//     char buf[100];
+//     snprintf(buf, 100, "$%.2f", dollars);
+//     return string(buf);
+// }
+// int getNumCentsRounded(coinsInt amount)
+// {
+//     float cents = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT - 2));
+//     return int(round(cents));
+// }
+// string coinsIntToCentsRoundedString(coinsInt amount)
+// {
+//     stringstream ss;
+//     ss << getNumCentsRounded(amount) << "c";
+//     return ss.str();
+// }
 coinsInt Coins::getInt()
 {
     return heldAmount;
 }
-string Coins::getDollarString()
+// string Coins::getDollarString()
+// {
+//     return coinsIntToDollarString(getInt());
+// }
+string Coins::getCurrencyString()
 {
-    return coinsIntToDollarString(getInt());
+    return coinsIntToCurrencyString(getInt());
 }
 coinsInt Coins::getSpaceLeft()
 {

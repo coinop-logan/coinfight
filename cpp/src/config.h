@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <chrono>
+#include <string>
 #include "myvectors.h"
 
 using EntityRef = uint16_t;
@@ -30,8 +31,8 @@ const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 
 const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
-const int CREDIT_PER_DOLLAR_EXPONENT = 4; // credit = dollar * 10^X
-const int WEI_PER_DOLLAR_EXPONENT = 6;
+const int BLOCKCHAIN_WEI_EXPONENT = 18; // weiAmount / 10^? = humanReadbleAmount
+const int LOCAL_CREDIT_EXPONENT = 3; // humanReadableAmount * 10^? = coinsIntAmount
 
 const float PARTICLE_MAGNET_STRENGTH = 1;
 const float PARTICLE_FRICTION_CONSTANT = 0.9;
@@ -39,11 +40,6 @@ const float PARTICLE_FRICTION_CONSTANT = 0.9;
 const int CURSOR_SIZE = 26;
 
 const fixed32 COLLISION_CORRECTION_BROADPHASE_FILTERBOX_HALFWIDTH(50);
-
-const bool HYPERSPEED = false;
-const int HYPERSPEED_TRANSFER_MULTIPLIER = (HYPERSPEED ? 10 : 1);
-
-const coinsInt GOLD_TRANSFER_RATE = 6 * HYPERSPEED_TRANSFER_MULTIPLIER;
 
 const unsigned int DEPOSIT_TO_WALLET_PERCENT = 50;
 const unsigned int DEPOSIT_TO_HONEYPOT_PERCENT = 40;

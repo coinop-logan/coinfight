@@ -493,8 +493,8 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 }
 
 
-Game::Game(int randSeed, time_t gameStartTime)
-    : randGen(randSeed), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius()), matchProfit(0)
+Game::Game(int randSeed, time_t gameStartTime, GameSettings gameSettings)
+    : randGen(randSeed), gameSettings(gameSettings), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius()), matchProfit(0)
 {
     mapRadius = calculateMapRadius();
 }
@@ -502,6 +502,7 @@ Game::Game(int randSeed, time_t gameStartTime)
 void Game::pack(Netpack::Builder* to)
 {
     packRandGenerator(to, randGen);
+    gameSettings.pack(to);
     packTimeT(to, gameStartTime);
     to->packEnum(mode);
     to->packUint64_t(frame);
@@ -526,10 +527,12 @@ void Game::pack(Netpack::Builder* to)
     packCoinsInt(to, matchProfit);
 }
 Game::Game(Netpack::Consumer* from)
-    : searchGrid(calculateMapRadius())
+    : gameSettings()
+    , searchGrid(calculateMapRadius())
     , mapRadius(calculateMapRadius())
 {
     randGen = consumeRandGenerator(from);
+    gameSettings = GameSettings(from);
     gameStartTime = consumeTimeT(from);
     mode = from->consumeEnum<GameMode>();
     frame = from->consumeUint64_t();
@@ -546,7 +549,7 @@ Game::Game(Netpack::Consumer* from)
     entities.clear();
     for (unsigned int i = 0; i < entitiesSize; i++)
     {
-        optional<boost::shared_ptr<Entity>> maybeEntity = consumeEntity(from);
+        optional<boost::shared_ptr<Entity>> maybeEntity = consumeEntity(&gameSettings, from);
         if (!maybeEntity)
         {
             throw runtime_error("Trying to unpack unrecognized entity");

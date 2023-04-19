@@ -86,7 +86,7 @@ void SpawnBeaconCmd::executeAsPlayer(Game* game, Address playerAddress)
 
     if (game->getPlayerBeaconAvailable(playerId))
     {
-        boost::shared_ptr<Beacon> beacon(new Beacon(playerId, this->pos, Beacon::Spawning, true));
+        boost::shared_ptr<Beacon> beacon(new Beacon(&game->gameSettings, playerId, this->pos, Beacon::Spawning, true));
         if (game->registerNewEntityIfInMapAndNoCollision(beacon))
         {
             game->setPlayerBeaconAvailable(playerId, false);
@@ -509,10 +509,10 @@ void PrimeBuildCmd::prepForUnitExecution(Game* game, uint8_t ownerId)
     switch (buildTypechar)
     {
         case GATEWAY_TYPECHAR:
-            unitToBuild = boost::shared_ptr<Gateway>(new Gateway(ownerId, buildPos));
+            unitToBuild = boost::shared_ptr<Gateway>(new Gateway(&game->gameSettings, ownerId, buildPos));
             break;
         case TURRET_TYPECHAR:
-            unitToBuild = boost::shared_ptr<Turret>(new Turret(ownerId, buildPos));
+            unitToBuild = boost::shared_ptr<Turret>(new Turret(&game->gameSettings, ownerId, buildPos));
             break;
         default:
             cout << "Prime doesn't know how to build that unit..." << endl;

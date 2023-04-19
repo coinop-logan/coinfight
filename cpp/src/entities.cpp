@@ -623,14 +623,6 @@ vector<Coins*> Unit::getDroppableCoins()
 {
     return vector<Coins*>{&goldInvested};
 }
-coinsInt Unit::getCost() const
-{
-    throw runtime_error("getCost() has not been defined for " + getTypename() + ".\n");
-}
-uint16_t Unit::getMaxHealth() const
-{
-    throw runtime_error("getMaxHeatlh() has not been defined for " + getTypename() + ".\n");
-}
 void Unit::cmdStop()
 {
     throw runtime_error("cmdStop() has not been defined for " + getTypename() + ".\n");
@@ -638,8 +630,8 @@ void Unit::cmdStop()
 
 Unit::Unit() : Entity() {} // this will throw if called. Needed for virtual inheritance later but should never be called.
 
-Unit::Unit(uint8_t ownerId, coinsInt totalCost, uint16_t healthAssumingBuilt, vector2fp pos)
-    : Entity(pos), healthAssumingBuilt(healthAssumingBuilt), ownerId(ownerId), goldInvested(totalCost), angle_view(0) {}
+Unit::Unit(GameSettings* gameSettings, uint8_t ownerId, coinsInt* cost, uint16_t* maxHealth, vector2fp pos)
+    : Entity(pos), gameSettings(gameSettings), cost(cost), maxHealth(maxHealth), healthAssumingBuilt(*maxHealth), ownerId(ownerId), goldInvested(*cost), angle_view(0) {}
 void Unit::packEntityAndUnitBasics(Netpack::Builder* to)
 {
     packEntityBasics(to);
@@ -648,8 +640,9 @@ void Unit::packEntityAndUnitBasics(Netpack::Builder* to)
     to->packUint16_t(healthAssumingBuilt);
     goldInvested.pack(to);
 }
-Unit::Unit(Netpack::Consumer* from)
+Unit::Unit(GameSettings* gameSettings, Netpack::Consumer* from)
     : Entity(from),
+      gameSettings(gameSettings),
       goldInvested((coinsInt)0), // will get overwritten with consume below
       angle_view(0)
 {
@@ -774,7 +767,7 @@ Building::Building() {} // this will throw if called. Needed for virtual inherit
 
 void Building::packBuildingBasics(Netpack::Builder* to) {}
 Building::Building(Netpack::Consumer* from)
-    : Unit(from) {}
+    {}
 
 void Building::iterateBuildingBasics()
 {
@@ -840,7 +833,6 @@ void MobileUnit::packMobileUnitBasics(Netpack::Builder* to)
     packVector2fp(to, lastVelocity);
 }
 MobileUnit::MobileUnit(Netpack::Consumer* from)
-    : Unit(from)
 {
     maybeTargetInfo = from->consumeOptional(consumeMoveTargetInfo);
     desiredVelocity = consumeVector2fp(from);
@@ -1031,11 +1023,9 @@ void MobileUnit::cmdMove(vector2fp pointTarget)
 fixed32 Beacon::getRadius() const { return BEACON_RADIUS; }
 uint8_t Beacon::typechar() const { return BEACON_TYPECHAR; }
 string Beacon::getTypename() const { return "Gateway Beacon"; }
-coinsInt Beacon::getCost() const { return GATEWAY_COST; }
-uint16_t Beacon::getMaxHealth() const { return BEACON_HEALTH; }
 
-Beacon::Beacon(uint8_t ownerId, vector2fp pos, State state, bool spendingTicket)
-    : Unit(ownerId, GATEWAY_COST, BEACON_HEALTH, pos)
+Beacon::Beacon(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos, State state, bool spendingTicket)
+    : Unit(gameSettings, ownerId, &gameSettings->gatewayOrBeaconCost, &gameSettings->beaconHealth, pos)
     , spendingTicket(spendingTicket)
     , state(state)
 {}
@@ -1047,8 +1037,8 @@ void Beacon::pack(Netpack::Builder* to)
     to->packEnum(state);
     to->packBool(spendingTicket);
 }
-Beacon::Beacon(Netpack::Consumer* from)
-    : Unit(from)
+Beacon::Beacon(GameSettings* gameSettings, Netpack::Consumer* from)
+    : Unit(gameSettings, from)
     , Building(from)
 {
     state = from->consumeEnum<Beacon::State>();
@@ -1063,15 +1053,15 @@ void Beacon::iterate()
     {
         case Spawning:
         {
-            build(BEACON_BUILD_RATE, &getGameOrThrow()->players[ownerId].credit);
+            build(getGameSettings()->beaconBuildRate, &getGameOrThrow()->players[ownerId].credit);
 
             if (isActive())
             {
                 // replace self with a Gateway
                 fixed32 healthRatio = fixed32(getEffectiveHealth()) / fixed32(getMaxHealth());
-                boost::shared_ptr<Gateway> gateway(new Gateway(this->ownerId, this->getPos()));
+                boost::shared_ptr<Gateway> gateway(new Gateway(this->getGameSettings(), this->ownerId, this->getPos()));
                 gateway->completeBuildingInstantly(&this->goldInvested);
-                gateway->setHealthAssumingBuilt(uint16_t(healthRatio * fixed32(GATEWAY_HEALTH)));
+                gateway->setHealthAssumingBuilt(uint16_t(healthRatio * getGameSettings()->gatewayHealth));
                 this->die();
                 game->registerNewEntityIgnoringConstraints(gateway);
             }
@@ -1079,7 +1069,7 @@ void Beacon::iterate()
         break;
         case Despawning:
         {
-            unbuild(BEACON_BUILD_RATE, &getGameOrThrow()->players[ownerId].credit);
+            unbuild(getGameSettings()->beaconBuildRate, &getGameOrThrow()->players[ownerId].credit);
 
             if (this->getBuilt() == 0)
             {
@@ -1127,8 +1117,6 @@ void Beacon::cmdWarpOut()
 fixed32 Gateway::getRadius() const {return GATEWAY_RADIUS;}
 uint8_t Gateway::typechar() const { return GATEWAY_TYPECHAR; }
 string Gateway::getTypename() const { return "Gateway"; }
-coinsInt Gateway::getCost() const { return GATEWAY_COST; }
-uint16_t Gateway::getMaxHealth() const { return GATEWAY_HEALTH; }
 
 // combat constants
 uint32_t Gateway::getShotRangeFloorsquared() const { return GATEWAY_SHOT_RANGE_FLOORSQUARED; }
@@ -1299,10 +1287,10 @@ void Gateway::cmdBuildUnit(uint8_t unitTypechar)
         switch (unitTypechar)
         {
             case PRIME_TYPECHAR:
-                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->ownerId, newUnitPos));
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Prime>(new Prime(this->getGameSettings(), this->ownerId, newUnitPos));
                 break;
             case FIGHTER_TYPECHAR:
-                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->ownerId, newUnitPos));
+                littleBabyUnitAwwwwSoCute = boost::shared_ptr<Fighter>(new Fighter(this->getGameSettings(), this->ownerId, newUnitPos));
                 break;
             default:
                 cout << "Gateway doesn't know how to build that unit..." << endl;
@@ -1337,7 +1325,7 @@ void Gateway::cmdScuttle(EntityRef targetRef)
         if (targetRef == this->getRefOrThrow())
         {
             // replace self with a despawning Beacon
-            boost::shared_ptr<Unit> beacon(new Beacon(this->ownerId, this->getPos(), Beacon::Despawning, false));
+            boost::shared_ptr<Unit> beacon(new Beacon(this->getGameSettings(), this->ownerId, this->getPos(), Beacon::Despawning, false));
             beacon->completeBuildingInstantly(&this->goldInvested);
             this->die();
             game->registerNewEntityIgnoringConstraints(beacon);
@@ -1450,8 +1438,8 @@ coinsInt Gateway::scuttleQueueWeight()
     return totalLeftToScuttle;
 }
 
-Gateway::Gateway(uint8_t ownerId, vector2fp pos)
-    : Unit(ownerId, GATEWAY_COST, GATEWAY_HEALTH, pos),
+Gateway::Gateway(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
+    : Unit(gameSettings, ownerId, &gameSettings->gatewayOrBeaconCost, &gameSettings->gatewayHealth, pos),
       goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
 {}
 void Gateway::pack(Netpack::Builder* to)
@@ -1479,8 +1467,8 @@ void Gateway::pack(Netpack::Builder* to)
         packEntityRef(to, scuttleTargetQueue[i]);
     }
 }
-Gateway::Gateway(Netpack::Consumer* from)
-    : Unit(from)
+Gateway::Gateway(GameSettings* gameSettings, Netpack::Consumer* from)
+    : Unit(gameSettings, from)
     , Building(from)
     , CombatUnit(from)
 {
@@ -1672,7 +1660,7 @@ void Gateway::iterate()
 
             if (auto goldPile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
             {
-                amountPulled = goldPile->gold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+                amountPulled = goldPile->gold.transferUpTo(getGameSettings()->goldTransferRate, &game->players[this->ownerId].credit);
             }
             else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
             {
@@ -1681,13 +1669,13 @@ void Gateway::iterate()
                 {
                     if (prime->heldGold.getInt() > 0)
                     {
-                        amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+                        amountPulled = prime->heldGold.transferUpTo(getGameSettings()->goldTransferRate, &game->players[this->ownerId].credit);
                         pulledFromPrimeHeldGold = true;
                     }
                 }
                 if (!pulledFromPrimeHeldGold && tryingToScuttle)
                 {
-                    amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &game->players[this->ownerId].credit);
+                    amountPulled = unit->unbuild(getGameSettings()->goldTransferRate, &game->players[this->ownerId].credit);
                     scuttling = true;
                 }
             }
@@ -1743,7 +1731,7 @@ void Gateway::iterate()
 
                 if (maybeCoinsToDepositTo)
                 {
-                    coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(GOLD_TRANSFER_RATE, maybeCoinsToDepositTo);
+                    coinsInt amountDeposited = game->players[this->ownerId].credit.transferUpTo(getGameSettings()->goldTransferRate, maybeCoinsToDepositTo);
                     if (maybeBuildingUnit && maybeBuildingUnit->isFullyBuilt())
                     {
                         buildTargetQueue.erase(buildTargetQueue.begin());
@@ -1821,14 +1809,13 @@ void Gateway::iterate()
 
 fixed32 Prime::getRadius() const { return PRIME_RADIUS; }
 fixed32 Prime::getMaxSpeed() const { return PRIME_SPEED; }
-coinsInt Prime::getCost() const { return PRIME_COST; }
-uint16_t Prime::getMaxHealth() const { return PRIME_HEALTH; }
 
 uint8_t Prime::typechar() const { return PRIME_TYPECHAR; }
 string Prime::getTypename() const { return "Prime"; }
 
-Prime::Prime(uint8_t ownerId, vector2fp pos)
-    : Unit(ownerId, PRIME_COST, PRIME_HEALTH, pos),
+Prime::Prime(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
+    : Unit(gameSettings, ownerId, &gameSettings->primeCost, &gameSettings->primeHealth, pos),
+      MobileUnit(),
       heldGold(PRIME_MAX_GOLD_HELD),
       goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
 {}
@@ -1860,8 +1847,8 @@ void Prime::pack(Netpack::Builder* to)
 
     to->packOptional<EntityRef>(fetchToImmediateTarget, packEntityRef);
 }
-Prime::Prime(Netpack::Consumer* from)
-    : Unit(from)
+Prime::Prime(GameSettings* gameSettings, Netpack::Consumer* from)
+    : Unit(gameSettings, from)
     , MobileUnit(from),
     heldGold(PRIME_MAX_GOLD_HELD)
 {
@@ -2326,7 +2313,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                             if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                             {
-                                amountPulled = goldpile->gold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
+                                amountPulled = goldpile->gold.transferUpTo(getGameSettings()->goldTransferRate, &this->heldGold);
                             }
                             else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                             {
@@ -2335,7 +2322,7 @@ void Prime::tryTransferAndMaybeMoveOn()
                                 {
                                     if (prime->heldGold.getInt() > 0)
                                     {
-                                        amountPulled = prime->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &this->heldGold);
+                                        amountPulled = prime->heldGold.transferUpTo(getGameSettings()->goldTransferRate, &this->heldGold);
                                         pullingFromPrimeOrGateway = true;
                                     }
                                 }
@@ -2352,7 +2339,7 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                                 if (!pullingFromPrimeOrGateway && tryingToScuttle)
                                 {
-                                    amountPulled = unit->unbuild(GOLD_TRANSFER_RATE, &this->heldGold);
+                                    amountPulled = unit->unbuild(getGameSettings()->goldTransferRate, &this->heldGold);
                                     scuttling = true;
                                 }
                             }
@@ -2422,14 +2409,14 @@ void Prime::tryTransferAndMaybeMoveOn()
 
                         if (auto goldpile = boost::dynamic_pointer_cast<GoldPile, Entity>(entity))
                         {
-                            amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &goldpile->gold);
+                            amountPushed = this->heldGold.transferUpTo(getGameSettings()->goldTransferRate, &goldpile->gold);
                             entityPushedTo = goldpile;
                         }
                         else if (auto unit = boost::dynamic_pointer_cast<Unit, Entity>(entity))
                         {
                             if (!unit->isFullyBuilt())
                             {
-                                amountPushed = unit->build(GOLD_TRANSFER_RATE, &this->heldGold);
+                                amountPushed = unit->build(getGameSettings()->goldTransferRate, &this->heldGold);
                                 entityPushedTo = unit;
                                 building = true;
                             }
@@ -2465,13 +2452,13 @@ void Prime::tryTransferAndMaybeMoveOn()
                                             }
                                         }
 
-                                        amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &gpToDepositTo->gold);
+                                        amountPushed = this->heldGold.transferUpTo(getGameSettings()->goldTransferRate, &gpToDepositTo->gold);
                                         entityPushedTo = gpToDepositTo;
                                     }
                                 }
                                 else if (auto prime = boost::dynamic_pointer_cast<Prime, Unit>(unit))
                                 {
-                                    amountPushed = this->heldGold.transferUpTo(GOLD_TRANSFER_RATE, &prime->heldGold);
+                                    amountPushed = this->heldGold.transferUpTo(getGameSettings()->goldTransferRate, &prime->heldGold);
                                     entityPushedTo = prime;
                                 }
                                 else
@@ -3080,8 +3067,9 @@ void CombatUnit::combatUnitStop()
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 
-Fighter::Fighter(uint8_t ownerId, vector2fp pos)
-    : Unit(ownerId, FIGHTER_COST, FIGHTER_HEALTH, pos)
+Fighter::Fighter(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
+    : Unit(gameSettings, ownerId, &gameSettings->fighterCost, &gameSettings->fighterHealth, pos),
+      CombatUnit()
 {}
 void Fighter::pack(Netpack::Builder* to)
 {
@@ -3089,8 +3077,8 @@ void Fighter::pack(Netpack::Builder* to)
     packMobileUnitBasics(to);
     packCombatUnitBasics(to);
 }
-Fighter::Fighter(Netpack::Consumer* from)
-    : Unit(from)
+Fighter::Fighter(GameSettings* gameSettings, Netpack::Consumer* from)
+    : Unit(gameSettings, from)
     , MobileUnit(from)
     , CombatUnit(from)
 {}
@@ -3113,8 +3101,6 @@ fixed32 Fighter::getShotRange() const { return FIGHTER_SHOT_RANGE; }
 fixed32 Fighter::getAggressionRange() const { return FIGHTER_AGGRESSION_RANGE; }
 fixed32 Fighter::getRadius() const { return FIGHTER_RADIUS; }
 fixed32 Fighter::getMaxSpeed() const { return FIGHTER_SPEED; }
-coinsInt Fighter::getCost() const { return FIGHTER_COST; }
-uint16_t Fighter::getMaxHealth() const { return FIGHTER_HEALTH; }
 
 uint8_t Fighter::typechar() const { return FIGHTER_TYPECHAR; }
 string Fighter::getTypename() const { return "Fighter"; }
@@ -3147,8 +3133,9 @@ void Fighter::cmdStop()
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 
-Turret::Turret(uint8_t ownerId, vector2fp pos)
-    : Unit(ownerId, TURRET_COST, TURRET_HEALTH, pos)
+Turret::Turret(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
+    : Unit(gameSettings, ownerId, &gameSettings->turretCost, &gameSettings->turretHealth, pos),
+      Building()
 {}
 void Turret::pack(Netpack::Builder* to)
 {
@@ -3156,8 +3143,8 @@ void Turret::pack(Netpack::Builder* to)
     packBuildingBasics(to);
     packCombatUnitBasics(to);
 }
-Turret::Turret(Netpack::Consumer* from)
-    : Unit(from)
+Turret::Turret(GameSettings* gameSettings, Netpack::Consumer* from)
+    : Unit(gameSettings, from)
     , Building(from)
     , CombatUnit(from)
 {}
@@ -3173,8 +3160,6 @@ uint16_t Turret::getShotCooldown() const { return TURRET_SHOT_COOLDOWN; }
 uint16_t Turret::getShotDamage() const { return TURRET_SHOT_DAMAGE; }
 fixed32 Turret::getShotRange() const { return TURRET_SHOT_RANGE; }
 fixed32 Turret::getRadius() const { return TURRET_RADIUS; }
-coinsInt Turret::getCost() const { return TURRET_COST; }
-uint16_t Turret::getMaxHealth() const { return TURRET_HEALTH; }
 fixed32 Turret::getAggressionRange() const { return TURRET_SHOT_RANGE; }
 
 uint8_t Turret::typechar() const { return TURRET_TYPECHAR; }
@@ -3209,7 +3194,7 @@ void Turret::cmdStop()
 
 
 
-optional<boost::shared_ptr<Entity>> consumeEntity(Netpack::Consumer* from)
+optional<boost::shared_ptr<Entity>> consumeEntity(GameSettings* gameSettings, Netpack::Consumer* from)
 {
     uint8_t typechar = consumeTypechar(from);
     
@@ -3222,19 +3207,19 @@ optional<boost::shared_ptr<Entity>> consumeEntity(Netpack::Consumer* from)
         return boost::shared_ptr<Entity>(new GoldPile(from));
         break;
     case BEACON_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Beacon(from));
+        return boost::shared_ptr<Entity>(new Beacon(gameSettings, from));
         break;
     case GATEWAY_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Gateway(from));
+        return boost::shared_ptr<Entity>(new Gateway(gameSettings, from));
         break;
     case PRIME_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Prime(from));
+        return boost::shared_ptr<Entity>(new Prime(gameSettings, from));
         break;
     case FIGHTER_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Fighter(from));
+        return boost::shared_ptr<Entity>(new Fighter(gameSettings, from));
         break;
     case TURRET_TYPECHAR:
-        return boost::shared_ptr<Entity>(new Turret(from));
+        return boost::shared_ptr<Entity>(new Turret(gameSettings, from));
         break;
     }
     return {};

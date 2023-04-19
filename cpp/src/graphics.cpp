@@ -575,7 +575,7 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
 
     sf::Text title(sf::String("Wallet"), *font, 24);
 
-    sf::Text balance(sf::String(playerBalance->getDollarString()), *font, 30);
+    sf::Text balance(sf::String(playerBalance->getCurrencyString()), *font, 30);
     balance.setFillColor(balanceTextColor);
 
     sf::Transform transform;
@@ -841,7 +841,7 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
         vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
-            sf::Text aboveText(displayAboveCoins->getDollarString(), *font, 16);
+            sf::Text aboveText(displayAboveCoins->getCurrencyString(), *font, 16);
             sf::FloatRect textRec = aboveText.getLocalBounds();
 
             vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-30)));
@@ -1379,7 +1379,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
 
     if (auto cost = hintInfo.maybeCost)
     {
-        string costString = coinsIntToDollarString(*cost);
+        string costString = coinsIntToCurrencyString(*cost);
         sf::Text costText(costString, *fwFont, 18);
         int xOffset = drawAreaSize.x - costText.getLocalBounds().width;
         costText.setPosition(toSFVecF(drawUpperLeft + vector2i(xOffset, 0)));
@@ -1643,7 +1643,10 @@ void loadKeyCommandIcons()
     {
         throw runtime_error("Can't create draw texture.");
     }
-    boost::shared_ptr<Prime> tempPrime(new Prime(-1, vector2fp::zero));
+    
+    GameSettings dummyGameSettings; // needed to create units, but we just want to draw them once.
+
+    boost::shared_ptr<Prime> tempPrime(new Prime(&dummyGameSettings, -1, vector2fp::zero));
     drawPrime(&cmdBuildPrimeSource, tempPrime, buttonDrawSize / 2, 45, 255);
     cmdBuildPrimeSource.display();
     cmdBuildPrimeIcon.setTexture(cmdBuildPrimeSource.getTexture());
@@ -1660,7 +1663,7 @@ void loadKeyCommandIcons()
     {
         throw runtime_error("Can't create draw texture.");
     }
-    boost::shared_ptr<Gateway> tempGateway(new Gateway(-1, vector2fp::zero));
+    boost::shared_ptr<Gateway> tempGateway(new Gateway(&dummyGameSettings, -1, vector2fp::zero));
     drawGateway(&cmdBuildGatewaySource, tempGateway, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
     cmdBuildGatewaySource.display();
     cmdBuildGatewayIcon.setTexture(cmdBuildGatewaySource.getTexture());
