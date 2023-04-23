@@ -87,7 +87,7 @@ string coinsIntToCurrencyString(coinsInt amount)
 {
     float bcCurrencyAmount = amount / (pow(10, LOCAL_CREDIT_EXPONENT));
     char buf[100];
-    snprintf(buf, 100, "%.2f c", bcCurrencyAmount);
+    snprintf(buf, 100, "%.0f c", bcCurrencyAmount);
     return string(buf);
 }
 // string coinsIntToDollarString(coinsInt amount)

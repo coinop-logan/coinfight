@@ -343,7 +343,6 @@ const fixed32 PRIME_SPEED(1.6);
 const fixed32 PRIME_TRANSFER_RANGE(150);
 const uint32_t PRIME_TRANSFER_RANGE_FLOORSQUARED = floorSquareFixed(PRIME_TRANSFER_RANGE);
 const fixed32 PRIME_SIGHT_RANGE(200);
-const coinsInt PRIME_MAX_GOLD_HELD = 5000;
 const fixed32 PRIME_RADIUS(10); // don't forget to update MAX_UNIT_RADIUS!!
 
 class Prime : public MobileUnit

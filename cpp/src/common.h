@@ -151,6 +151,12 @@ void forEachStartAt(vector<C>* vec, unsigned int start, void (*actionFunc)(C))
 struct GameSettings
 {
     coinsInt
+        goldTransferRate,
+        beaconBuildRate;
+    
+    coinsInt primeGoldCapacity;
+    
+    coinsInt
         gatewayOrBeaconCost,
         primeCost,
         fighterCost,
@@ -162,10 +168,6 @@ struct GameSettings
         primeHealth,
         fighterHealth,
         turretHealth;
-    
-    coinsInt
-        goldTransferRate,
-        beaconBuildRate;
 
     GameSettings() {}
     void pack(Netpack::Builder*);

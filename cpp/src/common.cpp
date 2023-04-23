@@ -249,6 +249,8 @@ void GameSettings::pack(Netpack::Builder* builder)
     packCoinsInt(builder, goldTransferRate);
     packCoinsInt(builder, beaconBuildRate);
 
+    packCoinsInt(builder, primeGoldCapacity);
+
     packCoinsInt(builder, gatewayOrBeaconCost);
 
     builder->packUint16_t(beaconHealth);
@@ -268,6 +270,8 @@ GameSettings::GameSettings(Netpack::Consumer* consumer)
 {
     goldTransferRate = consumeCoinsInt(consumer);
     beaconBuildRate = consumeCoinsInt(consumer);
+
+    primeGoldCapacity = consumeCoinsInt(consumer);
 
     gatewayOrBeaconCost = consumeCoinsInt(consumer);
 
@@ -289,8 +293,10 @@ GameSettings defaultGameSettings()
 {
     GameSettings settings;
 
-    settings.goldTransferRate = 60;
-    settings.beaconBuildRate = 100;
+    settings.goldTransferRate = 200;
+    settings.beaconBuildRate = 400;
+
+    settings.primeGoldCapacity = 50000;
 
     settings.gatewayOrBeaconCost = 500000;
 

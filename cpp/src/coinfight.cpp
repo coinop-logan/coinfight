@@ -18,7 +18,7 @@
 
 sf::Font mainFont, tutorialFont;
 
-void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float playerStartDollars, bool checkNetpack);
+void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float totalCurrencyIn, bool checkNetpack);
 void runTutorial(sf::RenderWindow* window);
 void runClient(sf::RenderWindow* window, string serverIP, sf::Font* font);
 
@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
             {
                 case StartLocal:
                 {
-                    runLocal(defaultGameSettings(), window, 50000, false);
+                    runLocal(defaultGameSettings(), window, 1500, false);
                     break;
                 }
                 case StartLocalDebug:
                 {
-                    runLocal(defaultGameSettings(), window, 50000, true);
+                    runLocal(defaultGameSettings(), window, 1500, true);
                     break;
                 }
                 case StartTutorial:
@@ -162,24 +162,24 @@ int main(int argc, char *argv[])
     cleanupGraphics(window);
 }
 
-void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float playerStartDollars, bool checkNetpack) {
-    coinsInt playerStartCredit = bcCurrencyAmountToCoinsIntND(playerStartDollars);
+void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float currencyInPerPlayer, bool checkNetpack) {
+    coinsInt creditInPerPlayer = bcCurrencyAmountToCoinsIntND(currencyInPerPlayer);
 
     int randSeed = time(NULL);
     Game game(randSeed, time(NULL), gameSettings);
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
-    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xff0f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
-    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf0ff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit)));
-    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x888f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x8fff00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf88f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
-    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x808f00f000f00f00f000f00f00f000f00f00f000"), playerStartCredit, true)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x0f0f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf00f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0x00ff00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xff0f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer)));
+    firstEvents.push_back(boost::shared_ptr<Event>(new DepositEvent(Address("0xf0ff00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer)));
+    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x0fff00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer, true)));
+    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x888f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer, true)));
+    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x8fff00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer, true)));
+    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0xf88f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer, true)));
+    // firstEvents.push_back(boost::shared_ptr<Event>(new BalanceUpdateEvent(Address("0x808f00f000f00f00f000f00f00f000f00f00f000"), creditInPerPlayer, true)));
 
     for (unsigned int i=0; i<firstEvents.size(); i++)
     {

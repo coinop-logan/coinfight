@@ -1233,7 +1233,7 @@ void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upper
     int yOffset = 0;
 
     stringstream ss;
-    ss << coinsIntToCurrencyString(prime->heldGold.getInt()) << " / " << coinsIntToCurrencyString(PRIME_MAX_GOLD_HELD);
+    ss << coinsIntToCurrencyString(prime->heldGold.getInt()) << " / " << coinsIntToCurrencyString(prime->heldGold.max);
     ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
     
     sf::Text heldGoldText(ss.str(), *font, 16);

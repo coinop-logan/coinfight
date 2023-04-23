@@ -1816,7 +1816,7 @@ string Prime::getTypename() const { return "Prime"; }
 Prime::Prime(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
     : Unit(gameSettings, ownerId, &gameSettings->primeCost, &gameSettings->primeHealth, pos),
       MobileUnit(),
-      heldGold(PRIME_MAX_GOLD_HELD),
+      heldGold(gameSettings->primeGoldCapacity),
       goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
 {}
 void Prime::pack(Netpack::Builder* to)
@@ -1850,7 +1850,7 @@ void Prime::pack(Netpack::Builder* to)
 Prime::Prime(GameSettings* gameSettings, Netpack::Consumer* from)
     : Unit(gameSettings, from)
     , MobileUnit(from),
-    heldGold(PRIME_MAX_GOLD_HELD)
+    heldGold(gameSettings->primeGoldCapacity)
 {
     heldGold = Coins(from);
 
@@ -2680,7 +2680,7 @@ vector<Coins*> Prime::getDroppableCoins()
 
 float Prime::getHeldGoldRatio()
 {
-    return ((float)this->heldGold.getInt()) / PRIME_MAX_GOLD_HELD;
+    return ((float)this->heldGold.getInt()) / ((float)this->heldGold.max);
 }
 
 
