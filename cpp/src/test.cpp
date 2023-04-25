@@ -28,7 +28,10 @@ void doThing(int a)
 
 int main()
 {
-    cout << unixTimeToTimeLeftString(time(0) + (60 * 60 * 24 * 0.5)) << endl;
+    vector2fp z = vector2fp::zero;
+    vector2fp point(vector2fl(-1, 1));
+
+    cout << point.x.raw_value() << endl;
 
     return 0;
 }
