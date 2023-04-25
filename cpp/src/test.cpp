@@ -1,4 +1,8 @@
 #include <cmath>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -26,12 +30,59 @@ void doThing(int a)
     cout << a << endl;
 }
 
+enum Cell { Void, Ground };
+Cell charToCell(char c)
+{
+    if (c == '0') return Void;
+    else return Ground;
+}
+class TerrainMap
+{
+    vector<vector<Cell>> cells;
+public:
+    TerrainMap(ifstream* infile)
+    {
+        cells.clear();
+
+        string line;
+
+        getline(*infile, line);
+
+        stringstream dimSS(line);
+        int width, height;
+        dimSS >> width >> height;
+
+        while (getline(*infile, line))
+        {
+            vector<Cell> row;
+
+            for (unsigned int i=0; i<line.size(); i++)
+            {
+                row.push_back(charToCell(line[i]));
+            }
+
+            assert(row.size() == width);
+            cells.push_back(row);
+        }
+        
+        assert(cells.size() == height);
+    }
+    int width() { return cells[0].size(); }
+    int height() { return cells.size(); }
+};
+
 int main()
 {
-    vector2fp z = vector2fp::zero;
-    vector2fp point(vector2fl(-1, 1));
+    ifstream infile("processed.map");
+    if (infile.fail())
+    {
+        cout << "failed to open file" << endl;
+        return 1;
+    }
 
-    cout << point.x.raw_value() << endl;
+    TerrainMap map(&infile);
 
+    cout << map.width() << endl;
+    
     return 0;
 }
