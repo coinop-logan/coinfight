@@ -293,7 +293,7 @@ GameSettings defaultGameSettings()
 {
     GameSettings settings;
 
-    settings.goldTransferRate = 200;
+    settings.goldTransferRate = 150;
     settings.beaconBuildRate = 400;
 
     settings.primeGoldCapacity = 50000;

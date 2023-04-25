@@ -214,7 +214,7 @@ void drawEnergyLine(sf::RenderWindow *window, vector2fl from, vector2fl to, sf::
 
 void drawGoldPile(sf::RenderWindow *window, boost::shared_ptr<GoldPile> goldPile, vector2fl drawPos)
 {
-    float width = ceil(sqrt(goldPile->gold.getInt() / 150.0)) + 5;
+    float width = ceil(sqrt(goldPile->gold.getInt() / GOLDPILE_WIDTH_DIVISOR)) + GOLDPILE_WIDTH_FLOOR;
     float height = width * .4;
     if (width > 1)
     {
