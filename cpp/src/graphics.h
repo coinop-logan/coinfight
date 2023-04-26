@@ -23,6 +23,7 @@ void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont);
 void cleanupGraphics(sf::RenderWindow* window);
 void displayTitle(sf::RenderWindow*, sf::Font*);
 void loadKeyCommandIcons();
+void loadMapSprite();
 sf::Sprite* getSpriteForKeyButtonMsg(KeyButtonMsg);
 sf::Sprite* getSpriteForUnitTypechar(uint8_t typechar);
 sf::View getUXView();

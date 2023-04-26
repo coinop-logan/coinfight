@@ -246,6 +246,9 @@ string floatToShortPercentString(float x)
 
 void GameSettings::pack(Netpack::Builder* builder)
 {
+    packFixed32(builder, mapScale);
+    packVector2fp(builder, mapCenterOffsetInGameCoords);
+
     packCoinsInt(builder, goldTransferRate);
     packCoinsInt(builder, beaconBuildRate);
 
@@ -267,7 +270,11 @@ void GameSettings::pack(Netpack::Builder* builder)
     builder->packUint16_t(turretHealth);
 }
 GameSettings::GameSettings(Netpack::Consumer* consumer)
+    : mapScale(fixed32(0)) // overwritten below
 {
+    mapScale = consumeFixed32(consumer);
+    mapCenterOffsetInGameCoords = consumeVector2fp(consumer);
+
     goldTransferRate = consumeCoinsInt(consumer);
     beaconBuildRate = consumeCoinsInt(consumer);
 
@@ -292,6 +299,9 @@ GameSettings::GameSettings(Netpack::Consumer* consumer)
 GameSettings defaultGameSettings()
 {
     GameSettings settings;
+
+    settings.mapScale = fixed32(18);
+    settings.mapCenterOffsetInGameCoords = vector2fp(fixed32(-1000), fixed32(-10000));
 
     settings.goldTransferRate = 150;
     settings.beaconBuildRate = 400;

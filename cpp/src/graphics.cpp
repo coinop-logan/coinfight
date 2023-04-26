@@ -39,7 +39,8 @@ sf::Texture
     cmdInvestSource,
     cmdStopSource,
     cmdWarpInSource,
-    cmdWarpOutSource
+    cmdWarpOutSource,
+    mapImageSource
 ;
 sf::RenderTexture
     cmdBuildPrimeSource,
@@ -59,7 +60,8 @@ sf::Sprite
     cmdBuildPrimeIcon,
     cmdBuildFighterIcon,
     cmdBuildGatewayIcon,
-    cmdBuildTurretIcon
+    cmdBuildTurretIcon,
+    mapImage
 ;
 
 void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
@@ -73,6 +75,7 @@ void loadFonts(sf::Font* mainFont, sf::Font* tutorialFont)
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
 {
     loadKeyCommandIcons();
+    loadMapSprite();
 
     // choose a good videomode
     sf::VideoMode chosenMode;
@@ -125,6 +128,63 @@ sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen)
     return window;
 }
 
+vector2fp gridCellPoint1(TerrainMap* map, fixed32 cellWidth, vector2i gridPos)
+{
+    return vector2fp(gridPos) * cellWidth;
+}
+
+sf::Color getCellColor(Cell cell)
+{
+    switch (cell)
+    {
+        case Void:
+        {
+            return sf::Color::Black;
+            break;
+        }
+        case Ground:
+        {
+            return sf::Color::Blue;
+            break;
+        }
+        default:
+        {
+            throw "I don't recognize that cell type!";
+        }
+    }
+}
+
+void drawMap(sf::RenderWindow* window, Game* game)
+{
+    fixed32 cellWidth = game->gameSettings.mapScale;
+    vector2fp offsetFromCenterInGameCoords = game->gameSettings.mapCenterOffsetInGameCoords;
+
+    mapImage.setOrigin(mapImage.getLocalBounds().width / 2, mapImage.getLocalBounds().height / 2);
+
+    mapImage.setScale((float)cellWidth, (float)cellWidth);
+    mapImage.setPosition(toSFVecF(offsetFromCenterInGameCoords));
+
+    window->draw(mapImage);
+
+    // vector2i mapGridDims = game->map.getGridDimensions();
+
+    // sf::RectangleShape cellShape(sf::Vector2f((float)cellWidth, (float)cellWidth));
+
+    // for (int i=0; i<mapGridDims.x; i++)
+    // {
+    //     for (int j=0; j<mapGridDims.y; j++)
+    //     {
+    //         vector2i gridPos(i, j);
+    //         vector2fl p1(gridCellPoint1(&game->map, cellWidth, gridPos));
+
+    //         cellShape.setPosition(toSFVecF(p1));
+    //         cellShape.setFillColor(getCellColor(game->map.getCell(gridPos)));
+            
+    //         window->draw(cellShape);
+    //     }
+    // }
+}
+
 void drawGameBackground(sf::RenderWindow *window)
 {
     sf::Color backgroundColor(0, 0, 50);
@@ -133,12 +193,14 @@ void drawGameBackground(sf::RenderWindow *window)
     float mapRadius(calculateMapRadius());
 
     sf::CircleShape biggestCircle(mapRadius, 300);
-    biggestCircle.setFillColor(backgroundColor);
+    biggestCircle.setFillColor(sf::Color::Transparent);
     biggestCircle.setOutlineColor(circlesOutlineColor);
-    biggestCircle.setOutlineThickness(1);
+    biggestCircle.setOutlineThickness(5);
     biggestCircle.setOrigin(mapRadius, mapRadius);
     biggestCircle.setPosition(sf::Vector2f(0,0));
     window->draw(biggestCircle);
+
+    return;
 
     sf::Color backgroundSpokeEndColor(circlesOutlineColor);
     backgroundSpokeEndColor.a = 50;
@@ -1199,6 +1261,7 @@ void updateAndDrawGhostBuildingIfExists(sf::RenderWindow* window, Game* game, Ga
 
 void drawGame(sf::RenderWindow* window, Game* game, GameUI* ui)
 {
+    drawMap(window, game);
     drawGameBackground(window);
 
     drawBuildRelatedEffects(window, game, ui);
@@ -1675,6 +1738,15 @@ void loadKeyCommandIcons()
     drawTurret(&cmdBuildTurretSource, buttonDrawSize / 2, 45, NEUTRAL_TEAM_COLOR, 255);
     cmdBuildTurretSource.display();
     cmdBuildTurretIcon.setTexture(cmdBuildTurretSource.getTexture());
+}
+
+void loadMapSprite()
+{
+    if (!mapImageSource.loadFromFile("map-image.bmp"))
+    {
+        throw runtime_error("Can't load map image");
+    }
+    mapImage.setTexture(mapImageSource);
 }
 
 sf::Sprite* getSpriteForUnitTypechar(uint8_t typechar)

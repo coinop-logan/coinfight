@@ -150,6 +150,9 @@ void forEachStartAt(vector<C>* vec, unsigned int start, void (*actionFunc)(C))
 
 struct GameSettings
 {
+    fixed32 mapScale;
+    vector2fp mapCenterOffsetInGameCoords;
+
     coinsInt
         goldTransferRate,
         beaconBuildRate;
@@ -175,5 +178,7 @@ struct GameSettings
 };
 
 GameSettings defaultGameSettings();
+
+const string DEFAULT_MAP_PATH("processed.map");
 
 #endif // COMMON_H

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -72,11 +73,31 @@ public:
     vector<EntityRef> nearbyEntitiesSloppyIncludingEmpty(vector2fp gamePos, fixed32 radius);
 };
 
+enum Cell {
+    Void,
+    Ground
+};
+
+class TerrainMap
+{
+    vector<vector<Cell>> cells;
+public:
+    TerrainMap() {}
+    TerrainMap(ifstream* infile);
+    vector2i getGridDimensions();
+    void pack(Netpack::Builder*);
+    TerrainMap(Netpack::Consumer*);
+    Cell getCell(vector2i);
+};
+
+TerrainMap loadTerrainMapOrThrow(string path);
+
 class Game
 {
 public:
     baseRandGenType randGen;
     GameSettings gameSettings;
+    TerrainMap map;
     time_t gameStartTime;
     enum GameMode
     {
@@ -113,7 +134,7 @@ public:
 
     void pack(Netpack::Builder*);
 
-    Game(int randSeed, time_t gameStartTime, GameSettings gameSettings);
+    Game(int randSeed, time_t gameStartTime, GameSettings gameSettings, TerrainMap map);
     Game(Netpack::Consumer*);
     void reassignEntityGamePointers();
 

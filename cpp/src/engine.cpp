@@ -246,6 +246,71 @@ vector<EntityRef> SearchGrid::nearbyEntitiesSloppyIncludingEmpty(vector2fp gameP
     return entitiesInGridRect(gridRectAroundGamePos(gamePos, radius));
 }
 
+Cell charToCell(char c)
+{
+    if (c == '0') return Void;
+    else return Ground;
+}
+
+TerrainMap::TerrainMap(ifstream* infile)
+{
+    cells.clear();
+
+    string line;
+
+    getline(*infile, line);
+
+    stringstream dimSS(line);
+    int width, height;
+    dimSS >> width >> height;
+
+    while (getline(*infile, line))
+    {
+        vector<Cell> row;
+
+        for (unsigned int i=0; i<line.size(); i++)
+        {
+            row.push_back(charToCell(line[i]));
+        }
+
+        assert((int)row.size() == width);
+        cells.push_back(row);
+    }
+    
+    assert((int)cells.size() == height);
+}
+vector2i TerrainMap::getGridDimensions()
+{
+    return vector2i(cells[0].size(), cells.size());
+}
+Cell TerrainMap::getCell(vector2i gridPos)
+{
+    return cells[gridPos.y][gridPos.x];
+}
+void TerrainMap::pack(Netpack::Builder* builder)
+{
+    #warning "still have to define pack/unpack for TerrainMap"
+}
+TerrainMap::TerrainMap(Netpack::Consumer* consumer)
+{
+    
+}
+
+TerrainMap loadTerrainMapOrThrow(string path)
+{
+    ifstream infile(path);
+    if (infile.fail())
+    {
+        throw "failed to open file";
+    }
+
+    TerrainMap map(&infile);
+
+    infile.close();
+
+    return map;
+}
+
 optional<uint8_t> Game::playerAddressToMaybeId(Address address)
 {
     for (uint8_t i=0; i<players.size(); i++)
@@ -493,8 +558,8 @@ vector<boost::shared_ptr<Unit>> Game::unitsCollidingWithCircle(vector2fp centerP
 }
 
 
-Game::Game(int randSeed, time_t gameStartTime, GameSettings gameSettings)
-    : randGen(randSeed), gameSettings(gameSettings), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius()), matchProfit(0)
+Game::Game(int randSeed, time_t gameStartTime, GameSettings gameSettings, TerrainMap map)
+    : randGen(randSeed), gameSettings(gameSettings), map(map), gameStartTime(gameStartTime), mode(Pregame), frame(0), searchGrid(calculateMapRadius()), matchProfit(0)
 {
     mapRadius = calculateMapRadius();
 }
@@ -503,6 +568,7 @@ void Game::pack(Netpack::Builder* to)
 {
     packRandGenerator(to, randGen);
     gameSettings.pack(to);
+    map.pack(to);
     packTimeT(to, gameStartTime);
     to->packEnum(mode);
     to->packUint64_t(frame);
@@ -528,11 +594,13 @@ void Game::pack(Netpack::Builder* to)
 }
 Game::Game(Netpack::Consumer* from)
     : gameSettings()
+    , map()
     , searchGrid(calculateMapRadius())
     , mapRadius(calculateMapRadius())
 {
     randGen = consumeRandGenerator(from);
     gameSettings = GameSettings(from);
+    map = TerrainMap(from);
     gameStartTime = consumeTimeT(from);
     mode = from->consumeEnum<GameMode>();
     frame = from->consumeUint64_t();

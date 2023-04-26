@@ -166,7 +166,8 @@ void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float currenc
     coinsInt creditInPerPlayer = bcCurrencyAmountToCoinsIntND(currencyInPerPlayer);
 
     int randSeed = time(NULL);
-    Game game(randSeed, time(NULL), gameSettings);
+    
+    Game game(randSeed, time(NULL), gameSettings, loadTerrainMapOrThrow(DEFAULT_MAP_PATH));
 
     vector<boost::shared_ptr<Event>> firstEvents;
 
@@ -346,7 +347,7 @@ void runLocal(GameSettings gameSettings, sf::RenderWindow* window, float currenc
 void runTutorial(sf::RenderWindow* window)
 {
     int randSeed = time(NULL);
-    Game game(randSeed, time(NULL), defaultGameSettings());
+    Game game(randSeed, time(NULL), defaultGameSettings(), loadTerrainMapOrThrow(DEFAULT_MAP_PATH));
     
     GameUI ui(&game.gameSettings, window, &mainFont, getSpriteForKeyButtonMsg, getSpriteForUnitTypechar, getUXView(), false);
 
@@ -491,7 +492,7 @@ void runClient(sf::RenderWindow* window, string serverAddressString, sf::Font* f
 
     connectionHandler.startReceivingLoop();
 
-    Game game(0, 0, GameSettings()); // will be overwritten soon with the resync packet
+    Game game(0, 0, GameSettings(), TerrainMap()); // will be overwritten soon with the resync packet
     
     optional<uint8_t> maybePlayerId = {};
 
