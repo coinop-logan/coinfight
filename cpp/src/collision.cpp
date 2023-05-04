@@ -87,7 +87,13 @@ vector2fp calcNewVelocityToAvoidCollisions(boost::shared_ptr<MobileUnit> unit, v
             /* Vector from cutoff center to relative velocity. */
             vector2fp w = relativeVelocity - invTimeStep * relativePosition;
 
-            const fixed32 wLength = w.getRoughMagnitude();
+            fixed32 wLength = w.getRoughMagnitude();
+            if (wLength == fixed32(0))
+            {
+                // hacky fix to avoid a divide by zero: pretend we're almost at a zero vector but not quite.
+                w = vector2fp(fixed32::from_raw_value(0), fixed32::from_raw_value(1));
+                wLength = w.getRoughMagnitude();
+            }
             const vector2fp unitW = w / wLength;
 
             line.direction = vector2fp(unitW.y, -unitW.x);
