@@ -143,7 +143,7 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                         "Recall Warp-in",
                         {},
                         'Q',
-                        "Recall the warp-in, refunding any $ spent so far.",
+                        "Recall the warp-in, refunding any funds spent so far.",
                         {
                             "If the Beacon is killed before the warp-out finishes, you'll lose the chance to warp in somewhere else.",
                             "The Beacon warps out at the same rate as it warped in."
@@ -304,7 +304,7 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                             "Deconstruct a friendly unit or structure, absorbing its investment gold.",
                             {
                                 "The friendly unit will become operational as soon as the scuttling starts.",
-                                "Make sure the Prime has somewhere to put the gold, or it will stop when it's full ($0.50)."
+                                "Make sure the Prime has somewhere to put the gold, or it will stop when it's full (" + coinsIntToPCKBString(gameSettings.primeGoldCapacity) +")."
                             }
                         ),
                         KeyButtonMsg::AttackScuttle

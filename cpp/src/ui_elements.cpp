@@ -103,6 +103,24 @@ sf::FloatRect displayCurrencyAmount(sf::RenderWindow* window, coinsInt amount, s
     return sf::FloatRect(drawUpperLeft.x, drawUpperLeft.y, totalWidth, totalHeight);
 }
 
+void displayCKBSymbol(sf::RenderWindow* window, int height, sf::Color color, vector2fl drawPos, vector2fl drawOriginVector)
+{
+    float originalSymbolHeight = ckbSymbolIcon.getLocalBounds().height;
+    float neededScale = (((float)height) / (float)originalSymbolHeight);
+    ckbSymbolIcon.setScale(neededScale, neededScale);
+
+    vector2fl drawUpperLeftOffset(
+        ckbSymbolIcon.getGlobalBounds().width * drawOriginVector.x,
+        ckbSymbolIcon.getGlobalBounds().height * drawOriginVector.y
+    );
+    vector2fl drawUpperLeft = drawPos - drawUpperLeftOffset;
+
+    ckbSymbolIcon.setPosition(toSFVecF(drawUpperLeft));
+    ckbSymbolIcon.setColor(color);
+
+    window->draw(ckbSymbolIcon);
+}
+
 Button::Button(vector2i p1, vector2i p2)
     : p1(p1), p2(p2), mousePos(), pressed(false), mouseover(false)
     {}
@@ -1472,43 +1490,39 @@ void displayGatewayProfitStatus(sf::RenderWindow* window, sf::Font* font, vector
     else if (get<0>(gateway->goldFlowFrom_view))
     {
         showPlus = true;
-        longTextString = "Sending funds to wallet.";
+        longTextString = "Sending pCKB to wallet.";
         characterTextColor = sf::Color(0, 255, 0);
         longTextColor = sf::Color(150, 200, 150);
     }
     else
     {
         showMinus = true;
-        longTextString = "Withdrawing funds from wallet.";
+        longTextString = "Withdrawing pCKB from wallet.";
         characterTextColor = sf::Color(255, 0, 0);
         longTextColor = sf::Color(200, 150, 150);
     }
 
-    sf::Text dollarSign("$", *font, 28);
-    int xOffset = (drawWidth - dollarSign.getLocalBounds().width) / 2;
-    vector2i dollarSignDrawPos = upperLeft + vector2i(xOffset, 0);
-    dollarSign.setPosition(toSFVecF(dollarSignDrawPos));
-    dollarSign.setFillColor(characterTextColor);
-    window->draw(dollarSign);
+    vector2fl ckbSymbolDrawPos = upperLeft + vector2fl(drawWidth / 2, 0);
+    displayCKBSymbol(window, 20, characterTextColor, ckbSymbolDrawPos, vector2fl(0.5, 0));
 
     if (showPlus)
     {
         sf::Text plus("+", *font, 28);
-        plus.setPosition(toSFVecF(dollarSignDrawPos + vector2i(13, 0)));
+        plus.setPosition(toSFVecF(ckbSymbolDrawPos + vector2i(16, -8)));
         plus.setFillColor(characterTextColor);
         window->draw(plus);
     }
     if (showMinus)
     {
         sf::Text minus("-", *font, 28);
-        minus.setPosition(toSFVecF(dollarSignDrawPos + vector2i(-13, 0)));
+        minus.setPosition(toSFVecF(ckbSymbolDrawPos + vector2i(-32, -8)));
         minus.setFillColor(characterTextColor);
         window->draw(minus);
     }
 
     int yOffset = 32;
     sf::Text longText(longTextString, *font, 14);
-    xOffset = (drawWidth - longText.getLocalBounds().width) / 2;
+    int xOffset = (drawWidth - longText.getLocalBounds().width) / 2;
     vector2i longTextDrawPos = upperLeft + vector2i(xOffset, yOffset);
     longText.setPosition(toSFVecF(longTextDrawPos));
     longText.setFillColor(longTextColor);
