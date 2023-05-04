@@ -79,11 +79,11 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                     "Warp In Gateway",
                     gameSettings.gatewayOrBeaconCost,
                     'W',
-                    "Warp in a Gateway, investing " + coinsIntToCurrencyString(gameSettings.gatewayOrBeaconCost) + ". This can only be done once per game.",
+                    "Warp in a Gateway, investing " + coinsIntToPCKBString(gameSettings.gatewayOrBeaconCost) + ". This can only be done once per game.",
                     {
                         "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal.",
                         "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
-                        "The warp can be reversed before completion, refunding the " + coinsIntToCurrencyString(gameSettings.gatewayOrBeaconCost) + " investment and allowing you to warp in somewhere else.",
+                        "The warp can be reversed before completion, refunding the " + coinsIntToPCKBString(gameSettings.gatewayOrBeaconCost) + " investment and allowing you to warp in somewhere else.",
                         "Additional Gateways can be built later with Primes."
                     }
                 ),
@@ -166,7 +166,7 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                         'Q',
                         "Begin constructing a Prime, a general worker unit.",
                         {
-                            "Harvests gold for construction or capture (" + coinsIntToCurrencyString(gameSettings.primeCost) + " carrying capacity).",
+                            "Harvests gold for construction or capture (" + coinsIntToPCKBString(gameSettings.primeCost) + " carrying capacity).",
                             "Constructs Gateways and Turrets.",
                             "Works with Gateways and other Primes to accelerate construction.",
                             "Can \"scuttle\" friendly buildings and units, destroying them to recover their gold investment."

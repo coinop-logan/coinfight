@@ -83,12 +83,20 @@ bool Coins::tryAdd(coinsInt addAmount)
 
 // PUBLIC
 
-string coinsIntToCurrencyString(coinsInt amount)
+string coinsIntToCurrencyAmountString(coinsInt amount)
 {
     float bcCurrencyAmount = amount / (pow(10, LOCAL_CREDIT_EXPONENT));
     char buf[100];
-    snprintf(buf, 100, "%.0f c", bcCurrencyAmount);
+    snprintf(buf, 100, "%.0f", bcCurrencyAmount);
     return string(buf);
+}
+string coinsIntToCurrencyStringWithLabel(coinsInt amount, string label)
+{
+    return coinsIntToCurrencyAmountString(amount) + label;
+}
+string coinsIntToPCKBString(coinsInt amount)
+{
+    return coinsIntToCurrencyStringWithLabel(amount, " pCKB");
 }
 // string coinsIntToDollarString(coinsInt amount)
 // {
@@ -111,14 +119,6 @@ string coinsIntToCurrencyString(coinsInt amount)
 coinsInt Coins::getInt()
 {
     return heldAmount;
-}
-// string Coins::getDollarString()
-// {
-//     return coinsIntToDollarString(getInt());
-// }
-string Coins::getCurrencyString()
-{
-    return coinsIntToCurrencyString(getInt());
 }
 coinsInt Coins::getSpaceLeft()
 {

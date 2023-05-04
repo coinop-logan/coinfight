@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     string serverIP = customServerIP ? *customServerIP : SERVER_IP_DEFAULT;
 
     loadFonts(&mainFont, &tutorialFont);
-    loadMenuIcons();
+    loadIcons();
 
     sf::RenderWindow* window = setupGraphics(fullscreen, smallScreen);
 

@@ -574,17 +574,11 @@ void displayAccountBalance(sf::RenderWindow *window, Coins *playerBalance, sf::F
     int textSpacing = 10;
 
     sf::Text title(sf::String("Wallet"), *font, 24);
+    title.setPosition(upperLeft);
+    window->draw(title);
 
-    sf::Text balance(sf::String(playerBalance->getCurrencyString()), *font, 30);
-    balance.setFillColor(balanceTextColor);
-
-    sf::Transform transform;
-    transform.translate(upperLeft);
-
-    window->draw(title, transform);
-
-    transform.translate(sf::Vector2f(0, title.getLocalBounds().height + textSpacing));
-    window->draw(balance, transform);
+    vector2fl currencyAmountUpperLeft = fromSFVec(upperLeft) + vector2fl(0, title.getLocalBounds().height + textSpacing);
+    displayCurrencyAmount(window, playerBalance->getInt(), font, 30, balanceTextColor, currencyAmountUpperLeft, vector2fl(0,0));
 }
 
 void displayDepositNeededMsg(sf::RenderWindow* window, sf::Font* font, sf::Vector2f upperLeft)
@@ -841,22 +835,19 @@ void drawUnitDroppableValues(sf::RenderWindow *window, Game *game, GameUI* ui, o
         vector2fp entityPos = game->entities[i]->getPos();
         if (displayAboveCoins)
         {
-            sf::Text aboveText(displayAboveCoins->getCurrencyString(), *font, 16);
-            sf::FloatRect textRec = aboveText.getLocalBounds();
-
-            vector2fl textPos(entityPos + vector2fp(fixed32(0), fixed32(-30)));
-
-            aboveText.setFillColor(topTextColor);
-            aboveText.setOrigin(textRec.width / 2.f, textRec.height / 2.f);
-            aboveText.setPosition(toSFVecF(textPos));
+            vector2fl bottomCenterDrawPos = vector2fl(entityPos) - vector2fl(0, 30);
+            sf::FloatRect textRec = displayCurrencyAmount(window, displayAboveCoins->getInt(), font, 16, topTextColor, bottomCenterDrawPos, vector2fl(0.5, 1));
 
             sf::RectangleShape drawRect(sf::Vector2f(textRec.width + 4, textRec.height + 4));
             drawRect.setOrigin((textRec.width / 2.f) + 2, (textRec.height / 2.f) + 2);
-            drawRect.setPosition(toSFVecF(textPos + vector2fl(0, 3)));
+            drawRect.setPosition(toSFVecF(bottomCenterDrawPos));
             drawRect.setFillColor(sf::Color(0, 0, 0, 150));
 
             window->draw(drawRect);
-            window->draw(aboveText);
+
+            // we call this a second time as a hacky way to get this text above the drawRect,
+            // since we can't properly size the draw rect without first calling displayCurrencyAmount
+            displayCurrencyAmount(window, displayAboveCoins->getInt(), font, 16, topTextColor, bottomCenterDrawPos, vector2fl(0.5, 1));
         }
         // the below was not being used - so I commented it out for now.
         // To use this you'll have to invert some of the y vals (this code is from before sf::View was used)
@@ -1379,12 +1370,7 @@ void displayKeyButtonHint(sf::RenderWindow* window, vector2i upperLeft, KeyButto
 
     if (auto cost = hintInfo.maybeCost)
     {
-        string costString = coinsIntToCurrencyString(*cost);
-        sf::Text costText(costString, *fwFont, 18);
-        int xOffset = drawAreaSize.x - costText.getLocalBounds().width;
-        costText.setPosition(toSFVecF(drawUpperLeft + vector2i(xOffset, 0)));
-        costText.setFillColor(sf::Color(255, 255, 0));
-        window->draw(costText);
+        displayCurrencyAmount(window, *cost, fwFont, 18, sf::Color(255, 255, 0), drawUpperLeft + vector2i(drawAreaSize.x, 0), vector2fl(1, 0));
     }
 
     int yOffset = titleText.getLocalBounds().height + 20;

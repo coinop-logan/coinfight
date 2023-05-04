@@ -51,7 +51,9 @@ const vector2i UNIT_ART_SIZE(120, 120);
 
 const int UNIT_INFO_STATUS_ELEMENT_SPACING = 14;
 
-void loadMenuIcons();
+void loadIcons();
+
+sf::FloatRect displayCurrencyAmount(sf::RenderWindow* window, coinsInt amount, sf::Font* font, int size, sf::Color color, vector2fl drawPos, vector2fl drawOriginVector);
 
 class Button
 {

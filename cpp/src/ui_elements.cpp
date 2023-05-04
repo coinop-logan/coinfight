@@ -11,17 +11,19 @@ sf::Texture
     copyActionSource,
     copyDoneSource,
     pasteActionSource,
-    pasteDoneSource
+    pasteDoneSource,
+    ckbSymbolSource
 ;
 
 sf::Sprite
     copyActionIcon,
     copyDoneIcon,
     pasteActionIcon,
-    pasteDoneIcon
+    pasteDoneIcon,
+    ckbSymbolIcon
 ;
 
-void loadMenuIcons()
+void loadIcons()
 {
     if (!copyActionSource.loadFromFile("clipboard-copy-action.png"))
     {
@@ -46,6 +48,13 @@ void loadMenuIcons()
         throw runtime_error("Can't load paste done icon");
     }
     pasteDoneIcon.setTexture(pasteDoneSource);
+
+    ckbSymbolSource.setSmooth(true);
+    if (!ckbSymbolSource.loadFromFile("nervos-n-white.png"))
+    {
+        throw runtime_error("Can't load CKB symbol icon");
+    }
+    ckbSymbolIcon.setTexture(ckbSymbolSource);
 }
 
 bool collides(vector2i p1, vector2i p2, vector2i point)
@@ -56,6 +65,42 @@ bool collides(vector2i p1, vector2i p2, vector2i point)
         point.y     >= p1.y &&
         point.y - 1 <= p2.y
     );
+}
+
+sf::FloatRect displayCurrencyAmount(sf::RenderWindow* window, coinsInt amount, sf::Font* font, int size, sf::Color color, vector2fl drawPos, vector2fl drawOriginVector)
+{
+    sf::Text amountText(sf::String(coinsIntToCurrencyAmountString(amount)), *font, size);
+
+    float originalSymbolHeight = ckbSymbolIcon.getLocalBounds().height;
+    float neededScale = (((float)size) / (float)originalSymbolHeight) * 0.65;
+    ckbSymbolIcon.setScale(neededScale, neededScale);
+
+    float spacing = size * 0.4;
+
+    float totalWidth = amountText.getLocalBounds().width + spacing + ckbSymbolIcon.getGlobalBounds().width;
+    float totalHeight = amountText.getLocalBounds().height;
+
+    // drawOriginVector determines where this is drawn "from":
+    // (0,0) indicates upper left while i.e. (0.5, 1) indicates middle bottom
+    // Given this and our width and height, we need to calculate our actual upperLeft point to start drawing from.
+    vector2fl drawUpperLeftOffset(
+        totalWidth * drawOriginVector.x,
+        totalHeight * drawOriginVector.y
+    );
+    vector2fl drawUpperLeft = drawPos - drawUpperLeftOffset;
+    
+    vector2fl symbolUpperLeft = drawUpperLeft + vector2fl(amountText.getLocalBounds().width + spacing, (size * 0.35));
+
+    amountText.setPosition(toSFVecF(drawUpperLeft));
+    ckbSymbolIcon.setPosition(toSFVecF(symbolUpperLeft));
+
+    amountText.setFillColor(color);
+    ckbSymbolIcon.setColor(color);
+
+    window->draw(amountText);
+    window->draw(ckbSymbolIcon);
+
+    return sf::FloatRect(drawUpperLeft.x, drawUpperLeft.y, totalWidth, totalHeight);
 }
 
 Button::Button(vector2i p1, vector2i p2)
@@ -976,11 +1021,7 @@ int displayWorkOrderInfo(sf::RenderWindow* window, sf::Font* font, vector2i uppe
     {
         vector2i drawPos = upperLeft + vector2i(250, yOffset);
 
-        string fundsLeftString = coinsIntToCurrencyString(*maybeFundsLeft);
-        sf::Text fundsLeftText(fundsLeftString, *font, 14);
-        fundsLeftText.setPosition(toSFVecF(drawPos));
-        fundsLeftText.setFillColor(sf::Color::Yellow);
-        window->draw(fundsLeftText);
+        displayCurrencyAmount(window, *maybeFundsLeft, font, 14, sf::Color::Yellow, drawPos, vector2fl(0, 0));
 
         drawPos += vector2i(50, 2);
         sf::Text left(" left", *font, 12);
@@ -1232,16 +1273,23 @@ void displayPrimeStatus(sf::RenderWindow* window, sf::Font* font, vector2i upper
 {
     int yOffset = 0;
 
-    stringstream ss;
-    ss << coinsIntToCurrencyString(prime->heldGold.getInt()) << " / " << coinsIntToCurrencyString(prime->heldGold.max);
-    ss << "  (" << floatToShortPercentString(prime->getHeldGoldRatio()) << ")";
-    
-    sf::Text heldGoldText(ss.str(), *font, 16);
-    heldGoldText.setPosition(toSFVecF(upperLeft + vector2i(0, yOffset)));
-    heldGoldText.setFillColor(sf::Color::Yellow);
-    window->draw(heldGoldText);
+    vector2fl currencyNumeratorDrawPos = upperLeft + vector2i(0, yOffset);
+    sf::Rect currencyNumeratorDrawRect = displayCurrencyAmount(window, prime->heldGold.getInt(), font, 16, sf::Color::Yellow, currencyNumeratorDrawPos, vector2fl(0, 0));
 
-    yOffset += heldGoldText.getLocalBounds().height + 30;
+    sf::Text slashText(" / ", *font, 16);
+    slashText.setPosition(toSFVecF(currencyNumeratorDrawPos + vector2fl(30, 0)));
+    slashText.setFillColor(sf::Color(100, 100, 100));
+    window->draw(slashText);
+    
+    vector2fl currencyDenominatorDrawPos = currencyNumeratorDrawPos + vector2fl(50, 0);
+    sf::Rect currencyDenominatorDrawRect = displayCurrencyAmount(window, prime->heldGold.max, font, 16, sf::Color(100, 100, 100), currencyDenominatorDrawPos, vector2fl(0, 0));
+
+    sf::Text percentText(" (" + floatToShortPercentString(prime->getHeldGoldRatio()) + ")", *font, 16);
+    percentText.setPosition(sf::Vector2f(currencyDenominatorDrawRect.left + currencyDenominatorDrawRect.width, currencyDenominatorDrawRect.top));
+    percentText.setFillColor(sf::Color::White);
+    window->draw(percentText);
+
+    yOffset += percentText.getLocalBounds().height + 30;
 
     displayPrimeGoldSourceInfo(window, font, upperLeft + vector2i(0, yOffset), prime);
 
