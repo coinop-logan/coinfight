@@ -287,14 +287,14 @@ Cell TerrainMap::getCell(vector2i gridPos)
 {
     return cells[gridPos.y][gridPos.x];
 }
-void TerrainMap::pack(Netpack::Builder* builder)
-{
-    #warning "still have to define pack/unpack for TerrainMap"
-}
-TerrainMap::TerrainMap(Netpack::Consumer* consumer)
-{
+// void TerrainMap::pack(Netpack::Builder* builder)
+// {
+//     #warning "still have to define pack/unpack for TerrainMap"
+// }
+// TerrainMap::TerrainMap(Netpack::Consumer* consumer)
+// {
     
-}
+// }
 
 TerrainMap loadTerrainMapOrThrow(string path)
 {
@@ -568,7 +568,6 @@ void Game::pack(Netpack::Builder* to)
 {
     packRandGenerator(to, randGen);
     gameSettings.pack(to);
-    map.pack(to);
     packTimeT(to, gameStartTime);
     to->packEnum(mode);
     to->packUint64_t(frame);
@@ -600,7 +599,6 @@ Game::Game(Netpack::Consumer* from)
 {
     randGen = consumeRandGenerator(from);
     gameSettings = GameSettings(from);
-    map = TerrainMap(from);
     gameStartTime = consumeTimeT(from);
     mode = from->consumeEnum<GameMode>();
     frame = from->consumeUint64_t();

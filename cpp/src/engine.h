@@ -85,8 +85,8 @@ public:
     TerrainMap() {}
     TerrainMap(ifstream* infile);
     vector2i getGridDimensions();
-    void pack(Netpack::Builder*);
-    TerrainMap(Netpack::Consumer*);
+    // void pack(Netpack::Builder*);
+    // TerrainMap(Netpack::Consumer*);
     Cell getCell(vector2i);
 };
 
