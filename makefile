@@ -34,6 +34,7 @@ prep-server:
 	mkdir -p bin/events_out/withdrawals
 	mkdir -p bin/sessions
 	cp assets/server/* bin/
+	cp assets/common/* bin/
 
 client: pre-build client-build
 
@@ -54,6 +55,7 @@ server-install: server-build
 
 client-build: bin/coinfight
 	cp -r assets/client/* bin/
+	cp assets/common/* bin/
 
 package-client:
 	cd package-assets/client && ./package.sh && mv coinfight-*.zip ../../dist/ && cd ../..
