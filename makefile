@@ -51,6 +51,7 @@ server-build: bin/server
 server-install: server-build
 	sudo cp py/*.py /usr/bin/coinfight/python/
 	sudo cp bin/server /usr/bin/coinfight/server
+	sudo cp assets/server/* /usr/share/coinfight_server
 
 client-build: bin/coinfight
 	cp -r assets/client/* bin/
