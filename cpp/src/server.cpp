@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
     }
 
     int randSeed = time(NULL);
-    Game game(randSeed, *gameStartTime, GameSettings());
+    Game game(randSeed, *gameStartTime, defaultGameSettings());
     if (restoreLabel)
     {
         boost::filesystem::path statePath = restoreLabelToStateFile(*restoreLabel);
