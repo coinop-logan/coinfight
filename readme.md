@@ -1,3 +1,7 @@
+## Currently Shelved
+
+I've halted the development of Coinfight to pursure more directly gainful employment for the time being.
+
 # Coinfight
 
 Build an army out of crypto (pCKB at the moment via Godwoken), fight other armies, pick up the pieces, and get out with more crypto! Unless you blunder and lose your army. Then all that money's gone!
@@ -8,8 +12,6 @@ Some vids if you're not about to download some random guy's "crypto game":
 * [Introducing Coinfight](https://medium.com/@coinop.logan/introducing-coinfight-db55c3f918ed) - 10 min read
 * [v0.1.6 showcase/demo](https://youtu.be/QRzH7jZX7B4) - 4 min video
 * [April 2023 devlog](https://medium.com/@coinop.logan/coinfight-devlog-3-472636deec57) - 4 min read
-
-Currently working on generating hype and rapid feature iteration from user feedback. If you're a marketer please get in contact ayy
 
 # To Play Coinfight
 
