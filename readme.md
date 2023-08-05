@@ -30,7 +30,7 @@ If using Mac, make sure `brew` is installed.
 
 In the root directory of the project, run `./configure` to install a couple dependecies, then run `make client`.
 
-This should populate `bin/` with the `client` and `coinfight_local` binaries and a few resources. Running `./coinfight_local` is a good way to test that the game runs smoothly without connecting to a server.
+This should populate `bin/` with the `client` and `coinfight_local` binaries and a few resources. Running `./coinfight_local` is a good way to test that the game runs smoothly sometime before trying to connect to a real game.
 
 ## Windows
 
