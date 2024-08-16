@@ -3,7 +3,7 @@ GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
 CXX = g++
 UNAME := $(shell uname)
 INC=-I/usr/include -I/usr/include/python3.8/ -I ./cpp/include/ `python3-config --includes`
-LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.8
+LIBSERVER=-lboost_system -lsfml-graphics -lsfml-system -lboost_filesystem `python3-config --ldflags` -lpython3.10
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Wall -std=c++17 -no-pie -arch x86_64 -DGIT_COMMIT_HASH='"$(GIT_COMMIT_HASH)"'
 LIBCLIENT=-lboost_system -lsfml-graphics -lsfml-system -lsfml-window -framework OpenGL

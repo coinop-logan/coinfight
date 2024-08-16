@@ -1440,7 +1440,7 @@ coinsInt Gateway::scuttleQueueWeight()
 
 Gateway::Gateway(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
     : Unit(gameSettings, ownerId, &gameSettings->gatewayOrBeaconCost, &gameSettings->gatewayHealth, pos),
-      goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
+      goldFlowFrom_view({boost::shared_ptr<Entity>(), false}), goldFlowTo_view({boost::shared_ptr<Entity>(), false})
 {}
 void Gateway::pack(Netpack::Builder* to)
 {
@@ -1635,8 +1635,8 @@ void Gateway::iterate()
     validateTargets();
 
     // until proven otherwise
-    goldFlowFrom_view = {{}, false};
-    goldFlowTo_view = {{}, false};
+    goldFlowFrom_view = {boost::shared_ptr<Entity>(), false};
+    goldFlowTo_view = {boost::shared_ptr<Entity>(), false};
 
     Game *game = getGameOrThrow();
 
@@ -1817,7 +1817,7 @@ Prime::Prime(GameSettings* gameSettings, uint8_t ownerId, vector2fp pos)
     : Unit(gameSettings, ownerId, &gameSettings->primeCost, &gameSettings->primeHealth, pos),
       MobileUnit(),
       heldGold(gameSettings->primeGoldCapacity),
-      goldFlowFrom_view({{}, false}), goldFlowTo_view({{}, false})
+      goldFlowFrom_view({boost::shared_ptr<Entity>(), false}), goldFlowTo_view({boost::shared_ptr<Entity>(), false})
 {}
 void Prime::pack(Netpack::Builder* to)
 {
@@ -2514,8 +2514,8 @@ void Prime::iterate()
     validateTargets();
 
     // until proven otherwise
-    goldFlowFrom_view = {{}, false};
-    goldFlowTo_view = {{}, false};
+    goldFlowFrom_view = {boost::shared_ptr<Entity>(), false};
+    goldFlowTo_view = {boost::shared_ptr<Entity>(), false};
 
     Game *game = getGameOrThrow();
 
