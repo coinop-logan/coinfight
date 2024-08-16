@@ -95,11 +95,11 @@ uint8_t consumeTypechar(Netpack::Consumer* from)
 
 coinsInt bcCurrencyAmountToCoinsIntND(float bcCurrencyAmount)
 {
-    return bcCurrencyAmount * (pow(10, LOCAL_CREDIT_EXPONENT));
+    return bcCurrencyAmount * (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
 }
 float coinsIntToDollarsND(coinsInt coins)
 {
-    return coins / (pow(10, LOCAL_CREDIT_EXPONENT));
+    return coins / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
 }
 
 vector2fl randomVectorWithMagnitude(float magnitude)
@@ -293,24 +293,24 @@ GameSettings defaultGameSettings()
 {
     GameSettings settings;
 
-    settings.goldTransferRate = 150;
-    settings.beaconBuildRate = 400;
+    settings.goldTransferRate = 6;
+    settings.beaconBuildRate = 12;
 
-    settings.primeGoldCapacity = 50000;
+    settings.primeGoldCapacity = 5000;
 
-    settings.gatewayOrBeaconCost = 500000;
+    settings.gatewayOrBeaconCost = 20000;
 
     settings.beaconHealth = 500;
 
     settings.gatewayHealth = 1500;
 
-    settings.primeCost = 50000;
+    settings.primeCost = 2500;
     settings.primeHealth = 100;
 
-    settings.fighterCost = 200000;
+    settings.fighterCost = 7500;
     settings.fighterHealth = 300;
 
-    settings.turretCost = 1000000;
+    settings.turretCost = 50000;
     settings.turretHealth = 900;
 
     return settings;

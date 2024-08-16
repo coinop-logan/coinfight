@@ -79,11 +79,11 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                     "Warp In Gateway",
                     gameSettings.gatewayOrBeaconCost,
                     'W',
-                    "Warp in a Gateway, investing " + coinsIntToPCKBString(gameSettings.gatewayOrBeaconCost) + ". This can only be done once per game.",
+                    "Warp in a Gateway, investing " + coinsIntToDollarString(gameSettings.gatewayOrBeaconCost) + ". This can only be done once per game.",
                     {
                         "Gateways allow you to invest in an army, and can pull in-game gold into your Coinfight wallet for withdrawal.",
                         "The warp-in takes about 20 seconds. During this time you are vulnerable to attack.",
-                        "The warp can be reversed before completion, refunding the " + coinsIntToPCKBString(gameSettings.gatewayOrBeaconCost) + " investment and allowing you to warp in somewhere else.",
+                        "The warp can be reversed before completion, refunding the " + coinsIntToDollarString(gameSettings.gatewayOrBeaconCost) + " investment and allowing you to warp in somewhere else.",
                         "Additional Gateways can be built later with Primes."
                     }
                 ),
@@ -166,7 +166,7 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                         'Q',
                         "Begin constructing a Prime, a general worker unit.",
                         {
-                            "Harvests gold for construction or capture (" + coinsIntToPCKBString(gameSettings.primeCost) + " carrying capacity).",
+                            "Harvests gold for construction or capture (" + coinsIntToCentsRoundedString(gameSettings.primeCost) + " carrying capacity).",
                             "Constructs Gateways and Turrets.",
                             "Works with Gateways and other Primes to accelerate construction.",
                             "Can \"scuttle\" friendly buildings and units, destroying them to recover their gold investment."
@@ -304,7 +304,7 @@ void GameUI::updateUnitCmds(GameSettings gameSettings, bool spawnBeaconAvailable
                             "Deconstruct a friendly unit or structure, absorbing its investment gold.",
                             {
                                 "The friendly unit will become operational as soon as the scuttling starts.",
-                                "Make sure the Prime has somewhere to put the gold, or it will stop when it's full (" + coinsIntToPCKBString(gameSettings.primeGoldCapacity) +")."
+                                "Make sure the Prime has somewhere to put the gold, or it will stop when it's full (" + coinsIntToCentsRoundedString(gameSettings.primeGoldCapacity) +")."
                             }
                         ),
                         KeyButtonMsg::AttackScuttle

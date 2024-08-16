@@ -25,14 +25,14 @@ Coins::Coins(coinsInt max) :  heldAmount(0), max(max)
 
 coinsInt weiDepositStringToCoinsInt(string weiString)
 {
-    int digitsToRemove = BLOCKCHAIN_WEI_EXPONENT - LOCAL_CREDIT_EXPONENT;
+    int digitsToRemove = BLOCKCHAIN_WEI_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
     string newString(weiString);
     newString.erase(newString.length() - digitsToRemove);
     return stoi(newString);
 }
 string coinsIntToWeiDepositString(coinsInt amount)
 {
-    int digitsToAdd = BLOCKCHAIN_WEI_EXPONENT - LOCAL_CREDIT_EXPONENT;
+    int digitsToAdd = BLOCKCHAIN_WEI_EXPONENT - CREDIT_PER_DOLLAR_EXPONENT;
     string coinsString = to_string(amount);
     string weiString = coinsString + string(digitsToAdd, '0');
     return weiString;
@@ -85,37 +85,37 @@ bool Coins::tryAdd(coinsInt addAmount)
 
 string coinsIntToCurrencyAmountString(coinsInt amount)
 {
-    float bcCurrencyAmount = amount / (pow(10, LOCAL_CREDIT_EXPONENT));
+    float bcCurrencyAmount = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
     char buf[100];
-    snprintf(buf, 100, "%.0f", bcCurrencyAmount);
+    snprintf(buf, 100, "%.2f", bcCurrencyAmount);
     return string(buf);
 }
-string coinsIntToCurrencyStringWithLabel(coinsInt amount, string label)
+// string coinsIntToCurrencyStringWithLabel(coinsInt amount, string label)
+// {
+//     return coinsIntToCurrencyAmountString(amount) + label;
+// }
+// string coinsIntToPCKBString(coinsInt amount)
+// {
+//     return coinsIntToCurrencyStringWithLabel(amount, " pCKB");
+// }
+string coinsIntToDollarString(coinsInt amount)
 {
-    return coinsIntToCurrencyAmountString(amount) + label;
+    float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
+    char buf[100];
+    snprintf(buf, 100, "$%.2f", dollars);
+    return string(buf);
 }
-string coinsIntToPCKBString(coinsInt amount)
+int getNumCentsRounded(coinsInt amount)
 {
-    return coinsIntToCurrencyStringWithLabel(amount, " pCKB");
+    float cents = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT - 2));
+    return int(round(cents));
 }
-// string coinsIntToDollarString(coinsInt amount)
-// {
-//     float dollars = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT));
-//     char buf[100];
-//     snprintf(buf, 100, "$%.2f", dollars);
-//     return string(buf);
-// }
-// int getNumCentsRounded(coinsInt amount)
-// {
-//     float cents = amount / (pow(10, CREDIT_PER_DOLLAR_EXPONENT - 2));
-//     return int(round(cents));
-// }
-// string coinsIntToCentsRoundedString(coinsInt amount)
-// {
-//     stringstream ss;
-//     ss << getNumCentsRounded(amount) << "c";
-//     return ss.str();
-// }
+string coinsIntToCentsRoundedString(coinsInt amount)
+{
+    stringstream ss;
+    ss << getNumCentsRounded(amount) << "c";
+    return ss.str();
+}
 coinsInt Coins::getInt()
 {
     return heldAmount;

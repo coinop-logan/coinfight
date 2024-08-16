@@ -32,7 +32,7 @@ const std::chrono::duration<double, std::ratio<1,60>> ONE_FRAME(1);
 const fixed32 ENTITY_COLLIDE_RADIUS(15);
 
 const int BLOCKCHAIN_WEI_EXPONENT = 18; // weiAmount / 10^? = humanReadbleAmount
-const int LOCAL_CREDIT_EXPONENT = 3; // humanReadableAmount * 10^? = coinsIntAmount
+const int CREDIT_PER_DOLLAR_EXPONENT = 4; // humanReadableAmount * 10^? = coinsIntAmount
 
 const float PARTICLE_MAGNET_STRENGTH = 1;
 const float PARTICLE_FRICTION_CONSTANT = 0.9;

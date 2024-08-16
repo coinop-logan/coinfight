@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
             {
                 case StartLocal:
                 {
-                    runLocal(defaultGameSettings(), window, 1500, false);
+                    runLocal(defaultGameSettings(), window, 10, false);
                     break;
                 }
                 case StartLocalDebug:
                 {
-                    runLocal(defaultGameSettings(), window, 1500, true);
+                    runLocal(defaultGameSettings(), window, 10, true);
                     break;
                 }
                 case StartTutorial:

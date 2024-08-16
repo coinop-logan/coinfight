@@ -16,11 +16,11 @@ coinsInt consumeCoinsInt(Netpack::Consumer* from);
 coinsInt weiDepositStringToCoinsInt(string weiString);
 string coinsIntToWeiDepositString(coinsInt coins);
 string coinsIntToCurrencyAmountString(coinsInt coins);
-string coinsIntToCurrencyStringWithLabel(coinsInt, string);
-string coinsIntToPCKBString(coinsInt);
-// string coinsIntToDollarString(coinsInt coins);
-// int getNumCentsRounded(coinsInt amount);
-// string coinsIntToCentsRoundedString(coinsInt amount);
+// string coinsIntToCurrencyStringWithLabel(coinsInt, string);
+// string coinsIntToPCKBString(coinsInt);
+string coinsIntToDollarString(coinsInt coins);
+int getNumCentsRounded(coinsInt amount);
+string coinsIntToCentsRoundedString(coinsInt amount);
 
 class Coins
 {
