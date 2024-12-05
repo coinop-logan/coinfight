@@ -14,7 +14,7 @@ const unsigned int TITLE_POS_Y = 50;
 
 const vector2i KEYBUTTONHINT_SIZE(650, KEYBUTTONBOX_SIZE.y);
 
-const float GOLDPILE_WIDTH_DIVISOR = 2500;
+const float GOLDPILE_WIDTH_DIVISOR = 300;
 const float GOLDPILE_WIDTH_FLOOR = 5;
 
 sf::RenderWindow* setupGraphics(bool fullscreen, bool smallScreen);
