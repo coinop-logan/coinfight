@@ -395,7 +395,7 @@ void LoginWindow::drawContent(sf::RenderWindow* window, vector2i drawOffset)
     // 3. Paste signature
 
     drawStepNum(window, "3", font, vector2i(leftBorder, yPos));
-    textHeight = drawWrappedStepText(window, "Click to paste the resulting signature here.", font, vector2i(textStartX, yPos), shortTextWidth);
+    textHeight = drawWrappedStepText(window, "Click to paste the resulting signature here. TODO: FAKE, REPLACE", font, vector2i(textStartX, yPos), shortTextWidth);
 
     if (!pasteButton)
     {

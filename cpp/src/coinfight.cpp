@@ -657,7 +657,11 @@ optional<Address> runLoginScreen(sf::RenderWindow* mainWindow, ConnectionHandler
         {
             Address taggedAddress = get<0>(*addressAndSigResponse);
             string sig = get<1>(*addressAndSigResponse);
-            connectionHandler->sendSignature(sig);
+
+            // connectionHandler->sendSignature(sig);
+            // todo: faking it
+            connectionHandler->sendSignature(taggedAddress.getString());
+
             optional<Address> maybePlayerAddress = connectionHandler->receiveAddressIfNotDenied();
             if (maybePlayerAddress)
             {

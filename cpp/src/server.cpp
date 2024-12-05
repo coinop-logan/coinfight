@@ -11,7 +11,7 @@
 #include "engine.h"
 #include "config.h"
 #include "packets.h"
-#include "sigWrapper.h"
+// #include "sigWrapper.h"
 #include "events.h"
 #include "exec.h"
 
@@ -203,31 +203,36 @@ public:
         }
         else
         {
-            // receivedSig now has sig
-            // But leave out the trailing \n leftover
-            string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
+            // todo: faking it
+            // instead, we're just going to expect and pull the address string and trust them lol
+            string address(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
 
-            // now have sig and sentChallenge as strings.
-            string error;
-            if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
-            {
-                connectionAuthdUserAddress = *maybeRecoveredAddress;
+            // // receivedSig now has sig
+            // // But leave out the trailing \n leftover
+            // string sig(boost::asio::buffer_cast<const char*>(receivedSig.data()), receivedSig.size() - 1);
+
+            // // now have sig and sentChallenge as strings.
+            // string error;
+            // if (auto maybeRecoveredAddress = signedMsgToAddressString(sentChallenge, sig, &error))
+            // {
+            //     connectionAuthdUserAddress = *maybeRecoveredAddress;
+                connectionAuthdUserAddress = address;
                 boost::asio::write(*socket, boost::asio::buffer(string("1")));
-            }
-            else
-            {
-                // send a 0 to indicate failure to client
-                boost::asio::write(*socket, boost::asio::buffer(string("0")));
-                cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
-                cout << error << endl;
-                state = Closed;
-                return;
-            }
-            
+            // }
+            // else
+            // {
+            //     // send a 0 to indicate failure to client
+            //     boost::asio::write(*socket, boost::asio::buffer(string("0")));
+            //     cout << "Error recovering address from connection. Kicking." << endl << "Here's the Python error message:" << endl;
+            //     cout << error << endl;
+            //     state = Closed;
+            //     return;
+            // }
 
             cout << "Player authenticated and connected." << endl;
 
-            string response = connectionAuthdUserAddress.getString(); // prepend with 1 to indicate success
+            string response = connectionAuthdUserAddress.getString();
+
             boost::asio::write(*socket, boost::asio::buffer(response));
 
             state = ReadyForFirstSync;
