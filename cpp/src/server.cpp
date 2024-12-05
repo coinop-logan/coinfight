@@ -163,7 +163,10 @@ public:
             // If there was a version mismatch, send a fail flag
             if (codeHash != GIT_COMMIT_HASH)
             {
-                cout << "Received code hash doesn't match! Sending denial and closing connection." << endl;
+                cout << "Received code hash doesn't match!" << endl;
+                cout << "Received: " << codeHash << endl;
+                cout << "Expected: " << GIT_COMMIT_HASH << endl;
+                cout << "Sending denial and closing connection." << endl;
                 boost::asio::write(*socket, boost::asio::buffer(string("0")));
                 state = Closed;
                 return;
